@@ -1,6 +1,10 @@
 #include "tp.h"
 #include "runtime/types.cpp"
 
+// TODO option in Makefile USE_PYTHON
+#define USE_PYTHON 1
+extern "C" int PyRun_SimpleString(const char* script);
+
 void tp_save(TP, const char * fname, tp_obj v) {
 	FILE *f;
 	f = fopen(fname,"wb");
@@ -87,7 +91,7 @@ tp_obj tpy_system(TP) {
 	return tp_number(r);
 }
 
-void tp_module_os_init (TP) {
+void tp_module_os_init(TP) {
 	tp_obj os = tp_import(tp, tp_string_atom(tp, "os"), tp_None, tp_string_atom(tp, "<builtin>"));
 	tp_set(tp, os, tp_string_atom(tp, "exists"), tp_function(tp, tpy_exists));
 	tp_set(tp, os, tp_string_atom(tp, "read"), tp_function(tp, tpy_load));
@@ -97,8 +101,35 @@ void tp_module_os_init (TP) {
 	tp_set(tp, os, tp_string_atom(tp, "save"), tp_function(tp, tpy_save));
 }
 
+// CPython integration //
+#ifdef USE_PYTHON
+	tp_obj tpy_cpython_run(TP) {
+		char * s = tp_cstr(tp, TP_STR());
+		int r = PyRun_SimpleString(s);  // returns -1 on failure
+		tp_free(tp, s);
+		return tp_number(r);
+	}
+	/* TODO
+	tp_obj tpy_cpython_eval(TP) {
+		char * s = tp_cstr(tp, TP_STR());
+		PyObject *r = PyRun_String(s);  // returns NULL on failure
+		tp_free(tp, s);
+		return tp_pyobject(r);
+	}
+	*/
+
+#endif
+
+void tp_module_cpython_init(TP) {
+	tp_obj py = tp_import(tp, tp_string_atom(tp, "python"), tp_None, tp_string_atom(tp, "<builtin>"));
+	tp_set(tp, py, tp_string_atom(tp, "run"), tp_function(tp, tpy_cpython_run));
+}
+
+
 void tp_module_corelib_init(TP) {
 	tp_import_from_buffer(tp, 0, "tinypy.runtime.types", _tp_types_tpc,  sizeof(_tp_types_tpc));
-
 	tp_module_os_init(tp);
+	#ifdef USE_PYTHON
+		tp_module_cpython_init(tp);
+	#endif
 }

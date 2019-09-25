@@ -22,7 +22,7 @@ TPLIB_FILES=tp.cpp compiler.cpp runtime.cpp
 
 
 %.o : %.cpp
-	c++ $(CFLAGS) -std=c++11 -g -rdynamic -O2 -I . -c -o $@ $<
+	c++ $(CFLAGS) -std=c++11 -g -rdynamic -O2 -I/usr/local/include/python3.7m -I . -c -o $@ $<
 
 all: tpython++
 
@@ -45,11 +45,10 @@ tinypy/tp.o : tinypy/tp.cpp tinypy/tp*.cpp tinypy/tp*.h
 tinypy/runtime.o : $(RUNTIME_C_FILES) tinypy/runtime.cpp tinypy/*.h
 
 
-#
 # tpvm only takes compiled byte codes (.bytecode files)
 #tpvm : $(VMLIB_FILES:%.c=tinypy/%.o) tinypy/vmmain.o modules/modules.a
 tpython++ : $(VMLIB_FILES:%.cpp=tinypy/%.o) tinypy/vmmain.o
-	c++ -o $@ $^ -lm -ldl -lpthread
+	c++ -o $@ $^ -lm -ldl -lpython3.7m -lpthread
 
 ## broken and DEPRECATED
 # tpy takes .py files

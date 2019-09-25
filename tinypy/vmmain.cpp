@@ -1,3 +1,9 @@
+// TODO option in Makefile for USE_PYTHON
+#define USE_PYTHON 1
+#ifdef USE_PYTHON
+#include <Python.h>
+#endif
+
 #include "tp.h"
 #include <thread>
 
@@ -82,6 +88,12 @@ void run_vm(int argc, char *argv[], int script_index){
 int main(int argc,  char *argv[]) {
 	signal(SIGSEGV, crash_handler);
 	signal(SIGABRT, crash_handler);
+
+#ifdef USE_PYTHON
+	Py_SetStandardStreamEncoding("utf-8", "surrogateescape");
+	Py_Initialize();
+#endif
+
 	if (argc==1){
 		std::cout << "Error: no byte code file provided" << std::endl;
 	} else if (argc==2){

@@ -2,13 +2,14 @@
 import os, sys, subprocess
 
 def metapy2tinypypp( source ):
-	if 'with thread:' not in source:
-		return [source]
 	shared = []
 	thread_local = []
 	thread = None
+	cpy = None
 	for ln in source.splitlines():
-		if ln.startswith('with thread:'):
+		if ln.startswith('with python:'):
+			cpy = []
+		elif ln.startswith('with thread:'):
 			thread = []
 			thread_local.append(thread)
 		elif thread is not None:
@@ -16,14 +17,25 @@ def metapy2tinypypp( source ):
 				thread.append( ln[1:] )
 			else:
 				thread = None
+		elif cpy is not None:
+			if ln.startswith('\t'):
+				cpy.append( ln[1:] )
+			else:
+				s = '\n'.join(cpy)
+				shared.append("python.run('''%s''')" %s)
+				cpy = None
 		else:
 			shared.append(ln)
 
 	scripts = []
-	for thread_code in thread_local:
+	if len(thread_local):
+		for thread_code in thread_local:
+			script = '\n'.join(shared)
+			script += '\n'
+			script += '\n'.join(thread_code)
+			scripts.append(script)
+	else:
 		script = '\n'.join(shared)
-		script += '\n'
-		script += '\n'.join(thread_code)
 		scripts.append(script)
 
 	return scripts
@@ -33,7 +45,10 @@ def main():
 	path, name = os.path.split(sys.argv[-1])
 	scripts = metapy2tinypypp( open(sys.argv[-1], 'rb').read() )
 	if len(scripts) == 1:
-		subprocess.check_call(['./tpc', '-o', './%s.bytecode'%name, sys.argv[-1]])
+		source = scripts[0]
+		tempf = '/tmp/%s_main.py'%name
+		open(tempf, 'wb').write(source)
+		subprocess.check_call(['./tpc', '-o', './%s.bytecode'%name, tempf])
 	else:
 		for i in range(len(scripts)):
 			source = scripts[i]
