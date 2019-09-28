@@ -40,9 +40,15 @@ tp_obj tp_str_internal_DEPRECATED(TP, tp_obj self, int mode) {
 
 
 tp_obj tp_str(TP, tp_obj self) {
+	if (self.type.type_id == TP_STRING) {
+		return self;
+	}
 	return tp_string_from_stdstring(tp, tp_as_string(tp, self));
 }
 tp_obj tp_repr(TP, tp_obj self) {
+	if (self.type.type_id == TP_STRING) {
+		return self;
+	}
 	return tp_string_from_stdstring(tp, tp_as_string(tp, self));
 }
 

@@ -74,11 +74,16 @@ tp_obj tp_string_from_buffer(TP, const char *s, int n) {
 tp_obj tp_string_from_stdstring(TP, std::string s) {
 	#ifdef DEBUG
 		std::cout << "tp_string.cpp tp_string_from_stdstring: " << std::endl;
+		std::cout << s << std::endl;
 	#endif
-
-	tp_obj r = tp_string_t(tp, s.size());
-	memcpy(tp_string_getptr(r), s.c_str(), s.size());
-	return r;
+	//tp_obj r = tp_string_t(tp, s.size());
+	//memcpy(tp_string_getptr(r), s.c_str(), s.size()+1);
+	//s.copy(tp_string_getptr(r), s.size());
+	//return r;
+	//return tp_track(tp, tp_string_from_const(tp, s.c_str(), s.size()));
+	char *dst = new char[s.size()+1];
+	std::strcpy(dst, s.c_str());
+	return tp_track(tp, tp_string_from_const(tp, dst, s.size()));
 }
 
 

@@ -7,6 +7,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <cstring>
 
 #include <setjmp.h>
 #include <sys/stat.h>
@@ -91,6 +92,7 @@ enum TPStringMagic {
 	TP_STRING_ATOM = 1,
 	TP_STRING_EXTERN = 2,
 	TP_STRING_VIEW = 3,
+	//TP_STRING_STD = 4,  // std::string is not allowed in a union
 };
 
 // not quite big enough?
@@ -432,7 +434,7 @@ tp_inline static tp_obj tp_number(tp_num v) {
 	return val;
 }
 
-/* Function: tp_string_n
+/* Function: tp_string_from_const (was tp_string_n)
  * Creates a new string object from a partial C string.
  * 
  * Like <tp_string>, but you specify how many bytes of the given C string to
@@ -488,7 +490,7 @@ tp_inline static std::string tp_as_string(TP, tp_obj self) {
 	switch( type ) {
 		case TP_STRING: {
 			if(self.type.magic == TP_STRING_VIEW) {
-				#if DEBUG > 2
+				#ifdef DEBUG
 					std::cout << "STRING VIEW" << std::endl;
 				#endif
 				ss << "\"" << tp_as_string(tp, self.string.info->base) << "\"";
@@ -503,9 +505,10 @@ tp_inline static std::string tp_as_string(TP, tp_obj self) {
 					} else {
 						std::cout << "STRING TYPE" << std::endl;
 					}
+					std::cout << self.string.info->len << std::endl;
+
 				#endif
 
-				std::cout << self.string.info->len << std::endl;
 				ss << "\"" << self.string.val << "\"";
 			} 
 		} break;
