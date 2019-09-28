@@ -127,7 +127,11 @@ void tp_module_cpython_init(TP) {
 
 
 void tp_module_corelib_init(TP) {
-	tp_import_from_buffer(tp, 0, "tinypy.runtime.types", _tp_types_tpc,  sizeof(_tp_types_tpc));
+	#ifdef DEBUG
+		std::cout << "runtime.cpp:tp_module_corelib_init" << std::endl;
+	#endif
+	//tp_import_from_buffer(tp, 0, "tinypy.runtime.types", _tp_types_tpc,  sizeof(_tp_types_tpc));
+	tp_import_from_buffer(tp, "tinypy.runtime.types", _tp_types_tpc,  sizeof(_tp_types_tpc));
 	tp_module_os_init(tp);
 	#ifdef USE_PYTHON
 		tp_module_cpython_init(tp);

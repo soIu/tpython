@@ -21,25 +21,41 @@
 #include <time.h>
 
 #ifdef __GNUC__
-#define tp_inline __inline__
+	#define tp_inline __inline__
 #endif
-
 #ifdef _MSC_VER
-#ifdef NDEBUG
-#define tp_inline __inline
-#else
-/* don't inline in debug builds (for easier debugging) */
-#define tp_inline
+	#ifdef NDEBUG
+		#define tp_inline __inline
+	#else
+		/* don't inline in debug builds (for easier debugging) */
+		#define tp_inline
+	#endif
 #endif
+#ifndef tp_inline
+	#error "Unsuported compiler"
 #endif
 
-#ifndef tp_inline
-#error "Unsuported compiler"
-#endif
+
+
+//#define TP_GCMAX 16384 /* FIXME: increased so that gc doesn't get called while running tp_str() */
+#define TP_REGS 16384
+#define TP_GCMAX 262144
+
+// fixes bench marking test, might need to be set higher later
+//#define TP_GCMAX 65536  // still not enough for heavy loads
+//#define TP_GCMAX 2097152  // this is too much with threads
+
+//#define TP_REGS 32768  // not required
+
+#define TP_FRAMES 256
+#define TP_REGS_EXTRA 2
+/* #define TP_REGS_PER_FRAME 256*/
+
+
 
 /*  #define tp_malloc(x) calloc((x),1)
-    #define tp_realloc(x,y) realloc(x,y)
-    #define tp_free(x) free(x) */
+	#define tp_realloc(x,y) realloc(x,y)
+	#define tp_free(x) free(x) */
 
 /* #include <gc/gc.h>
    #define tp_malloc(x) GC_MALLOC(x)
@@ -47,36 +63,34 @@
    #define tp_free(x)*/
 
 enum TPTypeID {
-    TP_NONE = 0,
-    TP_NUMBER = 1,
-    TP_GC_TRACKED = 10,
-    TP_FUNC = 10,
-    TP_DATA = 11,
-
-    //TP_HAS_META = 100,  // this must be a typo?
-    TP_HAS_META = 99,     // hartsantler FIXED sept 23rd
-    TP_STRING = 100,
-    TP_LIST = 101,
-    TP_DICT = 102,
-    TP_OBJECT = 103,
-    TP_INTERFACE = 104,
+	TP_NONE = 0,
+	TP_NUMBER = 1,
+	TP_GC_TRACKED = 10,
+	TP_FUNC = 10,
+	TP_DATA = 11,
+	TP_HAS_META = 99,     // this is not a type, any type >= TP_HAS_META can have a metatype
+	TP_STRING = 100,
+	TP_LIST = 101,
+	TP_DICT = 102,
+	TP_OBJECT = 103,
+	TP_INTERFACE = 104,
 };
 
 typedef struct TPTypeInfo {
-    enum TPTypeID type_id : 32; /* TPTypeID */
-    unsigned int magic: 32;
+	enum TPTypeID type_id : 32; /* TPTypeID */
+	unsigned int magic: 32;
 } TPTypeInfo;
 
 enum TPFuncMagic {
-    TP_FUNC_MASK_C = 1,
-    TP_FUNC_MASK_METHOD = 2,
+	TP_FUNC_MASK_C = 1,
+	TP_FUNC_MASK_METHOD = 2,
 };
 
 enum TPStringMagic {
-    TP_STRING_NONE = 0,
-    TP_STRING_ATOM = 1,
-    TP_STRING_EXTERN = 2,
-    TP_STRING_VIEW = 3,
+	TP_STRING_NONE = 0,
+	TP_STRING_ATOM = 1,
+	TP_STRING_EXTERN = 2,
+	TP_STRING_VIEW = 3,
 };
 
 // not quite big enough?
@@ -113,37 +127,37 @@ typedef double tp_num;
 
 /*
 typedef union tp_obj {
-    TPTypeInfo type;
-    struct { TPTypeInfo type; int * gci; } gc;
-    struct { TPTypeInfo type; tp_num val; } number;
-    struct { TPTypeInfo type; struct tpd_func *info; void *cfnc; } func;
-    struct { TPTypeInfo type; struct tpd_data *info; void *val; } data;
+	TPTypeInfo type;
+	struct { TPTypeInfo type; int * gci; } gc;
+	struct { TPTypeInfo type; tp_num val; } number;
+	struct { TPTypeInfo type; struct tpd_func *info; void *cfnc; } func;
+	struct { TPTypeInfo type; struct tpd_data *info; void *val; } data;
 
-    struct { TPTypeInfo type; struct tpd_obj *info; } obj;
-    struct { TPTypeInfo type; struct tpd_list *val; } list;
-    struct { TPTypeInfo type; struct tpd_dict *val; } dict;
-    struct { TPTypeInfo type; struct tpd_dict *val; } object;
-    struct { TPTypeInfo type; struct tpd_dict *val; } interface;
-    struct { TPTypeInfo type; struct tpd_string *info; const char * val;} string;
+	struct { TPTypeInfo type; struct tpd_obj *info; } obj;
+	struct { TPTypeInfo type; struct tpd_list *val; } list;
+	struct { TPTypeInfo type; struct tpd_dict *val; } dict;
+	struct { TPTypeInfo type; struct tpd_dict *val; } object;
+	struct { TPTypeInfo type; struct tpd_dict *val; } interface;
+	struct { TPTypeInfo type; struct tpd_string *info; const char * val;} string;
 } tp_obj;
 */
 
 typedef class tp_obj {
 public:
-    union {
-        TPTypeInfo type;
-        struct { TPTypeInfo type; int * gci; } gc;
-        struct { TPTypeInfo type; tp_num val; } number;
-        struct { TPTypeInfo type; struct tpd_func *info; void *cfnc; } func;
-        struct { TPTypeInfo type; struct tpd_data *info; void *val; } data;
+	union {
+		TPTypeInfo type;
+		struct { TPTypeInfo type; int * gci; } gc;
+		struct { TPTypeInfo type; tp_num val; } number;
+		struct { TPTypeInfo type; struct tpd_func *info; void *cfnc; } func;
+		struct { TPTypeInfo type; struct tpd_data *info; void *val; } data;
 
-        struct { TPTypeInfo type; struct tpd_obj *info; } obj;  // what type of object is this?
-        struct { TPTypeInfo type; struct tpd_list *val; } list;
-        struct { TPTypeInfo type; struct tpd_dict *val; } dict;
-        struct { TPTypeInfo type; struct tpd_dict *val; } object;
-        struct { TPTypeInfo type; struct tpd_dict *val; } interface;
-        struct { TPTypeInfo type; struct tpd_string *info; const char * val;} string;
-    };
+		struct { TPTypeInfo type; struct tpd_obj *info; } obj;  // what type of object is this?
+		struct { TPTypeInfo type; struct tpd_list *val; } list;
+		struct { TPTypeInfo type; struct tpd_dict *val; } dict;
+		struct { TPTypeInfo type; struct tpd_dict *val; } object;
+		struct { TPTypeInfo type; struct tpd_dict *val; } interface;
+		struct { TPTypeInfo type; struct tpd_string *info; const char * val;} string;
+	};
 } tp_obj;
 
 
@@ -153,100 +167,89 @@ Functions are into several namespaces from lower-level to higher-level:
 - `tpd_*` : tinypy data structures;
 
 - `tp_*` : tinypy interpreter C-API;
-           arguments from C arguments;
-           functions may return any C value;
-           return values are usually tracked by gc,
-           unless the name indicates untracked (ending with _nt)
-           add the result to gc before dropping to the Python land.
+		   arguments from C arguments;
+		   functions may return any C value;
+		   return values are usually tracked by gc,
+		   unless the name indicates untracked (ending with _nt)
+		   add the result to gc before dropping to the Python land.
 
 - `tpy_*` : python language C-API
-            arguments from local scope parameter list
-            functions always return tp_obj;
-            return values are usually tracked by gc if it should,
-            unless the name indicates untracked.
+			arguments from local scope parameter list
+			functions always return tp_obj;
+			return values are usually tracked by gc if it should,
+			unless the name indicates untracked.
 
 */
 
 typedef struct tpd_obj {
-    int gci;
-    tp_obj meta;
+	int gci;
+	tp_obj meta;
 } tpd_obj;
 
 typedef struct tpd_string {
-    int gci;
-    tp_obj meta;
-    tp_obj base;
-    char * s;
-    int len;
+	int gci;
+	tp_obj meta;
+	tp_obj base;
+	char * s;
+	int len;
 } tpd_string;
 
 typedef struct tpd_list {
-    int gci;
-    tp_obj meta;
-    tp_obj *items;
-    int len;
-    int alloc;
+	int gci;
+	tp_obj meta;
+	tp_obj *items;
+	int len;
+	int alloc;
 } tpd_list;
 
 typedef struct tpd_item {
-    int used;
-    int hash;
-    tp_obj key;
-    tp_obj val;
+	int used;
+	int hash;
+	tp_obj key;
+	tp_obj val;
 } tpd_item;
 
 typedef struct tpd_dict {
-    int gci;
-    tp_obj meta;
-    tpd_item *items;
-    int len;
-    int alloc;
-    int cur;
-    int mask;
-    int used;
+	int gci;
+	tp_obj meta;
+	tpd_item *items;
+	int len;
+	int alloc;
+	int cur;
+	int mask;
+	int used;
 } tpd_dict;
 
 typedef struct tpd_func {
-    int gci;
-    tp_obj instance;
-    tp_obj globals;
-    tp_obj code;
+	int gci;
+	tp_obj instance;
+	tp_obj globals;
+	tp_obj code;
 } tpd_func;
 
 typedef union tpd_code {
-    unsigned char i;
-    struct { unsigned char i,a,b,c; } regs;
-    struct { char val[4]; } string;
-    struct { float val; } number;
+	unsigned char i;
+	struct { unsigned char i,a,b,c; } regs;
+	struct { char val[4]; } string;
+	struct { float val; } number;
 } tpd_code;
 
 typedef struct tpd_frame {
 /*    tpd_code *codes; */
-    tp_obj code;
-    tpd_code *cur;
-    tpd_code *jmp;
-    tp_obj *regs;
-    tp_obj *ret_dest;
-    tp_obj fname;
-    tp_obj name;
-    tp_obj line;
-    tp_obj globals;
-    int lineno;
-    int cregs;
+	tp_obj code;
+	tpd_code *cur;
+	tpd_code *jmp;
+	tp_obj *regs;
+	tp_obj *ret_dest;
+	tp_obj fname;
+	tp_obj name;
+	tp_obj line;
+	tp_obj globals;
+	int lineno;
+	int cregs;
 } tpd_frame;
 
-//#define TP_GCMAX 16384 /* FIXME: increased so that gc doesn't get called while running tp_str() */
-#define TP_REGS 16384
-//#define TP_GCMAX 32768  // still not high enough
-// fixes bench marking test, might need to be set higher later
-//#define TP_GCMAX 65536  // still not enough for heavy loads
-#define TP_GCMAX 2097152
 
-//#define TP_REGS 32768  // not required
-
-#define TP_FRAMES 256
-#define TP_REGS_EXTRA 2
-/* #define TP_REGS_PER_FRAME 256*/
 
 /* Type: tp_vm
  * Representation of a tinypy virtual machine instance.
@@ -268,45 +271,45 @@ typedef struct tpd_frame {
  * frames[n].globals - A dictionary of global sybmols in callframe n.
  */
 typedef struct tp_vm {
-    tp_obj builtins;
-    tp_obj modules;
-    tp_obj _list_meta;
-    tp_obj _dict_meta;
-    tp_obj _string_meta;
-    tpd_frame frames[TP_FRAMES];
-    tp_obj _params;
-    tp_obj params;
-    tp_obj _regs;
-    tp_obj *regs;
-    tp_obj root;
-    jmp_buf buf;
+	tp_obj builtins;
+	tp_obj modules;
+	tp_obj _list_meta;
+	tp_obj _dict_meta;
+	tp_obj _string_meta;
+	tpd_frame frames[TP_FRAMES];
+	tp_obj _params;
+	tp_obj params;
+	tp_obj _regs;
+	tp_obj *regs;
+	tp_obj root;
+	jmp_buf buf;
 #ifdef CPYTHON_MOD
-    jmp_buf nextexpr;
+	jmp_buf nextexpr;
 #endif
-    int jmp;
-    tp_obj ex;
-    tp_obj last_result;
-    char chars[256][2];
-    int cur;
-    void (*echo)(const char* data, int length);
-    /* gc */
-    tpd_list *white;
-    tpd_list *grey;
-    tpd_list *black;
-    int steps;
-    /* sandbox */
-    clock_t clocks;
-    double time_elapsed;
-    double time_limit;
-    unsigned long mem_limit;
-    unsigned long mem_used;
-    int mem_exceeded;
+	int jmp;
+	tp_obj ex;
+	tp_obj last_result;
+	char chars[256][2];
+	int cur;
+	void (*echo)(const char* data, int length);
+	/* gc */
+	tpd_list *white;
+	tpd_list *grey;
+	tpd_list *black;
+	int steps;
+	/* sandbox */
+	clock_t clocks;
+	double time_elapsed;
+	double time_limit;
+	unsigned long mem_limit;
+	unsigned long mem_used;
+	int mem_exceeded;
 } tp_vm;
 
 #define TP tp_vm *tp
 typedef struct tpd_data {
-    int gci;
-    void (*free)(TP,tp_obj);
+	int gci;
+	void (*free)(TP,tp_obj);
 } tpd_data;
 
 #define tp_True tp_number(1)
@@ -341,13 +344,13 @@ void   tp_grey(TP,tp_obj);
  */
 void   _tp_raise(TP,tp_obj);
 #define tp_raise(r, obj) { \
-    _tp_raise(tp, obj); \
-    return r; \
+	_tp_raise(tp, obj); \
+	return r; \
 }
 
 #define tp_raise_printf(r,fmt,...) { \
-    _tp_raise(tp, tp_printf(tp, fmt, __VA_ARGS__)); \
-    return r; \
+	_tp_raise(tp, tp_printf(tp, fmt, __VA_ARGS__)); \
+	return r; \
 }
 
 /* Function: tp_string_from_const
@@ -378,11 +381,11 @@ char * tp_cstr(TP, tp_obj v);
 
 tp_inline static
 tp_obj tp_check_type(TP, int t, tp_obj v) {
-    if (v.type.type_id != t) {
-        tp_raise(tp_None,
-            tp_string_atom(tp, "(tp_check_type) TypeError: unexpected type"));
-    }
-    return v;
+	if (v.type.type_id != t) {
+		tp_raise(tp_None,
+			tp_string_atom(tp, "(tp_check_type) TypeError: unexpected type"));
+	}
+	return v;
 }
 /* 
  * Macros for obtaining objects from the parameter list of the current
@@ -414,19 +417,19 @@ tp_obj tp_check_type(TP, int t, tp_obj v) {
  */
 tp_obj tpd_list_get(TP, tpd_list *self, int k, const char *error);
 #define TP_LOOP(e) \
-    int __l = tp->params.list.val->len; \
-    int __i; for (__i=0; __i<__l; __i++) { \
-        (e) = tpd_list_get(tp, tp->params.list.val, __i, "TP_LOOP");
+	int __l = tp->params.list.val->len; \
+	int __i; for (__i=0; __i<__l; __i++) { \
+		(e) = tpd_list_get(tp, tp->params.list.val, __i, "TP_LOOP");
 #define TP_END \
-    }
+	}
 
 /* Function: tp_number
  * Creates a new numeric object.
  */
 tp_inline static tp_obj tp_number(tp_num v) {
-    tp_obj val = {TP_NUMBER};
-    val.number.val = v;
-    return val;
+	tp_obj val = {TP_NUMBER};
+	val.number.val = v;
+	return val;
 }
 
 /* Function: tp_string_n
@@ -446,7 +449,11 @@ tp_obj tp_params_n(TP, int n, tp_obj argv[]);
 tp_obj tp_params_v(TP, int n, ...);
 
 tp_obj tp_import(TP, tp_obj name, tp_obj code, tp_obj fname);
+
 tp_obj tp_import_from_buffer(TP, const char * fname, const char * name, void *codes, int len);
+tp_obj tp_import_from_buffer(TP, const char * name, unsigned char *codes, int len);
+
+
 tp_obj tp_ez_call(TP, const char *mod, const char *func, tp_obj params);
 tp_obj tp_eval_from_cstr(TP, const char *text, tp_obj globals);
 tp_obj tp_exec(TP, tp_obj code, tp_obj globals);
@@ -473,6 +480,72 @@ void tp_module_sys_init(TP, int argc, char * argv[]);
 void tp_module_builtins_init(TP);
 void tp_module_compiler_init(TP);
 void tp_module_corelib_init(TP);
+
+
+tp_inline static std::string tp_as_string(TP, tp_obj self) {
+	std::stringstream ss;
+	int type = self.type.type_id;
+	switch( type ) {
+		case TP_STRING: {
+			if(self.type.magic == TP_STRING_VIEW) {
+				#if DEBUG > 2
+					std::cout << "STRING VIEW" << std::endl;
+				#endif
+				ss << "\"" << tp_as_string(tp, self.string.info->base) << "\"";
+
+			} else {
+
+				#if DEBUG > 2
+					if(self.type.magic == TP_STRING_ATOM) {
+						std::cout << "STRING ATOM" << std::endl;
+					} else if(self.type.magic == TP_STRING_EXTERN) {
+						std::cout << "STRING EXTERN" << std::endl;
+					} else {
+						std::cout << "STRING TYPE" << std::endl;
+					}
+				#endif
+
+				std::cout << self.string.info->len << std::endl;
+				ss << "\"" << self.string.val << "\"";
+			} 
+		} break;
+		case TP_NUMBER: ss << self.number.val; break;
+		case TP_NONE: ss << "None"; break;
+		case TP_FUNC: ss << "function<" << self.func.cfnc << ">"; break;
+		case TP_LIST: {
+			ss << "[";
+			for (int i=0; i<self.list.val->len; i++){
+				ss << tp_as_string(tp, self.list.val->items[i]) << ",";
+			}
+			ss << "]";
+		} break;
+		case TP_DICT: {
+			ss << "{";
+			for (int i=0; i<self.dict.val->len; i++){
+				tpd_item item = self.dict.val->items[i];
+				ss << tp_as_string(tp, item.key) << ":";
+				ss << tp_as_string(tp, item.val);
+				ss << ",";
+			}
+			ss << "}";
+		} break;
+		case TP_OBJECT: {
+			ss << "object<" << self.object.val << ">";
+		} break;
+		case TP_INTERFACE: {
+			ss << "interface<" << self.interface.val << ">";
+		} break;
+		case TP_DATA: {
+			ss << "data<" << self.data.val << ">";
+		} break;
+		default:
+			ss << "<unknown type>";
+
+	}
+
+	return ss.str();
+}
+
 
 #include "tp_ops.h"
 

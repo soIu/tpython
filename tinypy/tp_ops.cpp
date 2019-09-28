@@ -140,6 +140,7 @@ _tp_get(TP, tp_obj self, tp_obj k, int mget)
             }
         } else if (type == TP_STRING) {
             if (k.type.type_id == TP_NUMBER) {
+                std::cout << "WARN: getting a string from a number - tp_ops.cpp:_tp_get" << std::endl;
                 int l = tp_string_len(self);
                 int n = k.number.val;
                 n = (n<0?l+n:n);

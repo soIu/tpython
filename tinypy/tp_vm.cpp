@@ -399,14 +399,10 @@ int tp_step(TP) {
 
     tpd_code e = *cur;
 
-#ifdef DEBUG_MODE
-    if (e.i < TP_ITOTAL)
-        fprintf(stdout,"%2d.%4d: %-6s %3d %3d %3d\n",tp->cur,cur - (tpd_code*)f->code.string.info->s,tp_strings[e.i],VA,VB,VC);
-//     int i; for(i=0;i<16;i++) { fprintf(stderr,"%d: %s\n",i,TP_xSTR(tp, regs[i])); }
-   
-//    tp_obj tpy_print(TP);
-
-#endif
+    #ifdef DEBUG
+        if (e.i < TP_ITOTAL)
+            fprintf(stdout,"%2d.%4d: %-6s %3d %3d %3d\n",tp->cur,cur - (tpd_code*)f->code.string.info->s,tp_strings[e.i],VA,VB,VC);
+    #endif
 
     switch (e.i) {
         case TP_IEOF: tp->last_result = RA; tp_return(tp,tp_None); SR(0); break;
@@ -467,6 +463,12 @@ int tp_step(TP) {
             #ifdef TP_SANDBOX
             tp_bounds(tp,cur,(UVBC/4)+1);
             #endif
+
+            #ifdef DEBUG
+                std::cout << "NEW STRING" << std::endl;
+                std::cout << (*(cur+1)).string.val << std::endl;
+            #endif
+
             int a = (*(cur+1)).string.val - tp_string_getptr(f->code);
             RA = tp_string_view(tp, f->code, a, a+UVBC);
             cur += (UVBC/4)+1;
@@ -535,7 +537,7 @@ int tp_step(TP) {
         //    printf("GOT LOOP NUM: %i \n", num_loop_steps);
         //} break;
         case 100: {
-#ifdef DEBUG_MODE
+#ifdef DEBUG
             //printf("GOT LOOP: %i \n", e.i);  // should be 100
             //printf("GOT LOOP: %i \n", RA.number.val);
             //https://stackoverflow.com/questions/9695329/c-how-to-round-a-double-to-an-int
