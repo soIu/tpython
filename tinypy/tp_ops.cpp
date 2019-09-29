@@ -286,6 +286,8 @@ tp_obj tp_add(TP, tp_obj a, tp_obj b) {
         return tp_list_add(tp, a, b);
     }
     //tp_raise(tp_None,tp_string_atom(tp, "(tp_add) TypeError: ?"));
+    std::cout << "operand A::type_id " << a.type.type_id << std::endl;
+    std::cout << "operand B::type_id " << b.type.type_id << std::endl;
     throw "TypeError in tp_ops.cpp:tp_add invalid object type to use the add operator with";
 }
 

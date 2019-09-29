@@ -394,9 +394,12 @@ int tp_step(TP) {
 	//SR(0);
 	// note: TPTypeID an enum, is unsigned char type, not int
 	#ifdef FAST_GLOBALS
-		std::pair<unsigned char,std::string> prev_code = std::make_pair(-1,std::string());
-		std::pair<unsigned char,std::string> prev_prev_code = std::make_pair(-1,std::string());
+		//std::pair<unsigned char,std::string> prev_code = std::make_pair(-1,std::string());
+		//std::pair<unsigned char,std::string> prev_prev_code = std::make_pair(-1,std::string());
+		std::pair<unsigned char, double> prev_code = std::make_pair(-1, 0.0);
+		std::pair<unsigned char, double> prev_prev_code = std::make_pair(-1, 0.0);
 		std::string var_name = std::string();
+		double var_num = 0.0;
 	#endif
 
 	while(1) {
@@ -424,7 +427,8 @@ int tp_step(TP) {
 
 			#ifdef FAST_GLOBALS
 			if (prev_code.first==TP_IGGET && prev_code.first==TP_IGGET) {
-				double num = __global_numbers__[prev_prev_code.second] + __global_numbers__[prev_code.second];
+				//double num = __global_numbers__[prev_prev_code.second] + __global_numbers__[prev_code.second];
+				double num = prev_prev_code.second + prev_code.second;
 				#ifdef DEBUG
 					std::cout << "	fast global add: " << num << std::endl;
 				#endif
@@ -487,7 +491,7 @@ int tp_step(TP) {
 			#ifdef FAST_GLOBALS
 				prev_prev_code = prev_code;
 				prev_code.first = e.i;
-				prev_code.second = std::string();
+				//prev_code.second = std::string();
 			#endif
 			continue;
 		case TP_ISTRING: {
@@ -500,11 +504,18 @@ int tp_step(TP) {
 				std::cout << "NEW STRING" << std::endl;
 				std::cout <<  std::string((*(cur+1)).string.val, UVBC) << std::endl;
 			#endif
+
 			//int a = (*(cur+1)).string.val - tp_string_getptr(f->code);
 			//RA = tp_string_view(tp, f->code, a, a+UVBC);
-			// string_view is broken everywhere, or just above?
-
+			// string_view is NOT broken, but is slightly slower than tp_string_from_const
 			RA = tp_string_from_const(tp, (*(cur+1)).string.val, UVBC );
+
+
+			//if (UVBC <= 5)  // this should work, bug causes some memory error, string becomes a func?
+			//	RA = tp_string_atom_from_stdstring(tp, std::string((*(cur+1)).string.val, UVBC) );
+			//else
+			//	RA = tp_string_from_const(tp, (*(cur+1)).string.val, UVBC );
+
 			cur += (UVBC/4)+1;
 			}
 			break;
@@ -529,10 +540,14 @@ int tp_step(TP) {
 			#endif
 
 			#ifdef FAST_GLOBALS
-				var_name = tp_as_string(tp, RB);
-				if (__global_numbers__.count(var_name) != 0) {
-					RA.type.type_id = TP_REG_MAGIC;
-				} else if (!tp_iget(tp,&RA,f->globals,RB)) {
+				// is it the conversion to std::string or the lookup of a std::string in std::map that is slow?
+				//var_name = tp_as_string(tp, RB);
+				//if (__global_numbers__.count(var_name) != 0) {
+				//	RA.type.type_id = TP_REG_MAGIC;
+				//} else if (!tp_iget(tp,&RA,f->globals,RB)) {
+				//	RA = tp_get(tp,tp->builtins,RB); GA;
+				//}
+				if (!tp_iget(tp,&RA,f->globals,RB)) {
 					RA = tp_get(tp,tp->builtins,RB); GA;
 				}
 			#else
@@ -550,8 +565,10 @@ int tp_step(TP) {
 
 			#ifdef FAST_GLOBALS
 				if (prev_code.first == TP_INUMBER) {
-					var_name = tp_as_string(tp, RA);
-					__global_numbers__[ var_name ] = RB.number.val;
+					//var_name = tp_as_string(tp, RA);
+					var_num  = RB.number.val;
+					//__global_numbers__[ var_name ] = var_num;
+					tp_set(tp,f->globals,RA,RB);
 				} else {
 					tp_set(tp,f->globals,RA,RB);
 				}
@@ -638,7 +655,8 @@ int tp_step(TP) {
 	#ifdef FAST_GLOBALS
 		prev_prev_code = prev_code;
 		prev_code.first = e.i;
-		prev_code.second = var_name;
+		//prev_code.second = var_name;
+		prev_code.second = var_num;
 	#endif
 
 	}  // end of while

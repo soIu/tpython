@@ -53,6 +53,22 @@ tp_obj tp_string_atom(TP, const char * v) {
 	}
 }
 
+tp_obj tp_string_atom_from_stdstring(TP, std::string s) {
+	if (__string_atoms__.count(s) != 0) {
+		#ifdef DEBUG
+			std::cout << "string atom already in cache: " << v << std::endl;
+		#endif
+		return __string_atoms__[s];
+	} else {
+		#ifdef DEBUG
+			std::cout << "caching new string atom: " << v << std::endl;
+		#endif
+		static tpd_string info = {0};
+		tp_obj r = tp_string_atom(tp, s.c_str());
+		return r;
+	}
+}
+
 
 /*
  * Return a untracked string object from external memory.
