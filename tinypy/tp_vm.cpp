@@ -205,7 +205,7 @@ char * TP_xSTR(TP, tp_obj obj) {
 	return tp_cstr(tp, tp_str(tp, obj));
 }
 
-
+/*
 int _substep(TP, tpd_frame *f, tp_obj *regs, tpd_code *cur) {
 	while(1) {
 	#ifdef TP_SANDBOX
@@ -382,6 +382,9 @@ int _substep(TP, tpd_frame *f, tp_obj *regs, tpd_code *cur) {
 	}
 	SR(0);
 }
+*/
+
+std::map<std::string, double> __global_numbers__ = {};
 
 int tp_step(TP) {
 	tpd_frame *f = &tp->frames[tp->cur];
@@ -389,7 +392,12 @@ int tp_step(TP) {
 	tpd_code *cur = f->cur;
 	//return _substep(tp, f, regs, cur);
 	//SR(0);
-
+	// note: TPTypeID an enum, is unsigned char type, not int
+	#ifdef FAST_GLOBALS
+		std::pair<unsigned char,std::string> prev_code = std::make_pair(-1,std::string());
+		std::pair<unsigned char,std::string> prev_prev_code = std::make_pair(-1,std::string());
+		std::string var_name = std::string();
+	#endif
 
 	while(1) {
 	#ifdef TP_SANDBOX
@@ -407,6 +415,24 @@ int tp_step(TP) {
 	switch (e.i) {
 		case TP_IEOF: tp->last_result = RA; tp_return(tp,tp_None); SR(0); break;
 		case TP_IADD:{
+			#ifdef DEBUG
+				std::cout << "+ TP_IADD +" << std::endl;
+				std::cout << "  RA: " << tp_as_string(tp, RA) << std::endl;  // destination register
+				std::cout << "  RB: " << tp_as_string(tp, RB) << std::endl;  // first operand
+				std::cout << "  RC: " << tp_as_string(tp, RC) << std::endl;  // second operand
+			#endif
+
+			#ifdef FAST_GLOBALS
+			if (prev_code.first==TP_IGGET && prev_code.first==TP_IGGET) {
+				double num = __global_numbers__[prev_prev_code.second] + __global_numbers__[prev_code.second];
+				#ifdef DEBUG
+					std::cout << "	fast global add: " << num << std::endl;
+				#endif
+				RA = tp_number(num);
+				//if (RA.type.type_id == TP_REG_MAGIC) throw "OK";
+			} else 
+			#endif
+
 			if (RB.type.type_id == TP_NUMBER) {
 				RA = tp_number(RB.number.val+RC.number.val);
 			} else {
@@ -458,6 +484,11 @@ int tp_step(TP) {
 			//printf("SET NUMBER TO RA: %i \n", RA.number.val);  // note RA.number.val is a double
 			//std::cout << RA.number.val << std::endl;
 			cur += sizeof(tp_num)/4;
+			#ifdef FAST_GLOBALS
+				prev_prev_code = prev_code;
+				prev_code.first = e.i;
+				prev_code.second = std::string();
+			#endif
 			continue;
 		case TP_ISTRING: {
 			#ifdef TP_SANDBOX
@@ -490,12 +521,44 @@ int tp_step(TP) {
 			#endif
 			f->cur = cur + 1;  RA = tp_call(tp,RB,RC); GA;
 			return 0; break;
-		case TP_IGGET:
-			if (!tp_iget(tp,&RA,f->globals,RB)) {
-				RA = tp_get(tp,tp->builtins,RB); GA;
-			}
-			break;
-		case TP_IGSET: tp_set(tp,f->globals,RA,RB); break;
+		case TP_IGGET: {
+			#ifdef DEBUG
+				std::cout << "<- TP_IGGET" << std::endl;
+				std::cout << "  RA: " << tp_as_string(tp, RA) << std::endl;  // destination register
+				std::cout << "  RB: " << tp_as_string(tp, RB) << std::endl;  // name of variable to fetch
+			#endif
+
+			#ifdef FAST_GLOBALS
+				var_name = tp_as_string(tp, RB);
+				if (__global_numbers__.count(var_name) != 0) {
+					RA.type.type_id = TP_REG_MAGIC;
+				} else if (!tp_iget(tp,&RA,f->globals,RB)) {
+					RA = tp_get(tp,tp->builtins,RB); GA;
+				}
+			#else
+				if (!tp_iget(tp,&RA,f->globals,RB)) {
+					RA = tp_get(tp,tp->builtins,RB); GA;
+				}
+			#endif
+		} break;
+		case TP_IGSET: {
+			#ifdef DEBUG
+				std::cout << "TP_IGSET ->" << std::endl;
+				std::cout << "  RA: " << tp_as_string(tp, RA) << std::endl;  // variable name to set to
+				std::cout << "  RB: " << tp_as_string(tp, RB) << std::endl;  // value of variable
+			#endif
+
+			#ifdef FAST_GLOBALS
+				if (prev_code.first == TP_INUMBER) {
+					var_name = tp_as_string(tp, RA);
+					__global_numbers__[ var_name ] = RB.number.val;
+				} else {
+					tp_set(tp,f->globals,RA,RB);
+				}
+			#else
+				tp_set(tp,f->globals,RA,RB);
+			#endif
+		} break;
 		case TP_IDEF: {
 			#ifdef TP_SANDBOX
 			tp_bounds(tp,cur,SVBC);
@@ -539,6 +602,7 @@ int tp_step(TP) {
 		//    num_loop_steps = VA;
 		//    printf("GOT LOOP NUM: %i \n", num_loop_steps);
 		//} break;
+/*
 		case 100: {
 #ifdef DEBUG
 			//printf("GOT LOOP: %i \n", e.i);  // should be 100
@@ -556,19 +620,28 @@ int tp_step(TP) {
 			//return 0;
 			SR(0);
 		} break;
+*/
 		default:{
 			printf("INVALID BYTE CODE: %i \n", e.i);
 			tp_raise(0,tp_string_atom(tp, "(tp_step) RuntimeError: invalid instruction"));
 			break;
 		}
-	}
+	}  // end of switch
+
 	#ifdef TP_SANDBOX
 	tp_time_update(tp);
 	tp_mem_update(tp);
 	tp_bounds(tp,cur,1);
 	#endif
+
 	cur += 1;
-	}
+	#ifdef FAST_GLOBALS
+		prev_prev_code = prev_code;
+		prev_code.first = e.i;
+		prev_code.second = var_name;
+	#endif
+
+	}  // end of while
 	SR(0);
 
 }

@@ -102,6 +102,8 @@ def rebuild():
 
 	if '--debug' in sys.argv:
 		defs += ' -DDEBUG'
+	if '--fast-globals' in sys.argv:
+		defs += ' -DFAST_GLOBALS'
 
 	makefile = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe).replace('<EXEOPTS>', exeopts)
 	if mode=='windows':

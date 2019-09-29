@@ -70,7 +70,10 @@ enum TPTypeID {
 	TP_GC_TRACKED = 10,
 	TP_FUNC = 10,
 	TP_DATA = 11,
+
+	TP_REG_MAGIC = 40,
 	TP_HAS_META = 99,     // this is not a type, any type >= TP_HAS_META can have a metatype
+
 	TP_STRING = 100,
 	TP_LIST = 101,
 	TP_DICT = 102,
@@ -498,19 +501,16 @@ tp_inline static std::string tp_as_string(TP, tp_obj self) {
 
 			} else {
 
-				#if DEBUG > 2
 					if(self.type.magic == TP_STRING_ATOM) {
-						std::cout << "STRING ATOM" << std::endl;
+						//std::cout << "STRING ATOM" << std::endl;
+						ss << "\"" << self.string.val << "\"";
 					} else if(self.type.magic == TP_STRING_EXTERN) {
-						std::cout << "STRING EXTERN" << std::endl;
+						//std::cout << "STRING EXTERN" << std::endl;
+						ss << "\"" << self.string.info->s << "\"";
 					} else {
-						std::cout << "STRING TYPE" << std::endl;
+						//std::cout << "STRING TYPE" << std::endl;
+						ss << "\"" << self.string.info->s << "\"";
 					}
-					std::cout << self.string.info->len << std::endl;
-
-				#endif
-
-				ss << "\"" << self.string.val << "\"";
 			} 
 		} break;
 		case TP_NUMBER: ss << self.number.val; break;
