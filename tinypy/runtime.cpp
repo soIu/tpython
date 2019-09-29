@@ -1,9 +1,9 @@
 #include "tp.h"
 #include "runtime/types.cpp"
 
-// TODO option in Makefile USE_PYTHON
-#define USE_PYTHON 1
-extern "C" int PyRun_SimpleString(const char* script);
+#ifdef USE_PYTHON
+	extern "C" int PyRun_SimpleString(const char* script);
+#endif
 
 void tp_save(TP, const char * fname, tp_obj v) {
 	FILE *f;
@@ -118,12 +118,11 @@ void tp_module_os_init(TP) {
 	}
 	*/
 
+	void tp_module_cpython_init(TP) {
+		tp_obj py = tp_import(tp, tp_string_atom(tp, "python"), tp_None, tp_string_atom(tp, "<builtin>"));
+		tp_set(tp, py, tp_string_atom(tp, "run"), tp_function(tp, tpy_cpython_run));
+	}
 #endif
-
-void tp_module_cpython_init(TP) {
-	tp_obj py = tp_import(tp, tp_string_atom(tp, "python"), tp_None, tp_string_atom(tp, "<builtin>"));
-	tp_set(tp, py, tp_string_atom(tp, "run"), tp_function(tp, tpy_cpython_run));
-}
 
 
 void tp_module_corelib_init(TP) {

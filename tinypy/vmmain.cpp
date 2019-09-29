@@ -1,7 +1,6 @@
 // TODO option in Makefile for USE_PYTHON
-#define USE_PYTHON 1
 #ifdef USE_PYTHON
-#include <Python.h>
+	#include <Python.h>
 #endif
 
 #include "tp.h"
