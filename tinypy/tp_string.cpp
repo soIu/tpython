@@ -16,8 +16,8 @@ tp_obj tp_string_t(TP, int n) {
 	return tp_track(tp, r);
 }
 
+/* FIXME: use a hash table for the atoms to avoid the leak
 tp_obj tp_string_atom(TP, const char * v) {
-	/* FIXME: use a hash table for the atoms to avoid the leak */
 	static tpd_string info = {0};
 	tp_obj r;
 	r.type.type_id = TP_STRING;
@@ -27,6 +27,32 @@ tp_obj tp_string_atom(TP, const char * v) {
 	r.string.val = v;
 	return r;
 }
+*/
+std::map<std::string, tp_obj> __string_atoms__ = {};
+
+tp_obj tp_string_atom(TP, const char * v) {
+	std::string s = std::string(v);
+	if (__string_atoms__.count(s) != 0) {
+		#ifdef DEBUG
+			std::cout << "string atom already in cache: " << v << std::endl;
+		#endif
+		return __string_atoms__[s];
+	} else {
+		#ifdef DEBUG
+			std::cout << "caching new string atom: " << v << std::endl;
+		#endif
+		static tpd_string info = {0};
+		tp_obj r;
+		r.type.type_id = TP_STRING;
+		r.type.magic = TP_STRING_ATOM;
+		r.string.info = &info;
+		r.string.info->meta = tp->_string_meta;
+		r.string.val = v;
+		__string_atoms__[s] = r;
+		return r;
+	}
+}
+
 
 /*
  * Return a untracked string object from external memory.
