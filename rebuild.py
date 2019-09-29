@@ -59,7 +59,7 @@ tinypy/runtime.o : $(RUNTIME_C_FILES) tinypy/runtime.cpp tinypy/*.h
 # tpvm only takes compiled byte codes (.bytecode files)
 #tpvm : $(VMLIB_FILES:%.c=tinypy/%.o) tinypy/vmmain.o modules/modules.a
 <EXE> : $(VMLIB_FILES:%.cpp=tinypy/%.o) tinypy/vmmain.o
-	<CC> -o $@ $^ <LIBS>
+	<CC> <EXEOPTS> -o $@ $^ <LIBS>
 
 ## broken and DEPRECATED
 # tpy takes .py files
@@ -82,6 +82,7 @@ clean:
 def rebuild():
 	mode = 'linux'
 	exe = 'tpython++'
+	exeopts = ''
 	CC = 'c++'
 	libs = '-lm -ldl -lpython3.7m -lpthread'
 	defs = '-DUSE_PYTHON'
@@ -91,6 +92,7 @@ def rebuild():
 		libs = '-ldl -lpthread'
 		exe += '.arm'
 		mode = 'arm'
+		exeopts = '-static'
 	elif '--windows' in sys.argv or '--mingw' in sys.argv:
 		CC = 'x86_64-w64-mingw32-g++-posix'
 		defs = ''
@@ -101,7 +103,7 @@ def rebuild():
 	if '--debug' in sys.argv:
 		defs += ' -DDEBUG'
 
-	makefile = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe)
+	makefile = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe).replace('<EXEOPTS>', exeopts)
 	if mode=='windows':
 		makefile = makefile.replace('-rdynamic', '')
 
