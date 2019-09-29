@@ -35,7 +35,7 @@ TPLIB_FILES=tp.cpp compiler.cpp runtime.cpp
 	<CC> $(CFLAGS) <DEFINES> -std=c++11 -g -rdynamic -O2 -I/usr/local/include/python3.7m -I . -c -o $@ $<
 #	c++ $(CFLAGS) -DDEBUG=1 -std=c++11 -g -rdynamic -O0 -I/usr/local/include/python3.7m -I . -c -o $@ $<
 
-all: tpython++
+all: <EXE>
 
 #modules/modules.c: $(MAKEFILE)
 #	echo "#include <tinypy/tp.h>" > $@
@@ -58,7 +58,7 @@ tinypy/runtime.o : $(RUNTIME_C_FILES) tinypy/runtime.cpp tinypy/*.h
 
 # tpvm only takes compiled byte codes (.bytecode files)
 #tpvm : $(VMLIB_FILES:%.c=tinypy/%.o) tinypy/vmmain.o modules/modules.a
-tpython++ : $(VMLIB_FILES:%.cpp=tinypy/%.o) tinypy/vmmain.o
+<EXE> : $(VMLIB_FILES:%.cpp=tinypy/%.o) tinypy/vmmain.o
 	<CC> -o $@ $^ <LIBS>
 
 ## broken and DEPRECATED
@@ -68,7 +68,7 @@ tpython++ : $(VMLIB_FILES:%.cpp=tinypy/%.o) tinypy/vmmain.o
 #	c++ -o $@ $^ -lm
 
 clean:
-	rm -rf tpython++
+	rm -rf <EXE>
 	rm -rf $(RUNTIME_C_FILES)
 	#rm -rf $(COMPILER_C_FILES)
 	rm -rf tinypy/*.o
@@ -80,6 +80,8 @@ clean:
 
 
 def rebuild():
+	mode = 'linux'
+	exe = 'tpython++'
 	CC = 'c++'
 	libs = '-lm -ldl -lpython3.7m -lpthread'
 	defs = '-DUSE_PYTHON'
@@ -87,16 +89,32 @@ def rebuild():
 		CC = 'arm-linux-gnueabi-g++'
 		defs = ''
 		libs = '-ldl -lpthread'
+		exe += '.arm'
+		mode = 'arm'
 	elif '--windows' in sys.argv or '--mingw' in sys.argv:
-		CC = 'x86_64-w64-mingw32-g++'
+		CC = 'x86_64-w64-mingw32-g++-posix'
+		defs = ''
+		libs = '-lpthread'
+		exe += '.exe'
+		mode = 'windows'
+
 	if '--debug' in sys.argv:
 		defs += ' -DDEBUG'
 
-	makefile = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs)
+	makefile = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe)
+	if mode=='windows':
+		makefile = makefile.replace('-rdynamic', '')
 
 	open('Makefile', 'wb').write(makefile)
 	subprocess.check_call(['make', 'clean'])
 	subprocess.check_call(['make'])
 
+	if mode == 'windows':
+		for dll in ['libstdc++-6.dll','libgcc_s_seh-1.dll', 'libwinpthread-1.dll']:
+			if not os.path.isfile(dll):
+				if dll == 'libwinpthread-1.dll':
+					os.system('cp -v /usr/x86_64-w64-mingw32/lib/%s ./%s' %(dll, dll))
+				else:
+					os.system('cp -v /usr/lib/gcc/x86_64-w64-mingw32/5.3-posix/%s ./%s' %(dll, dll))
 
 rebuild()

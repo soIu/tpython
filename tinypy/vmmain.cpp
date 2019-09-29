@@ -7,10 +7,13 @@
 #include <thread>
 
 #include <stdio.h>
-#include <execinfo.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
+
+
+#ifndef __MINGW64__
+#include <execinfo.h>
 
 // https://gist.github.com/fmela/591333
 #include <dlfcn.h>    // for dladdr
@@ -53,17 +56,21 @@ std::string cpp_backtrace(int skip = 1)
 				trace_buf << "[truncated]\n";
 		return trace_buf.str();
 }
+#endif
 
 // https://stackoverflow.com/questions/77005/how-to-automatically-generate-a-stacktrace-when-my-program-crashes
 void crash_handler(int sig) {
-	//void *array[10];
-	//size_t size;
-	// get void*'s for all entries on the stack
-	//size = backtrace(array, 10);
-	// print out all the frames to stderr, with unreadable names
 	fprintf(stderr, "Error: signal %d:\n", sig);
-	//backtrace_symbols_fd(array, size, STDERR_FILENO);
-	std::cout << cpp_backtrace() << std::endl;
+	#ifdef __MINGW64__
+		//void *array[10];
+		//size_t size;
+		// get void*'s for all entries on the stack
+		//size = backtrace(array, 10);   // not supported in MINGW
+		// print out all the frames to stderr, with unreadable names
+		//backtrace_symbols_fd(array, size, STDERR_FILENO);
+	#else
+		std::cout << cpp_backtrace() << std::endl;
+	#endif
 	exit(1);
 }
 
