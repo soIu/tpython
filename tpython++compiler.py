@@ -41,24 +41,27 @@ def metapy2tinypypp( source ):
 	return scripts
 
 def main():
-	assert sys.argv[-1].endswith('.py')
-	path, name = os.path.split(sys.argv[-1])
-	scripts = metapy2tinypypp( open(sys.argv[-1], 'rb').read() )
+	input_file = None
+	exargs = []
+	for arg in sys.argv[1:]:
+		if arg.endswith('.py'):
+			input_file = arg
+		elif arg.startswith('--'):
+			exargs.append(arg)
+	assert input_file
+	path, name = os.path.split(input_file)
+	scripts = metapy2tinypypp( open(input_file, 'rb').read() )
 	if len(scripts) == 1:
 		source = scripts[0]
 		tempf = '/tmp/%s_main.py'%name
 		open(tempf, 'wb').write(source)
-		subprocess.check_call(['./tpc', '-o', './%s.bytecode'%name, tempf])
+		subprocess.check_call(['./tpc']+exargs+['-o', './%s.bytecode'%name, tempf])
 	else:
 		for i in range(len(scripts)):
 			source = scripts[i]
 			tempf = '/tmp/%s_thread%s.py'%(name,i)
 			open(tempf, 'wb').write(source)
-			subprocess.check_call([
-				'./tpc', '-o', 
-				'./%s_thread%s.bytecode'%(name,i), 
-				tempf
-			])
+			subprocess.check_call(['./tpc']+exargs+['-o', './%s_thread%s.bytecode'%(name,i), tempf])
 
 main()
 

@@ -385,6 +385,7 @@ int _substep(TP, tpd_frame *f, tp_obj *regs, tpd_code *cur) {
 */
 
 std::map<std::string, double> __global_numbers__ = {};
+tp_obj __global_objects__[256] = {};
 
 int tp_step(TP) {
 	tpd_frame *f = &tp->frames[tp->cur];
@@ -414,6 +415,33 @@ int tp_step(TP) {
 		if (e.i < TP_ITOTAL)
 			fprintf(stdout,"%2d.%4d: %-6s %3d %3d %3d\n",tp->cur,cur - (tpd_code*)f->code.string.info->s,tp_strings[e.i],VA,VB,VC);
 	#endif
+
+if ( e.i == 102 ) {
+	#ifdef DEBUG
+		std::cout << "VA: " << (char)VA << std::endl;
+		std::cout << "VB: " << (char)VB << std::endl;
+		std::cout << "VC: " << (char)VC << std::endl;
+	#endif
+	// this is 20 percent slower, should have been slightly faster?
+	// this is slower probably because each char is reallocated as a tp_string inside of tp_get_by_char,
+	// despite being a single byte, that single copy is slower.
+	//tp_obj a = tp_get_by_char(tp, f->globals, (char)VA);
+	//tp_obj b = tp_get_by_char(tp, f->globals, (char)VB);
+	//tp_obj c = tp_get_by_char(tp, f->globals, (char)VC);
+	//a.number.val += b.number.val + c.number.val;
+	//a.number.val += tp_get_by_char(tp, f->globals, (char)VB).number.val + tp_get_by_char(tp, f->globals, (char)VC).number.val;
+	//std::cout << a.number.val << std::endl;
+	//tp_set_by_char(tp, f->globals, (char)VA, a);
+
+	// 3x faster!
+	tp_obj a = __global_objects__[VA];
+	tp_obj b = __global_objects__[VB];
+	tp_obj c = __global_objects__[VC];
+	a.number.val += b.number.val + c.number.val;
+	__global_objects__[VA] = a;
+
+
+} else {
 
 	switch (e.i) {
 		case TP_IEOF: tp->last_result = RA; tp_return(tp,tp_None); SR(0); break;
@@ -551,7 +579,9 @@ int tp_step(TP) {
 					RA = tp_get(tp,tp->builtins,RB); GA;
 				}
 			#else
-				if (!tp_iget(tp,&RA,f->globals,RB)) {
+				if (RB.string.info->len==1) {
+					RA = __global_objects__[ (int)RB.string.info->s[0] ];
+				} else if (!tp_iget(tp, &RA, f->globals, RB)) {
 					RA = tp_get(tp,tp->builtins,RB); GA;
 				}
 			#endif
@@ -573,7 +603,13 @@ int tp_step(TP) {
 					tp_set(tp,f->globals,RA,RB);
 				}
 			#else
-				tp_set(tp,f->globals,RA,RB);
+				if (RA.string.info->len==1) {
+					//int idx = (int)RA.string.info->s[0];
+					//std::cout << "global set index: " << idx << std::endl;
+					__global_objects__[ (int)RA.string.info->s[0] ] = RB;
+				} else {
+					tp_set(tp,f->globals,RA,RB);
+				}
 			#endif
 		} break;
 		case TP_IDEF: {
@@ -615,6 +651,23 @@ int tp_step(TP) {
 		case TP_IFILE: f->fname = RA; break;
 		case TP_INAME: f->name = RA; break;
 		case TP_IREGS: f->cregs = VA; break;
+
+		/* this is slower here, because its at the bottom of the switch?
+		case 102: {
+			#ifdef DEBUG
+				std::cout << "VA: " << (char)VA << std::endl;
+				std::cout << "VB: " << (char)VB << std::endl;
+				std::cout << "VC: " << (char)VC << std::endl;
+			#endif
+			tp_obj a = tp_get_by_char(tp, f->globals, (char)VA);
+			tp_obj b = tp_get_by_char(tp, f->globals, (char)VB);
+			tp_obj c = tp_get_by_char(tp, f->globals, (char)VC);
+			a.number.val += b.number.val + c.number.val;
+			//std::cout << a.number.val << std::endl;
+			tp_set_by_char(tp, f->globals, (char)VA, a);
+		} break;
+		*/
+
 		//case 99:  {   // how to read a simple number
 		//    num_loop_steps = VA;
 		//    printf("GOT LOOP NUM: %i \n", num_loop_steps);
@@ -644,6 +697,8 @@ int tp_step(TP) {
 			break;
 		}
 	}  // end of switch
+
+} // end of special cases before switch
 
 	#ifdef TP_SANDBOX
 	tp_time_update(tp);

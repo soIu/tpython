@@ -26,6 +26,9 @@ def short_has_arg(opt, shortopts):
 def getopt(args, shortopts):
     opts = []
     while args and args[0].startswith('-') and args[0] != '-':
+        if args[0].startswith('--'):
+            args = args[1:]
+            continue
         if args[0] == '--':
             args = args[1:]
             break

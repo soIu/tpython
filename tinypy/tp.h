@@ -551,6 +551,9 @@ tp_inline static std::string tp_as_string(TP, tp_obj self) {
 }
 
 
+tp_obj tp_get_by_char(TP, tp_obj d, char c);
+void tp_set_by_char(TP, tp_obj d, char c, tp_obj v);
+
 #include "tp_ops.h"
 
 #endif

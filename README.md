@@ -49,6 +49,10 @@ The TPython++ VM can only read in bytecode, so you need to use python to compile
 python tpython++compiler.py myscript.py
 ```
 
+Options for `tpython++compiler.py`
+* `--beta` (use experimental beta features, faster but could be unstable)
+
+
 # Optional CPython
 
 CPython3.7 can be used from within TPython++ scripts using this syntax:
