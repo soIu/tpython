@@ -2,7 +2,8 @@ import tinypy.compiler.tokenize as tokenize
 from tinypy.compiler.tokenize import Token
 from tinypy.compiler.boot import *
 
-EOF,ADD,SUB,MUL,DIV,POW,BITAND,BITOR,CMP,MGET,GET,SET,NUMBER,STRING,GGET,GSET,MOVE,DEF,PASS,JUMP,CALL,RETURN,IF,DEBUG,EQ,LE,LT,IFACE,DICT,LIST,NONE,LEN,POS,PARAMS,IGET,FILE,NAME,NE,HAS,RAISE,SETJMP,MOD,LSH,RSH,ITER,DEL,REGS,BITXOR,IFN,NOT,BITNOT = 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48, 49, 50
+#EOF,ADD,SUB,MUL,DIV,POW,BITAND,BITOR,CMP,MGET,GET,SET,NUMBER,STRING,GGET,GSET,MOVE,DEF,PASS,JUMP,CALL,RETURN,IF,DEBUG,EQ,LE,LT,IFACE,DICT,LIST,NONE,LEN,POS,PARAMS,IGET,FILE,NAME,NE,HAS,RAISE,SETJMP,MOD,LSH,RSH,ITER,DEL,REGS,BITXOR,IFN,NOT,BITNOT = 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48, 49, 50
+EOF,NUMBER,STRING,ADD,SUB,MUL,DIV,CMP,MGET,GET,SET,GGET,GSET,MOVE,DEF,PASS,JUMP,CALL,RETURN,IF,DEBUG,EQ,LE,LT,IFACE,DICT,LIST,NONE,LEN,PARAMS,IGET,FILE,NAME,NE,HAS,RAISE,SETJMP,MOD,LSH,RSH,ITER,DEL,REGS,IFN,NOT, POW,BITAND,BITOR,BITNOT,BITXOR,  POS = range(51)  ## note: POS is TP_ILINE in tp_vm.cpp
 
 class DState:
 	def __init__(self,code,fname):
@@ -781,9 +782,20 @@ def encode(fname,s,t):
 	D.begin(True)
 	do(t)
 	D.end()
+	if '--inspect-bytecode' in sys.argv or '--beta' in sys.argv:
+		print(D.out)
+		for chunk in D.out:
+			print(chunk)
+			if type(chunk) is tuple:
+				if chunk[0]=='code':
+					if chunk[1] >= 104:
+						raise RuntimeError(chunk)
+
 	map_tags()
 	out = D.out; D = None
 	# Use a function instead of ''.join() so that bytes and
 	# strings during bootstrap
+	if '--inspect-bytecode' in sys.argv:
+		print(out)
 	return join(out)
 

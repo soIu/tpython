@@ -32,7 +32,7 @@ TPLIB_FILES=tp.cpp compiler.cpp runtime.cpp
 
 
 %.o : %.cpp
-	<CC> $(CFLAGS) <DEFINES> -std=c++11 -g -rdynamic -O2 -I/usr/local/include/python3.7m -I . -c -o $@ $<
+	<CC> $(CFLAGS) <DEFINES> -std=c++11 -g -rdynamic -O3 -I/usr/local/include/python3.7m -I . -c -o $@ $<
 #	c++ $(CFLAGS) -DDEBUG=1 -std=c++11 -g -rdynamic -O0 -I/usr/local/include/python3.7m -I . -c -o $@ $<
 
 all: <EXE>
@@ -78,6 +78,7 @@ clean:
 
 '''
 
+#gcc -c -Q -O3 --help=optimizers | grep enabled
 
 def rebuild():
 	mode = 'linux'
