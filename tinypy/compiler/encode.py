@@ -192,7 +192,15 @@ def imanage(orig,fnc):
 		assert isinstance( dest, Token )
 		if dest.type == 'name' and len(dest.val)==1:
 			a = ord(dest.val)
-			if expr.type == 'name' and len(expr.val)==1:
+			if expr.type == 'number' and expr.val.isdigit():
+				b = int(expr.val)
+				if b > 0 and b < 256:
+					if b == 1:
+						code(90, a=get_reg(dest.val))
+					else:
+						code(91, a=a, b=b)
+					return None
+			elif expr.type == 'name' and len(expr.val)==1:
 				b = ord(expr.val)
 				code(101, a=a, b=b)
 				return None

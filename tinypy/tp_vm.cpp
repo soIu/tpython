@@ -416,7 +416,20 @@ int tp_step(TP) {
 			fprintf(stdout,"%2d.%4d: %-6s %3d %3d %3d\n",tp->cur,cur - (tpd_code*)f->code.string.info->s,tp_strings[e.i],VA,VB,VC);
 	#endif
 
-if ( e.i == 102 ) {
+if ( e.i == 90 ) {
+	#ifdef DEBUG
+		std::cout << "TP_POST_INC ++" << std::endl;
+		std::cout << "  RA: " << tp_as_string(tp, RA) << std::endl;
+		std::cout << "  RB: " << tp_as_string(tp, RB) << std::endl;
+		std::cout << "  RC: " << tp_as_string(tp, RC) << std::endl;
+		std::cout << "VA: " << VA << std::endl;
+		std::cout << "VB: " << VB << std::endl;
+		std::cout << "VC: " << VC << std::endl;
+	#endif
+
+	RA.number.val ++;
+
+} else if ( e.i == 102 ) {
 	#ifdef DEBUG
 		std::cout << "VA: " << (char)VA << std::endl;
 		std::cout << "VB: " << (char)VB << std::endl;
@@ -513,13 +526,15 @@ if ( e.i == 102 ) {
 			tp_bounds(tp,cur,sizeof(tp_num)/4);
 			#endif
 			RA = tp_number(*(tp_num*)((*++cur).string.val ));
-			//printf("SET NUMBER TO RA: %i \n", RA.number.val);  // note RA.number.val is a double
-			//std::cout << RA.number.val << std::endl;
+
+			#ifdef DEBUG
+				std::cout << RA.number.val << std::endl;
+			#endif
+
 			cur += sizeof(tp_num)/4;
 			#ifdef FAST_GLOBALS
 				prev_prev_code = prev_code;
 				prev_code.first = e.i;
-				//prev_code.second = std::string();
 			#endif
 			continue;
 		case TP_ISTRING: {
@@ -649,7 +664,12 @@ if ( e.i == 102 ) {
 			break;
 //#endif
 		case TP_IFILE: f->fname = RA; break;
-		case TP_INAME: f->name = RA; break;
+		case TP_INAME: {
+			f->name = RA;
+			#ifdef DEBUG
+				std::cout << "  RA: " << tp_as_string(tp, RA) << std::endl;
+			#endif
+		} break;
 		case TP_IREGS: f->cregs = VA; break;
 
 		/* this is slower here, because its at the bottom of the switch?

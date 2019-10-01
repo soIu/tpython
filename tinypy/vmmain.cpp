@@ -92,8 +92,9 @@ void run_vm(int argc, char *argv[], int script_index){
 }
 
 int main(int argc,  char *argv[]) {
-	signal(SIGSEGV, crash_handler);
-	signal(SIGABRT, crash_handler);
+	signal(SIGSEGV, crash_handler); // memory segfault
+	signal(SIGABRT, crash_handler); // some old places in tinypy code had used `abort()`
+	signal(SIGINT, crash_handler);  // allow CTRL+C to halt the program
 
 #ifdef USE_PYTHON
 	Py_SetStandardStreamEncoding("utf-8", "surrogateescape");
