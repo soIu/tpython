@@ -344,9 +344,20 @@ tp_obj tp_len(TP,tp_obj self) {
 }
 
 int tp_cmp(TP, tp_obj a, tp_obj b) {
-	if (a.type.type_id != b.type.type_id) { return a.type.type_id-b.type.type_id; }
+	if (a.type.type_id != b.type.type_id) { 
+        if (a.type.type_id==TP_INTEGER && b.type.type_id==TP_NUMBER)
+            return _tp_sign_int(a.integer.val - (int)b.number.val);
+        else if (a.type.type_id==TP_NUMBER && b.type.type_id==TP_INTEGER)
+            return _tp_sign_int( (int)a.number.val - b.integer.val);
+
+        std::cout << "first type: " << a.type.type_id << std::endl;
+        std::cout << "second type: " << b.type.type_id << std::endl;
+        throw "invalid compare of different types";
+        //return a.type.type_id-b.type.type_id; // when was this used?
+    }
 	switch(a.type.type_id) {
 		case TP_NONE: return 0;
+        case TP_INTEGER: return _tp_sign_int(a.integer.val-b.integer.val);
 		case TP_NUMBER: return _tp_sign(a.number.val-b.number.val);
 		case TP_STRING: return tp_string_cmp(a, b);
 		case TP_LIST: return tp_list_cmp(tp, a, b);

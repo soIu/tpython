@@ -3,7 +3,7 @@ from tinypy.compiler.tokenize import Token
 from tinypy.compiler.boot import *
 
 #EOF,ADD,SUB,MUL,DIV,POW,BITAND,BITOR,CMP,MGET,GET,SET,NUMBER,STRING,GGET,GSET,MOVE,DEF,PASS,JUMP,CALL,RETURN,IF,DEBUG,EQ,LE,LT,IFACE,DICT,LIST,NONE,LEN,POS,PARAMS,IGET,FILE,NAME,NE,HAS,RAISE,SETJMP,MOD,LSH,RSH,ITER,DEL,REGS,BITXOR,IFN,NOT,BITNOT = 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48, 49, 50
-EOF,REGS,NAME,NUMBER,STRING,MOVE,IF,EQ,LE,LT, GGET,GSET, ADD,SUB,MUL,DIV,CMP,MGET,GET,SET,     NE,NOT,IFN,ITER,HAS,IGET,DEL,IFACE,DICT,LIST,PARAMS,LEN,JUMP,SETJMP,CALL,  DEF,RETURN,RAISE,NONE,MOD,LSH,RSH, POW,BITAND,BITOR,BITNOT,BITXOR,  PASS,FILE,DEBUG,POS = range(51)  ## note: POS is TP_ILINE in tp_vm.cpp
+EOF,REGS,NAME,INTEGER,NUMBER,STRING,MOVE,IF,EQ,LE,LT, GGET,GSET, ADD,SUB,MUL,DIV,CMP,MGET,GET,SET,     NE,NOT,IFN,ITER,HAS,IGET,DEL,IFACE,DICT,LIST,PARAMS,LEN,JUMP,SETJMP,CALL,  DEF,RETURN,RAISE,NONE,MOD,LSH,RSH, POW,BITAND,BITOR,BITNOT,BITXOR,  PASS,FILE,DEBUG,POS = range(52)  ## note: POS is TP_ILINE in tp_vm.cpp
 
 class DState:
 	def __init__(self,code,fname):
@@ -79,8 +79,19 @@ def _do_number(v,r=None):
 	code(NUMBER,r,0,0)
 	write(fpack(number(v)))
 	return r
+
+def _do_integer(v,r=None):
+	r = get_tmp(r)
+	#code(INTEGER,r,0,0)
+	#write(fpack(number(v)))  ## not packed or unpacked properly? TODO FIXME
+	code(INTEGER, a=r, b=int(v), c=0)  ## just small integers for now
+	return r
+
 def do_number(t,r=None):
-	return _do_number(t.val,r)
+	if '--int-type' in sys.argv and '.' not in t.val and int(t.val) >= 0 and int(t.val) <= 255:
+		return _do_integer(t.val,r)
+	else:
+		return _do_number(t.val,r)
 
 def get_tag():
 	k = str(D._tagi)

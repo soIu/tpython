@@ -194,6 +194,7 @@ enum {
 	TP_IEOF,  // this must be first, otherwise segfault in case of TP_INUMBER
 	TP_IREGS,
 	TP_INAME,
+	TP_IINTEGER,
 	TP_INUMBER,TP_ISTRING,
 	TP_IMOVE,
 	TP_IIF,TP_IEQ,TP_ILE,TP_ILT,
@@ -233,6 +234,7 @@ const char *tp_strings[TP_ITOTAL] = {
 	"EOF",
 	"REGS",
 	"NAME",
+	"INTEGER",
 	"NUM", "STR",
 	"MOVE",
 	"IF", "EQ","LE","LT",
@@ -313,7 +315,10 @@ if ( e.i == 90 ) {
 		std::cout << "VC: " << VC << std::endl;
 	#endif
 
-	RA.number.val ++;  // note pre incrementing provides no speed up
+	if (RA.type.type_id == TP_INTEGER)
+		RA.integer.val ++;
+	else
+		RA.number.val ++;
 
 } else if ( e.i == 102 ) {
 	#ifdef DEBUG
@@ -321,22 +326,15 @@ if ( e.i == 90 ) {
 		std::cout << "VB: " << (char)VB << std::endl;
 		std::cout << "VC: " << (char)VC << std::endl;
 	#endif
-	// this is 20 percent slower, should have been slightly faster?
-	// this is slower probably because each char is reallocated as a tp_string inside of tp_get_by_char,
-	// despite being a single byte, that single copy is slower.
-	//tp_obj a = tp_get_by_char(tp, f->globals, (char)VA);
-	//tp_obj b = tp_get_by_char(tp, f->globals, (char)VB);
-	//tp_obj c = tp_get_by_char(tp, f->globals, (char)VC);
-	//a.number.val += b.number.val + c.number.val;
-	//a.number.val += tp_get_by_char(tp, f->globals, (char)VB).number.val + tp_get_by_char(tp, f->globals, (char)VC).number.val;
-	//std::cout << a.number.val << std::endl;
-	//tp_set_by_char(tp, f->globals, (char)VA, a);
 
 	// 3x faster!
 	tp_obj a = __global_objects__[VA];
 	tp_obj b = __global_objects__[VB];
 	tp_obj c = __global_objects__[VC];
-	a.number.val += b.number.val + c.number.val;
+	if (RA.type.type_id == TP_INTEGER)
+		a.integer.val += b.integer.val + c.integer.val;
+	else
+		a.number.val += b.number.val + c.number.val;
 	__global_objects__[VA] = a;
 
 
@@ -353,7 +351,17 @@ if ( e.i == 90 ) {
 			#endif
 		} break;
 
-		case TP_INUMBER:
+		case TP_IINTEGER: {
+			RA = tp_integer( VB );
+			//RA = tp_integer(  (int)(*(tp_num*)((*++cur).string.val ))  );  // TODO FIXME
+			#ifdef DEBUG
+				std::cout << RA.integer.val << std::endl;
+			#endif
+			//cur += sizeof(tp_num)/4;
+			//continue;
+		} break;
+
+		case TP_INUMBER: {
 			#ifdef TP_SANDBOX
 			tp_bounds(tp,cur,sizeof(tp_num)/4);
 			#endif
@@ -365,6 +373,7 @@ if ( e.i == 90 ) {
 
 			cur += sizeof(tp_num)/4;
 			continue;
+		} break;
 		case TP_ISTRING: {
 			#ifdef TP_SANDBOX
 			tp_bounds(tp,cur,(UVBC/4)+1);

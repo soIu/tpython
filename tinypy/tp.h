@@ -67,6 +67,8 @@
 enum TPTypeID {
 	TP_NONE = 0,
 	TP_NUMBER = 1,
+	TP_INTEGER = 2,
+
 	TP_GC_TRACKED = 10,
 	TP_FUNC = 10,
 	TP_DATA = 11,
@@ -154,6 +156,7 @@ public:
 		TPTypeInfo type;
 		struct { TPTypeInfo type; int * gci; } gc;
 		struct { TPTypeInfo type; tp_num val; } number;
+		struct { TPTypeInfo type; int val; } integer;
 		struct { TPTypeInfo type; struct tpd_func *info; void *cfnc; } func;
 		struct { TPTypeInfo type; struct tpd_data *info; void *val; } data;
 
@@ -438,6 +441,11 @@ tp_inline static tp_obj tp_number(tp_num v) {
 	val.number.val = v;
 	return val;
 }
+tp_inline static tp_obj tp_integer(int v) {
+	tp_obj val = {TP_INTEGER};
+	val.integer.val = v;
+	return val;
+}
 
 /* Function: tp_string_from_const (was tp_string_n)
  * Creates a new string object from a partial C string.
@@ -514,6 +522,7 @@ tp_inline static std::string tp_as_string(TP, tp_obj self) {
 					}
 			} 
 		} break;
+		case TP_INTEGER: ss << self.integer.val; break;
 		case TP_NUMBER: ss << self.number.val; break;
 		case TP_NONE: ss << "None"; break;
 		case TP_FUNC: ss << "function<" << self.func.cfnc << ">"; break;
