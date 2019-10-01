@@ -32,7 +32,7 @@ TPLIB_FILES=tp.cpp compiler.cpp runtime.cpp
 
 
 %.o : %.cpp
-	<CC> $(CFLAGS) <DEFINES> -std=c++11 -g -rdynamic -O3 -I/usr/local/include/python3.7m -I . -c -o $@ $<
+	<CC> $(CFLAGS) <DEFINES> -std=c++11 <OPTIONS> -I/usr/local/include/python3.7m -I . -c -o $@ $<
 #	c++ $(CFLAGS) -DDEBUG=1 -std=c++11 -g -rdynamic -O0 -I/usr/local/include/python3.7m -I . -c -o $@ $<
 
 all: <EXE>
@@ -87,6 +87,7 @@ def rebuild():
 	CC = 'c++'
 	libs = '-lm -ldl -lpython3.7m -lpthread'
 	defs = '-DUSE_PYTHON'
+	opts = ''
 	if '--arm' in sys.argv:
 		CC = 'arm-linux-gnueabi-g++'
 		defs = ''
@@ -100,13 +101,18 @@ def rebuild():
 		libs = '-lpthread'
 		exe += '.exe'
 		mode = 'windows'
+	else:  ## linux
+		opts += ' -O3 -march=native -ffast-math -fno-math-errno -funsafe-math-optimizations -fno-signed-zeros -fno-trapping-math'
 
 	if '--debug' in sys.argv:
 		defs += ' -DDEBUG'
-	if '--fast-globals' in sys.argv:
-		defs += ' -DFAST_GLOBALS'
+		opts += ' -g -rdynamic'
+	elif mode == 'linux':
+		#opts += ' -fno-exceptions'  ## TODO
+		pass
 
-	makefile = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe).replace('<EXEOPTS>', exeopts)
+
+	makefile = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe).replace('<EXEOPTS>', exeopts).replace('<OPTIONS>', opts)
 	if mode=='windows':
 		makefile = makefile.replace('-rdynamic', '')
 

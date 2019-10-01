@@ -432,6 +432,7 @@ tp_obj tpd_list_get(TP, tpd_list *self, int k, const char *error);
 /* Function: tp_number
  * Creates a new numeric object.
  */
+//tp_inline static tp_obj tp_number(tp_num v) noexcept {
 tp_inline static tp_obj tp_number(tp_num v) {
 	tp_obj val = {TP_NUMBER};
 	val.number.val = v;

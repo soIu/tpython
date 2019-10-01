@@ -192,33 +192,77 @@ const char *tp_strings[TP_ITOTAL] = {
 
 enum {
 	TP_IEOF,  // this must be first, otherwise segfault in case of TP_INUMBER
-
+	TP_IREGS,
+	TP_INAME,
 	TP_INUMBER,TP_ISTRING,
+	TP_IMOVE,
+	TP_IIF,TP_IEQ,TP_ILE,TP_ILT,
+	TP_IGGET,TP_IGSET,
 
-	TP_IADD,TP_ISUB,TP_IMUL,TP_IDIV,TP_ICMP,TP_IMGET,TP_IGET,TP_ISET,
-	TP_IGGET,TP_IGSET,TP_IMOVE,TP_IDEF,TP_IPASS,TP_IJUMP,TP_ICALL,
-	TP_IRETURN,TP_IIF,TP_IDEBUG,TP_IEQ,TP_ILE,TP_ILT,TP_IIFACE, TP_IDICT,TP_ILIST,TP_INONE,TP_ILEN,
-	TP_IPARAMS,TP_IIGET,TP_IFILE,TP_INAME,TP_INE,TP_IHAS,TP_IRAISE,TP_ISETJMP,
-	TP_IMOD,TP_ILSH,TP_IRSH,TP_IITER,TP_IDEL,TP_IREGS, TP_IIFN, 
+	TP_IADD,TP_ISUB,TP_IMUL,TP_IDIV,TP_ICMP,
+	TP_IMGET,TP_IGET,TP_ISET,
+
+	TP_INE,
 	TP_INOT, 
-
+	TP_IIFN, 
+	TP_IITER,
+	TP_IHAS,
+	TP_IIGET,
+	TP_IDEL, 
+	TP_IIFACE, TP_IDICT,TP_ILIST,
+	TP_IPARAMS,
+	TP_ILEN,
+	TP_IJUMP,
+	TP_ISETJMP,
+	TP_ICALL,
+	TP_IDEF,
+	TP_IRETURN,
+	TP_IRAISE,
+	TP_INONE,
+	TP_IMOD,TP_ILSH,TP_IRSH,
 	TP_IPOW,TP_IBITAND,TP_IBITOR, TP_IBITNOT, TP_IBITXOR,
+
+	TP_IPASS,
+	TP_IFILE,
+	TP_IDEBUG,
 	TP_ILINE,
 	TP_ITOTAL
 };
 
 const char *tp_strings[TP_ITOTAL] = {
 	"EOF",
-
+	"REGS",
+	"NAME",
 	"NUM", "STR",
-	"ADD","SUB","MUL","DIV","CMP","MGET", "GET","SET",
-	"GGET","GSET","MOVE","DEF","PASS","JUMP","CALL","RETURN","IF","DEBUG",
-	"EQ","LE","LT","IFACE","DICT","LIST","NONE","LEN",
-	"PARAMS","IGET","FILE",
-	"NAME","NE","HAS","RAISE","SETJMP","MOD","LSH","RSH","ITER","DEL","REGS",
-	"IFN", "NOT", 
+	"MOVE",
+	"IF", "EQ","LE","LT",
+	"GGET","GSET",
 
+	"ADD","SUB","MUL","DIV","CMP","MGET", "GET","SET",
+
+	"NE",
+	"NOT", 
+	"IFN", 
+	"ITER",
+	"HAS",
+	"IGET",
+	"DEL",
+	"IFACE","DICT","LIST",
+	"PARAMS",
+	"LEN",
+	"JUMP",
+	"SETJMP",
+	"CALL",
+	"DEF",
+	"RETURN",
+	"RAISE",
+	"NONE",
+	"MOD","LSH","RSH",
 	"POW","BITAND","BITOR","BITNOT", "BITXOR", 
+
+	"PASS",
+	"FILE",
+	"DEBUG",
 	"LINE",
 };
 
@@ -238,24 +282,12 @@ char * TP_xSTR(TP, tp_obj obj) {
 	return tp_cstr(tp, tp_str(tp, obj));
 }
 
-std::map<std::string, double> __global_numbers__ = {};
 tp_obj __global_objects__[256] = {};
 
 int tp_step(TP) {
 	tpd_frame *f = &tp->frames[tp->cur];
 	tp_obj *regs = f->regs;
 	tpd_code *cur = f->cur;
-	//return _substep(tp, f, regs, cur);
-	//SR(0);
-	// note: TPTypeID an enum, is unsigned char type, not int
-	#ifdef FAST_GLOBALS
-		//std::pair<unsigned char,std::string> prev_code = std::make_pair(-1,std::string());
-		//std::pair<unsigned char,std::string> prev_prev_code = std::make_pair(-1,std::string());
-		std::pair<unsigned char, double> prev_code = std::make_pair(-1, 0.0);
-		std::pair<unsigned char, double> prev_prev_code = std::make_pair(-1, 0.0);
-		std::string var_name = std::string();
-		double var_num = 0.0;
-	#endif
 
 	while(1) {
 	#ifdef TP_SANDBOX
@@ -312,6 +344,14 @@ if ( e.i == 90 ) {
 
 	switch (e.i) {
 		case TP_IEOF: tp->last_result = RA; tp_return(tp,tp_None); SR(0); break;
+		case TP_IREGS: f->cregs = VA; break;
+
+		case TP_INAME: {
+			f->name = RA;
+			#ifdef DEBUG
+				std::cout << "  RA: " << tp_as_string(tp, RA) << std::endl;
+			#endif
+		} break;
 
 		case TP_INUMBER:
 			#ifdef TP_SANDBOX
@@ -324,10 +364,6 @@ if ( e.i == 90 ) {
 			#endif
 
 			cur += sizeof(tp_num)/4;
-			#ifdef FAST_GLOBALS
-				prev_prev_code = prev_code;
-				prev_code.first = e.i;
-			#endif
 			continue;
 		case TP_ISTRING: {
 			#ifdef TP_SANDBOX
@@ -355,6 +391,42 @@ if ( e.i == 90 ) {
 			}
 			break;
 
+		case TP_IMOVE: RA = RB; break;
+
+		case TP_IIF: if (tp_true(tp,RA)) { cur += 1; } break;
+		case TP_IEQ: RA = tp_number(tp_cmp(tp,RB,RC)==0); break;
+		case TP_ILE: RA = tp_number(tp_cmp(tp,RB,RC)<=0); break;
+		case TP_ILT: RA = tp_number(tp_cmp(tp,RB,RC)<0); break;
+
+		case TP_IGGET: {
+			#ifdef DEBUG
+				std::cout << "<- TP_IGGET" << std::endl;
+				std::cout << "  RA: " << tp_as_string(tp, RA) << std::endl;  // destination register
+				std::cout << "  RB: " << tp_as_string(tp, RB) << std::endl;  // name of variable to fetch
+			#endif
+
+			if (RB.string.info->len==1) {
+				RA = __global_objects__[ (int)RB.string.info->s[0] ];
+			} else if (!tp_iget(tp, &RA, f->globals, RB)) {
+				RA = tp_get(tp,tp->builtins,RB); GA;
+			}
+		} break;
+		case TP_IGSET: {
+			#ifdef DEBUG
+				std::cout << "TP_IGSET ->" << std::endl;
+				std::cout << "  RA: " << tp_as_string(tp, RA) << std::endl;  // variable name to set to
+				std::cout << "  RB: " << tp_as_string(tp, RB) << std::endl;  // value of variable
+			#endif
+
+			if (RA.string.info->len==1) {
+				//int idx = (int)RA.string.info->s[0];
+				//std::cout << "global set index: " << idx << std::endl;
+				__global_objects__[ (int)RA.string.info->s[0] ] = RB;
+			} else {
+				tp_set(tp,f->globals,RA,RB);
+			}
+		} break;
+
 
 		case TP_IADD:{
 			#ifdef DEBUG
@@ -362,18 +434,6 @@ if ( e.i == 90 ) {
 				std::cout << "  RA: " << tp_as_string(tp, RA) << std::endl;  // destination register
 				std::cout << "  RB: " << tp_as_string(tp, RB) << std::endl;  // first operand
 				std::cout << "  RC: " << tp_as_string(tp, RC) << std::endl;  // second operand
-			#endif
-
-			#ifdef FAST_GLOBALS
-			if (prev_code.first==TP_IGGET && prev_code.first==TP_IGGET) {
-				//double num = __global_numbers__[prev_prev_code.second] + __global_numbers__[prev_code.second];
-				double num = prev_prev_code.second + prev_code.second;
-				#ifdef DEBUG
-					std::cout << "	fast global add: " << num << std::endl;
-				#endif
-				RA = tp_number(num);
-				//if (RA.type.type_id == TP_REG_MAGIC) throw "OK";
-			} else 
 			#endif
 
 			if (RB.type.type_id == TP_NUMBER) {
@@ -386,21 +446,17 @@ if ( e.i == 90 ) {
 		case TP_IMUL: RA = tp_mul(tp,RB,RC); break;
 		case TP_IDIV: RA = tp_div(tp,RB,RC); break;
 
-		case TP_IMOD:  RA = tp_mod(tp,RB,RC); break;  // bad order
-		case TP_ILSH:  RA = tp_lsh(tp,RB,RC); break;
-		case TP_IRSH:  RA = tp_rsh(tp,RB,RC); break;  // bad order
 
 		case TP_ICMP: RA = tp_number(tp_cmp(tp,RB,RC)); break;
-		case TP_INE: RA = tp_number(tp_cmp(tp,RB,RC)!=0); break;
-		case TP_IEQ: RA = tp_number(tp_cmp(tp,RB,RC)==0); break;
-		case TP_ILE: RA = tp_number(tp_cmp(tp,RB,RC)<=0); break;
-		case TP_ILT: RA = tp_number(tp_cmp(tp,RB,RC)<0); break;
-		case TP_INOT: RA = tp_number(!tp_true(tp,RB)); break;
-		case TP_IPASS: break;
-		case TP_IIF: if (tp_true(tp,RA)) { cur += 1; } break;
-		case TP_IIFN: if (!tp_true(tp,RA)) { cur += 1; } break;
-		case TP_IGET: RA = tp_get(tp,RB,RC); GA; break;
+
 		case TP_IMGET: RA = tp_mget(tp,RB,RC); GA; break;
+		case TP_IGET: RA = tp_get(tp,RB,RC); GA; break;
+		case TP_ISET: tp_set(tp,RA,RB,RC); break;
+
+		case TP_INE: RA = tp_number(tp_cmp(tp,RB,RC)!=0); break;
+		case TP_INOT: RA = tp_number(!tp_true(tp,RB)); break;
+		case TP_IIFN: if (!tp_true(tp,RA)) { cur += 1; } break;
+
 		case TP_IITER:
 			if (RC.number.val < tp_len(tp,RB).number.val) {
 				RA = tp_iter(tp,RB,RC); GA;
@@ -411,11 +467,12 @@ if ( e.i == 90 ) {
 				cur += 1;
 			}
 			break;
+
 		case TP_IHAS: RA = tp_has(tp,RB,RC); break;
 		case TP_IIGET: tp_iget(tp,&RA,RB,RC); break;
-		case TP_ISET: tp_set(tp,RA,RB,RC); break;
+
 		case TP_IDEL: tp_del(tp,RA,RB); break;
-		case TP_IMOVE: RA = RB; break;
+
 		case TP_IIFACE: RA = tp_interface_from_items(tp, VC/2, &RB); break;
 		case TP_IDICT: RA = tp_dict_from_items(tp, VC/2, &RB); break;
 		case TP_ILIST: RA = tp_list_from_items(tp, VC, &RB); break;
@@ -429,58 +486,7 @@ if ( e.i == 90 ) {
 			#endif
 			f->cur = cur + 1;  RA = tp_call(tp,RB,RC); GA;
 			return 0; break;
-		case TP_IGGET: {
-			#ifdef DEBUG
-				std::cout << "<- TP_IGGET" << std::endl;
-				std::cout << "  RA: " << tp_as_string(tp, RA) << std::endl;  // destination register
-				std::cout << "  RB: " << tp_as_string(tp, RB) << std::endl;  // name of variable to fetch
-			#endif
 
-			#ifdef FAST_GLOBALS
-				// is it the conversion to std::string or the lookup of a std::string in std::map that is slow?
-				//var_name = tp_as_string(tp, RB);
-				//if (__global_numbers__.count(var_name) != 0) {
-				//	RA.type.type_id = TP_REG_MAGIC;
-				//} else if (!tp_iget(tp,&RA,f->globals,RB)) {
-				//	RA = tp_get(tp,tp->builtins,RB); GA;
-				//}
-				if (!tp_iget(tp,&RA,f->globals,RB)) {
-					RA = tp_get(tp,tp->builtins,RB); GA;
-				}
-			#else
-				if (RB.string.info->len==1) {
-					RA = __global_objects__[ (int)RB.string.info->s[0] ];
-				} else if (!tp_iget(tp, &RA, f->globals, RB)) {
-					RA = tp_get(tp,tp->builtins,RB); GA;
-				}
-			#endif
-		} break;
-		case TP_IGSET: {
-			#ifdef DEBUG
-				std::cout << "TP_IGSET ->" << std::endl;
-				std::cout << "  RA: " << tp_as_string(tp, RA) << std::endl;  // variable name to set to
-				std::cout << "  RB: " << tp_as_string(tp, RB) << std::endl;  // value of variable
-			#endif
-
-			#ifdef FAST_GLOBALS
-				if (prev_code.first == TP_INUMBER) {
-					//var_name = tp_as_string(tp, RA);
-					var_num  = RB.number.val;
-					//__global_numbers__[ var_name ] = var_num;
-					tp_set(tp,f->globals,RA,RB);
-				} else {
-					tp_set(tp,f->globals,RA,RB);
-				}
-			#else
-				if (RA.string.info->len==1) {
-					//int idx = (int)RA.string.info->s[0];
-					//std::cout << "global set index: " << idx << std::endl;
-					__global_objects__[ (int)RA.string.info->s[0] ] = RB;
-				} else {
-					tp_set(tp,f->globals,RA,RB);
-				}
-			#endif
-		} break;
 		case TP_IDEF: {
 			#ifdef TP_SANDBOX
 			tp_bounds(tp,cur,SVBC);
@@ -496,21 +502,12 @@ if ( e.i == 90 ) {
 			
 		case TP_IRETURN: tp_return(tp,RA); SR(0); break;
 		case TP_IRAISE: _tp_raise(tp,RA); SR(0); break;
-		case TP_IDEBUG:
-			tp_echo(tp, tp_string_atom(tp, "DEBUG:"));
-			tp_echo(tp, tp_number(VA));
-			tp_echo(tp, RA);
-			break;
 		case TP_INONE: RA = tp_None; break;
 
-		case TP_IFILE: f->fname = RA; break;
-		case TP_INAME: {
-			f->name = RA;
-			#ifdef DEBUG
-				std::cout << "  RA: " << tp_as_string(tp, RA) << std::endl;
-			#endif
-		} break;
-		case TP_IREGS: f->cregs = VA; break;
+
+		case TP_IMOD:  RA = tp_mod(tp,RB,RC); break;
+		case TP_ILSH:  RA = tp_lsh(tp,RB,RC); break;
+		case TP_IRSH:  RA = tp_rsh(tp,RB,RC); break;
 
 
 		case TP_IPOW: RA = tp_pow(tp,RB,RC); break;
@@ -518,6 +515,17 @@ if ( e.i == 90 ) {
 		case TP_IBITOR:  RA = tp_bitwise_or(tp,RB,RC); break;
 		case TP_IBITNOT:  RA = tp_bitwise_not(tp,RB); break;
 		case TP_IBITXOR:  RA = tp_bitwise_xor(tp,RB,RC); break;
+
+#ifdef DEBUG
+		case TP_IPASS: break;
+
+		case TP_IFILE: f->fname = RA; break;
+
+		case TP_IDEBUG:
+			tp_echo(tp, tp_string_atom(tp, "DEBUG:"));
+			tp_echo(tp, tp_number(VA));
+			tp_echo(tp, RA);
+			break;
 
 		case TP_ILINE: {
 			#ifdef TP_SANDBOX
@@ -539,6 +547,7 @@ if ( e.i == 90 ) {
 			tp_raise(0,tp_string_atom(tp, "(tp_step) RuntimeError: invalid instruction"));
 			break;
 		}
+#endif
 	}  // end of switch
 
 } // end of special cases before switch
@@ -550,12 +559,6 @@ if ( e.i == 90 ) {
 	#endif
 
 	cur += 1;
-	#ifdef FAST_GLOBALS
-		prev_prev_code = prev_code;
-		prev_code.first = e.i;
-		//prev_code.second = var_name;
-		prev_code.second = var_num;
-	#endif
 
 	}  // end of while
 	SR(0);
