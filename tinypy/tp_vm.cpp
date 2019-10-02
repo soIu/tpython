@@ -306,18 +306,33 @@ int tp_step(TP) {
 	#endif
 
 if ( e.i == 80 ) {
-	//case TP_IIF: if (tp_true(tp,RA)) { cur += 1; } break;
 
 	#ifdef DEBUG
 		std::cout << "----------FAST LESS THAN----------" << std::endl;
 		std::cout << "	RA: " << tp_as_string(tp, RA) << std::endl;
 		std::cout << "	VB: " << VB << std::endl;
+		std::cout << "	VC: " << VC << std::endl;
 		std::cout << "	const: " << __const_numbers__[VB] << std::endl;
 	#endif
 
+	// if the condition is true, then skip the next byte code,
+	// which seems odd, but is correct, because in encode.py,
+	// in the function do_while, after the generated `if`,
+	// there is a generated `jump(end)`, that is the end of the loop,
+	// so here when this is true, we are skipping that jump to end.
+	// note that after the big switch, there is already an increment
+	// on the cur pointer by 1
 	if (RA.number.val < __const_numbers__[VB])
 		cur += 1;
 
+	RA.number.val ++;
+
+} else if ( e.i == 81 ) {
+	if (RA.number.val < __const_numbers__[VB])
+		cur += 1;
+
+	if (VC)
+		RA.number.val += VC;
 
 } else if ( e.i == 90 ) {
 	#ifdef DEBUG
