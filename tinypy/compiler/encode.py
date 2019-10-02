@@ -7,18 +7,22 @@ EOF,REGS,NAME,INTEGER,NUMBER,STRING,MOVE,IF,EQ,LE,LT, GGET,GSET, ADD,SUB,MUL,DIV
 
 class DState:
 	def __init__(self,code,fname):
+		self.const_numbers = []  ## max size is 256
+		self.header = []
 		self.nopos = False
-		self.code, self.fname = code,fname
+		self.code = code
+		self.fname = fname
 		self.lines = self.code.split('\n')
-
 		self.stack,self.out,self._scopei,self.tstack,self._tagi,self.data = [],[('tag','EOF')],0,[],0,{}
 		self.error = False
+
 	def begin(self,gbl=False):
 		if len(self.stack): self.stack.append((self.vars,self.r2n,self.n2r,self._tmpi,self.mreg,self.snum,self._globals,self.lineno,self.globals,self.rglobals,self.cregs,self.tmpc))
 		else: self.stack.append(None)
 		self.vars,self.r2n,self.n2r,self._tmpi,self.mreg,self.snum,self._globals,self.lineno,self.globals,self.rglobals,self.cregs,self.tmpc = [],{},{},0,0,str(self._scopei),gbl,-1,[],[],['regs'],0
 		self._scopei += 1
 		insert(self.cregs)
+
 	def end(self):
 		self.cregs.append(self.mreg)
 		code(EOF)
@@ -34,14 +38,35 @@ class DState:
 			self.vars,self.r2n,self.n2r,self._tmpi,self.mreg,self.snum,self._globals,self.lineno,self.globals,self.rglobals,self.cregs,self.tmpc = self.stack.pop()
 		else: self.stack.pop()
 
+	def const_number(self, n):
+		## returns the address of the constant number
+		if len(self.const_numbers) == 256:
+			return -1
+		elif n in self.const_numbers:
+			return self.const_numbers.index(n)
+		else:
+			self.const_numbers.append(n)
+			const_addr = len(self.const_numbers)-1
+			code(NUMBER,a=0,b=2,c=const_addr, head=True)  ## b=2 means do not set a register
+			write(fpack(number(n)), head=True)
+
+			return const_addr
+
 
 def insert(v): D.out.append(v)
-def write(v):
+def write(v, head=False):
 	if istype(v,'list'):
-		insert(v)
+		if head:
+			D.header.append( v )
+		else:
+			insert(v)
 		return
 	for n in range(0,len(v),4):
-		insert(('data',v[n:n+4]))
+		if head:
+			D.header.append(('data',v[n:n+4]))
+		else:
+			insert(('data',v[n:n+4]))
+
 def setpos(v, debug_mode=False):
 	if not debug_mode:
 		return
@@ -53,15 +78,18 @@ def setpos(v, debug_mode=False):
 	val = text + "\0"*(4-len(text)%4)
 	code_16(POS,int(len(val)/4),line)
 	write(val)
-def code(i,a=0,b=0,c=0):
+
+def code(i,a=0,b=0,c=0, head=False):
 	if not istype(i,'number'): raise
 	if not istype(a,'number'): raise
 	if not istype(b,'number'): raise
 	if not istype(c,'number'): raise
-	write(('code',i,a,b,c))
+	write(('code',i,a,b,c), head=head)
+
 def code_16(i,a,b):
 	if b < 0: b += 0x8000
 	code(i,a,(b&0xff00)>>8,(b&0xff)>>0)
+
 def get_code16(i,a,b):
 	return ('code',i,a,(b&0xff00)>>8,(b&0xff)>>0)
 
@@ -76,7 +104,12 @@ def do_string(t,r=None):
 
 def _do_number(v,r=None):
 	r = get_tmp(r)
-	code(NUMBER,r,0,0)
+	const_addr = D.const_number(v)
+	if const_addr != -1:
+		## TODO do not write number twice, this is needed until the rest of the code is refactored
+		code(NUMBER,a=r,b=1,c=const_addr)
+	else:
+		code(NUMBER,a=r,b=0,c=0)
 	write(fpack(number(v)))
 	return r
 
@@ -123,7 +156,7 @@ def map_tags():
 	tags = {}
 	out = []
 	n = 0
-	for item in D.out:
+	for item in D.header + D.out:
 		if item[0] == 'tag':
 			tags[item[1]] = n
 			continue
@@ -627,9 +660,22 @@ def do_while(t):
 	t = stack_tag()
 	tag(t,'begin')
 	tag(t,'continue')
-	r = do(items[0])
-	code(IF,r)
-	free_tmp(r) #REG
+	cond = items[0]
+	old_style = True
+	if cond.type == 'symbol':
+		if cond.val == '<':
+			if cond.items[0].type == 'name' and cond.items[1].type == 'number':
+				const_addr = D.const_number(cond.items[1].val)
+				if const_addr != -1:
+					old_style = False
+					a, b = cond.items
+					code(80, a=get_reg(a.val), b=const_addr)
+
+	if old_style:
+		r = do(items[0])
+		code(IF,r)
+		free_tmp(r) #REG
+
 	jump(t,'end')
 	free_tmp(do(items[1])) #REG
 	jump(t,'begin')
@@ -803,7 +849,8 @@ def encode(fname,s,t):
 						raise RuntimeError(chunk)
 
 	map_tags()
-	out = D.out; D = None
+	out = D.out
+	D = None
 	# Use a function instead of ''.join() so that bytes and
 	# strings during bootstrap
 	if '--inspect-bytecode' in sys.argv:

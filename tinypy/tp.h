@@ -256,6 +256,8 @@ typedef struct tpd_frame {
 	tp_obj globals;
 	int lineno;
 	int cregs;
+	//tp_obj __fast_locals__[256] = {};
+	//int __const_ints__[64] = {};
 } tpd_frame;
 
 

@@ -285,6 +285,7 @@ char * TP_xSTR(TP, tp_obj obj) {
 }
 
 tp_obj __global_objects__[256] = {};
+double __const_numbers__[256] = {};
 
 int tp_step(TP) {
 	tpd_frame *f = &tp->frames[tp->cur];
@@ -304,7 +305,21 @@ int tp_step(TP) {
 			fprintf(stdout,"%2d.%4d: %-6s %3d %3d %3d\n",tp->cur,cur - (tpd_code*)f->code.string.info->s,tp_strings[e.i],VA,VB,VC);
 	#endif
 
-if ( e.i == 90 ) {
+if ( e.i == 80 ) {
+	//case TP_IIF: if (tp_true(tp,RA)) { cur += 1; } break;
+
+	#ifdef DEBUG
+		std::cout << "----------FAST LESS THAN----------" << std::endl;
+		std::cout << "	RA: " << tp_as_string(tp, RA) << std::endl;
+		std::cout << "	VB: " << VB << std::endl;
+		std::cout << "	const: " << __const_numbers__[VB] << std::endl;
+	#endif
+
+	if (RA.number.val < __const_numbers__[VB])
+		cur += 1;
+
+
+} else if ( e.i == 90 ) {
 	#ifdef DEBUG
 		std::cout << "TP_POST_INC ++" << std::endl;
 		std::cout << "  RA: " << tp_as_string(tp, RA) << std::endl;
@@ -365,10 +380,19 @@ if ( e.i == 90 ) {
 			#ifdef TP_SANDBOX
 			tp_bounds(tp,cur,sizeof(tp_num)/4);
 			#endif
-			RA = tp_number(*(tp_num*)((*++cur).string.val ));
+			double num = *(tp_num*)((*++cur).string.val );
+
+			if (VB==1) {
+				RA = tp_number(num);
+				__const_numbers__[VC] = num;
+			} else if (VB==2){
+				__const_numbers__[VC] = num;				
+			} else {
+				RA = tp_number(num);
+			}
 
 			#ifdef DEBUG
-				std::cout << RA.number.val << std::endl;
+				std::cout << num << std::endl;
 			#endif
 
 			cur += sizeof(tp_num)/4;

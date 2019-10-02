@@ -7,7 +7,7 @@ class Token:
 		if full_debug_mode and hasattr(self, 'nud') and self.nud:
 			prefix = '<%s>' % self.nud.func_name
 		if self.items is not None:
-			if self.val in '+-/*':
+			if self.val in '+-/*<>':
 				return prefix + '(' + self.val.join([i._format() for i in self.items]) + ')'
 			elif len(self.val) == 2 and self.val[1]=='=':
 				return prefix + self.val.join([i._format() for i in self.items])

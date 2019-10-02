@@ -357,8 +357,8 @@ int tp_cmp(TP, tp_obj a, tp_obj b) {
     }
 	switch(a.type.type_id) {
 		case TP_NONE: return 0;
-        case TP_INTEGER: return _tp_sign_int(a.integer.val-b.integer.val);
 		case TP_NUMBER: return _tp_sign(a.number.val-b.number.val);
+        case TP_INTEGER: return _tp_sign_int(a.integer.val-b.integer.val);
 		case TP_STRING: return tp_string_cmp(a, b);
 		case TP_LIST: return tp_list_cmp(tp, a, b);
 		case TP_DICT: return a.dict.val - b.dict.val;

@@ -69,7 +69,8 @@ void crash_handler(int sig) {
 		// print out all the frames to stderr, with unreadable names
 		//backtrace_symbols_fd(array, size, STDERR_FILENO);
 	#else
-		std::cout << cpp_backtrace() << std::endl;
+		if (sig != 2)
+			std::cout << cpp_backtrace() << std::endl;
 	#endif
 	exit(1);
 }
