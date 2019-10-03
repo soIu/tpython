@@ -188,7 +188,7 @@ void tp_gcinc(TP) {
 }
 
 tp_obj tp_track(TP,tp_obj v) {
-	#ifdef DEBUG
+	#if DEBUG > 1
 		std::cout << "tp_gc.cpp tp_track" << std::endl;
 		std::cout << tp_as_string(tp, v) << std::endl;
 		std::cout << "-------------------" << std::endl;

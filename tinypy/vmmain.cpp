@@ -113,9 +113,11 @@ tp_obj tp_load(TP, const char*);
 #endif
 
 int main(int argc,  char *argv[]) {
-	signal(SIGSEGV, crash_handler); // memory segfault
-	signal(SIGABRT, crash_handler); // some old places in tinypy code had used `abort()`
-	signal(SIGINT, crash_handler);  // allow CTRL+C to halt the program
+	#ifndef __EMSCRIPTEN_major__
+		signal(SIGSEGV, crash_handler); // memory segfault
+		signal(SIGABRT, crash_handler); // some old places in tinypy code had used `abort()`
+		signal(SIGINT, crash_handler);  // allow CTRL+C to halt the program
+	#endif
 
 	#ifdef USE_PYTHON
 		Py_SetStandardStreamEncoding("utf-8", "surrogateescape");

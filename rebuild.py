@@ -88,7 +88,10 @@ def rebuild():
 	if '--wasm' in sys.argv:
 		CC = os.path.expanduser('~/emsdk/fastcomp/emscripten/em++')
 		libs = ''
-		opts += ' -O2'
+		if '--closure' in sys.argv:
+			opts += ' -O3 -fno-rtti --closure 1'
+		else:
+			opts += ' -O3 -fno-rtti'
 		#exe += '.html'
 		exe += '.js'
 		if not embed_bytecode:
