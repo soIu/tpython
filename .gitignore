@@ -1,3 +1,7 @@
+*.gen.h
+*.wasm
+*.js
+*.arm
 *.dll
 Makefile
 tpython++

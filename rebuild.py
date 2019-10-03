@@ -65,11 +65,25 @@ def rebuild():
 	libs = '-lm -ldl -lpthread'
 	defs = ''
 	opts = ''
+	embed_bytecode = False
+	for arg in sys.argv[1:]:
+		if arg.endswith('.py'):
+			embed_bytecode = True
+			defs += ' -DUSE_EMBEDDED_BYTECODE'
+			subprocess.check_call([
+				'./tpython++compiler.py', 
+				'--beta', 
+				'--gen-header=embedded_bytecode.gen.h', 
+				arg
+			])
+			os.system('cp -v /tmp/embedded_bytecode.gen.h ./tinypy/.')
+			break
 
 	if '--cpython' in sys.argv:
-		defs += '-DUSE_PYTHON'
+		defs += ' -DUSE_PYTHON'
 		libs += ' -lpython3.7m'
 		opts += ' -I/usr/local/include/python3.7m'
+
 	##############################################
 	if '--wasm' in sys.argv:
 		CC = os.path.expanduser('~/emsdk/fastcomp/emscripten/em++')
@@ -77,6 +91,9 @@ def rebuild():
 		opts += ' -O2'
 		#exe += '.html'
 		exe += '.js'
+		if not embed_bytecode:
+			print("WARN: you must embed a bytecode file to run TPython as WASM")
+			print("run: ./rebuild.py myscript.py (this will generate and embed the bytecode)")
 	elif '--arm' in sys.argv:
 		CC = 'arm-linux-gnueabi-g++'
 		defs = ''

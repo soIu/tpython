@@ -83,41 +83,61 @@ void * _tp_import_modules(TP);
 /* from runtime */
 tp_obj tp_load(TP, const char*);
 
-void run_vm(int argc, char *argv[], int script_index){
-	tp_vm *tp = tp_init(argc, argv);
-	tp_obj fname = tp_string_atom(tp, argv[script_index]);
-	tp_obj code = tp_load(tp, argv[script_index]);
-	try {
-		tp_obj module = tp_import(tp, tp_string_atom(tp, "__main__"), code, fname);
-	} catch (const char * str) {
-		std::cout << "Runtime Exception: " << str << std::endl;
-		crash_handler(-1);
+
+#ifdef USE_EMBEDDED_BYTECODE
+	#include "embedded_bytecode.gen.h"
+	void run_vm_embedded(int argc, char *argv[]){
+		tp_vm *tp = tp_init(argc, argv);
+		try {
+			tp_import_from_buffer(tp, "__main__", __embedded_bytecode_gen_h__,  sizeof(__embedded_bytecode_gen_h__));
+		} catch (const char * str) {
+			std::cout << "Runtime Exception: " << str << std::endl;
+			crash_handler(-1);
+		}
+		tp_deinit(tp);
 	}
-	tp_deinit(tp);
-}
+#else
+	void run_vm(int argc, char *argv[], int script_index){
+		tp_vm *tp = tp_init(argc, argv);
+		tp_obj fname = tp_string_atom(tp, argv[script_index]);
+		tp_obj code = tp_load(tp, argv[script_index]);
+		try {
+			tp_obj module = tp_import(tp, tp_string_atom(tp, "__main__"), code, fname);
+		} catch (const char * str) {
+			std::cout << "Runtime Exception: " << str << std::endl;
+			crash_handler(-1);
+		}
+		tp_deinit(tp);
+	}
+
+#endif
 
 int main(int argc,  char *argv[]) {
 	signal(SIGSEGV, crash_handler); // memory segfault
 	signal(SIGABRT, crash_handler); // some old places in tinypy code had used `abort()`
 	signal(SIGINT, crash_handler);  // allow CTRL+C to halt the program
 
-#ifdef USE_PYTHON
-	Py_SetStandardStreamEncoding("utf-8", "surrogateescape");
-	Py_Initialize();
-#endif
+	#ifdef USE_PYTHON
+		Py_SetStandardStreamEncoding("utf-8", "surrogateescape");
+		Py_Initialize();
+	#endif
 
-	if (argc==1){
-		std::cout << "Error: no byte code file provided" << std::endl;
-	} else if (argc==2){
-		run_vm(argc, argv, 1);
-	} else if (argc==3) {
-		std::thread t1( [=]{run_vm(argc, argv, 1);} );
-		std::thread t2( [=]{run_vm(argc, argv, 2);} );
-		t1.join();
-		t2.join();
-	} else {
-		std::cout << "TODO: more than two threads it not yet supported" << std::endl;
-	}
+	#ifdef USE_EMBEDDED_BYTECODE
+		run_vm_embedded(argc, argv);
+	#else
+		if (argc==1){
+			std::cout << "Error: no byte code file provided" << std::endl;
+		} else if (argc==2){
+			run_vm(argc, argv, 1);
+		} else if (argc==3) {
+			std::thread t1( [=]{run_vm(argc, argv, 1);} );
+			std::thread t2( [=]{run_vm(argc, argv, 2);} );
+			t1.join();
+			t2.join();
+		} else {
+			std::cout << "TODO: more than two threads it not yet supported" << std::endl;
+		}
+	#endif
 
 	return 0;
 }
