@@ -22,8 +22,7 @@ TPLIB_FILES=tp.cpp compiler.cpp runtime.cpp
 
 
 %.o : %.cpp
-	<CC> $(CFLAGS) <DEFINES> -std=c++11 <OPTIONS> -I/usr/local/include/python3.7m -I . -c -o $@ $<
-#	c++ $(CFLAGS) -DDEBUG=1 -std=c++11 -g -rdynamic -O0 -I/usr/local/include/python3.7m -I . -c -o $@ $<
+	<CC> $(CFLAGS) <DEFINES> -std=c++11 <OPTIONS> -I . -c -o $@ $<
 
 all: <EXE>
 
@@ -63,9 +62,15 @@ def rebuild():
 	exe = 'tpython++'
 	exeopts = ''
 	CC = 'c++'
-	libs = '-lm -ldl -lpython3.7m -lpthread'
-	defs = '-DUSE_PYTHON'
+	libs = '-lm -ldl -lpthread'
+	defs = ''
 	opts = ''
+
+	if '--cpython' in sys.argv:
+		defs += '-DUSE_PYTHON'
+		libs += ' -lpython3.7m'
+		opts += ' -I/usr/local/include/python3.7m'
+
 	if '--arm' in sys.argv:
 		CC = 'arm-linux-gnueabi-g++'
 		defs = ''
