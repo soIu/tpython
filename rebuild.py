@@ -70,8 +70,14 @@ def rebuild():
 		defs += '-DUSE_PYTHON'
 		libs += ' -lpython3.7m'
 		opts += ' -I/usr/local/include/python3.7m'
-
-	if '--arm' in sys.argv:
+	##############################################
+	if '--wasm' in sys.argv:
+		CC = os.path.expanduser('~/emsdk/fastcomp/emscripten/em++')
+		libs = ''
+		opts += ' -O2'
+		#exe += '.html'
+		exe += '.js'
+	elif '--arm' in sys.argv:
 		CC = 'arm-linux-gnueabi-g++'
 		defs = ''
 		libs = '-ldl -lpthread'
