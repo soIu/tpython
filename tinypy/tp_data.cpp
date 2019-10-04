@@ -26,23 +26,26 @@
  * >     free(self.data.val);
  * > }
  * >
- * > tp_obj my_obj = tpy_data(TP, 0, my_ptr);
+ * > tp_obj my_obj = tp_data(TP, 0, my_ptr);
  * > my_obj.data.info->free = __free__;
  */
 tp_obj tp_data_t(TP, int magic, void *v) {
-    tp_obj r = {TP_DATA};
-    r.data.info = (tpd_data*)tp_malloc(tp, sizeof(tpd_data));
-    r.data.val = v;
-    r.type.magic = magic;
-    return tp_track(tp,r);
+	tp_obj r = {TP_DATA};
+	r.data.info = (tpd_data*)tp_malloc(tp, sizeof(tpd_data));
+	r.data.val = v;
+	r.type.magic = magic;
+	return tp_track(tp,r);
+}
+
+tp_obj tp_data(TP, int magic, void *v) {
+	return tp_data_t(tp, magic, v);
 }
 
 /* creates an untracked tp_data */
 tp_obj tp_data_nt(TP, int magic, void *v) {
-    tp_obj r = {TP_DATA};
-    r.data.info = NULL;
-    r.data.val = v;
-    r.type.magic = magic;
-    return r;
+	tp_obj r = {TP_DATA};
+	r.data.info = NULL;
+	r.data.val = v;
+	r.type.magic = magic;
+	return r;
 }
-

@@ -477,9 +477,11 @@ tp_obj tp_exec(TP, tp_obj code, tp_obj globals);
 tp_obj tp_compile(TP, tp_obj text, tp_obj fname);
 
 tp_obj tp_data_t(TP, int magic, void *v);
+tp_obj tp_data(TP, int magic, void *v);  // tracked by default
 tp_obj tp_list_t(TP);
 tp_obj tp_list_nt(TP);
 tp_obj tp_dict_t(TP);
+tp_obj tp_dict(TP);  // tracked by default
 tp_obj tp_object_t(TP);
 #define tp_object tp_object_t
 tp_obj tp_dict_nt(TP);

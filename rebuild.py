@@ -10,7 +10,7 @@ Makefile = '''
 
 TINYPYC=./tpc
 
-VMLIB_FILES=tp.cpp dummy-compiler.cpp runtime.cpp
+VMLIB_FILES=tp.cpp dummy-compiler.cpp runtime.cpp <MODULES>
 TPLIB_FILES=tp.cpp compiler.cpp runtime.cpp
 
 #MODULES=math random re
@@ -22,7 +22,7 @@ TPLIB_FILES=tp.cpp compiler.cpp runtime.cpp
 
 
 %.o : %.cpp
-	<CC> $(CFLAGS) <DEFINES> -std=c++11 <OPTIONS> -I . -c -o $@ $<
+	<CC> $(CFLAGS) <DEFINES> -std=c++11 <OPTIONS> -I/usr/local/include -I . -c -o $@ $<
 
 all: <EXE>
 
@@ -65,6 +65,7 @@ def rebuild():
 	libs = '-lm -ldl -lpthread'
 	defs = ''
 	opts = ''
+	mods = ''
 	embed_bytecode = False
 	for arg in sys.argv[1:]:
 		if arg.endswith('.py'):
@@ -120,8 +121,12 @@ def rebuild():
 		#opts += ' -fno-exceptions'  ## TODO
 		pass
 
+	if '--sdl' in sys.argv:
+		#mods += ' module_sdl.cpp'  # the entire sdl module is actually just in module_sdl.h
+		defs += ' -DUSE_SDL'        # from runtime.cpp, module_sdl.h will be included
+		libs += ' -lSDL2'
 
-	makefile = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe).replace('<EXEOPTS>', exeopts).replace('<OPTIONS>', opts)
+	makefile = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe).replace('<EXEOPTS>', exeopts).replace('<OPTIONS>', opts).replace('<MODULES>', mods)
 	if mode=='windows':
 		makefile = makefile.replace('-rdynamic', '')
 

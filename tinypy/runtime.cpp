@@ -4,6 +4,10 @@
 	extern "C" int PyRun_SimpleString(const char* script);
 #endif
 
+#ifdef USE_SDL
+	#include "module_sdl.h"
+#endif
+
 void tp_save(TP, const char * fname, tp_obj v) {
 	FILE *f;
 	f = fopen(fname,"wb");
@@ -133,4 +137,9 @@ void tp_module_corelib_init(TP) {
 	#ifdef USE_PYTHON
 		tp_module_cpython_init(tp);
 	#endif
+
+	#ifdef USE_SDL
+		tp_module_sdl_init(tp);
+	#endif
+
 }
