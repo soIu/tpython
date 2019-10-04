@@ -667,27 +667,28 @@ def do_while(t):
 			if cond.items[0].type == 'name' and cond.items[1].type == 'number':
 				const_addr = D.const_number(cond.items[1].val)
 				if const_addr != -1:
-					old_style = False
-					a, b = cond.items
-					## look ahead to see if the next operation is to increment a.val by 1
-					do_increment = 0
-					do_slower_method = True
-					assert items[1].type == 'statements'
-					nextop = items[1].items[0]
-					if nextop.type == 'symbol' and nextop.val == '+=':
-						if nextop.items[0].type == 'name' and nextop.items[1].type == 'number' and nextop.items[1].val.isdigit():
-							incby = int(nextop.items[1].val)
-							if nextop.items[0].val == a.val and incby >= 1 and incby <= 255:
-								items[1].items = items[1].items[1:]  ## remove the next op
-								if incby == 1:
-									## this is optimized more because of `i++`
-									code(80, a=get_reg(a.val), b=const_addr)
-									do_slower_method = False
-								else:
-									do_increment = incby
+					if items[1].type == 'statements':
+						old_style = False
+						a, b = cond.items
+						## look ahead to see if the next operation is to increment a.val by 1
+						do_increment = 0
+						do_slower_method = True
 
-					if do_slower_method:
-						code(81, a=get_reg(a.val), b=const_addr, c=do_increment)
+						nextop = items[1].items[0]
+						if nextop.type == 'symbol' and nextop.val == '+=':
+							if nextop.items[0].type == 'name' and nextop.items[1].type == 'number' and nextop.items[1].val.isdigit():
+								incby = int(nextop.items[1].val)
+								if nextop.items[0].val == a.val and incby >= 1 and incby <= 255:
+									items[1].items = items[1].items[1:]  ## remove the next op
+									if incby == 1:
+										## this is optimized more because of `i++`
+										code(80, a=get_reg(a.val), b=const_addr)
+										do_slower_method = False
+									else:
+										do_increment = incby
+
+						if do_slower_method:
+							code(81, a=get_reg(a.val), b=const_addr, c=do_increment)
 
 	if old_style:
 		r = do(items[0])
