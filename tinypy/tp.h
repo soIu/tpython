@@ -41,7 +41,8 @@
 
 //#define TP_GCMAX 16384 /* FIXME: increased so that gc doesn't get called while running tp_str() */
 #define TP_REGS 16384
-#define TP_GCMAX 262144
+//#define TP_GCMAX 262144
+#define TP_GCMAX 524288
 
 // fixes bench marking test, might need to be set higher later
 //#define TP_GCMAX 65536  // still not enough for heavy loads
@@ -73,7 +74,6 @@ enum TPTypeID {
 	TP_FUNC = 10,
 	TP_DATA = 11,
 
-	TP_REG_MAGIC = 40,
 	TP_HAS_META = 99,     // this is not a type, any type >= TP_HAS_META can have a metatype
 
 	TP_STRING = 100,

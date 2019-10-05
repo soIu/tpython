@@ -1,10 +1,10 @@
 import sdl
 
-SW = 640
-SH = 480
+SW = 320
+SH = 240
+pal = [((min(255,v)),(min(255,v*3/2)),(min(255,v*2))) for v in range(0,256)]
 
 def julia(s,ca,cb):
-	pal = [((min(255,v)),(min(255,v*3/2)),(min(255,v*2))) for v in range(0,256)]
 	for y in range(SH):
 		for x in range(SW):
 			i=0
@@ -16,26 +16,30 @@ def julia(s,ca,cb):
 				a=na
 				b=nb
 				i = i +1
-			s.set_at((x,y),pal[i*16])
+			#s.set_at((x,y),pal[i*16])
+			sdl.draw((x,y), pal[i*16] )
+			sdl.flip()
 
 def main():
-	sdl.init_video()
-	s = sdl.create_window( (SW,SH) )
+	sdl.initialize()
+	s = sdl.window( (SW,SH) )
 	_quit = False
 	#while not _quit:
-	for i in range(2):
-		sdl.display_clear( [0,0,0] )
+	for i in range(20):
+		print(i)
+		sdl.clear( [0,0,0] )
 		#for e in pygame.event.get():
 		#	if e.type in (pygame.locals.QUIT,pygame.locals.KEYDOWN):
 		#		_quit = True
 		
 		#x,y = pygame.mouse.get_pos()
-		x = 100
-		y = 200
+		x = i
+		y = i+1
 		ca=((float(x)/SW) * 2.0 - 1.0)
 		cb=((float(y)/SH) * 2.0 - 1.0)
 		julia(s,ca,cb)
-		sdl.display_flip()
+		sdl.flip()
+		sdl.delay(30)
 
 	
 if __name__ == '__main__':

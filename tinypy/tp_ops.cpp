@@ -155,7 +155,6 @@ _tp_get(TP, tp_obj self, tp_obj k, int mget)
 			}
 		} else if (type == TP_STRING) {
 			if (k.type.type_id == TP_NUMBER) {
-				std::cout << "WARN: getting a string from a number - tp_ops.cpp:_tp_get" << std::endl;
 				int l = tp_string_len(self);
 				int n = k.number.val;
 				n = (n<0?l+n:n);
@@ -205,6 +204,9 @@ _tp_get(TP, tp_obj self, tp_obj k, int mget)
 	} else if (k.type.type_id == TP_STRING) {
 		return tp_copy(tp, self);
 	}
+
+    std::cout << "_tp_get: self =" << tp_as_string(tp, self) << std::endl;
+    std::cout << "_tp_get: key =" << tp_as_string(tp, k) << std::endl;
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_get) TypeError: ?"));
 	throw "TypeError in tp_ops.cpp:_tp_get unexpected type";
 }
@@ -476,10 +478,16 @@ tp_obj tp_call(TP, tp_obj self, tp_obj params) {
 			return dest;
 		}
 	}
-	tp_echo(tp, self);
+	//tp_echo(tp, self);
+    std::cout << std::endl;
 	std::cout << "ERROR in tp_call - object type: " << self.type.type_id << std::endl;
-	std::cout << "this error can happen when TP_GCMAX or TP_REGS is not set high enough" << std::endl;
-	std::cout << "or when an interface is missing the meta function __new__" << std::endl;
+    std::cout << "  object: " << tp_as_string(tp,self) << std::endl;
+    std::cout << "  object type: " << self.type.type_id << std::endl;
+    std::cout << std::endl;
+
+    std::cout << " The most common cause of this error is the function is undefined," << std::endl;
+	std::cout << " in rare cases this error can happen when TP_GCMAX or TP_REGS is not set high enough" << std::endl;
+	std::cout << " or when an interface is missing the meta function __new__" << std::endl;
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_call) TypeError: object is not callable"));
 	throw "TypeError tp_ops.cpp:tp_call object is not callable";
 }

@@ -28,7 +28,7 @@ def preprocess_source(src, optimize=True, unsafe=False, inspect=False):
 		return src
 	out = []
 	for ln in src.splitlines():
-		if not ln.strip().startswith("#") and 'for ' in ln and ' in ' in ln and 'range(' in ln:
+		if ln.strip().startswith("for ") and ' in ' in ln and 'range(' in ln:
 			tabs = ln.count('\t')
 			start = end = None
 			loops = ln.split('range(')[-1].split(')')[0]
@@ -54,6 +54,9 @@ def preprocess_source(src, optimize=True, unsafe=False, inspect=False):
 
 		else:
 			out.append(ln)
+
+	if '--inspect-opt' in sys.argv:
+		inspect = True
 
 	if inspect:
 		print(src)
