@@ -22,7 +22,7 @@ TPLIB_FILES=tp.cpp compiler.cpp runtime.cpp
 
 
 %.o : %.cpp
-	<CC> $(CFLAGS) <DEFINES> -std=c++11 <OPTIONS> -I/usr/local/include -I . -c -o $@ $<
+	<CC> $(CFLAGS) <DEFINES> -std=c++11 <OPTIONS> <SDL_INCLUDE> -I . -c -o $@ $<
 
 all: <EXE>
 
@@ -66,6 +66,7 @@ def rebuild():
 	defs = ''
 	opts = ''
 	mods = ''
+	sdl_inc = ''
 	embed_bytecode = False
 	for arg in sys.argv[1:]:
 		if arg.endswith('.py'):
@@ -86,15 +87,20 @@ def rebuild():
 		opts += ' -I/usr/local/include/python3.7m'
 
 	##############################################
-	if '--wasm' in sys.argv:
+	if '--wasm' in sys.argv or '--html' in sys.argv:
+		mode = 'wasm'
 		CC = os.path.expanduser('~/emsdk/fastcomp/emscripten/em++')
 		libs = ''
 		opts += ' -O3 -fno-rtti -s FILESYSTEM=0 -s DISABLE_EXCEPTION_CATCHING=0'
 		if '--closure' in sys.argv:
 			opts += ' --closure 1'
 
-		#exe += '.html'
-		exe += '.js'
+		if '--sdl' in sys.argv:  ## this is also required just at the linker stage
+			opts += """ -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]'"""
+		if '--html' in sys.argv:
+			exe += '.html'
+		else:
+			exe += '.js'
 		if not embed_bytecode:
 			print("WARN: you must embed a bytecode file to run TPython as WASM")
 			print("run: ./rebuild.py myscript.py (this will generate and embed the bytecode)")
@@ -124,9 +130,13 @@ def rebuild():
 	if '--sdl' in sys.argv:
 		#mods += ' module_sdl.cpp'  # the entire sdl module is actually just in module_sdl.h
 		defs += ' -DUSE_SDL'        # from runtime.cpp, module_sdl.h will be included
-		libs += ' -lSDL2'
+		if mode == 'wasm':
+			exeopts += """ -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]'"""
+		else:
+			sdl_inc = '-I/usr/local/include'
+			libs += ' -lSDL2'
 
-	makefile = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe).replace('<EXEOPTS>', exeopts).replace('<OPTIONS>', opts).replace('<MODULES>', mods)
+	makefile = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe).replace('<EXEOPTS>', exeopts).replace('<OPTIONS>', opts).replace('<MODULES>', mods).replace('<SDL_INCLUDE>', sdl_inc)
 	if mode=='windows':
 		makefile = makefile.replace('-rdynamic', '')
 
