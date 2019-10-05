@@ -37,12 +37,12 @@ tp_obj _sdl_display_clear(TP) {
 
 tp_obj _sdl_display_flip(TP) {
 	//SDL_RenderPresent(_sdl_renderer);
-    SDL_UpdateWindowSurface(_sdl_window);
+	SDL_UpdateWindowSurface(_sdl_window);
 	return tp_None;
 }
 tp_obj _sdl_delay(TP) {
 	tp_obj ms = TP_TYPE(TP_NUMBER);
-    SDL_Delay((int)ms.number.val );
+	SDL_Delay((int)ms.number.val );
 	return tp_None;
 }
 
@@ -134,6 +134,45 @@ tp_obj _sdl_draw(TP) {
 	return tp_None;
 }
 
+tp_obj _sdl_event_get(TP) {
+	SDL_Event e;
+	tp_obj r = tp_list(tp);
+	while (SDL_PollEvent(&e)) {
+		tp_obj d = tp_dict(tp);
+		//tp_obj d = tp_object(tp);
+		tp_set(tp,d,tp_string_atom(tp, "type"),tp_number(e.type));
+		switch (e.type) {
+			case SDL_KEYDOWN:
+				tp_set(tp,d,tp_string_atom(tp, "type"),tp_string_atom(tp,"KEYDOWN"));
+				tp_set(tp,d,tp_string_atom(tp, "key"),tp_number(e.key.keysym.sym));
+				tp_set(tp,d,tp_string_atom(tp, "mod"),tp_number(e.key.keysym.mod));
+				break;
+			case SDL_KEYUP:
+				tp_set(tp,d,tp_string_atom(tp, "type"),tp_string_atom(tp,"KEYUP"));
+				tp_set(tp,d,tp_string_atom(tp, "key"),tp_number(e.key.keysym.sym));
+				tp_set(tp,d,tp_string_atom(tp, "mod"),tp_number(e.key.keysym.mod));
+				break;
+			case SDL_MOUSEMOTION:
+				tp_set(tp,d,tp_string_atom(tp, "type"),tp_string_atom(tp,"MOUSE"));
+				tp_set(tp,d,tp_string_atom(tp, "x"),tp_number(e.motion.x));
+				tp_set(tp,d,tp_string_atom(tp, "y"),tp_number(e.motion.y));
+				tp_set(tp,d,tp_string_atom(tp, "rx"),tp_number(e.motion.xrel));
+				tp_set(tp,d,tp_string_atom(tp, "ry"),tp_number(e.motion.yrel));
+				tp_set(tp,d,tp_string_atom(tp, "state"),tp_number(e.motion.state));
+				break;
+			case SDL_MOUSEBUTTONDOWN:
+			case SDL_MOUSEBUTTONUP:
+				tp_set(tp,d,tp_string_atom(tp, "type"),tp_string_atom(tp,"CLICK"));
+				tp_set(tp,d,tp_string_atom(tp, "x"),tp_number(e.button.x));
+				tp_set(tp,d,tp_string_atom(tp, "y"),tp_number(e.button.y));
+				tp_set(tp,d,tp_string_atom(tp, "button"),tp_number(e.button.button));
+				break;
+		}
+		//tp_set(tp,r,tp_None,d);
+		tpd_list_append(tp, r.list.val, d);
+	}
+	return r;
+}
 
 void tp_module_sdl_init(TP) {
 	//tp_obj g = tp_dict(tp);
@@ -147,4 +186,5 @@ void tp_module_sdl_init(TP) {
 	tp_set(tp,g,tp_string_atom(tp, "draw"),tp_function(tp,_sdl_draw));
 	tp_set(tp,g,tp_string_atom(tp, "delay"),tp_function(tp,_sdl_delay));
 	tp_set(tp,g,tp_string_atom(tp, "quit"),tp_function(tp,_sdl_quit));
+	tp_set(tp,g,tp_string_atom(tp, "poll"),tp_function(tp,_sdl_event_get));
 }

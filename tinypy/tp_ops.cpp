@@ -352,10 +352,10 @@ int tp_cmp(TP, tp_obj a, tp_obj b) {
         else if (a.type.type_id==TP_NUMBER && b.type.type_id==TP_INTEGER)
             return _tp_sign_int( (int)a.number.val - b.integer.val);
 
-        std::cout << "first type: " << a.type.type_id << std::endl;
-        std::cout << "second type: " << b.type.type_id << std::endl;
-        throw "invalid compare of different types";
-        //return a.type.type_id-b.type.type_id; // when was this used?
+        //std::cout << "first type: " << a.type.type_id << std::endl;
+        //std::cout << "second type: " << b.type.type_id << std::endl;
+        //throw "invalid compare of different types";
+        return a.type.type_id-b.type.type_id; // why not just return false here?
     }
 	switch(a.type.type_id) {
 		case TP_NONE: return 0;

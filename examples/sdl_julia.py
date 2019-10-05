@@ -19,25 +19,29 @@ def julia(s,ca,cb):
 			#s.set_at((x,y),pal[i*16])
 			sdl.draw((x,y), pal[i*16] )
 			sdl.flip()
+			for e in sdl.poll():
+				if e['type'] == "KEYUP":
+					return True
+				elif e['type'] == "MOUSE":
+					print('mouse x:', e['x'])
+					print('mouse y:', e['y'])
+	return False
 
 def main():
 	sdl.initialize()
 	s = sdl.window( (SW,SH) )
-	_quit = False
-	#while not _quit:
-	for i in range(20):
+	i = 0
+	while True:
 		print(i)
+		i += 1
 		sdl.clear( [0,0,0] )
-		#for e in pygame.event.get():
-		#	if e.type in (pygame.locals.QUIT,pygame.locals.KEYDOWN):
-		#		_quit = True
-		
 		#x,y = pygame.mouse.get_pos()
 		x = i
 		y = i+1
 		ca=((float(x)/SW) * 2.0 - 1.0)
 		cb=((float(y)/SH) * 2.0 - 1.0)
-		julia(s,ca,cb)
+		if julia(s,ca,cb) == True:
+			break
 		sdl.flip()
 		sdl.delay(30)
 

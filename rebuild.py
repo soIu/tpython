@@ -131,7 +131,8 @@ def rebuild():
 		#mods += ' module_sdl.cpp'  # the entire sdl module is actually just in module_sdl.h
 		defs += ' -DUSE_SDL'        # from runtime.cpp, module_sdl.h will be included
 		if mode == 'wasm':
-			exeopts += """ -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]'"""
+			#exeopts += """ -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]' -s TOTAL_MEMORY=33554432"""
+			exeopts += """ -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]' -s ALLOW_MEMORY_GROWTH=1"""
 		else:
 			sdl_inc = '-I/usr/local/include'
 			libs += ' -lSDL2'
