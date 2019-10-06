@@ -1,13 +1,20 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 import os, sys, subprocess
 
 def metapy2tinypypp( source ):
 	shared = []
+	right_side = []
 	thread_local = []
 	thread = None
 	cpy = None
 	for ln in source.splitlines():
-		if ln.startswith('with python:'):
+		if u'┃' in ln:
+			assert ln.count(u'┃')==1
+			a,b = ln.split(u'┃')
+			shared.append(a)
+			right_side.append(b)
+		elif ln.startswith('with python:'):
 			cpy = []
 		elif ln.startswith('with thread:'):
 			thread = []
@@ -24,6 +31,9 @@ def metapy2tinypypp( source ):
 				s = '\n'.join(cpy)
 				shared.append("python.run('''%s''')" %s)
 				cpy = None
+		elif len(right_side) and not ln.strip():
+			shared.extend( right_side )
+			right_side = []
 		else:
 			shared.append(ln)
 
@@ -50,7 +60,7 @@ def main():
 			exargs.append(arg)
 	assert input_file
 	path, name = os.path.split(input_file)
-	scripts = metapy2tinypypp( open(input_file, 'rb').read() )
+	scripts = metapy2tinypypp( open(input_file, 'rb').read().decode('utf-8') )
 	if len(scripts) == 1:
 		source = scripts[0]
 		tempf = '/tmp/%s_main.py'%name
