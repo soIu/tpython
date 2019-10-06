@@ -96,7 +96,9 @@ def rebuild():
 			opts += ' --closure 1'
 
 		if '--sdl' in sys.argv:  ## this is also required just at the linker stage
-			opts += """ -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]'"""
+			opts += ' -s USE_SDL=2'
+			if '--sdl-image' in sys.argv:
+				opts += """ -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]'"""
 		if '--html' in sys.argv:
 			exe += '.html'
 		else:
@@ -132,7 +134,11 @@ def rebuild():
 		defs += ' -DUSE_SDL'        # from runtime.cpp, module_sdl.h will be included
 		if mode == 'wasm':
 			#exeopts += """ -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]' -s TOTAL_MEMORY=33554432"""
-			exeopts += """ -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]' -s ALLOW_MEMORY_GROWTH=1"""
+			exeopts += ' -s USE_SDL=2'
+			if '--sdl-image' in sys.argv:
+				exeopts += """ -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]'"""
+			if '--allow-memory-growth' in sys.argv:
+				exeopts += ' -s ALLOW_MEMORY_GROWTH=1'
 		else:
 			sdl_inc = '-I/usr/local/include'
 			libs += ' -lSDL2'
