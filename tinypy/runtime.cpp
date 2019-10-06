@@ -1,4 +1,5 @@
 #include "tp.h"
+#include <random>
 
 #ifdef USE_PYTHON
 	extern "C" int PyRun_SimpleString(const char* script);
@@ -7,6 +8,8 @@
 #ifdef USE_SDL
 	#include "module_sdl.h"
 #endif
+
+std::mt19937 *__rand_engine = NULL;
 
 void tp_save(TP, const char * fname, tp_obj v) {
 	FILE *f;
@@ -127,6 +130,28 @@ void tp_module_os_init(TP) {
 	}
 #endif
 
+tp_obj tpy_random(TP) {
+	std::uniform_real_distribution<double> unif(0.0, 1.0);
+	double x = unif(*__rand_engine);
+	return tp_number(x);
+}
+tp_obj tpy_uniform(TP) {
+	tp_obj a = TP_OBJ();
+	tp_obj b = TP_OBJ();
+	std::uniform_real_distribution<double> unif(a.number.val, b.number.val);
+	double x = unif(*__rand_engine);
+	return tp_number(x);
+}
+
+
+void tp_module_random_init(TP) {
+	std::random_device rand_dev;
+	__rand_engine = new std::mt19937(rand_dev());
+	tp_obj rand = tp_import(tp, tp_string_atom(tp, "random"), tp_None, tp_string_atom(tp, "<builtin>"));
+	tp_set(tp, rand, tp_string_atom(tp, "random"), tp_function(tp, tpy_random));
+	tp_set(tp, rand, tp_string_atom(tp, "uniform"), tp_function(tp, tpy_uniform));
+}
+
 
 void tp_module_corelib_init(TP) {
 	#ifdef DEBUG
@@ -134,6 +159,8 @@ void tp_module_corelib_init(TP) {
 	#endif
 
 	tp_module_os_init(tp);
+	tp_module_random_init(tp);
+
 	#ifdef USE_PYTHON
 		tp_module_cpython_init(tp);
 	#endif

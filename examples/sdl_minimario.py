@@ -1,4 +1,5 @@
 import sdl
+import random
 
 Mario = [
 '     RRRRR      ',
@@ -29,15 +30,21 @@ MarioPal = {
 	'0': [5,5,5],
 }
 
-def draw_mario(ox, oy, mario, crouching):
+def draw_mario(ox, oy, mario, crouching, running ):
 	y = oy
 	Y = 0
 	if crouching == True:
 		y += 8
+	flip_legs = False
+	if running==True and random.random() > 0.5:
+		flip_legs = True
+
 	for ln in mario:
 		Y += 1
 		if crouching == True and Y in (12,13):
 			continue
+		if flip_legs == True and Y in (10,11,12,13,14,15):
+			ln = ln.reverse()
 		y += 4
 		x = ox
 		for c in ln:
@@ -58,6 +65,7 @@ def main():
 	crouch = False
 	while True:
 		i += 1
+		running = False
 		jumping *= 0.7
 		if jumping >= 4:
 			jumping -= 4
@@ -96,10 +104,13 @@ def main():
 					return
 
 		X += mx
+		if jumping < 1:
+			if abs(mx) >= 2:
+				running = True
 		if direction == 1:
-			draw_mario(X, (my-jumping)+140, Mario, crouch )
+			draw_mario(X, (my-jumping)+140, Mario, crouch, running )
 		else:
-			draw_mario(X, (my-jumping)+140, MarioReversed, crouch )
+			draw_mario(X, (my-jumping)+140, MarioReversed, crouch, running )
 
 		sdl.flip()
 		sdl.delay(60)
