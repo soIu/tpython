@@ -243,7 +243,7 @@ def imanage(orig,fnc):
 					if b == 1:
 						code(90, a=get_reg(dest.val))
 					else:
-						code(91, a=a, b=b)
+						code(91, a=get_reg(dest.val), b=b)
 					return None
 			elif expr.type == 'name' and len(expr.val)==1:
 				b = ord(expr.val)

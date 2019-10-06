@@ -478,6 +478,8 @@ tp_obj tp_compile(TP, tp_obj text, tp_obj fname);
 
 tp_obj tp_data_t(TP, int magic, void *v);
 tp_obj tp_data(TP, int magic, void *v);  // tracked by default
+
+tp_obj tp_len(TP,tp_obj self);
 tp_obj tp_list_t(TP);
 #define tp_list tp_list_t
 tp_obj tp_list_nt(TP);

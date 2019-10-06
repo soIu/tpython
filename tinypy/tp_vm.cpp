@@ -350,6 +350,22 @@ if ( e.i == 80 ) {
 	else
 		RA.number.val ++;
 
+} else if ( e.i == 91 ) {
+	#ifdef DEBUG
+		std::cout << "TP_POST_INC += n" << std::endl;
+		std::cout << "  RA: " << tp_as_string(tp, RA) << std::endl;
+		std::cout << "  RB: " << tp_as_string(tp, RB) << std::endl;
+		std::cout << "  RC: " << tp_as_string(tp, RC) << std::endl;
+		std::cout << "VA: " << VA << std::endl;
+		std::cout << "VB: " << VB << std::endl;
+		std::cout << "VC: " << VC << std::endl;
+	#endif
+
+	if (RA.type.type_id == TP_INTEGER)
+		RA.integer.val += (int)VB;
+	else
+		RA.number.val += (double)VB;
+
 } else if ( e.i == 102 ) {
 	#ifdef DEBUG
 		std::cout << "VA: " << (char)VA << std::endl;

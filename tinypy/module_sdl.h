@@ -128,11 +128,18 @@ tp_obj _sdl_draw(TP) {
 	SDL_Rect r;
 	r.x = tp_get(tp,pos,tp_number(0)).number.val;
 	r.y = tp_get(tp,pos,tp_number(1)).number.val;
-	r.w = 1; r.h = 1;
+	if (tp_len(tp,pos).number.val == 4) {
+		r.w = tp_get(tp,pos,tp_number(2)).number.val;
+		r.h = tp_get(tp,pos,tp_number(3)).number.val;
+	} else {
+		r.w = 1;
+		r.h = 1;
+	}
 	Uint32 c = _sdl_list_to_color(tp, clr, _sdl_window_surf);
 	SDL_FillRect(_sdl_window_surf, &r, c);
 	return tp_None;
 }
+
 
 tp_obj _sdl_event_get(TP) {
 	SDL_Event e;
@@ -144,12 +151,14 @@ tp_obj _sdl_event_get(TP) {
 		switch (e.type) {
 			case SDL_KEYDOWN:
 				tp_set(tp,d,tp_string_atom(tp, "type"),tp_string_atom(tp,"KEYDOWN"));
-				tp_set(tp,d,tp_string_atom(tp, "key"),tp_number(e.key.keysym.sym));
+				tp_set(tp,d,tp_string_atom(tp, "key"),tp_number(e.key.keysym.scancode));
+				tp_set(tp,d,tp_string_atom(tp, "sym"),tp_number(e.key.keysym.sym));
 				tp_set(tp,d,tp_string_atom(tp, "mod"),tp_number(e.key.keysym.mod));
 				break;
 			case SDL_KEYUP:
 				tp_set(tp,d,tp_string_atom(tp, "type"),tp_string_atom(tp,"KEYUP"));
-				tp_set(tp,d,tp_string_atom(tp, "key"),tp_number(e.key.keysym.sym));
+				tp_set(tp,d,tp_string_atom(tp, "key"),tp_number(e.key.keysym.scancode));
+				tp_set(tp,d,tp_string_atom(tp, "sym"),tp_number(e.key.keysym.sym));
 				tp_set(tp,d,tp_string_atom(tp, "mod"),tp_number(e.key.keysym.mod));
 				break;
 			case SDL_MOUSEMOTION:
