@@ -4,6 +4,7 @@
 #ifndef TP_H
 #define TP_H
 
+#include <algorithm>
 #include <map>
 #include <string>
 #include <iostream>

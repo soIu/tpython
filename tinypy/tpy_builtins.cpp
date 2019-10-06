@@ -463,6 +463,7 @@ void tp_module_builtins_init(TP) {
     tp_set(tp, tp->_string_meta, tp_string_atom(tp, "find"), tp_function(tp, tpy_str_find));
     tp_set(tp, tp->_string_meta, tp_string_atom(tp, "strip"), tp_function(tp, tpy_str_strip));
     tp_set(tp, tp->_string_meta, tp_string_atom(tp, "replace"), tp_function(tp, tpy_str_replace));
+    tp_set(tp, tp->_string_meta, tp_string_atom(tp, "reverse"), tp_function(tp, tpy_str_reverse));
 
     tp_set(tp, tp->_dict_meta, tp_string_atom(tp, "update"), tp_function(tp, tpy_dict_merge));
 

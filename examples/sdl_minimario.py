@@ -18,6 +18,8 @@ Mario = [
 'HHHH       HHHH ',
 ' HHHHH     HHHHH',
 ]
+MarioReversed = [ s.reverse() for s in Mario ]
+
 MarioPal = {
 	'R': [255,0,0],
 	'H': [80,50,5],
@@ -27,9 +29,15 @@ MarioPal = {
 	'0': [5,5,5],
 }
 
-def draw_mario(ox, oy):
+def draw_mario(ox, oy, mario, crouching):
 	y = oy
-	for ln in Mario:
+	Y = 0
+	if crouching == True:
+		y += 8
+	for ln in mario:
+		Y += 1
+		if crouching == True and Y in (12,13):
+			continue
 		y += 4
 		x = ox
 		for c in ln:
@@ -40,32 +48,59 @@ def draw_mario(ox, oy):
 
 def main():
 	sdl.initialize()
-	s = sdl.window( (320, 240) )
+	s = sdl.window( (720, 240) )
 	i = 0
+	X = 0
 	mx = 0
 	my = 0
 	jumping = 0
+	direction = 1
+	crouch = False
 	while True:
 		i += 1
 		jumping *= 0.7
 		if jumping >= 4:
 			jumping -= 4
-		sdl.clear( [0,0,0] )
+			mx *= 0.8
+		else:
+			mx *= 0.6
+
+		sdl.clear( [130,130,255] )
+		sdl.draw( [0, 210, 720, 50], [80,50, 10] )
+		sdl.draw( [0, 208, 720, 4], [100,70, 20] )
 		for e in sdl.poll():
 			if e['type'] == "KEYDOWN":
 				print('key:', e['key'])
 				if e['key'] == 80:    ## left key
-					mx -= 8
+					direction = -1
+					mx -= 8; X -= 8
+					if mx < -16:
+						mx = -16
 				elif e['key'] == 79:  ## right key
-					mx += 8
-				elif e['type'] == 81: ## key down
+					direction = 1
+					mx += 8; X += 8
+					if mx > 16:
+						mx = 16
+				elif e['key'] == 81: ## key down
 					jumping *= 0.5
 					crouch = True
 			elif e['type'] == "KEYUP":
-				if e['key'] == 82:   ## key up
-					jumping += 80
+				if e['key'] == 82:      ## key up
+					crouch = False
+				elif e['key'] == 44:    ## space
+					if jumping < 1:
+						jumping += 70
+						jumping += 10 * abs(mx)
+						mx *= 4
+				elif e['key'] in (20,41):  ## q, esc
+					return
 
-		draw_mario(mx, (my-jumping)+140 )
+		X += mx
+		if direction == 1:
+			draw_mario(X, (my-jumping)+140, Mario, crouch )
+		else:
+			draw_mario(X, (my-jumping)+140, MarioReversed, crouch )
+
 		sdl.flip()
 		sdl.delay(60)
 
