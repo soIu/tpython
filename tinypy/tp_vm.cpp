@@ -305,7 +305,44 @@ int tp_step(TP) {
 			fprintf(stdout,"%2d.%4d: %-6s %3d %3d %3d\n",tp->cur,cur - (tpd_code*)f->code.string.info->s,tp_strings[e.i],VA,VB,VC);
 	#endif
 
-if ( e.i == 80 ) {
+if ( e.i == 64 ) {
+	#ifdef DEBUG
+		std::cout << "---------FAST GLOBAL ADD--------" << std::endl;
+		std::cout << "	VB: " << (char)VB << std::endl;
+		std::cout << "	VC: " << (char)VC << std::endl;
+	#endif
+	tp_obj b = __global_objects__[VB];
+	tp_obj c = __global_objects__[VC];
+	RA.number.val = b.number.val + c.number.val;
+} else if ( e.i == 65 ) {
+	#ifdef DEBUG
+		std::cout << "---------FAST GLOBAL SUB--------" << std::endl;
+		std::cout << "	VB: " << (char)VB << std::endl;
+		std::cout << "	VC: " << (char)VC << std::endl;
+	#endif
+	tp_obj b = __global_objects__[VB];
+	tp_obj c = __global_objects__[VC];
+	RA.number.val = b.number.val - c.number.val;
+} else if ( e.i == 66 ) {
+	#ifdef DEBUG
+		std::cout << "---------FAST GLOBAL MULT--------" << std::endl;
+		std::cout << "	VB: " << (char)VB << std::endl;
+		std::cout << "	VC: " << (char)VC << std::endl;
+	#endif
+	tp_obj b = __global_objects__[VB];
+	tp_obj c = __global_objects__[VC];
+	RA.number.val = b.number.val * c.number.val;
+} else if ( e.i == 67 ) {
+	#ifdef DEBUG
+		std::cout << "---------FAST GLOBAL DIV--------" << std::endl;
+		std::cout << "	VB: " << (char)VB << std::endl;
+		std::cout << "	VC: " << (char)VC << std::endl;
+	#endif
+	tp_obj b = __global_objects__[VB];
+	tp_obj c = __global_objects__[VC];
+	RA.number.val = b.number.val / c.number.val;
+
+} else if ( e.i == 80 ) {
 
 	#ifdef DEBUG
 		std::cout << "----------FAST LESS THAN----------" << std::endl;

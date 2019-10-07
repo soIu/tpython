@@ -342,6 +342,28 @@ def do_symbol(t,r=None):
 		if v == '!=': cd = NE
 		return infix(cd,b,c,r)
 	else:
+		#	if t.val in D.vars:
+		#return do_local(t,r)
+		a = items[0]
+		b = items[1]
+		if a.type == 'name' and a.val in D.globals and len(a.val)==1:
+			if b.type == 'name' and b.val in D.globals and len(b.val)==1:
+				print('r=', r)
+				if r is None:
+					r = 0
+				if t.val == '+':
+					code(64, a=r, b=ord(a.val), c=ord(b.val))
+					return r
+				elif t.val == '-':
+					code(65, a=r, b=ord(a.val), c=ord(b.val))
+					return r
+				elif t.val == '*':
+					code(66, a=r, b=ord(a.val), c=ord(b.val))
+					return r
+				elif t.val == '/':
+					code(67, a=r, b=ord(a.val), c=ord(b.val))
+					return r
+
 		return infix(metas[t.val],items[0],items[1],r)
 
 def do_set_ctx(k,v):
