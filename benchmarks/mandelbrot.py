@@ -23,8 +23,10 @@ def mandelbrot():
 
 			i = 0
 			while i < 50 and T+t <= 4:
-				z = 2*Z*z + c
-				Z = T - t + C
+				z = 2*Z*z
+				z += c
+				Z = T - t
+				Z += C
 				T = Z * Z
 				t = z * z
 				i += 1

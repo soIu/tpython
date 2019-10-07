@@ -236,7 +236,6 @@ def imanage(orig,fnc):
 		assert len(orig.items)==2
 		assert isinstance( dest, Token )
 		if dest.type == 'name' and len(dest.val)==1:
-			a = ord(dest.val)
 			if expr.type == 'number' and expr.val.isdigit():
 				b = int(expr.val)
 				if b > 0 and b < 256:
@@ -245,19 +244,21 @@ def imanage(orig,fnc):
 					else:
 						code(91, a=get_reg(dest.val), b=b)
 					return None
-			elif expr.type == 'name' and len(expr.val)==1:
-				b = ord(expr.val)
-				code(101, a=a, b=b)
-				return None
-			elif expr.type == 'symbol':
-				opb, opc = expr.items
-				if opb.type=='name' and len(opb.val)==1:
-					if opc.type=='name' and len(opc.val)==1:
-						b = ord(opb.val)
-						c = ord(opc.val)
-						assert expr.val == '+'  ## TODO other ops
-						code(102, a=a, b=b, c=c)
-						return None
+			if dest.val in D.globals:
+				a = ord(dest.val)
+				if expr.type == 'name' and len(expr.val)==1 and expr.val in D.globals:
+					b = ord(expr.val)
+					code(101, a=a, b=b)
+					return None
+				elif expr.type == 'symbol':
+					opb, opc = expr.items
+					if opb.type=='name' and len(opb.val)==1 and opb.val in D.globals:
+						if opc.type=='name' and len(opc.val)==1 and opc.val in D.globals:
+							b = ord(opb.val)
+							c = ord(opc.val)
+							assert expr.val == '+'  ## TODO other ops
+							code(102, a=a, b=b, c=c)
+							return None
 
 	items = orig.items
 	orig.val = orig.val[:-1]
@@ -330,7 +331,26 @@ def do_symbol(t,r=None):
 		code(EQ,r,r,free_tmp(zero))
 		return r
 	if t.val in sets:
+		if items[0].type == 'name' and items[0].val in D.globals and len(items[0].val)==1:
+			a = items[0]
+			expr = items[1]
+			if expr.type == 'symbol' and expr.val in '+-/*':
+				b = expr.items[0]
+				c = expr.items[1]
+				if b.type == 'name' and c.type == 'name' and len(b.val)==1 and len(c.val)==1:
+					if b.val in D.globals and c.val in D.globals:
+						if expr.val == '+':
+							code(68, a=ord(a.val), b=ord(b.val), c=ord(c.val))
+						elif expr.val == '-':
+							code(69, a=ord(a.val), b=ord(b.val), c=ord(c.val))
+						elif expr.val == '*':
+							code(70, a=ord(a.val), b=ord(b.val), c=ord(c.val))
+						elif expr.val == '/':
+							code(71, a=ord(a.val), b=ord(b.val), c=ord(c.val))
+						return None
+
 		return do_set_ctx(items[0],items[1]);
+
 	elif t.val in cmps:
 		b,c = items[0],items[1]
 		v = t.val

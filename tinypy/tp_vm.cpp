@@ -342,6 +342,56 @@ if ( e.i == 64 ) {
 	tp_obj c = __global_objects__[VC];
 	RA.number.val = b.number.val / c.number.val;
 
+} else if ( e.i == 68 ) {
+	#ifdef DEBUG
+		std::cout << "VA: " << (char)VA << std::endl;
+		std::cout << "VB: " << (char)VB << std::endl;
+		std::cout << "VC: " << (char)VC << std::endl;
+	#endif
+
+	tp_obj a = __global_objects__[VA];
+	tp_obj b = __global_objects__[VB];
+	tp_obj c = __global_objects__[VC];
+	a.number.val = b.number.val + c.number.val;
+	__global_objects__[VA] = a;
+} else if ( e.i == 69 ) {
+	#ifdef DEBUG
+		std::cout << "VA: " << (char)VA << std::endl;
+		std::cout << "VB: " << (char)VB << std::endl;
+		std::cout << "VC: " << (char)VC << std::endl;
+	#endif
+
+	tp_obj a = __global_objects__[VA];
+	tp_obj b = __global_objects__[VB];
+	tp_obj c = __global_objects__[VC];
+	a.number.val = b.number.val - c.number.val;
+	__global_objects__[VA] = a;
+} else if ( e.i == 70 ) {
+	#ifdef DEBUG
+		std::cout << "VA: " << (char)VA << std::endl;
+		std::cout << "VB: " << (char)VB << std::endl;
+		std::cout << "VC: " << (char)VC << std::endl;
+	#endif
+
+	tp_obj a = __global_objects__[VA];
+	tp_obj b = __global_objects__[VB];
+	tp_obj c = __global_objects__[VC];
+	a.number.val = b.number.val * c.number.val;
+	__global_objects__[VA] = a;
+} else if ( e.i == 71 ) {
+	#ifdef DEBUG
+		std::cout << "VA: " << (char)VA << std::endl;
+		std::cout << "VB: " << (char)VB << std::endl;
+		std::cout << "VC: " << (char)VC << std::endl;
+	#endif
+
+	tp_obj a = __global_objects__[VA];
+	tp_obj b = __global_objects__[VB];
+	tp_obj c = __global_objects__[VC];
+	a.number.val = b.number.val / c.number.val;
+	__global_objects__[VA] = a;
+
+
 } else if ( e.i == 80 ) {
 
 	#ifdef DEBUG
@@ -403,8 +453,23 @@ if ( e.i == 64 ) {
 	else
 		RA.number.val += (double)VB;
 
+} else if ( e.i == 101 ) {
+	#ifdef DEBUG
+		std::cout << "=====ADD GLOBAL by GLOBAL=====" << std::endl;
+		std::cout << "VA: " << (char)VA << std::endl;
+		std::cout << "VB: " << (char)VB << std::endl;
+		std::cout << "VC: " << (char)VC << std::endl;
+	#endif
+
+	tp_obj a = __global_objects__[VA];
+	tp_obj b = __global_objects__[VB];
+	a.number.val += b.number.val;
+	__global_objects__[VA] = a;
+
+
 } else if ( e.i == 102 ) {
 	#ifdef DEBUG
+		std::cout << "=====ADD GLOBAL by GLOBAL+GLOBAL=====" << std::endl;
 		std::cout << "VA: " << (char)VA << std::endl;
 		std::cout << "VB: " << (char)VB << std::endl;
 		std::cout << "VC: " << (char)VC << std::endl;
