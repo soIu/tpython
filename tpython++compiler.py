@@ -64,13 +64,13 @@ def main():
 	if len(scripts) == 1:
 		source = scripts[0]
 		tempf = '/tmp/%s_main.py'%name
-		open(tempf, 'wb').write(source)
+		open(tempf, 'wb').write(source.encode('utf-8'))
 		subprocess.check_call(['./tpc']+exargs+['-o', './%s.bytecode'%name, tempf])
 	else:
 		for i in range(len(scripts)):
 			source = scripts[i]
 			tempf = '/tmp/%s_thread%s.py'%(name,i)
-			open(tempf, 'wb').write(source)
+			open(tempf, 'wb').write(source.encode('utf-8'))
 			subprocess.check_call(['./tpc']+exargs+['-o', './%s_thread%s.bytecode'%(name,i), tempf])
 
 main()
