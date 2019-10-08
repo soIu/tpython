@@ -229,7 +229,7 @@ def free_reg(r):
 	n = D.r2n[r]; del D.r2n[r]; del D.n2r[n]
 
 def imanage(orig,fnc):
-	if orig.val == '+=' and '--beta' in sys.argv:
+	if orig.val in ('+=', '-=', '*=', '/=') and '--beta' in sys.argv:
 		print(orig)
 		dest = orig.items[0]
 		expr = orig.items[1]  ## may contain sub expressions
@@ -239,16 +239,27 @@ def imanage(orig,fnc):
 			if expr.type == 'number' and expr.val.isdigit():
 				b = int(expr.val)
 				if b > 0 and b < 256:
-					if b == 1:
-						code(90, a=get_reg(dest.val))
-					else:
-						code(91, a=get_reg(dest.val), b=b)
-					return None
+					if orig.val == '+=':
+						if dest.val in D.globals:
+							code(92, a=ord(dest.val), b=b)
+						else:
+							if b == 1:
+								code(90, a=get_reg(dest.val))
+							else:
+								code(91, a=get_reg(dest.val), b=b)
+						return None
 			if dest.val in D.globals:
 				a = ord(dest.val)
 				if expr.type == 'name' and len(expr.val)==1 and expr.val in D.globals:
 					b = ord(expr.val)
-					code(101, a=a, b=b)
+					if orig.val == '+=':
+						code(101, a=a, b=b)
+					elif orig.val == '-=':
+						code(102, a=a, b=b)
+					elif orig.val == '*=':
+						code(103, a=a, b=b)
+					elif orig.val == '/=':
+						code(104, a=a, b=b)
 					return None
 				elif expr.type == 'symbol':
 					opb, opc = expr.items
@@ -256,9 +267,17 @@ def imanage(orig,fnc):
 						if opc.type=='name' and len(opc.val)==1 and opc.val in D.globals:
 							b = ord(opb.val)
 							c = ord(opc.val)
-							assert expr.val == '+'  ## TODO other ops
-							code(102, a=a, b=b, c=c)
-							return None
+							if orig.val == '+=':
+								if expr.val == '+':
+									code(105, a=a, b=b, c=c)
+								elif expr.val == '-':
+									code(106, a=a, b=b, c=c)
+								elif expr.val == '*':
+									code(107, a=a, b=b, c=c)
+								elif expr.val == '/':
+									code(108, a=a, b=b, c=c)
+
+								return None
 
 	items = orig.items
 	orig.val = orig.val[:-1]
@@ -706,7 +725,7 @@ def do_while(t):
 	old_style = True
 	if cond.type == 'symbol':
 		if cond.val == '<':
-			if cond.items[0].type == 'name' and cond.items[1].type == 'number':
+			if cond.items[0].type == 'name' and cond.items[1].type == 'number' and cond.items[0].val not in D.globals:
 				const_addr = D.const_number(cond.items[1].val)
 				if const_addr != -1:
 					if items[1].type == 'statements':
@@ -731,6 +750,16 @@ def do_while(t):
 
 						if do_slower_method:
 							code(81, a=get_reg(a.val), b=const_addr, c=do_increment)
+
+			elif cond.items[0].type == 'name' and cond.items[1].type == 'name':
+				a,b = cond.items
+				if len(b.val)==1 and b.val in D.globals:
+					if len(a.val)==1 and a.val in D.globals:
+						old_style = False
+						code(82, a=ord(a.val), b=ord(b.val))
+					elif a.val not in D.globals:
+						old_style = False
+						code(83, a=get_reg(a.val), b=ord(b.val))
 
 	if old_style:
 		r = do(items[0])
@@ -904,10 +933,6 @@ def encode(fname,s,t):
 		print(D.out)
 		for chunk in D.out:
 			print(chunk)
-			if type(chunk) is tuple:
-				if chunk[0]=='code':
-					if chunk[1] >= 104:
-						raise RuntimeError(chunk)
 
 	map_tags()
 	out = D.out
