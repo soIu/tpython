@@ -58,6 +58,8 @@ clean:
 #gcc -c -Q -O3 --help=optimizers | grep enabled
 
 def rebuild():
+	os.system('rm -f tinypy/__user__.gen.h')
+
 	mode = 'linux'
 	exe = 'tpython++'
 	exeopts = ''
@@ -79,6 +81,8 @@ def rebuild():
 				arg
 			])
 			os.system('cp -v /tmp/embedded_bytecode.gen.h ./tinypy/.')
+			if os.path.isfile('./tinypy/__user__.gen.h'):
+				defs += ' -DUSE_USER_CUSTOM_CPP'
 			break
 
 	if '--cpython' in sys.argv:

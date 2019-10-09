@@ -152,6 +152,9 @@ void tp_module_random_init(TP) {
 	tp_set(tp, rand, tp_string_atom(tp, "uniform"), tp_function(tp, tpy_uniform));
 }
 
+#ifdef USE_USER_CUSTOM_CPP
+	#include "__user__.gen.h"
+#endif
 
 void tp_module_corelib_init(TP) {
 	#ifdef DEBUG
@@ -167,6 +170,10 @@ void tp_module_corelib_init(TP) {
 
 	#ifdef USE_SDL
 		tp_module_sdl_init(tp);
+	#endif
+
+	#ifdef USE_USER_CUSTOM_CPP
+		module_init(tp);
 	#endif
 
 }

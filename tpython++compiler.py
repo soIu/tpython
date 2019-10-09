@@ -8,17 +8,27 @@ def metapy2tinypypp( source ):
 	thread_local = []
 	thread = None
 	cpy = None
+	cpp = []
+	in_cpp = False
 	for ln in source.splitlines():
 		if u'┃' in ln:
 			assert ln.count(u'┃')==1
 			a,b = ln.split(u'┃')
 			shared.append(a)
 			right_side.append(b)
+		elif ln.startswith('with c++:'):
+			cpp = []
+			in_cpp = True
 		elif ln.startswith('with python:'):
 			cpy = []
 		elif ln.startswith('with thread:'):
 			thread = []
 			thread_local.append(thread)
+		elif in_cpp:
+			if not ln.strip():
+				in_cpp = False
+			else:
+				cpp.append(ln)
 		elif thread is not None:
 			if ln.startswith('\t'):
 				thread.append( ln[1:] )
@@ -48,7 +58,7 @@ def metapy2tinypypp( source ):
 		script = '\n'.join(shared)
 		scripts.append(script)
 
-	return scripts
+	return scripts, '\n'.join(cpp)
 
 def main():
 	input_file = None
@@ -60,7 +70,12 @@ def main():
 			exargs.append(arg)
 	assert input_file
 	path, name = os.path.split(input_file)
-	scripts = metapy2tinypypp( open(input_file, 'rb').read().decode('utf-8') )
+
+	scripts, cpp = metapy2tinypypp( open(input_file, 'rb').read().decode('utf-8') )
+
+	if cpp:
+		open('./tinypy/__user__.gen.h', 'wb').write(cpp.encode('utf-8'))
+
 	if len(scripts) == 1:
 		source = scripts[0]
 		tempf = '/tmp/%s_main.py'%name
