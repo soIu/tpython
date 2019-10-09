@@ -59,6 +59,7 @@ clean:
 
 def rebuild():
 	os.system('rm -f tinypy/__user__.gen.h')
+	os.system('rm -f tinypy/*.gcda')
 
 	mode = 'linux'
 	exe = 'tpython++'
@@ -134,6 +135,9 @@ def rebuild():
 	else:  ## linux
 		opts += ' -O3 -fno-rtti -funroll-loops -finline-small-functions -march=native -ffast-math -fno-math-errno -funsafe-math-optimizations -fno-signed-zeros -fno-trapping-math -frename-registers'
 		exeopts += opts
+		if '--gcc5' in sys.argv:
+			CC = '/usr/bin/g++-5'
+			assert os.path.isfile(CC)
 
 	###############################
 	if '--debug' in sys.argv:
