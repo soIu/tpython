@@ -23,6 +23,7 @@
 #include <math.h>
 #include <time.h>
 
+/*
 #ifdef __GNUC__
 	#define tp_inline __inline__
 #endif
@@ -30,14 +31,18 @@
 	#ifdef NDEBUG
 		#define tp_inline __inline
 	#else
-		/* don't inline in debug builds (for easier debugging) */
+		// don't inline in debug builds (for easier debugging)
 		#define tp_inline
 	#endif
 #endif
 #ifndef tp_inline
 	#error "Unsuported compiler"
 #endif
+*/
 
+// better performance when the compiler is allowed to making the inline decisions
+// PGO has no speed up when tp_inline is defined. So here it is defined as nothing.
+#define tp_inline
 
 
 //#define TP_GCMAX 16384 /* FIXME: increased so that gc doesn't get called while running tp_str() */

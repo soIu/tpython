@@ -128,7 +128,8 @@ def rebuild():
 		assert os.path.isdir(sdlroot)
 
 	else:  ## linux
-		opts += ' -O3 -march=native -ffast-math -fno-math-errno -funsafe-math-optimizations -fno-signed-zeros -fno-trapping-math'
+		opts += ' -O3 -fno-rtti -funroll-loops -finline-small-functions -march=native -ffast-math -fno-math-errno -funsafe-math-optimizations -fno-signed-zeros -fno-trapping-math -frename-registers'
+		exeopts += opts
 
 	###############################
 	if '--debug' in sys.argv:
@@ -164,6 +165,19 @@ def rebuild():
 		gradlew = os.path.join(sdlroot, 'build/org.tpython.helloworld/gradlew')
 		subprocess.check_call([gradlew, 'installDebug'])
 
+	elif '--pgo' in sys.argv:
+		makefile_gen_pgo = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe).replace('<EXEOPTS>', ' -fprofile-generate ' + exeopts).replace('<OPTIONS>', ' -fprofile-generate ' + opts).replace('<MODULES>', mods).replace('<SDL_INCLUDE>', sdl_inc)
+		makefile_use_pgo = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe).replace('<EXEOPTS>', ' -fprofile-use ' + exeopts).replace('<OPTIONS>', ' -fprofile-use ' + opts).replace('<MODULES>', mods).replace('<SDL_INCLUDE>', sdl_inc)
+
+		open('Makefile', 'wb').write(makefile_gen_pgo)
+		subprocess.check_call(['make', 'clean'])
+		subprocess.check_call(['make'])
+		subprocess.check_call(['./tpython++'])
+
+		open('Makefile', 'wb').write(makefile_use_pgo)
+		subprocess.check_call(['make', 'clean'])
+		subprocess.check_call(['make'])
+
 	else:
 		makefile = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe).replace('<EXEOPTS>', exeopts).replace('<OPTIONS>', opts).replace('<MODULES>', mods).replace('<SDL_INCLUDE>', sdl_inc)
 		if mode=='windows':
@@ -173,12 +187,13 @@ def rebuild():
 		subprocess.check_call(['make', 'clean'])
 		subprocess.check_call(['make'])
 
-		if mode == 'windows':
-			for dll in ['libstdc++-6.dll','libgcc_s_seh-1.dll', 'libwinpthread-1.dll']:
-				if not os.path.isfile(dll):
-					if dll == 'libwinpthread-1.dll':
-						os.system('cp -v /usr/x86_64-w64-mingw32/lib/%s ./%s' %(dll, dll))
-					else:
-						os.system('cp -v /usr/lib/gcc/x86_64-w64-mingw32/5.3-posix/%s ./%s' %(dll, dll))
+	#####################
+	if mode == 'windows':
+		for dll in ['libstdc++-6.dll','libgcc_s_seh-1.dll', 'libwinpthread-1.dll']:
+			if not os.path.isfile(dll):
+				if dll == 'libwinpthread-1.dll':
+					os.system('cp -v /usr/x86_64-w64-mingw32/lib/%s ./%s' %(dll, dll))
+				else:
+					os.system('cp -v /usr/lib/gcc/x86_64-w64-mingw32/5.3-posix/%s ./%s' %(dll, dll))
 
 rebuild()

@@ -1,3 +1,4 @@
+*.gcda
 *.gen.h
 *.wasm
 *.js
