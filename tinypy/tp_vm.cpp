@@ -305,7 +305,13 @@ int tp_step(TP) {
 			fprintf(stdout,"%2d.%4d: %-6s %3d %3d %3d\n",tp->cur,cur - (tpd_code*)f->code.string.info->s,tp_strings[e.i],VA,VB,VC);
 	#endif
 
-if ( e.i == 64 ) {
+if ( e.i == 60 ) {
+	#ifdef DEBUG
+		std::cout << "---------FAST PRINT--------" << std::endl;
+	#endif
+	std::cout << (char)VA;
+
+} else if ( e.i == 64 ) {
 	#ifdef DEBUG
 		std::cout << "---------FAST GLOBAL ADD--------" << std::endl;
 		std::cout << "	VB: " << (char)VB << std::endl;

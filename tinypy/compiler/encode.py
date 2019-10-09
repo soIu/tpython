@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import tinypy.compiler.tokenize as tokenize
 from tinypy.compiler.tokenize import Token
 from tinypy.compiler.boot import *
@@ -543,6 +544,23 @@ def do_del(tt):
 		free_tmp(r); free_tmp(r2) #REG
 
 def do_call(t,r=None):
+	assert t.type == 'call'
+	## fast printing optimization
+	if t.items[0].type == 'name' and t.items[0].val == 'print':
+		if len(t.items[1:]) >= 2 and t.items[-1].type == 'symbol' and t.items[-1].val == '=':
+			kwargs = t.items[-1]
+			if kwargs.items[0].type=='name' and kwargs.items[0].val == 'end':
+				if kwargs.items[1].type=='string' and kwargs.items[1].val == '':
+					if t.items[1].type == 'string':
+						if len(t.items[1].val)==1:
+							code(60, a=ord(t.items[1].val))
+							return None
+						## TODO fix unicode bugs, and test compiler with Python3
+						elif len(t.items[1].val)==2 and t.items[1].val == '·':  ## middle dot with bad encoding
+							#code(60, a=ord(u'·'))  ## code 183, is printed as `�`
+							code(60, a=ord('.'))  ## workaround change to a regular dot
+							return None
+
 	r = get_tmp(r)
 	items = t.items
 	fnc = do(items[0])
