@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
-w = 150.0
-h = 150.0
-y = 0.0
+h = 150
 Z = 0.0  ## Zr
 z = 0.0  ## Zi
 T = 0.0  ## Tr
@@ -12,18 +10,20 @@ C = 0.0  ## Cr
 c = 0.0  ## Ci
 U = 0.0
 V = 0.0
-
 K = 1.5
 k = 1.0
 
 def mandelbrot():
-	global w,h,y, Z,z,T,t,C,c, U,V
-	while y < h:
-		x = 0.0
-		while x < w:
+	global h, Z,z,T,t,C,c, U,V
+	y = 0
+	while y < 150:
+		y += 1
+		x = 0
+		while x < 150:
+			x += 1
 			Z, z, T, t = 0.0, 0.0, 0.0, 0.0
 			U = x*2
-			U /= w
+			U /= h
 			V = y*2
 			V /= h
 			C = U - K
@@ -45,9 +45,5 @@ def mandelbrot():
 				print('*', end='')
 			else:
 				print('·', end='')
-
-			x = x+1
-
-		y = y+1
 
 mandelbrot()

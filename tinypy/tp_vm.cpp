@@ -491,7 +491,13 @@ if ( e.i == 64 ) {
 	tp_obj c = __global_objects__[VC];
 	__global_objects__[VA].number.val += b.number.val / c.number.val;
 
+} else if ( e.i == 128 ) {
+	#ifdef DEBUG
+		std::cout << "FAST IF global+global<=n" << std::endl;
+	#endif
 
+	if (__global_objects__[VA].number.val+__global_objects__[VB].number.val <= (double)VC)
+		cur += 1;
 
 
 } else {

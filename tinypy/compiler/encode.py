@@ -808,7 +808,25 @@ def do_if(t):
 	for tt in items:
 		tag(t,n)
 		if tt.type == 'elif':
-			a = do(tt.items[0]); code(IF,a); free_tmp(a);
+			slow_if = True
+			if tt.items[0].type == 'symbol' and tt.items[0].val == '<=':
+				opa, opb = tt.items[0].items
+				if opa.type == 'symbol' and  opa.val == '+':
+					opaa, opab = opa.items
+					if opaa.type=='name' and opab.type=='name':
+						if len(opaa.val)==1 and opaa.val in D.globals:
+							if len(opab.val)==1 and opab.val in D.globals:
+								if opb.type == 'number' and opb.val.isdigit():
+									num = int(opb.val)
+									if num >= 0 and num <= 255:
+										slow_if = False
+										code(128, a=ord(opaa.val), b=ord(opab.val), c=num)
+
+			if slow_if:
+				a = do(tt.items[0])
+				code(IF,a)
+				free_tmp(a);
+
 			jump(t,n+1)
 			free_tmp(do(tt.items[1])) #REG
 		elif tt.type == 'else':
