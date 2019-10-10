@@ -33,22 +33,22 @@ def main():
 		sdl.draw( [0, 210, 720, 50], [80,50, 10] )
 		sdl.draw( [0, 208, 720, 4], [100,70, 20] )
 		for e in sdl.poll():
-			if e['type'] == "KEYDOWN":
-				print('key:', e['key'])
-				if e['key'] == 80:    ## left key
+			if e.type == "KEYDOWN":
+				print('key:', e.key)
+				if e.key == 80:    ## left key
 					direction = -1; mx -= 8; X -= 8
 					if mx < -16: mx = -16
-				elif e['key'] == 79:  ## right key
+				elif e.key == 79:  ## right key
 					direction = 1; mx += 8; X += 8
 					if mx > 16: mx = 16
-				elif e['key'] == 81: ## key down
+				elif e.key == 81: ## key down
 					jumping *= 0.5; crouch = True
-			elif e['type'] == "KEYUP":
-				if e['key'] == 82: crouch = False
-				elif e['key'] == 44:    ## space
+			elif e.type == "KEYUP":
+				if e.key == 82: crouch = False
+				elif e.key == 44:    ## space
 					if jumping < 1:
 						jumping += 70; jumping += 10 * abs(mx); mx *= 4
-				elif e['key'] in (20,41):  return
+				elif e.key in (20,41):  return
 		X += mx
 		if jumping < 1:
 			if abs(mx) >= 2: running = True

@@ -145,8 +145,7 @@ tp_obj _sdl_event_get(TP) {
 	SDL_Event e;
 	tp_obj r = tp_list(tp);
 	while (SDL_PollEvent(&e)) {
-		tp_obj d = tp_dict(tp);
-		//tp_obj d = tp_object(tp);
+		tp_obj d = tp_object(tp);
 		tp_set(tp,d,tp_string_atom(tp, "type"),tp_number(e.type));
 		switch (e.type) {
 			case SDL_KEYDOWN:
