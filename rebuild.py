@@ -125,12 +125,20 @@ def rebuild():
 		exe += '.exe'
 		mode = 'windows'
 	elif '--android' in sys.argv:
-		#git clone https://github.com/georgik/sdl2-android-example.git
+		print('ensure that you have installed android sdk28 and build-tools28')
+		print('sudo ./sdkmanager  "platforms;android-28" "build-tools;28.0.0"')
 		mode = 'android'
 		if '--sdl' not in sys.argv:
 			raise RuntimeError('SDL is required for Android build, enable with `--sdl`')
 		sdlroot = os.path.expanduser('~/SDL2-2.0.9')
-		assert os.path.isdir(sdlroot)
+		#sdlroot = os.path.expanduser('~/sdl2-android-example')
+		#if not os.path.isdir(sdlroot):
+		#	subprocess.check_call(
+		#		['git', 'clone', 'https://github.com/georgik/sdl2-android-example.git'],
+		#		cwd=os.path.expanduser('~/')
+		#	)
+		#if not os.path.isdir(sdlroot):
+		#	raise RuntimeError('unable to git clone from: https://github.com/georgik/sdl2-android-example.git')
 
 	else:  ## linux
 		opts += ' -O3 -fno-rtti -funroll-loops -finline-small-functions -march=native -ffast-math -fno-math-errno -funsafe-math-optimizations -fno-signed-zeros -fno-trapping-math -frename-registers'

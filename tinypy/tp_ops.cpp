@@ -164,12 +164,26 @@ _tp_get(TP, tp_obj self, tp_obj k, int mget)
 			}
 		} else if (type == TP_OBJECT) {
 			/* not a raw dict, must be object or interface */
+			#ifdef DEBUG
+				std::cout << "	begin _tp_get: " << tp_as_string(tp,k) << std::endl;
+			#endif
 			TP_META_BEGIN(self,"__getitem__");
 				return tp_call(tp, meta, tp_params_v(tp, 1, k));
 			TP_META_END;
+			#ifdef DEBUG
+				std::cout << "	falling back to tp_vget" << std::endl;
+			#endif
+
 			if (tp_vget(tp, self, k, &r, mget)) {
+				#ifdef DEBUG
+					std::cout << "	_tp_get OK" << std::endl;
+				#endif
 				return r;
 			}
+			#ifdef DEBUG
+				std::cout << "	_tp_get failure" << std::endl;
+			#endif
+
 		} else if (type == TP_INTERFACE) {
 			if (tp_vget(tp, self, k, &r, 0)) {
 				return r;
