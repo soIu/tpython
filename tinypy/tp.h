@@ -331,8 +331,11 @@ typedef struct tpd_data {
 
 #define tp_True tp_number(1)
 #define tp_False tp_number(0)
+#define True tp_number(1)
+#define False tp_number(0)
 
 extern tp_obj tp_None;
+#define None tp_None
 
 #ifdef TP_SANDBOX
 void *tp_malloc(TP, unsigned long);

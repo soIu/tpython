@@ -29,7 +29,8 @@ def pythonicpp( source ):
 			assert s.startswith('@module')
 			assert s.count('(')==1
 			assert s.count(')')==1
-			modname = s.split('(')[-1].split(')')[0]
+			modname = s.split('(')[-1].split(')')[0].strip()
+			assert modname
 			if modname not in mods:
 				mods[modname] = []
 			out.append('// module: ' + modname)
@@ -58,6 +59,7 @@ def pythonicpp( source ):
 					args.append( arg )
 
 			if prevs.startswith('@module'):
+				mods[modname].append(func_name)
 				if not len(args):
 					args.append('TP')
 				elif args[0] != 'TP':
@@ -85,9 +87,10 @@ def pythonicpp( source ):
 			w += 'else {'
 			out.append(w)
 		else:
-			if not s.endswith( ('{', '}') ):
-				if not s.endswith(';'):
-					ln += ';'
+			if not s.endswith( ('{', '}', '(', ',') ) and not s.startswith('#'):
+				if not s=='else' and not s.startswith( ('if ', 'if(') ):
+					if not s.endswith(';'):
+						ln += ';'
 			out.append(ln)
 
 		prev = ln
@@ -95,6 +98,16 @@ def pythonicpp( source ):
 		previ = indent
 
 	if autofunc:
+		out.append('}')
+
+	if mods:
+		## generate module_init
+		out.append('void module_init(TP) {')
+		for i,modname in enumerate(mods):
+			m = 'mod%s' %i
+			out.append('tp_obj %s = tp_import(tp, tp_string_atom(tp, "%s"),tp_None, tp_string_atom(tp, "<c++>"));' %(m,modname))
+			for func in mods[modname]:
+				out.append('tp_set(tp, %s, tp_string_atom(tp, "%s"), tp_function(tp, %s));' %(m,func,func))
 		out.append('}')
 
 	cpp = '\n'.join(out)

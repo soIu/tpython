@@ -40,8 +40,7 @@ with c++:
 	void module_init(TP) {
 		tp_obj mod = tp_import(
 			tp, tp_string_atom(tp, "mycppmodule"), 
-			tp_None, tp_string_atom(tp, "<my c++ module>")
-		);
+			tp_None, tp_string_atom(tp, "<my c++ module>"));
 		tp_set(tp, mod, tp_string_atom(tp, "mandelbrot"), tp_function(tp, mandelbrot));
 	}
 

@@ -32,7 +32,7 @@ with c++:
 					std::cout << '*'
 				else:
 					std::cout << '.'
-		return tp_None;
+		return None
 
 
 import mycppmodule
