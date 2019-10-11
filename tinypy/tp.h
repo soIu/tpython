@@ -174,6 +174,11 @@ public:
 		struct { TPTypeInfo type; struct tpd_string *info; const char * val;} string;
 	};
 	friend std::ostream & operator << (std::ostream &out, const tp_obj &self);
+	void append(const char *s);
+	void append(std::string s);
+	void append(double n);
+	void append(int n);
+	void append(tp_obj ob);
 } tp_obj;
 
 

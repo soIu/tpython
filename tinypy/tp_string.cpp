@@ -87,7 +87,7 @@ tp_obj tp_string_from_const(TP, const char *s, int n) {
 	r.string.info->base = tp_None;
 	r.string.info->s = (char*) s;
 	r.string.info->len = n;
-	r.obj.info->meta = tp->_string_meta;
+	//r.obj.info->meta = tp->_string_meta;  //DEPRECATED
 	return r;
 }
 
@@ -125,7 +125,10 @@ tp_obj tp_string_from_stdstring(TP, std::string s) {
 	//return tp_track(tp, tp_string_from_const(tp, s.c_str(), s.size()));
 	char *dst = new char[s.size()+1];
 	std::strcpy(dst, s.c_str());
-	return tp_track(tp, tp_string_from_const(tp, dst, s.size()));
+	if (tp)
+		return tp_track(tp, tp_string_from_const(tp, dst, s.size()));
+	else
+		return tp_string_from_const(tp, dst, s.size());
 }
 
 

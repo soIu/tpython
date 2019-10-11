@@ -506,9 +506,27 @@ tp_obj tp_call(TP, tp_obj self, tp_obj params) {
 	throw "TypeError tp_ops.cpp:tp_call object is not callable";
 }
 
-/**/
+/* tp_obj methods */
 
 std::ostream & operator << (std::ostream &out, const tp_obj &self) { 
 	out << tp_as_string(NULL, self);
 	return out; 
+}
+
+void tp_obj::append(const char *s) {
+	tp_obj ob = tp_string_from_const(NULL,s, strlen(s));
+	tpd_list_append(NULL, this->list.val, ob);
+}
+
+void tp_obj::append(std::string s){
+	tpd_list_append(NULL, this->list.val, tp_string_from_stdstring(NULL,s));
+}
+void tp_obj::append(double n){
+	tpd_list_append(NULL, this->list.val, tp_number(n));
+}
+void tp_obj::append(int n){
+	tpd_list_append(NULL, this->list.val, tp_number(n));
+}
+void tp_obj::append(tp_obj ob){
+	tpd_list_append(NULL, this->list.val, ob);
 }

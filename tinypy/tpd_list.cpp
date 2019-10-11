@@ -15,7 +15,8 @@ void tpd_list_set(TP, tpd_list *self,int k, tp_obj v, const char *error) {
         tp_raise(,tp_string_atom(tp, "(tpd_list_set) KeyError"));
     }
     self->items[k] = v;
-    tp_grey(tp, v);
+    if (tp)
+        tp_grey(tp, v);
 }
 
 tpd_list *tpd_list_new(TP) {
@@ -46,7 +47,8 @@ void tpd_list_appendx(TP, tpd_list *self, tp_obj v) {
 }
 void tpd_list_insert(TP,tpd_list *self, int n, tp_obj v) {
     tpd_list_insertx(tp,self,n,v);
-    tp_grey(tp, v);
+    if (tp)
+        tp_grey(tp, v);
 }
 void tpd_list_append(TP,tpd_list *self, tp_obj v) {
     tpd_list_insert(tp,self,self->len,v);
