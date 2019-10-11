@@ -156,6 +156,7 @@ typedef union tp_obj {
 } tp_obj;
 */
 
+
 typedef class tp_obj {
 public:
 	union {
@@ -173,6 +174,16 @@ public:
 		struct { TPTypeInfo type; struct tpd_dict *val; } interface;
 		struct { TPTypeInfo type; struct tpd_string *info; const char * val;} string;
 	};
+	/*
+	tp_obj(){}
+	tp_obj(double num) {
+		this->type.type_id = TP_NUMBER;
+		this->number.val = num;
+	}
+	tp_obj operator+ (const tp_obj & first) const {
+		return tp_obj(this->number.val + first.number.val);
+	}
+	*/
 	friend std::ostream & operator << (std::ostream &out, const tp_obj &self);
 	void append(const char *s);
 	void append(std::string s);
@@ -502,6 +513,7 @@ void tpd_list_append(TP,tpd_list *self, tp_obj v);
 
 tp_obj tp_dict_t(TP);
 tp_obj tp_dict(TP);  // tracked by default
+tpd_dict *tpd_dict_new(TP);
 
 tp_obj tp_object_t(TP);
 #define tp_object tp_object_t

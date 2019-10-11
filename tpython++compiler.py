@@ -11,11 +11,16 @@ def pythonicpp( source ):
 	autofunc = 0
 	mods = {}
 	modname = None
+	in_class = False
+	class_indent = 0
+	class_name = None
 	for ln in source:
 		indent = 0
 		for c in ln:
 			if c == '\t':
 				indent += 1
+			else:
+				break
 
 		if indent < previ and autobrace:
 			braces = previ - indent
@@ -23,7 +28,14 @@ def pythonicpp( source ):
 			b += '}'*braces
 			out.append(b)
 
+		if in_class and indent <= class_indent:
+			in_class = False
+			class_indent = 0
+			out.append('	;// end of class: ' + class_name)
+			class_name = None
+
 		s = ln.strip()
+
 
 		if s.startswith('@'):
 			assert s.startswith('@module')
@@ -34,14 +46,27 @@ def pythonicpp( source ):
 			if modname not in mods:
 				mods[modname] = []
 			out.append('// module: ' + modname)
+		elif s.startswith('class') and s.endswith(':'):
+			in_class = True
+			class_indent = indent
+			class_name = s[:-1].split()[-1]
+			out.append( 'class %s: public tp_obj {' %class_name)
+			out.append( '	public:')
+
 		elif s.startswith('def '):
 			assert s.endswith(':')
 			autobrace += 1
 			autofunc += 1
-			func_name = s[len('def ') : ].split('(')[0]
+			func_name = s[len('def ') : ].split('(')[0].strip()
+			if func_name == '__init__':
+				assert in_class
+				func_name = class_name
+
 			if '->' in s:
 				returns = s[:-1].split('->')[-1]
-			elif prevs.startswith('@module'):
+			elif in_class and func_name == class_name:
+				returns = ''
+			elif prevs.startswith('@module') or in_class:
 				returns = 'tp_obj'
 			else:
 				returns = 'void'
@@ -58,29 +83,48 @@ def pythonicpp( source ):
 				if not arg:
 					continue
 
-				if prevs.startswith('@module'):
+				if in_class:
+					if i==0:
+						assert arg == 'self'
+					elif i==1 and arg=='TP':
+						args.append(arg)
+					else:
+						if ' ' in arg:
+							args.append(arg)
+						else:
+							out.append('		tp_obj %s;' %arg)
+							args.append('tp_obj ' +arg)
+
+				elif prevs.startswith('@module'):
 					if arg == 'TP':
 						if i != 0:
 							raise SyntaxError('ERROR: `TP` is automatically inserted as the first argument for modules')
 					else:
 						if ' ' in arg:
 							atype, aname = arg.split()
-							tpargs.append('auto %s = %s();' %(aname, atype))
+							tpargs.append(('\t'*(indent+1))+'auto %s = %s();' %(aname, atype))
 						else:
-							tpargs.append('auto %s = TP_OBJ();' %arg)
+							tpargs.append(('\t'*(indent+1))+'auto %s = TP_OBJ();' %arg)
 
 				else:
 					if ' ' not in arg:
 						arg = 'auto ' + arg
 					args.append( arg )
-
-			#func = '\t' * indent
-			func = '%s %s(%s) {' %(returns, func_name, ','.join(args))
+			if in_class:
+				func = '\t' * indent
+			else:
+				func = '\t'
+			func += '%s %s(%s) {' %(returns, func_name, ','.join(args))
 			out.append(func)
 
 			if prevs.startswith('@module'):
 				mods[modname].append(func_name)
 				out.extend(tpargs)
+
+			if in_class and func_name==class_name:
+				out.append('this->type.type_id = TP_OBJECT;')
+				out.append('this->dict.val = tpd_dict_new(NULL);')
+				out.append('this->obj.info->meta = tp_None;')
 
 
 		elif s.startswith('while ') and s.endswith(':'):
@@ -101,6 +145,8 @@ def pythonicpp( source ):
 			w += 'else {'
 			out.append(w)
 		else:
+			if in_class:
+				ln = ln.replace('self.', 'this->')
 			if not s.endswith( ('{', '}', '(', ',') ) and not s.startswith('#'):
 				if not s=='else' and not s.startswith( ('if ', 'if(') ):
 					if not s.endswith(';'):
