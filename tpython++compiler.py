@@ -46,28 +46,42 @@ def pythonicpp( source ):
 			else:
 				returns = 'void'
 
-			args = []
+			if prevs.startswith('@module'):
+				args = ['TP']
+				tpargs = []
+			else:
+				args = []
+
 			rawargs = s.split('(')[-1].split(')')[0]
 			for i, arg in enumerate(rawargs.split(',')):
-				if arg == 'TP':
-					if i != 0:
-						raise SyntaxError('ERROR: `TP` must be the first argument')
-				elif arg and ' ' not in arg:
-					arg = 'auto ' + arg
+				arg = arg.strip()
+				if not arg:
+					continue
 
-				if arg:
+				if prevs.startswith('@module'):
+					if arg == 'TP':
+						if i != 0:
+							raise SyntaxError('ERROR: `TP` is automatically inserted as the first argument for modules')
+					else:
+						if ' ' in arg:
+							atype, aname = arg.split()
+							tpargs.append('auto %s = %s();' %(aname, atype))
+						else:
+							tpargs.append('auto %s = TP_OBJ();' %arg)
+
+				else:
+					if ' ' not in arg:
+						arg = 'auto ' + arg
 					args.append( arg )
-
-			if prevs.startswith('@module'):
-				mods[modname].append(func_name)
-				if not len(args):
-					args.append('TP')
-				elif args[0] != 'TP':
-					args.insert(0, 'TP')
 
 			#func = '\t' * indent
 			func = '%s %s(%s) {' %(returns, func_name, ','.join(args))
 			out.append(func)
+
+			if prevs.startswith('@module'):
+				mods[modname].append(func_name)
+				out.extend(tpargs)
+
 
 		elif s.startswith('while ') and s.endswith(':'):
 			autobrace += 1

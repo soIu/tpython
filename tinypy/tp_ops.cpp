@@ -507,3 +507,8 @@ tp_obj tp_call(TP, tp_obj self, tp_obj params) {
 }
 
 /**/
+
+std::ostream & operator << (std::ostream &out, const tp_obj &self) { 
+	out << tp_as_string(NULL, self);
+	return out; 
+}

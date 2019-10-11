@@ -173,6 +173,7 @@ public:
 		struct { TPTypeInfo type; struct tpd_dict *val; } interface;
 		struct { TPTypeInfo type; struct tpd_string *info; const char * val;} string;
 	};
+	friend std::ostream & operator << (std::ostream &out, const tp_obj &self);
 } tp_obj;
 
 
@@ -578,7 +579,6 @@ tp_inline static std::string tp_as_string(TP, tp_obj self) {
 
 	return ss.str();
 }
-
 
 tp_obj tp_get_by_char(TP, tp_obj d, char c);
 void tp_set_by_char(TP, tp_obj d, char c, tp_obj v);
