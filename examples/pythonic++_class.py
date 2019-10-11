@@ -9,7 +9,7 @@ with c++:
 	def new_foo(a, b):
 		std::cout << "making new foo from c++" << std::endl
 		auto f = Foo(a,b)
-		tp_set(tp, f, tp_string_atom(tp, "bar"), tp_function(tp,&f.bar))
+		tp_set(tp, f, tp_string_atom(tp, "bar"), tp_function(tp,reinterpret_cast<tp_obj (*)(tp_vm*)>((void*)&Foo::bar)))
 		return f
 
 
