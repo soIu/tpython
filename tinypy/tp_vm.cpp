@@ -32,7 +32,8 @@ tp_vm * tp_create_vm(void) {
 
 	tp->_list_meta = tp_interface_t(tp);
 	tp->_dict_meta = tp_interface_t(tp);
-	tp->_string_meta = tp_interface_t(tp);
+	//tp->_string_meta = tp_interface_t(tp);
+	__string_meta__ = tp_interface_t(tp);
 
 	
 	/* gc initialized, can use tpy_ functions. */
@@ -52,7 +53,7 @@ tp_vm * tp_create_vm(void) {
 
 	tp_set(tp, tp->root, tp_None, tp->_list_meta);
 	tp_set(tp, tp->root, tp_None, tp->_dict_meta);
-	tp_set(tp, tp->root, tp_None, tp->_string_meta);
+	//tp_set(tp, tp->root, tp_None, tp->_string_meta);
 	
 	
 	tp->regs = tp->_regs.list.val->items;

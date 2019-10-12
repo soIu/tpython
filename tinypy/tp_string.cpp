@@ -12,7 +12,7 @@ tp_obj tp_string_t(TP, int n) {
 	r.string.info = (tpd_string*)tp_malloc(tp, sizeof(tpd_string));
 	r.string.info->len = n;
 	r.string.info->s = (char*)tp_malloc(tp, n);
-	r.obj.info->meta = tp->_string_meta;
+	r.obj.info->meta = __string_meta__;
 	return tp_track(tp, r);
 }
 
@@ -46,7 +46,7 @@ tp_obj tp_string_atom(TP, const char * v) {
 		r.type.type_id = TP_STRING;
 		r.type.magic = TP_STRING_ATOM;
 		r.string.info = &info;
-		r.string.info->meta = tp->_string_meta;
+		r.string.info->meta = __string_meta__;
 		r.string.val = v;
 		__string_atoms__[s] = r;
 		return r;
@@ -87,7 +87,7 @@ tp_obj tp_string_from_const(TP, const char *s, int n) {
 	r.string.info->base = tp_None;
 	r.string.info->s = (char*) s;
 	r.string.info->len = n;
-	r.obj.info->meta = tp->_string_meta;  //NOT DEPRECATED
+	r.obj.info->meta = __string_meta__;
 	return r;
 }
 

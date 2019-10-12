@@ -318,12 +318,14 @@ typedef struct tpd_frame {
  * cur - The index of the currently executing call frame.
  * frames[n].globals - A dictionary of global sybmols in callframe n.
  */
+static tp_obj __string_meta__;
+
 typedef struct tp_vm {
 	tp_obj builtins;
 	tp_obj modules;
 	tp_obj _list_meta;
 	tp_obj _dict_meta;
-	tp_obj _string_meta;
+	//tp_obj _string_meta;
 	tpd_frame frames[TP_FRAMES];
 	tp_obj _params;
 	tp_obj params;
