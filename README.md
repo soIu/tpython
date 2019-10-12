@@ -3,17 +3,6 @@
 A tiny GIL-less python implementation (based on TinyPy), fully upgraded from C to C++11, and optimized for speed and portability to mobile platforms.
 TPython++ is used by the Blendot game engine.  http://blendot.org
 
-# roadmap
-
-* optionally embed CPython (libpython) and support calling classic python using new syntax `with python:`
-* preparser to generate better optimized output and bytecodes
-* new bytecodes to speed up the interpreter
-* new python3 style type hints, and new bytecodes to optimize them
-* remove the bootstrapping and self hosting, we can compile bytecodes best from classic python.
-* allow users to easily extend the interpreter loop with their own custom C++ classes
-* restrict python syntax and rules to speed up the interpreter
-* replace the Makefile with scons
-
 # history
 
 TinyPy is the smallest Python implementation ever, just 64K, created by Phil Hassey in 2008.  TPython++ is based on RainWoodMans fork of TinyPy. https://github.com/rainwoodman/tinypy
@@ -91,7 +80,16 @@ The above example generate two `.bytecode` files, one for each thread, and you n
 ./tpython++ myscript_thread0.bytecode myscript_thread1.bytecode
 ```
 
-# Benchmarks
+# Pythonic++
 
-You can see TPython++ vs Python vs PyPy vs GDscript benchmarks at:
-http://blendot.org/tpython/
+Pythonic++ is our own dialect of C++ that adopts the style of Python syntax,
+it is a minimal translator and binding generator, that will not get in your way when doing direct C++.
+For maximum speed, nothing beats Pythonic++.
+
+# Benchmarks and Articles
+
+https://medium.com/@judge_raptor/the-smallest-fastest-python-ever-827a36390fbf
+
+https://medium.com/@judge_raptor/tpython-with-c-abc90e32d760
+
+https://medium.com/@judge_raptor/pythonic-2869545fcad6
