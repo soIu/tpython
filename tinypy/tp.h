@@ -4,6 +4,7 @@
 #ifndef TP_H
 #define TP_H
 
+#include <functional>
 #include <algorithm>
 #include <map>
 #include <string>
@@ -97,6 +98,8 @@ typedef struct TPTypeInfo {
 enum TPFuncMagic {
 	TP_FUNC_MASK_C = 1,
 	TP_FUNC_MASK_METHOD = 2,
+	TP_FUNC_MASK_CPP = 3,
+	TP_FUNC_MASK_METHOD_CPP = 4,
 };
 
 enum TPStringMagic {
@@ -156,6 +159,7 @@ typedef union tp_obj {
 } tp_obj;
 */
 
+struct tp_vm;
 
 typedef class tp_obj {
 public:
@@ -164,9 +168,10 @@ public:
 		struct { TPTypeInfo type; int * gci; } gc;
 		struct { TPTypeInfo type; tp_num val; } number;
 		struct { TPTypeInfo type; int val; } integer;
-		struct { TPTypeInfo type; struct tpd_func *info; void *cfnc; } func;
+		//error: union member ‘tp_obj::<unnamed union>::func’ with non-trivial ‘tp_obj::<unnamed union>::<unnamed struct>::~<constructor>()’
+		//struct { TPTypeInfo type; struct tpd_func *info; void *cfnc; std::function<tp_obj(tp_vm*)> cppfunc;} func;
+		struct { TPTypeInfo type; struct tpd_func *info; void *cfnc;} func;
 		struct { TPTypeInfo type; struct tpd_data *info; void *val; } data;
-
 		struct { TPTypeInfo type; struct tpd_obj *info; } obj;  // what type of object is this?
 		struct { TPTypeInfo type; struct tpd_list *val; } list;
 		struct { TPTypeInfo type; struct tpd_dict *val; } dict;
@@ -174,8 +179,16 @@ public:
 		struct { TPTypeInfo type; struct tpd_dict *val; } interface;
 		struct { TPTypeInfo type; struct tpd_string *info; const char * val;} string;
 	};
+	//std::function<tp_obj(tp_vm*)> *__cppfunc__;  // this will crash
+	//tp_obj(){
+	//	this->type.type_id = TP_NONE;
+		//this->__cppfunc__ = std::function<tp_obj(tp_vm*)>(); 
+	//}
+	//tp_obj(TPTypeID etype){ 
+	//	this->type.type_id = etype;
+		//this->__cppfunc__ = std::function<tp_obj(tp_vm*)>(); 
+	//}
 	/*
-	tp_obj(){}
 	tp_obj(double num) {
 		this->type.type_id = TP_NUMBER;
 		this->number.val = num;
@@ -257,6 +270,7 @@ typedef struct tpd_func {
 	tp_obj instance;
 	tp_obj globals;
 	tp_obj code;
+	std::function<tp_obj(tp_vm*)> cppfunc;
 } tpd_func;
 
 typedef union tpd_code {
@@ -518,8 +532,21 @@ tpd_dict *tpd_dict_new(TP);
 tp_obj tp_object_t(TP);
 #define tp_object tp_object_t
 tp_obj tp_dict_nt(TP);
+
 tp_obj tp_function(TP, tp_obj v(TP));
+
+// note: when this is used from user c++, the lamba must capture by `[=]`
+// the pointer to self, it is up to the user to delete the pointer later.
+tp_obj tp_function(TP, std::function<tp_obj(tp_vm*)>);
+
 tp_obj tp_method(TP, tp_obj self,tp_obj v(TP));
+
+// note: if below is used for user defined c++ classes,
+// the data members of those class instances will be lost on the `self` below,
+// because when created on the stack, those members are lost when passed to another function
+// TODO capture `self` as a pointer instead for this case.
+tp_obj tp_method(TP, tp_obj self, std::function<tp_obj(tp_vm*)>);
+
 tp_obj tp_def(TP, tp_obj code, tp_obj g);
 tp_obj tp_bind(TP, tp_obj function, tp_obj self);
 

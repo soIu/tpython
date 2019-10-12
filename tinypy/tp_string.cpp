@@ -87,7 +87,7 @@ tp_obj tp_string_from_const(TP, const char *s, int n) {
 	r.string.info->base = tp_None;
 	r.string.info->s = (char*) s;
 	r.string.info->len = n;
-	//r.obj.info->meta = tp->_string_meta;  //DEPRECATED
+	r.obj.info->meta = tp->_string_meta;  //NOT DEPRECATED
 	return r;
 }
 
