@@ -14,6 +14,7 @@ def pythonicpp( source ):
 	in_class = False
 	class_indent = 0
 	class_name = None
+	classes = {}
 	for ln in source:
 		indent = 0
 		for c in ln:
@@ -50,6 +51,7 @@ def pythonicpp( source ):
 			in_class = True
 			class_indent = indent
 			class_name = s[:-1].split()[-1]
+			classes[ class_name ] = {}  ## methods
 			out.append( 'class %s: public tp_obj {' %class_name)
 			out.append( '	public:')
 
@@ -86,8 +88,10 @@ def pythonicpp( source ):
 				if in_class:
 					if i==0:
 						assert arg == 'self'
-					elif i==1 and arg=='TP':
-						args.append(arg)
+						if func_name == class_name:
+							args.append('TP')
+					#elif i==1 and arg=='TP':
+					#	args.append(arg)
 					else:
 						if ' ' in arg:
 							args.append(arg)
@@ -123,8 +127,17 @@ def pythonicpp( source ):
 
 			if in_class and func_name==class_name:
 				out.append('this->type.type_id = TP_OBJECT;')
-				out.append('this->dict.val = tpd_dict_new(NULL);')
+				out.append('this->dict.val = tpd_dict_new(tp);')
 				out.append('this->obj.info->meta = tp_None;')
+				## generate lambda wrappers
+				for methname in classes[ class_name ]:
+					methargs = classes[ class_name ][methname]
+					margs =  ','.join( ['TP_OBJ()' for ma in methargs] )
+					wrapper = 'std::function<tp_obj(tp_vm*)> __%s_wrapper = [=](tp_vm *tp){return this->%s(%s);};' %(methname, methname, margs)
+					out.append(wrapper)
+					out.append('tp_set(tp, *this, tp_string_atom(tp, "%s"), tp_function(tp, __%s_wrapper));' %(methname, methname))
+			elif in_class:
+				classes[ class_name ][ func_name ] = args
 
 
 		elif s.startswith('while ') and s.endswith(':'):
