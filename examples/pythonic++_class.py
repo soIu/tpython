@@ -4,24 +4,27 @@
 with c++:
 	class Foo:
 		def add(self, u, v):
-			std::cout << "calling add" << std::endl
-			return tp_number(u.number.val + v.number.val)
+			print("calling add")
+			return u + v
+		def sub(self, u, v):
+			return u - v
+		def mul(self, u, v):
+			return u * v
+		def div(self, u, v):
+			return u / v
 		def bar(self):
-			std::cout << "calling bar" << std::endl
-			std::cout << self.x << std::endl
-			std::cout << self.y << std::endl
-			return tp_number(self.x.number.val + self.y.number.val)
+			print("calling bar")
+			print(self.x)
+			print(self.y)
+			return self.x + self.y
 		def __init__(self, x, y ):
 			self.x = x
 			self.y = y
 	@module( mycppmodule )
 	def new_foo(a, b):
-		std::cout << "making new foo from c++" << std::endl
+		print("making new foo from c++")
 		Foo *fptr = new Foo(tp, a,b)
-		auto f = *fptr
-		std::cout << f.x << std::endl
-		std::cout << f.y << std::endl
-		return f
+		return *fptr
 
 
 import mycppmodule
@@ -31,4 +34,7 @@ print( foo )
 res = foo.bar()
 print( res )
 print( foo.add(1,99) )
+print( foo.sub(1,99) )
+print( foo.mul(2,99) )
+print( foo.div(1,99) )
 

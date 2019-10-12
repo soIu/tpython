@@ -193,10 +193,27 @@ public:
 		this->type.type_id = TP_NUMBER;
 		this->number.val = num;
 	}
-	tp_obj operator+ (const tp_obj & first) const {
-		return tp_obj(this->number.val + first.number.val);
-	}
 	*/
+	tp_obj operator+ (const tp_obj & first) const {
+		tp_obj val = {TP_NUMBER};
+		val.number.val = this->number.val + first.number.val;
+		return val;
+	}
+	tp_obj operator- (const tp_obj & first) const {
+		tp_obj val = {TP_NUMBER};
+		val.number.val = this->number.val - first.number.val;
+		return val;
+	}
+	tp_obj operator* (const tp_obj & first) const {
+		tp_obj val = {TP_NUMBER};
+		val.number.val = this->number.val * first.number.val;
+		return val;
+	}
+	tp_obj operator/ (const tp_obj & first) const {
+		tp_obj val = {TP_NUMBER};
+		val.number.val = this->number.val / first.number.val;
+		return val;
+	}
 	friend std::ostream & operator << (std::ostream &out, const tp_obj &self);
 	void append(const char *s);
 	void append(std::string s);
@@ -628,6 +645,14 @@ tp_inline static std::string tp_as_string(TP, tp_obj self) {
 
 tp_obj tp_get_by_char(TP, tp_obj d, char c);
 void tp_set_by_char(TP, tp_obj d, char c, tp_obj v);
+
+// python-style print helper funcs //
+static void print(const char *s) {
+	std::cout << s << std::endl;
+}
+static void print(tp_obj ob) {
+	std::cout << ob << std::endl;
+}
 
 #include "tp_ops.h"
 

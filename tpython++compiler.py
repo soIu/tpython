@@ -50,7 +50,7 @@ def pythonicpp( source ):
 		elif s.startswith('class') and s.endswith(':'):
 			in_class = True
 			class_indent = indent
-			class_name = s[:-1].split()[-1]
+			class_name = s[:-1].split()[-1].strip()
 			classes[ class_name ] = {}  ## methods
 			out.append( 'class %s: public tp_obj {' %class_name)
 			out.append( '	public:')
@@ -96,8 +96,9 @@ def pythonicpp( source ):
 						if ' ' in arg:
 							args.append(arg)
 						else:
-							out.append('		tp_obj %s;' %arg)
 							args.append('tp_obj ' +arg)
+							if func_name == class_name:
+								out.append('		tp_obj %s;' %arg)
 
 				elif prevs.startswith('@module'):
 					if arg == 'TP':
@@ -118,7 +119,10 @@ def pythonicpp( source ):
 				func = '\t' * indent
 			else:
 				func = '\t'
-			func += '%s %s(%s) {' %(returns, func_name, ','.join(args))
+			if in_class and func_name == class_name:
+				func += '%s(%s) {' %(func_name, ','.join(args))
+			else:
+				func += '%s %s(%s) {' %(returns, func_name, ','.join(args))
 			out.append(func)
 
 			if prevs.startswith('@module'):
@@ -126,16 +130,16 @@ def pythonicpp( source ):
 				out.extend(tpargs)
 
 			if in_class and func_name==class_name:
-				out.append('this->type.type_id = TP_OBJECT;')
-				out.append('this->dict.val = tpd_dict_new(tp);')
-				out.append('this->obj.info->meta = tp_None;')
+				out.append('			this->type.type_id = TP_OBJECT;')
+				out.append('			this->dict.val = tpd_dict_new(tp);')
+				out.append('			this->obj.info->meta = tp_None;')
 				## generate lambda wrappers
 				for methname in classes[ class_name ]:
 					methargs = classes[ class_name ][methname]
 					margs =  ','.join( ['TP_OBJ()' for ma in methargs] )
-					wrapper = 'std::function<tp_obj(tp_vm*)> __%s_wrapper = [=](tp_vm *tp){return this->%s(%s);};' %(methname, methname, margs)
+					wrapper = '			std::function<tp_obj(tp_vm*)> __%s_wrapper = [=](tp_vm *tp){return this->%s(%s);};' %(methname, methname, margs)
 					out.append(wrapper)
-					out.append('tp_set(tp, *this, tp_string_atom(tp, "%s"), tp_function(tp, __%s_wrapper));' %(methname, methname))
+					out.append('			tp_set(tp, *this, tp_string_atom(tp, "%s"), tp_function(tp, __%s_wrapper));' %(methname, methname))
 			elif in_class:
 				classes[ class_name ][ func_name ] = args
 
@@ -178,9 +182,9 @@ def pythonicpp( source ):
 		out.append('void module_init(TP) {')
 		for i,modname in enumerate(mods):
 			m = 'mod%s' %i
-			out.append('tp_obj %s = tp_import(tp, tp_string_atom(tp, "%s"),tp_None, tp_string_atom(tp, "<c++>"));' %(m,modname))
+			out.append('	tp_obj %s = tp_import(tp, tp_string_atom(tp, "%s"),tp_None, tp_string_atom(tp, "<c++>"));' %(m,modname))
 			for func in mods[modname]:
-				out.append('tp_set(tp, %s, tp_string_atom(tp, "%s"), tp_function(tp, %s));' %(m,func,func))
+				out.append('	tp_set(tp, %s, tp_string_atom(tp, "%s"), tp_function(tp, %s));' %(m,func,func))
 		out.append('}')
 
 	cpp = '\n'.join(out)
