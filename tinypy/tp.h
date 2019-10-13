@@ -4,6 +4,10 @@
 #ifndef TP_H
 #define TP_H
 
+#ifdef INCLUDEOS
+	#include <os>
+#endif
+
 #include <functional>
 #include <algorithm>
 #include <map>

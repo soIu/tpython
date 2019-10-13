@@ -1,4 +1,7 @@
-// TODO option in Makefile for USE_PYTHON
+#ifdef INCLUDEOS
+	#include <service>
+#endif
+
 #ifdef USE_PYTHON
 	#include <Python.h>
 #endif
@@ -14,6 +17,7 @@
 
 #ifndef __MINGW64__
 	#ifndef __EMSCRIPTEN_major__
+	#ifndef INCLUDEOS
 		#include <execinfo.h>
 
 		// https://gist.github.com/fmela/591333
@@ -58,6 +62,7 @@
 				return trace_buf.str();
 		}
 	#endif
+	#endif
 #endif
 
 // https://stackoverflow.com/questions/77005/how-to-automatically-generate-a-stacktrace-when-my-program-crashes
@@ -72,8 +77,10 @@ void crash_handler(int sig) {
 		//backtrace_symbols_fd(array, size, STDERR_FILENO);
 	#else
 		#ifndef __EMSCRIPTEN_major__
+		#ifndef INCLUDEOS
 			if (sig != 2)
 				std::cout << cpp_backtrace() << std::endl;
+		#endif
 		#endif
 	#endif
 	exit(1);
@@ -112,7 +119,17 @@ tp_obj tp_load(TP, const char*);
 
 #endif
 
+
+#ifdef INCLUDEOS
+void Service::start() {
+	std::cout << "starting tpython interpreter..." << std::endl;
+	run_vm_embedded(0, NULL);
+}
+#else
 int main(int argc,  char *argv[]) {
+	#ifdef DEBUG
+		std::cout << "starting tpython interpreter..." << std::endl;
+	#endif
 	#ifndef __EMSCRIPTEN_major__
 		signal(SIGSEGV, crash_handler); // memory segfault
 		signal(SIGABRT, crash_handler); // some old places in tinypy code had used `abort()`
@@ -143,3 +160,4 @@ int main(int argc,  char *argv[]) {
 
 	return 0;
 }
+#endif

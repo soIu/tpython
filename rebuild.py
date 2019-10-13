@@ -220,7 +220,7 @@ def rebuild():
 					evalue = '%s:%s' %(evalue, os.environ['PATH'])
 				env[ename] = evalue
 		print(env)
-		cmd = ['cmake', '-DCMAKE_C_COMPILER=clang-6.0', '-DCMAKE_CXX_COMPILER=clang++-6.0']
+		cmd = ['cmake', '-DCMAKE_C_COMPILER=clang-6.0', '-DCMAKE_CXX_COMPILER=clang++-6.0', '-DINCLUDEOS=1']
 		for d in defs.split():
 			if '=' not in d:
 				cmd.append(d+'=1')
