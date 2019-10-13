@@ -92,7 +92,12 @@ def rebuild():
 		opts += ' -I/usr/local/include/python3.7m'
 
 	##############################################
-	if '--wasm' in sys.argv or '--html' in sys.argv:
+	if '--includeos' in sys.argv:
+		mode = 'includeos'
+		if not os.path.isdir('./tpythonos_build'):
+			os.mkdir('tpythonos_build')
+			subprocess.check_call(['conan', 'install', '../tinypy', '-pr', 'clang-6.0-linux-x86_64'], cwd='./tpythonos_build')
+	elif '--wasm' in sys.argv or '--html' in sys.argv:
 		mode = 'wasm'
 		CC = os.path.expanduser('~/emsdk/fastcomp/emscripten/em++')
 		libs = ''
@@ -169,7 +174,25 @@ def rebuild():
 			sdl_inc = '-I/usr/local/include'
 			libs += ' -lSDL2'
 
-	if mode == 'android':
+	if mode == 'includeos':
+		#subprocess.check_call(['bash', '-c', 'source activate.sh'], cwd='./tpythonos_build')  ## this will not work
+		env = {}
+		for ln in open('./tpythonos_build/activate.sh','rb').read().splitlines():
+			if ln.startswith( ('export ', 'PS1=', 'OLD_PS1=') ):
+				continue
+			else:
+				assert '=' in ln
+				ename  = ln[ : ln.index('=') ]
+				evalue = ln[ ln.index('"')+1 : ln.rindex('"') ]
+				if ename == 'PATH':
+					evalue = '%s:%s' %(evalue, os.environ['PATH'])
+				env[ename] = evalue
+		print(env)
+		subprocess.check_call(['cmake', '-DCMAKE_C_COMPILER=clang-6.0', '-DCMAKE_CXX_COMPILER=clang++-6.0','../tinypy'], cwd='./tpythonos_build', env=env)
+		subprocess.check_call(['cmake', '--build', '.'], cwd='./tpythonos_build', env=env)
+		subprocess.check_call(['boot', 'tpythonos'], cwd='./tpythonos_build', env=env)
+
+	elif mode == 'android':
 		androbuildsh = os.path.join(sdlroot, 'build-scripts/androidbuild.sh')
 		assert os.path.isfile(androbuildsh)
 		c_files = [
