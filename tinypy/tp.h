@@ -49,11 +49,15 @@
 // PGO has no speed up when tp_inline is defined. So here it is defined as nothing.
 #define tp_inline
 
+/* FIXME: increased so that gc doesn't get called while running tp_str() */
+#ifdef INCLUDEOS
+	//#define TP_GCMAX 16384
+	#define TP_GCMAX 262144
+#else
+	#define TP_GCMAX 524288
+#endif
 
-//#define TP_GCMAX 16384 /* FIXME: increased so that gc doesn't get called while running tp_str() */
 #define TP_REGS 16384
-//#define TP_GCMAX 262144
-#define TP_GCMAX 524288
 
 // fixes bench marking test, might need to be set higher later
 //#define TP_GCMAX 65536  // still not enough for heavy loads

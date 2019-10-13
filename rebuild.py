@@ -17,7 +17,7 @@ def gen_interpreter_codes(randomize=False):
 		'DEF','RETURN','RAISE','NONE','MOD','LSH','RSH', 
 		'POW','BITAND','BITOR','BITNOT','BITXOR',  
 		'PASS','FILE','DEBUG',
-		'POS',
+		'LINE',
 	]
 	## note: POS is TP_ILINE in tp_vm.cpp
 	if randomize:
@@ -86,6 +86,21 @@ clean:
 
 '''
 
+CMakeFile = '''
+cmake_minimum_required(VERSION 3.8)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_definitions(%s)
+set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+project (tinypy)
+include(${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake OPTIONAL RESULT_VARIABLE HAS_CONAN)
+conan_basic_setup()
+include(os)
+os_add_executable(tpythonos "TPythonOS" tp.cpp dummy-compiler.cpp runtime.cpp vmmain.cpp)
+#os_add_drivers(tpythonos virtionet vmxnet3 boot_logger)
+os_add_stdout(tpythonos default_stdout)
+'''
+
 #gcc -c -Q -O3 --help=optimizers | grep enabled
 
 def rebuild():
@@ -107,12 +122,15 @@ def rebuild():
 		if arg.endswith('.py'):
 			embed_bytecode = True
 			defs += ' -DUSE_EMBEDDED_BYTECODE'
-			subprocess.check_call([
+			cmd = [
 				'./tpython++compiler.py', 
 				'--beta', 
 				'--gen-header=embedded_bytecode.gen.h', 
 				arg
-			])
+			]
+			if '--debug' in sys.argv:
+				cmd.append('--debug')
+			subprocess.check_call(cmd)
 			os.system('cp -v /tmp/embedded_bytecode.gen.h ./tinypy/.')
 			if os.path.isfile('./tinypy/__user__.gen.h'):
 				defs += ' -DUSE_USER_CUSTOM_CPP'
@@ -207,6 +225,9 @@ def rebuild():
 			libs += ' -lSDL2'
 
 	if mode == 'includeos':
+		if not embed_bytecode:
+			raise RuntimeError('includeos builds require that you embed your bytecode')
+
 		#subprocess.check_call(['bash', '-c', 'source activate.sh'], cwd='./tpythonos_build')  ## this will not work
 		env = {}
 		for ln in open('./tpythonos_build/activate.sh','rb').read().splitlines():
@@ -220,17 +241,23 @@ def rebuild():
 					evalue = '%s:%s' %(evalue, os.environ['PATH'])
 				env[ename] = evalue
 		print(env)
-		cmd = ['cmake', '-DCMAKE_C_COMPILER=clang-6.0', '-DCMAKE_CXX_COMPILER=clang++-6.0', '-DINCLUDEOS=1']
-		for d in defs.split():
-			if '=' not in d:
-				cmd.append(d+'=1')
-			else:
-				cmd.append(d)
+		cmd = ['cmake', '-DCMAKE_C_COMPILER=clang-6.0', '-DCMAKE_CXX_COMPILER=clang++-6.0']
 		cmd.append('../tinypy')
 		print(cmd)
+		cmakedefs = ['-DINCLUDEOS']
+		for d in defs.split():
+			cmakedefs.append(d)
+		assert '-DUSE_EMBEDDED_BYTECODE' in cmakedefs
+		cmakedefs = ' '.join(cmakedefs)
+		cmakefile = CMakeFile % cmakedefs
+		open('./tinypy/CMakeLists.txt', 'wb').write(cmakefile)
 		subprocess.check_call(cmd, cwd='./tpythonos_build', env=env)
 		subprocess.check_call(['cmake', '--build', '.'], cwd='./tpythonos_build', env=env)
-		subprocess.check_call(['boot', 'tpythonos'], cwd='./tpythonos_build', env=env)
+		#subprocess.check_call(['boot', 'tpythonos'], cwd='./tpythonos_build', env=env)
+		print('tpythonos build OK - to test run these commands:')
+		print('cd tpythonos_build')
+		print('source activate.sh')
+		print('boot tpythonos')
 
 	elif mode == 'android':
 		androbuildsh = os.path.join(sdlroot, 'build-scripts/androidbuild.sh')

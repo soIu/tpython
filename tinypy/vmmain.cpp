@@ -95,7 +95,10 @@ tp_obj tp_load(TP, const char*);
 	#include "embedded_bytecode.gen.h"
 	void run_vm_embedded(int argc, char *argv[]){
 		tp_vm *tp = tp_init(argc, argv);
+		std::cout << "tp_init OK..." << std::endl;
 		try {
+			std::cout << "trying to import from buffer..." << std::endl;
+			std::cout << __embedded_bytecode_gen_h__ << std::endl;
 			tp_import_from_buffer(tp, "__main__", __embedded_bytecode_gen_h__,  sizeof(__embedded_bytecode_gen_h__));
 		} catch (const char * str) {
 			std::cout << "Runtime Exception: " << str << std::endl;

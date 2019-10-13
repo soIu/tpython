@@ -68,7 +68,7 @@ def write(v, head=False):
 		else:
 			insert(('data',v[n:n+4]))
 
-def setpos(v, debug_mode=False):
+def setpos(v, debug_mode='--debug' in sys.argv):
 	if not debug_mode:
 		return
 	if D.nopos: return
@@ -77,7 +77,7 @@ def setpos(v, debug_mode=False):
 	text = D.lines[line-1]
 	D.lineno = line
 	val = text + "\0"*(4-len(text)%4)
-	code_16(POS,int(len(val)/4),line)
+	code_16(LINE,int(len(val)/4),line)
 	write(val)
 
 def code(i,a=0,b=0,c=0, head=False):
