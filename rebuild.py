@@ -220,7 +220,15 @@ def rebuild():
 					evalue = '%s:%s' %(evalue, os.environ['PATH'])
 				env[ename] = evalue
 		print(env)
-		subprocess.check_call(['cmake', '-DCMAKE_C_COMPILER=clang-6.0', '-DCMAKE_CXX_COMPILER=clang++-6.0','../tinypy'], cwd='./tpythonos_build', env=env)
+		cmd = ['cmake', '-DCMAKE_C_COMPILER=clang-6.0', '-DCMAKE_CXX_COMPILER=clang++-6.0']
+		for d in defs.split():
+			if '=' not in d:
+				cmd.append(d+'=1')
+			else:
+				cmd.append(d)
+		cmd.append('../tinypy')
+		print(cmd)
+		subprocess.check_call(cmd, cwd='./tpythonos_build', env=env)
 		subprocess.check_call(['cmake', '--build', '.'], cwd='./tpythonos_build', env=env)
 		subprocess.check_call(['boot', 'tpythonos'], cwd='./tpythonos_build', env=env)
 
