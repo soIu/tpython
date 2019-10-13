@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import os, sys, subprocess, random
+import os, sys, subprocess, random, json
 
 ## Ubuntu Notes:
 ## sudo apt-get install g++-arm-linux-gnueabi gcc-arm-linux-gnueabi binutils-arm-linux-gnueabi
@@ -241,6 +241,7 @@ def rebuild():
 					evalue = '%s:%s' %(evalue, os.environ['PATH'])
 				env[ename] = evalue
 		print(env)
+
 		cmd = ['cmake', '-DCMAKE_C_COMPILER=clang-6.0', '-DCMAKE_CXX_COMPILER=clang++-6.0']
 		cmd.append('../tinypy')
 		print(cmd)
@@ -248,9 +249,22 @@ def rebuild():
 		for d in defs.split():
 			cmakedefs.append(d)
 		assert '-DUSE_EMBEDDED_BYTECODE' in cmakedefs
+
+		vmjson = {"mem":128, "net":[]}
+		if '--vga' in sys.argv:
+			vmjson["vga"] = "std"
+			cmakedefs.append('-DINCLUDEOS_VGA')
+		elif '--color-vga' in sys.argv:
+			vmjson["vga"] = "qxl"
+			cmakedefs.append('-DINCLUDEOS_VGA256')
+
+		open('./tinypy/vm.json', 'wb').write(json.dumps(vmjson))
+
 		cmakedefs = ' '.join(cmakedefs)
 		cmakefile = CMakeFile % cmakedefs
 		open('./tinypy/CMakeLists.txt', 'wb').write(cmakefile)
+
+
 		subprocess.check_call(cmd, cwd='./tpythonos_build', env=env)
 		subprocess.check_call(['cmake', '--build', '.'], cwd='./tpythonos_build', env=env)
 		#subprocess.check_call(['boot', 'tpythonos'], cwd='./tpythonos_build', env=env)

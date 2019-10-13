@@ -6,6 +6,14 @@
 
 #ifdef INCLUDEOS
 	#include <os>
+	#ifdef INCLUDEOS_VGA
+		#include <vga>
+		#include <hw/ps2.hpp>
+	#endif
+	#ifdef INCLUDEOS_VGA256
+		#include <hw/ps2.hpp>
+		#include <hw/vga_gfx.hpp>
+	#endif
 #endif
 
 #include <functional>

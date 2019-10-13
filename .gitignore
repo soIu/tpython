@@ -5,6 +5,8 @@
 *.arm
 *.dll
 
+vm.json
+CMakeLists.txt
 Makefile
 tpython++
 tpython++.html
