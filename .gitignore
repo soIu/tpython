@@ -1,11 +1,16 @@
+*_gen.py
 *.gcda
 *.gen.h
 *.wasm
-*.js
 *.arm
 *.dll
+
 Makefile
 tpython++
+tpython++.html
+tpython++.js
+tpythonos_build
+
 *.bytecode
 *.pyc
 *.o
