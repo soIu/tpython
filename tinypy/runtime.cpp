@@ -1,8 +1,5 @@
 #include "tp.h"
-
-#ifndef INCLUDEOS
-	#include <random>
-#endif
+#include <random>
 
 #ifdef USE_PYTHON
 	extern "C" int PyRun_SimpleString(const char* script);
@@ -12,9 +9,7 @@
 	#include "module_sdl.h"
 #endif
 
-#ifndef INCLUDEOS
-	std::mt19937 *__rand_engine = NULL;
-#endif
+std::mt19937 *__rand_engine = NULL;
 
 void tp_save(TP, const char * fname, tp_obj v) {
 	FILE *f;
@@ -135,25 +130,59 @@ void tp_module_os_init(TP) {
 	}
 #endif
 
-#ifndef INCLUDEOS
-	tp_obj tpy_random(TP) {
-		std::uniform_real_distribution<double> unif(0.0, 1.0);
-		double x = unif(*__rand_engine);
-		return tp_number(x);
-	}
-	tp_obj tpy_uniform(TP) {
-		tp_obj a = TP_OBJ();
-		tp_obj b = TP_OBJ();
-		std::uniform_real_distribution<double> unif(a.number.val, b.number.val);
-		double x = unif(*__rand_engine);
-		return tp_number(x);
-	}
-	void tp_module_random_init(TP) {
+tp_obj tpy_random(TP) {
+	std::uniform_real_distribution<double> unif(0.0, 1.0);
+	double x = unif(*__rand_engine);
+	return tp_number(x);
+}
+tp_obj tpy_uniform(TP) {
+	tp_obj a = TP_OBJ();
+	tp_obj b = TP_OBJ();
+	std::uniform_real_distribution<double> unif(a.number.val, b.number.val);
+	double x = unif(*__rand_engine);
+	return tp_number(x);
+}
+void tp_module_random_init(TP) {
+	#ifdef INCLUDEOS
+		__rand_engine = new std::mt19937(time(NULL));
+	#else
 		std::random_device rand_dev;
 		__rand_engine = new std::mt19937(rand_dev());
-		tp_obj rand = tp_import(tp, tp_string_atom(tp, "random"), tp_None, tp_string_atom(tp, "<builtin>"));
-		tp_set(tp, rand, tp_string_atom(tp, "random"), tp_function(tp, tpy_random));
-		tp_set(tp, rand, tp_string_atom(tp, "uniform"), tp_function(tp, tpy_uniform));
+	#endif
+
+	tp_obj rand = tp_import(tp, tp_string_atom(tp, "random"), tp_None, tp_string_atom(tp, "<builtin>"));
+	tp_set(tp, rand, tp_string_atom(tp, "random"), tp_function(tp, tpy_random));
+	tp_set(tp, rand, tp_string_atom(tp, "uniform"), tp_function(tp, tpy_uniform));
+}
+
+
+#ifdef INCLUDEOS_VGA
+	TextmodeVGA *__vga__ = NULL;
+	tp_obj tpy_vga_init(TP) {
+		__vga__ = &TextmodeVGA::get();
+		return None;
+	}
+	tp_obj tpy_vga_draw(TP) {
+		tp_obj symbol = TP_OBJ();
+		tp_obj color = TP_OBJ();
+		tp_obj x = TP_OBJ();
+		tp_obj y = TP_OBJ();
+		if (symbol.type.type_id==TP_NUMBER)
+			__vga__->put( (char)symbol.number.val, (int8_t)color.number.val, (int8_t)x.number.val, (int8_t)y.number.val);
+		else
+			__vga__->put( *tp_string_getptr(symbol), (int8_t)color.number.val, (int8_t)x.number.val, (int8_t)y.number.val);
+		return None;
+	}
+	tp_obj tpy_vga_clear(TP) {
+		__vga__->clear();
+		return None;
+	}
+
+	void tp_module_vga_init(TP) {
+		tp_obj rand = tp_import(tp, tp_string_atom(tp, "vga"), tp_None, tp_string_atom(tp, "<builtin>"));
+		tp_set(tp, rand, tp_string_atom(tp, "initialize"), tp_function(tp, tpy_vga_init));
+		tp_set(tp, rand, tp_string_atom(tp, "draw"), tp_function(tp, tpy_vga_draw));
+		tp_set(tp, rand, tp_string_atom(tp, "clear"), tp_function(tp, tpy_vga_clear));
 	}
 #endif
 
@@ -167,10 +196,7 @@ void tp_module_corelib_init(TP) {
 	#endif
 
 	tp_module_os_init(tp);
-
-	#ifndef INCLUDEOS
-		tp_module_random_init(tp);
-	#endif
+	tp_module_random_init(tp);
 
 	#ifdef USE_PYTHON
 		tp_module_cpython_init(tp);
@@ -178,6 +204,10 @@ void tp_module_corelib_init(TP) {
 
 	#ifdef USE_SDL
 		tp_module_sdl_init(tp);
+	#endif
+
+	#ifdef INCLUDEOS_VGA
+		tp_module_vga_init(tp);
 	#endif
 
 	#ifdef USE_USER_CUSTOM_CPP
