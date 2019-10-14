@@ -1,6 +1,8 @@
-## this demo is compiled with: `./rebuild.py --includeos --svga includeos_svga_pythonic++.py`
 # Copyright 2015 Oslo and Akershus University College of Applied Sciences and Alfred Bratterud Licensed under the Apache License
 # You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+## compile with: `./rebuild.py --includeos --svga includeos_svga_pythonic++.py`
+## note: this requires qemu with qxl enabled, from your qemu source folder run: ./configure --enable-spice
+## for help installing qxl spice see: https://chrisrjones.com/articles/build-qemu-with-spice-video-support-for-an-os-x-vm
 
 with c++:
 	import <timers>
@@ -54,11 +56,13 @@ with c++:
 	static std::deque<Star> stars
 	@module( mymodule )
 	def start():
+		print("starting stars....")
 		VGA_gfx::set_mode(VGA_gfx::MODE_320_200_256)
 		VGA_gfx::clear()
 		VGA_gfx::apply_default_palette()
 		clear()
 		auto update_callback = def[](int):
+			print("updating stars....")
 			## add new (random) star
 			if rand() % 2 == 0:
 				Star star
@@ -73,7 +77,9 @@ with c++:
 				dead_star.clear()
 				stars.pop_front()
 			timev++
-		Timers::periodic(16ms, update_callback)
+		while 1:
+			update_callback(0)
+		##Timers::periodic(16ms, update_callback)
 
 import mymodule
 mymodule.start()
