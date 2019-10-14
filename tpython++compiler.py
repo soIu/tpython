@@ -38,8 +38,7 @@ def pythonicpp( source ):
 		s = ln.strip()
 
 
-		if s.startswith('@'):
-			assert s.startswith('@module')
+		if s.startswith('@module'):
 			assert s.count('(')==1
 			assert s.count(')')==1
 			modname = s.split('(')[-1].split(')')[0].strip()
@@ -47,6 +46,8 @@ def pythonicpp( source ):
 			if modname not in mods:
 				mods[modname] = []
 			out.append('// module: ' + modname)
+		elif s == '@const':
+			pass
 		elif s.startswith('class') and s.endswith(':'):
 			in_class = True
 			class_indent = indent
@@ -119,10 +120,15 @@ def pythonicpp( source ):
 				func = '\t' * indent
 			else:
 				func = '\t'
+
+			exopts = ''
+			if prevs == '@const':
+				exopts = ' const '
+
 			if in_class and func_name == class_name:
-				func += '%s(%s) {' %(func_name, ','.join(args))
+				func += '%s(%s) %s{' %(func_name, ','.join(args), exopts)
 			else:
-				func += '%s %s(%s) {' %(returns, func_name, ','.join(args))
+				func += '%s %s(%s) %s{' %(returns, func_name, ','.join(args), exopts)
 			out.append(func)
 
 			if prevs.startswith('@module'):
@@ -164,8 +170,9 @@ def pythonicpp( source ):
 		else:
 			if in_class:
 				ln = ln.replace('self.', 'this->')
-			if not s.endswith( ('{', '}', '(', ',') ) and not s.startswith('#'):
+			if not s.endswith( ('{', '}', '(', ',', ':') ) and not s.startswith('#'):
 				if not s=='else' and not s.startswith( ('if ', 'if(') ):
+
 					if not s.endswith(';'):
 						ln += ';'
 			out.append(ln)
