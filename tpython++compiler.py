@@ -14,6 +14,7 @@ def pythonicpp( source ):
 	in_class = False
 	class_indent = 0
 	class_name = None
+	class_has_init = False
 	classes = {}
 	nsbrace = 0
 	lambdabrace = []
@@ -46,7 +47,9 @@ def pythonicpp( source ):
 		if in_class and indent <= class_indent:
 			in_class = False
 			class_indent = 0
-			out.append('	;// end of class: ' + class_name)
+			assert out[-1][-1] == '}'
+			#out.append('	;// end of class: ' + class_name)
+			out[-1] += ';	// end of class: ' + class_name
 			class_name = None
 
 		s = ln.strip()
@@ -118,7 +121,8 @@ def pythonicpp( source ):
 				returns = s[:-1].split('->')[-1]
 			elif in_class and func_name == class_name:
 				returns = ''
-			elif prevs.startswith('@module') or in_class:
+				class_has_init = True
+			elif prevs.startswith('@module') or (in_class and class_has_init):
 				returns = 'tp_obj'
 			else:
 				returns = 'void'

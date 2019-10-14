@@ -256,9 +256,9 @@ def rebuild():
 		if '--vga' in sys.argv:
 			vmjson["vga"] = "std"
 			cmakedefs.append('-DINCLUDEOS_VGA')
-		elif '--color-vga' in sys.argv:
+		elif '--svga' in sys.argv:
 			vmjson["vga"] = "qxl"
-			cmakedefs.append('-DINCLUDEOS_VGA256')
+			cmakedefs.append('-DINCLUDEOS_SVGA')
 
 		open('./tinypy/vm.json', 'wb').write(json.dumps(vmjson))
 

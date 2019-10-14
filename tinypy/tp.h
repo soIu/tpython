@@ -10,7 +10,7 @@
 		#include <vga>
 		#include <hw/ps2.hpp>
 	#endif
-	#ifdef INCLUDEOS_VGA256
+	#ifdef INCLUDEOS_SVGA
 		#include <hw/ps2.hpp>
 		#include <hw/vga_gfx.hpp>
 	#endif
