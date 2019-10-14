@@ -15,6 +15,9 @@ def pythonicpp( source ):
 	class_indent = 0
 	class_name = None
 	classes = {}
+	nsbrace = 0
+	lambdabrace = []
+
 	for ln in source:
 		indent = 0
 		for c in ln:
@@ -23,7 +26,18 @@ def pythonicpp( source ):
 			else:
 				break
 
-		if indent < previ and autobrace:
+		if lambdabrace and indent <= lambdabrace[-1]:
+			brace = lambdabrace.pop()
+			b = '\t' * brace
+			b += '};'
+			out.append(b)
+
+		elif indent <= nsbrace:
+			b = '\t' * nsbrace
+			b += '}  // end of namespace'
+			out.append(b)
+			nsbrace = 0
+		elif indent < previ and autobrace:
 			braces = previ - indent
 			b = '\t' * indent
 			b += '}'*braces
@@ -36,9 +50,28 @@ def pythonicpp( source ):
 			class_name = None
 
 		s = ln.strip()
+		if s.startswith('##'):
+			ln = ln.replace('##', '//')
+			out.append(ln)
 
+		elif ln.startswith('	import '):
+			inc = s.split()[-1]
+			if inc.startswith("<"):
+				assert inc.endswith(">")
+			elif not inc.startswith('"'):
+				inc = '"' + inc + '"'
+			out.append('	#include ' + inc)
+		elif ln.startswith('	define('):
+			assert s.endswith(')')
+			defname = s[len('define(') : s.index('=') ]
+			defval  = s[ s.index('=')+1 : -1]
+			out.append('	#define %s %s' %(defname, defval))
+		elif ln.startswith('	undef('):
+			assert s.endswith(')')
+			defname = s.split('(')[-1].split(')')[0]
+			out.append('	#undef %s' %defname)
 
-		if s.startswith('@module'):
+		elif s.startswith('@module'):
 			assert s.count('(')==1
 			assert s.count(')')==1
 			modname = s.split('(')[-1].split(')')[0].strip()
@@ -48,6 +81,22 @@ def pythonicpp( source ):
 			out.append('// module: ' + modname)
 		elif s == '@const':
 			pass
+
+		elif ' def[' in s and ln.endswith(':'):
+			ln = ln.replace(' def[', '[')
+			ln = ln[:-1]+ '{'
+			lambdabrace.append(indent)
+			out.append(ln)
+
+		elif s.startswith('namespace ') and s.endswith(':'):
+			assert not nsbrace  ## no nested namespace defs
+			nsbrace = indent
+			out.append( ('\t'*indent) + s[:-1] + '{')
+			autobrace = 0
+		elif s.startswith('namespace ') and s.endswith('{'):
+			out.append( ln )
+			autobrace = 0
+
 		elif s.startswith('class') and s.endswith(':'):
 			in_class = True
 			class_indent = indent

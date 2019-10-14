@@ -18,14 +18,14 @@
 # limitations under the License.
 
 with c++:
-	#include <random>
-	#include <timers>
-	#define S_SIGN '@'
-	#define S_COLOR TextmodeVGA::vga_color::COLOR_LIGHT_CYAN
-	#define S_SPAWN Point{{ 35, 12 }}
-	#define GRID_X 80
-	#define GRID_Y 25
-	namespace snake_util {
+	import <random>
+	import <timers>
+	define(S_SIGN='@')
+	define(S_COLOR= TextmodeVGA::vga_color::COLOR_LIGHT_CYAN)
+	define(S_SPAWN= Point{{ 35, 12 }})
+	define(GRID_X=80)
+	define(GRID_Y=25)
+	namespace snake_util:
 		using grid_t = int8_t
 		class Point {
 			public:
@@ -47,7 +47,6 @@ with c++:
 				point_t _point
 		};
 		struct Part;
-	}
 	class Snake {
 		public:
 			using Point = snake_util::Point
@@ -74,7 +73,7 @@ with c++:
 			void render()
 			void gameover()
 	};
-	namespace snake_util {
+	namespace snake_util:
 		struct Part {
 			using sign_t = char
 			using color_t = int8_t
@@ -83,25 +82,23 @@ with c++:
 			color_t color
 			Point pos
 		};
-	}
-	// ----- IMPLEMENTATION -----
+	## ----- IMPLEMENTATION -----
 	Snake::Snake(TextmodeVGA& vga) : _head_dir({ 1, 0 }), _vga(vga), _active(true) {
 		reset()
 	};
 	def Snake::user_update(const Direction dir):
-		auto valid = [&head_dir = _head_dir](const auto dir) -> bool {
-			return (dir != Point{ { 0, 0 } } && dir != Point{{ -1, -1 }} * head_dir);
-		};
-		if (valid(dir)) _head_dir = dir
+		auto valid = def[&head_dir = _head_dir](const auto dir) -> bool:
+			return (dir != Point{ { 0, 0 } } && dir != Point{{ -1, -1 }} * head_dir)
+		if valid(dir):
+			_head_dir = dir
 	def Snake::reset():
-		auto reset_range = [](auto& range) -> void {
+		auto reset_range = def[](auto& range) -> void:
 			range.clear()
 			range.reserve(100)
-		};
 		reset_range(_body)
 		reset_range(_food)
 		reset_range(_obstacles)
-		// spawn head
+		## spawn head
 		_body.emplace_back(S_SIGN, S_COLOR, S_SPAWN)
 		_head_dir = Point{{ 1, 0 }};
 		spawn_items()
@@ -115,35 +112,31 @@ with c++:
 			gameover()
 			return
 		Timers::oneshot(
-			std::chrono::milliseconds(_head_dir.x() == 0 ? 120 : 70),
-			[this](auto) { this->game_loop(); }
+		  std::chrono::milliseconds(_head_dir.x() == 0 ? 120 : 70),
+		  [this](auto) { this->game_loop(); }
 		);
 	def Snake::update_positions():
 		auto head = _body.front()
 		std::rotate( std::rbegin(_body), std::next(std::rbegin(_body)), std::rend(_body) )
-		auto wrap_head_pos = [&point = head.pos]() -> void {
-			auto wrap = [](auto ic, Point::val_t val) -> Point::val_t {
+		auto wrap_head_pos = def[&point = head.pos]() -> void:
+			auto wrap = def[](auto ic, Point::val_t val) -> Point::val_t:
 				switch (val) {
-				case -1: return decltype(ic)::value - 1
-				case decltype(ic)::value: return 0
+				  case -1: return decltype(ic)::value - 1
+				  case decltype(ic)::value: return 0
 				}
 				return val
-			};
 			std::integral_constant<Point::val_t, GRID_X> x
 			std::integral_constant<Point::val_t, GRID_Y> y
 			point = Point{ { wrap(x, point.x()), wrap(y, point.y()) } };
-		};
 		head.pos = head.pos + _head_dir
 		wrap_head_pos()
 		_body.front() = head
 	def Snake::intersect():
 		const auto head = _body.front();
-		auto comp = [=](const auto part) {
+		auto comp = def[=](const auto part):
 			return head.pos == part.pos
-		};
-		auto intersect_range = [=](const auto first, const auto last) -> bool {
+		auto intersect_range = def[=](const auto first, const auto last) -> bool:
 			return std::none_of(first, last, comp)
-		};
 		_active = intersect_range(std::next(std::cbegin(_body)), std::cend(_body)) && intersect_range(std::cbegin(_obstacles), std::cend(_obstacles))
 		auto food_it = std::find_if(std::begin(_food), std::end(_food), comp)
 		if food_it != _food.end():
@@ -155,21 +148,17 @@ with c++:
 		static std::mt19937 generator(time(NULL)); // sadly this is ugly
 		static std::uniform_int_distribution<val_t> distribution_x(0, GRID_X - 1)
 		static std::uniform_int_distribution<val_t> distribution_y(0, GRID_Y - 1)
-		auto rand_point = []() -> Point {
+		auto rand_point = def[]() -> Point:
 			return Point{{ distribution_x(generator), distribution_y(generator) }};
-		};
 		_food.emplace_back('#', TextmodeVGA::vga_color::COLOR_LIGHT_GREEN, rand_point())
 		_obstacles.emplace_back('X', TextmodeVGA::vga_color::COLOR_RED, rand_point())
 		_obstacles.emplace_back('X', TextmodeVGA::vga_color::COLOR_RED, rand_point())
 	def Snake::render():
 		_vga.clear()
-		auto render_range = [&vga = _vga](const auto& range) -> void {
+		auto render_range = def[&vga = _vga](const auto& range) -> void:
 			std::for_each(std::begin(range), std::end(range),
-				[&vga](const auto& part) -> void {
-					vga.put(part.sign, part.color, part.pos.x(), part.pos.y())
-				}
+			[&vga](const auto& part) -> void {vga.put(part.sign, part.color, part.pos.x(), part.pos.y());}
 			)
-		};
 		render_range(_body)
 		render_range(_food)
 		render_range(_obstacles)
@@ -181,40 +170,36 @@ with c++:
 		_vga.set_cursor((GRID_X / 5) * 2, (GRID_Y / 2))
 		const std::string finalscore = "SCORE: " + std::to_string(_body.size())
 		_vga.write(finalscore.c_str(), finalscore.size())
-	namespace snake_util {
-	Point::Point(const int key) :
-		_point([key]() -> point_t {
-			switch (key) {
-			case hw::KBM::VK_UP: return{ 0, -1 };
-			case hw::KBM::VK_DOWN: return{ 0, 1 };
-			case hw::KBM::VK_RIGHT: return{ 1, 0 };
-			case hw::KBM::VK_LEFT: return{ -1, 0 };
-			}
-			return { 0, 0 };
-		}())  //TODO fix smart `;` appender
-	{ }
-	Point::Point(const point_t point) : _point(point) { }
-	Point Point::operator+ (const Point other) {
-		return Point{{ _point.first + other._point.first,
-			_point.second + other._point.second }};
-	}
-	def Point::operator* (const Point other) -> Point:
-		return Point{ { _point.first * other._point.first,
-			_point.second * other._point.second } };
-	@const
-	def Point::operator== (const Point other) -> bool:
-		return _point == other._point
-	@const
-	def Point::operator!= (const Point other) -> bool:
-		return _point != other._point
-	// --- Part ---
-	Part::Part( sign_t s, const color_t c, Point&& p ) : sign(s), color(c), pos(std::forward<Point>(p)) { }
-	} // end of namespace
-	#undef S_SIGN
-	#undef S_COLOR
-	#undef S_SPAWN
-	#undef GRID_X
-	#undef GRID_Y
+	namespace snake_util:
+		Point::Point(const int key) :
+			_point([key]() -> point_t {
+				switch (key) {
+					case hw::KBM::VK_UP: return{ 0, -1 };
+					case hw::KBM::VK_DOWN: return{ 0, 1 };
+					case hw::KBM::VK_RIGHT: return{ 1, 0 };
+					case hw::KBM::VK_LEFT: return{ -1, 0 };
+				}
+				return { 0, 0 };
+			}())  //TODO fix smart `;` appender
+		{ }
+		Point::Point(const point_t point) : _point(point) { }
+		def Point::operator+ (const Point other) -> Point:
+			return Point{{ _point.first + other._point.first, _point.second + other._point.second }};
+		def Point::operator* (const Point other) -> Point:
+			return Point{ { _point.first * other._point.first, _point.second * other._point.second } };
+		@const
+		def Point::operator== (const Point other) -> bool:
+			return _point == other._point
+		@const
+		def Point::operator!= (const Point other) -> bool:
+			return _point != other._point
+		## --- Part ---
+		Part::Part( sign_t s, const color_t c, Point&& p ) : sign(s), color(c), pos(std::forward<Point>(p)) { }
+	undef(S_SIGN)
+	undef(S_COLOR)
+	undef(S_SPAWN)
+	undef(GRID_X)
+	undef(GRID_Y)
 	@module( mymodule )
 	def start():
 		static Snake snake {TextmodeVGA::get()};

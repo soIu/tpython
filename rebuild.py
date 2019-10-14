@@ -228,6 +228,8 @@ def rebuild():
 		if not embed_bytecode:
 			raise RuntimeError('includeos builds require that you embed your bytecode')
 
+		os.system('rm -f ./tpythonos_build/CMakeFiles/tpythonos.elf.bin.dir/*.o')
+
 		#subprocess.check_call(['bash', '-c', 'source activate.sh'], cwd='./tpythonos_build')  ## this will not work
 		env = {}
 		for ln in open('./tpythonos_build/activate.sh','rb').read().splitlines():
