@@ -82,7 +82,7 @@ void tp_del(TP, tp_obj self, tp_obj k) {
 tp_obj tp_iter(TP,tp_obj self, tp_obj k) {
 	int type = self.type.type_id;
 	if (type == TP_LIST || type == TP_STRING) { return tp_get(tp,self,k); }
-	if (type == TP_DICT && k.type.type_id == TP_NUMBER) {  // hartsantler TODO why is number iterable?
+	if (type == TP_DICT && k.type.type_id == TP_NUMBER) {
 		return self.dict.val->items[tpd_dict_next(tp,self.dict.val)].key;
 	}
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_iter) TypeError: iteration over non-sequence"));
@@ -359,6 +359,19 @@ tp_obj tp_len(TP,tp_obj self) {
 	throw "TypeError in tp_ops.cpp:tp_len invalid object type to use the len function with";
 }
 
+int len(tp_obj self) {
+	int type = self.type.type_id;
+	if (type == TP_STRING) {
+		return (int)(tp_string_len(self));
+	} else if (type == TP_DICT) {
+		return (int)(self.dict.val->len);
+	} else if (type == TP_LIST) {
+		return (int)(self.list.val->len);
+	}
+	//tp_raise(tp_None,tp_string_atom(tp, "(tp_len) TypeError: len() of unsized object"));
+	throw "TypeError in tp_ops.cpp:len invalid object type to use the len function with";
+}
+
 int tp_cmp(TP, tp_obj a, tp_obj b) {
 	if (a.type.type_id != b.type.type_id) { 
         if (a.type.type_id==TP_INTEGER && b.type.type_id==TP_NUMBER)
@@ -522,6 +535,26 @@ tp_obj tp_call(TP, tp_obj self, tp_obj params) {
 }
 
 /* tp_obj methods */
+
+tp_obj::operator char() const {
+	return *tp_string_getptr(*this);
+}
+
+tp_obj::operator uint8_t() const {
+	return (uint8_t)(*tp_string_getptr(*this));
+}
+
+tp_obj tp_obj::operator[] (int index) {
+	if (this->type.type_id==TP_STRING) {
+		auto ptr = tp_string_getptr(*this);
+		char c = ptr[index];
+		//std::cout << c << std::endl;
+		std::string s{c};
+		return tp_string_from_stdstring(NULL,s);
+	} else {
+		return _tp_get(NULL, *this, tp_number(index), 0);
+	}
+}
 
 std::ostream & operator << (std::ostream &out, const tp_obj &self) { 
 	out << tp_as_string(NULL, self);

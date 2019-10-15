@@ -48,6 +48,20 @@ tp_obj tpy_str_split(TP) {
 	tpd_list_append(tp, r.list.val, tp_string_view(tp, v, 0, tp_string_len(v)));
 	return r;
 }
+tp_obj tpy_str_splitlines(TP) {
+	tp_obj v = TP_OBJ();
+	tp_obj d = tp_string_from_const(tp, "\n", 1);
+	tp_obj r = tp_list_t(tp);
+	v = tp_string_view(tp, v, 0, tp_string_len(v));
+	int i;
+	while ((i = tp_str_index(v, d))!=-1) {
+		tpd_list_append(tp, r.list.val, tp_string_view(tp, v, 0, i));
+		v.string.info->s += i + tp_string_len(d);
+		v.string.info->len -= i + tp_string_len(d);
+	}
+	tpd_list_append(tp, r.list.val, tp_string_view(tp, v, 0, tp_string_len(v)));
+	return r;
+}
 
 
 tp_obj tpy_str_find(TP) {

@@ -468,6 +468,7 @@ void tp_module_builtins_init(TP) {
 
 	tp_set(tp, __string_meta__, tp_string_atom(tp, "join"), tp_function(tp, tpy_str_join));
 	tp_set(tp, __string_meta__, tp_string_atom(tp, "split"), tp_function(tp, tpy_str_split));
+	tp_set(tp, __string_meta__, tp_string_atom(tp, "splitlines"), tp_function(tp, tpy_str_splitlines));
 	tp_set(tp, __string_meta__, tp_string_atom(tp, "index"), tp_function(tp, tpy_str_index));
 	tp_set(tp, __string_meta__, tp_string_atom(tp, "find"), tp_function(tp, tpy_str_find));
 	tp_set(tp, __string_meta__, tp_string_atom(tp, "strip"), tp_function(tp, tpy_str_strip));

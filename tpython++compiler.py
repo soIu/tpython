@@ -234,8 +234,10 @@ def pythonicpp( source ):
 		prevs = s
 		previ = indent
 
-	if autofunc:
-		out.append('}')
+	if previ >= 2:
+		out.append('}' * (previ-1) )
+	elif autofunc:
+		out.append('} // autobrace: %s' %previ)
 
 	if mods:
 		## generate module_init

@@ -210,6 +210,9 @@ public:
 		this->number.val = num;
 	}
 	*/
+	operator char() const;
+	operator uint8_t() const;
+	tp_obj operator[] (int index);
 	tp_obj operator+ (const tp_obj & first) const {
 		tp_obj val = {TP_NUMBER};
 		val.number.val = this->number.val + first.number.val;
@@ -555,6 +558,7 @@ tp_obj tp_data_t(TP, int magic, void *v);
 tp_obj tp_data(TP, int magic, void *v);  // tracked by default
 
 tp_obj tp_len(TP,tp_obj self);
+int len(tp_obj ob);
 tp_obj tp_list_t(TP);
 #define tp_list tp_list_t
 tp_obj tp_list_nt(TP);
@@ -669,6 +673,13 @@ static void print(const char *s) {
 static void print(tp_obj ob) {
 	std::cout << ob << std::endl;
 }
+static void print(double num) {
+	std::cout << num << std::endl;
+}
+static void print(int num) {
+	std::cout << num << std::endl;
+}
+
 
 #include "tp_ops.h"
 
