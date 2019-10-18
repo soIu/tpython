@@ -184,7 +184,7 @@ def pythonicpp( source, header='' ):
 							tpargs.append(('\t'*(indent+1))+'auto %s = TP_OBJ();' %arg)
 
 				else:
-					if ' ' not in arg and arg != 'TP':
+					if ' ' not in arg and arg != 'TP' and arg != 'void':
 						arg = 'auto ' + arg
 					args.append( arg )
 			if in_class:
@@ -220,11 +220,37 @@ def pythonicpp( source, header='' ):
 			elif in_class:
 				classes[ class_name ][ func_name ] = args
 
+		elif s.startswith('switch ') and s.endswith(':'):
+			autobrace += 1
+			w = '\t' * indent
+			w += 'switch(' + s[len('switch '):-1] + ') {'
+			out.append(w)
+
+		elif s.startswith('case ') and s.endswith(':'):
+			autobrace += 1
+			w = '\t' * indent
+			w += 'case ' + s[len('case '):] + '{'
+			out.append(w)
+
+		elif s == 'default:':
+			autobrace += 1
+			out.append(ln + '{')
 
 		elif s.startswith('while ') and s.endswith(':'):
 			autobrace += 1
 			w = '\t' * indent
 			w += 'while(' + s[len('while '):-1] + ') {'
+			out.append(w)
+
+		elif s.startswith( ('for ', 'for(','for (') ) and s.endswith(':'):
+			autobrace += 1
+			w = '\t' * indent
+			loop = s[len('for '):-1]
+			if not loop.startswith('('):
+				loop = '(' + loop
+			if not loop.endswith(')'):
+				loop += ')'
+			w += 'for ' + loop + ' {'
 			out.append(w)
 
 		elif s.startswith('try') and s.endswith(':'):
@@ -250,6 +276,13 @@ def pythonicpp( source, header='' ):
 			w = '\t' * indent
 			w += 'if(' + s[len('if '):-1] + ') {'
 			out.append(w)
+
+		elif s.startswith('elif not ') and s.endswith(':'):
+			autobrace += 1
+			w = '\t' * indent
+			w += 'else if(!(' + s[len('elif not '):-1] + ')) {'
+			out.append(w)
+
 		elif s.startswith('elif ') and s.endswith(':'):
 			autobrace += 1
 			w = '\t' * indent

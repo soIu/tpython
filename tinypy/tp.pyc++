@@ -26,7 +26,7 @@ import "tpy_string.cpp"
 import "tpy_dict.cpp"
 import "tpy_list.cpp"
 
-import "tp_vm.cpp"
+import "tp_vm.gen.cpp"
 
 /* FIXME: after string / dict gets a meta, register these methods
  * to the meta in tpy_builtin
