@@ -22,8 +22,8 @@ import "tp_func.cpp"
 
 import "tp_repr.cpp"
 
-import "tpy_string.cpp"
-import "tpy_dict.cpp"
+import "tpy_string.gen.cpp"
+import "tpy_dict.gen.cpp"
 import "tpy_list.gen.cpp"
 
 import "tp_vm.gen.cpp"
