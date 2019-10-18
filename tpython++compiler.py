@@ -27,6 +27,9 @@ def pythonicpp( source, header='' ):
 		s = ln.strip()
 		#if s.startswith('##'):
 		#	pass
+		if s.endswith('\\'):
+			out.append(ln)
+			continue
 
 		indent = 0
 		for c in ln:
@@ -101,6 +104,8 @@ def pythonicpp( source, header='' ):
 			out.append('// module: ' + modname)
 		elif s == '@const':
 			pass
+		elif s == '@static':
+			pass
 
 		elif ' def[' in s and ln.endswith(':'):
 			ln = ln.replace(' def[', '[')
@@ -142,6 +147,8 @@ def pythonicpp( source, header='' ):
 				class_has_init = True
 			elif prevs.startswith('@module') or (in_class and class_has_init):
 				returns = 'tp_obj'
+			elif 'operator' in func_name:
+				returns = ''
 			else:
 				returns = 'void'
 
@@ -195,6 +202,8 @@ def pythonicpp( source, header='' ):
 			exopts = ''
 			if prevs == '@const':
 				exopts = ' const '
+			if prevs == '@static':
+				returns = 'static ' + returns
 
 			if in_class and func_name == class_name:
 				func += '%s(%s) %s{' %(func_name, ','.join(args), exopts)

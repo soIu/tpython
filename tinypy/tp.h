@@ -679,6 +679,9 @@ static void print(double num) {
 static void print(int num) {
 	std::cout << num << std::endl;
 }
+static void print(std::string s) {
+	std::cout << s << std::endl;
+}
 
 
 #include "tp_ops.h"
