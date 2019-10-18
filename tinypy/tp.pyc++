@@ -32,8 +32,8 @@ import "tp_vm.gen.cpp"
  * to the meta in tpy_builtin
  * and tp_ops above tpy **/
 import "tp_ops.gen.cpp" 
-import "tp_import.cpp"
-import "tp_interp.cpp"
+import "tp_import.gen.cpp"
+import "tp_interp.gen.cpp"
 
 #ifdef TP_SANDBOX
 import "interp/sandbox.cpp"

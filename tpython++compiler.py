@@ -8,8 +8,8 @@ def pythonicpp( source, header='' ):
 	out = []
 	if header:
 		out.append(header)
-	prev = None
-	prevs = None
+	prev = ''
+	prevs = ''
 	previ = None
 	autobrace = 0
 	autofunc = 0
