@@ -73,7 +73,7 @@ tinypy/tp.o : tinypy/tp.cpp tinypy/tp*.cpp tinypy/tp*.h
 
 # tpvm only takes compiled byte codes (.bytecode files)
 #tpvm : $(VMLIB_FILES:%.c=tinypy/%.o) tinypy/vmmain.o modules/modules.a
-<EXE> : $(VMLIB_FILES:%.cpp=tinypy/%.o) tinypy/vmmain.o
+<EXE> : $(VMLIB_FILES:%.cpp=tinypy/%.o) tinypy/vmmain.gen.o
 	<CC> <EXEOPTS> -o $@ $^ <LIBS>
 
 
@@ -103,10 +103,20 @@ os_add_stdout(tpythonos default_stdout)
 
 #gcc -c -Q -O3 --help=optimizers | grep enabled
 
+def gen_interpreter():
+	cmd = [
+		'./tpython++compiler.py', 
+		'./tinypy'
+	]
+	if '--debug' in sys.argv:
+		cmd.append('--debug')
+	subprocess.check_call(cmd)
+
 def rebuild():
 	os.system('rm -f tinypy/__user__.gen.h')
 	os.system('rm -f tinypy/*.gcda')
 	gen_interpreter_codes( randomize='--secure' in sys.argv)
+	gen_interpreter()
 
 	mode = 'linux'
 	exe = 'tpython++'

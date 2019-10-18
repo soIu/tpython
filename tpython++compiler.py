@@ -2,8 +2,12 @@
 # -*- coding: utf-8 -*-
 import os, sys, subprocess
 
-def pythonicpp( source ):
+def pythonicpp( source, header='' ):
+	if not type(source) is list:
+		source = source.splitlines()
 	out = []
+	if header:
+		out.append(header)
 	prev = None
 	prevs = None
 	previ = None
@@ -16,10 +20,14 @@ def pythonicpp( source ):
 	class_name = None
 	class_has_init = False
 	classes = {}
-	nsbrace = 0
+	nsbrace = -1
 	lambdabrace = []
 
 	for ln in source:
+		s = ln.strip()
+		#if s.startswith('##'):
+		#	pass
+
 		indent = 0
 		for c in ln:
 			if c == '\t':
@@ -27,35 +35,44 @@ def pythonicpp( source ):
 			else:
 				break
 
-		if lambdabrace and indent <= lambdabrace[-1]:
-			brace = lambdabrace.pop()
-			b = '\t' * brace
-			b += '};'
-			out.append(b)
+		#if s:
+		if True:
+			if lambdabrace and indent <= lambdabrace[-1]:
+				brace = lambdabrace.pop()
+				b = '\t' * brace
+				b += '};'
+				out.append(b)
 
-		elif indent <= nsbrace:
-			b = '\t' * nsbrace
-			b += '}  // end of namespace'
-			out.append(b)
-			nsbrace = 0
-		elif indent < previ and autobrace:
-			braces = previ - indent
-			b = '\t' * indent
-			b += '}'*braces
-			out.append(b)
+			elif indent <= nsbrace:
+				b = '\t' * nsbrace
+				b += '}  // end of namespace'
+				out.append(b)
+				nsbrace = 0
+			elif indent < previ and autobrace:
+				braces = previ - indent
+				b = '\t' * indent
+				b += '}'*braces
+				out.append(b)
 
-		if in_class and indent <= class_indent:
-			in_class = False
-			class_indent = 0
-			assert out[-1][-1] == '}'
-			#out.append('	;// end of class: ' + class_name)
-			out[-1] += ';	// end of class: ' + class_name
-			class_name = None
+			if in_class and indent <= class_indent:
+				in_class = False
+				class_indent = 0
+				assert out[-1][-1] == '}'
+				#out.append('	;// end of class: ' + class_name)
+				out[-1] += ';	// end of class: ' + class_name
+				class_name = None
+		#else:
+		#	autobrace = 0
 
-		s = ln.strip()
 		if s.startswith('##'):
 			ln = ln.replace('##', '//')
 			out.append(ln)
+
+		#elif s.startswith('#'):
+		#	out.append(ln)
+		#	if ln == '#endif':
+		#		autobrace = 0
+		#	continue
 
 		elif ln.startswith('	import '):
 			inc = s.split()[-1]
@@ -209,10 +226,27 @@ def pythonicpp( source ):
 			w += 'while(' + s[len('while '):-1] + ') {'
 			out.append(w)
 
+		elif s.startswith('try') and s.endswith(':'):
+			autobrace += 1
+			w = '\t' * indent
+			w += 'try ' + s[len('while '):-1] + ' {'
+			out.append(w)
+
+		elif s.startswith('catch ') and s.endswith(':'):
+			autobrace += 1
+			w = '\t' * indent
+			w += 'catch ' + s[len('while '):-1] + ' {'
+			out.append(w)
+
 		elif s.startswith('if ') and s.endswith(':'):
 			autobrace += 1
 			w = '\t' * indent
 			w += 'if(' + s[len('if '):-1] + ') {'
+			out.append(w)
+		elif s.startswith('elif ') and s.endswith(':'):
+			autobrace += 1
+			w = '\t' * indent
+			w += 'else if(' + s[len('elif '):-1] + ') {'
 			out.append(w)
 
 		elif s == 'else:':
@@ -225,8 +259,7 @@ def pythonicpp( source ):
 				ln = ln.replace('self.', 'this->')
 			if not s.endswith( ('{', '}', '(', ',', ':') ) and not s.startswith('#'):
 				if not s=='else' and not s.startswith( ('if ', 'if(') ):
-
-					if not s.endswith(';'):
+					if not s.endswith(';') and s:
 						ln += ';'
 			out.append(ln)
 
@@ -236,8 +269,8 @@ def pythonicpp( source ):
 
 	if previ >= 2:
 		out.append('}' * (previ-1) )
-	elif autofunc:
-		out.append('} // autobrace: %s' %previ)
+	#elif autofunc:
+	#	out.append('} // autobrace: %s' %previ)
 
 	if mods:
 		## generate module_init
@@ -313,33 +346,52 @@ def metapy2tinypypp( source ):
 	cpp = pythonicpp( cpp )
 	return scripts, cpp
 
+def pythonicpp_translate( path ):
+	for file in os.listdir( path ):
+		if file.endswith( '.pyc++' ):
+			cpp = pythonicpp( open(os.path.join(path,file),'rb').read(), header="/*generated from: %s*/" %file )
+			open(os.path.join(path, file.replace('.pyc++', '.gen.cpp') ),'wb').write(cpp)
+		elif file.endswith( '.pyh' ):
+			cpp = pythonicpp( open(os.path.join(path,file),'rb').read(), header="/*generated from: %s*/" %file )
+			open(os.path.join(path, file.replace('.pyh', '.gen.h') ),'wb').write(cpp)
+
+
 def main():
 	input_file = None
 	exargs = []
+	pythonicpp_paths = []
 	for arg in sys.argv[1:]:
 		if arg.endswith('.py'):
 			input_file = arg
 		elif arg.startswith('--'):
 			exargs.append(arg)
-	assert input_file
-	path, name = os.path.split(input_file)
+		elif os.path.isdir(arg):
+			pythonicpp_paths.append( arg )
 
-	scripts, cpp = metapy2tinypypp( open(input_file, 'rb').read().decode('utf-8') )
+	if input_file:
+		path, name = os.path.split(input_file)
 
-	if cpp:
-		open('./tinypy/__user__.gen.h', 'wb').write(cpp.encode('utf-8'))
+		scripts, cpp = metapy2tinypypp( open(input_file, 'rb').read().decode('utf-8') )
 
-	if len(scripts) == 1:
-		source = scripts[0]
-		tempf = '/tmp/%s_main.py'%name
-		open(tempf, 'wb').write(source.encode('utf-8'))
-		subprocess.check_call(['./tpc']+exargs+['-o', './%s.bytecode'%name, tempf])
-	else:
-		for i in range(len(scripts)):
-			source = scripts[i]
-			tempf = '/tmp/%s_thread%s.py'%(name,i)
+		if cpp:
+			open('./tinypy/__user__.gen.h', 'wb').write(cpp.encode('utf-8'))
+
+		if len(scripts) == 1:
+			source = scripts[0]
+			tempf = '/tmp/%s_main.py'%name
 			open(tempf, 'wb').write(source.encode('utf-8'))
-			subprocess.check_call(['./tpc']+exargs+['-o', './%s_thread%s.bytecode'%(name,i), tempf])
+			subprocess.check_call(['./tpc']+exargs+['-o', './%s.bytecode'%name, tempf])
+		else:
+			for i in range(len(scripts)):
+				source = scripts[i]
+				tempf = '/tmp/%s_thread%s.py'%(name,i)
+				open(tempf, 'wb').write(source.encode('utf-8'))
+				subprocess.check_call(['./tpc']+exargs+['-o', './%s_thread%s.bytecode'%(name,i), tempf])
+
+	if pythonicpp_paths:
+		for path in pythonicpp_paths:
+			print('translate path: ', path)
+			pythonicpp_translate( path )
 
 main()
 
