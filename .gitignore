@@ -1,3 +1,4 @@
+*.gen.cpp
 *_gen.py
 *.gcda
 *.gen.h

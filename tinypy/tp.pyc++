@@ -1,0 +1,43 @@
+import "tp.h"
+import "tp_internal.h"
+
+tp_obj tp_None = {TP_NONE};
+
+import "tpd_list.cpp"
+import "tpd_dict.cpp"
+
+import "tp_echo.cpp"
+import "tp_param.cpp"
+
+import "tp_gc.cpp"
+import "tp_hash.cpp"
+import "tp_list.cpp"
+import "tp_dict.cpp"
+import "tp_string.cpp"
+
+import "tp_meta.cpp"
+import "tp_frame.cpp"
+import "tp_data.cpp"
+import "tp_func.cpp"
+
+import "tp_repr.cpp"
+
+import "tpy_string.cpp"
+import "tpy_dict.cpp"
+import "tpy_list.cpp"
+
+import "tp_vm.cpp"
+
+/* FIXME: after string / dict gets a meta, register these methods
+ * to the meta in tpy_builtin
+ * and tp_ops above tpy **/
+import "tp_ops.cpp" 
+import "tp_import.cpp"
+import "tp_interp.cpp"
+
+#ifdef TP_SANDBOX
+import "interp/sandbox.cpp"
+#endif
+
+
+import "tpy_builtins.cpp"

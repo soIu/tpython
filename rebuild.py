@@ -41,8 +41,8 @@ Makefile = '''
 
 TINYPYC=./tpc
 
-VMLIB_FILES=tp.cpp dummy-compiler.cpp runtime.cpp <MODULES>
-TPLIB_FILES=tp.cpp compiler.cpp runtime.cpp
+VMLIB_FILES=tp.gen.cpp dummy-compiler.cpp runtime.gen.cpp <MODULES>
+TPLIB_FILES=tp.gen.cpp compiler.cpp runtime.gen.cpp
 
 #MODULES=math random re
 #MODULES_A_FILES=$(MODULES:%=modules/%.a)
@@ -68,7 +68,7 @@ all: <EXE>
 #			$(MODULES_C_FILES:%.c=%.o)
 #	$(AR) rcu $@ $^
 
-tinypy/tp.o : tinypy/tp.cpp tinypy/tp*.cpp tinypy/tp*.h
+tinypy/tp.o : tinypy/tp.gen.cpp tinypy/tp*.cpp tinypy/tp*.h
 
 
 # tpvm only takes compiled byte codes (.bytecode files)
@@ -96,7 +96,7 @@ project (tinypy)
 include(${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake OPTIONAL RESULT_VARIABLE HAS_CONAN)
 conan_basic_setup()
 include(os)
-os_add_executable(tpythonos "TPythonOS" tp.cpp dummy-compiler.cpp runtime.cpp vmmain.cpp)
+os_add_executable(tpythonos "TPythonOS" tp.gen.cpp dummy-compiler.cpp runtime.gen.cpp vmmain.gen.cpp)
 #os_add_drivers(tpythonos virtionet vmxnet3 boot_logger)
 os_add_stdout(tpythonos default_stdout)
 '''

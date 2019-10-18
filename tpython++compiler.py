@@ -74,13 +74,13 @@ def pythonicpp( source, header='' ):
 		#		autobrace = 0
 		#	continue
 
-		elif ln.startswith('	import '):
+		elif s.startswith('import '):
 			inc = s.split()[-1]
 			if inc.startswith("<"):
 				assert inc.endswith(">")
 			elif not inc.startswith('"'):
 				inc = '"' + inc + '"'
-			out.append('	#include ' + inc)
+			out.append('#include ' + inc)
 		elif ln.startswith('	define('):
 			assert s.endswith(')')
 			defname = s[len('define(') : s.index('=') ]
@@ -126,7 +126,8 @@ def pythonicpp( source, header='' ):
 			out.append( '	public:')
 
 		elif s.startswith('def '):
-			assert s.endswith(':')
+			if not s.endswith(':'):
+				raise SyntaxError(ln)
 			autobrace += 1
 			autofunc += 1
 			func_name = s[len('def ') : ].split('(')[0].strip()
@@ -183,7 +184,7 @@ def pythonicpp( source, header='' ):
 							tpargs.append(('\t'*(indent+1))+'auto %s = TP_OBJ();' %arg)
 
 				else:
-					if ' ' not in arg:
+					if ' ' not in arg and arg != 'TP':
 						arg = 'auto ' + arg
 					args.append( arg )
 			if in_class:
@@ -236,6 +237,12 @@ def pythonicpp( source, header='' ):
 			autobrace += 1
 			w = '\t' * indent
 			w += 'catch ' + s[len('while '):-1] + ' {'
+			out.append(w)
+
+		elif s.startswith('if not ') and s.endswith(':'):
+			autobrace += 1
+			w = '\t' * indent
+			w += 'if(!(' + s[len('if not '):-1] + ')) {'
 			out.append(w)
 
 		elif s.startswith('if ') and s.endswith(':'):
