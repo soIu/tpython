@@ -1,6 +1,6 @@
 # tpythonpp
 
-A tiny GIL-less python implementation (based on TinyPy), fully upgraded from C to C++11, and optimized for speed and portability to mobile platforms.
+A tiny GIL-less python implementation (based on TinyPy), written in Pythonic++ (a dialect of C++), and optimized for speed and portability to mobile platforms.
 TPython++ is used by the Blendot game engine.  http://blendot.org
 
 # history
@@ -84,7 +84,9 @@ The above example generate two `.bytecode` files, one for each thread, and you n
 
 Pythonic++ is our own dialect of C++ that adopts the style of Python syntax,
 it is a minimal translator and binding generator, that will not get in your way when doing direct C++.
-For maximum speed, nothing beats Pythonic++.
+For maximum speed and readability, nothing beats Pythonic++.  
+The best way to learn Pythonic++ is to read the TPython interpreter source code, it is fully
+written in Pythonic++, the file extensions are: `.pyc++` and `.pyh`
 
 # Benchmarks and Articles
 

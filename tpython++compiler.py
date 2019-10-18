@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import os, sys, subprocess
 
-def pythonicpp( source, header='' ):
+def pythonicpp( source, header='', info={} ):
 	if not type(source) is list:
 		source = source.splitlines()
 	out = []
@@ -20,6 +20,7 @@ def pythonicpp( source, header='' ):
 	class_name = None
 	class_has_init = False
 	classes = {}
+	functions = {}
 	nsbrace = -1
 	lambdabrace = []
 
@@ -136,6 +137,7 @@ def pythonicpp( source, header='' ):
 			autobrace += 1
 			autofunc += 1
 			func_name = s[len('def ') : ].split('(')[0].strip()
+
 			if func_name == '__init__':
 				assert in_class
 				func_name = class_name
@@ -229,6 +231,8 @@ def pythonicpp( source, header='' ):
 					out.append('			tp_set(tp, *this, tp_string_atom(tp, "%s"), tp_function(tp, __%s_wrapper));' %(methname, methname))
 			elif in_class:
 				classes[ class_name ][ func_name ] = args
+			else:
+				functions[ func_name ] = args
 
 		elif s.startswith('switch ') and s.endswith(':'):
 			autobrace += 1
@@ -336,6 +340,12 @@ def pythonicpp( source, header='' ):
 	cpp = '\n'.join(out)
 	if '--inspect-pythonic++' in sys.argv:
 		raise RuntimeError(cpp)
+
+	if 'classes' in info:
+		info['classes'].update( classes )
+	if 'functions' in info:
+		info['functions'].update( functions )
+
 	return cpp
 
 def metapy2tinypypp( source ):
@@ -398,14 +408,21 @@ def metapy2tinypypp( source ):
 	return scripts, cpp
 
 def pythonicpp_translate( path ):
+	info = {'classes':{}, 'functions':{}}
 	for file in os.listdir( path ):
 		if file.endswith( '.pyc++' ):
-			cpp = pythonicpp( open(os.path.join(path,file),'rb').read(), header="/*generated from: %s*/" %file )
+			cpp = pythonicpp( open(os.path.join(path,file),'rb').read(), header="/*generated from: %s*/" %file, info=info )
 			open(os.path.join(path, file.replace('.pyc++', '.gen.cpp') ),'wb').write(cpp)
 		elif file.endswith( '.pyh' ):
-			cpp = pythonicpp( open(os.path.join(path,file),'rb').read(), header="/*generated from: %s*/" %file )
+			cpp = pythonicpp( open(os.path.join(path,file),'rb').read(), header="/*generated from: %s*/" %file, info=info )
 			open(os.path.join(path, file.replace('.pyh', '.gen.h') ),'wb').write(cpp)
 
+	print('classes:')
+	for cname in info['classes']:
+		print('	' + cname)
+	print('functions:')
+	for fname in info['functions']:
+		print('	' + fname)
 
 def main():
 	input_file = None
