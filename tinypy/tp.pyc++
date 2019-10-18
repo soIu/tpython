@@ -6,12 +6,12 @@ tp_obj tp_None = {TP_NONE};
 import "tpd_list.cpp"
 import "tpd_dict.cpp"
 
-import "tp_echo.cpp"
-import "tp_param.cpp"
+import "tp_echo.gen.cpp"
+import "tp_param.gen.cpp"
 
-import "tp_gc.cpp"
-import "tp_hash.cpp"
-import "tp_list.cpp"
+import "tp_gc.gen.cpp"
+import "tp_hash.gen.cpp"
+import "tp_list.gen.cpp"
 import "tp_dict.gen.cpp"
 import "tp_string.gen.cpp"
 
