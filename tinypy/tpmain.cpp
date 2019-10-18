@@ -1,4 +1,4 @@
-#include "tp.h"
+#include "tp.gen.h"
 
 /* INCLUDE */
 

@@ -1,4 +1,4 @@
-import "tp.h"
+import "tp.gen.h"
 import <random>
 
 #ifdef USE_PYTHON

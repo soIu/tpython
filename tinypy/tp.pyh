@@ -5,64 +5,48 @@
 #define TP_H
 
 #ifdef INCLUDEOS
-	#include <os>
-	#ifdef INCLUDEOS_VGA
-		#include <vga>
-		#include <hw/ps2.hpp>
-	#endif
-	#ifdef INCLUDEOS_SVGA
-		#include <hw/ps2.hpp>
-		#include <hw/vga_gfx.hpp>
-	#endif
+  import <os>
+  #ifdef INCLUDEOS_VGA
+    import <vga>
+    import <hw/ps2.hpp>
+  #endif
+  #ifdef INCLUDEOS_SVGA
+    import <hw/ps2.hpp>
+    import <hw/vga_gfx.hpp>
+  #endif
 #endif
 
-#include <functional>
-#include <algorithm>
-#include <map>
-#include <string>
-#include <iostream>
-#include <sstream>
-#include <cstring>
+import <functional>
+import <algorithm>
+import <map>
+import <string>
+import <iostream>
+import <sstream>
+import <cstring>
 
-#include <setjmp.h>
-#include <sys/stat.h>
+import <setjmp.h>
+import <sys/stat.h>
 #ifndef __USE_ISOC99
-#define __USE_ISOC99
+  #define __USE_ISOC99
 #endif
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdarg.h>
-#include <math.h>
-#include <time.h>
 
-/*
-#ifdef __GNUC__
-	#define tp_inline __inline__
-#endif
-#ifdef _MSC_VER
-	#ifdef NDEBUG
-		#define tp_inline __inline
-	#else
-		// don't inline in debug builds (for easier debugging)
-		#define tp_inline
-	#endif
-#endif
-#ifndef tp_inline
-	#error "Unsuported compiler"
-#endif
-*/
+import <stdio.h>
+import <stdlib.h>
+import <string.h>
+import <stdarg.h>
+import <math.h>
+import <time.h>
 
-// better performance when the compiler is allowed to making the inline decisions
-// PGO has no speed up when tp_inline is defined. So here it is defined as nothing.
+## better performance when the compiler is allowed to making the inline decisions
+## PGO has no speed up when tp_inline is defined. So here it is defined as nothing.
 #define tp_inline
 
-/* FIXME: increased so that gc doesn't get called while running tp_str() */
+## FIXME: increased so that gc doesnt get called while running tp_str()
 #ifdef INCLUDEOS
-	//#define TP_GCMAX 16384
-	#define TP_GCMAX 262144
+  //#define TP_GCMAX 16384
+  #define TP_GCMAX 262144
 #else
-	#define TP_GCMAX 524288
+  #define TP_GCMAX 524288
 #endif
 
 #define TP_REGS 16384
@@ -77,56 +61,40 @@
 #define TP_REGS_EXTRA 2
 /* #define TP_REGS_PER_FRAME 256*/
 
-
-
-/*  #define tp_malloc(x) calloc((x),1)
-	#define tp_realloc(x,y) realloc(x,y)
-	#define tp_free(x) free(x) */
-
-/* #include <gc/gc.h>
-   #define tp_malloc(x) GC_MALLOC(x)
-   #define tp_realloc(x,y) GC_REALLOC(x,y)
-   #define tp_free(x)*/
-
 enum TPTypeID {
-	TP_NONE = 0,
-	TP_NUMBER = 1,
-	TP_INTEGER = 2,
-
-	TP_GC_TRACKED = 10,
-	TP_FUNC = 10,
-	TP_DATA = 11,
-
-	TP_HAS_META = 99,     // this is not a type, any type >= TP_HAS_META can have a metatype
-
-	TP_STRING = 100,
-	TP_LIST = 101,
-	TP_DICT = 102,
-	TP_OBJECT = 103,
-	TP_INTERFACE = 104,
+  TP_NONE = 0,
+  TP_NUMBER = 1,
+  TP_INTEGER = 2,
+  TP_GC_TRACKED = 10,
+  TP_FUNC = 10,
+  TP_DATA = 11,
+  TP_HAS_META = 99,     // this is not a type, any type >= TP_HAS_META can have a metatype
+  TP_STRING = 100,
+  TP_LIST = 101,
+  TP_DICT = 102,
+  TP_OBJECT = 103,
+  TP_INTERFACE = 104,
 };
 
 typedef struct TPTypeInfo {
-	enum TPTypeID type_id : 32; /* TPTypeID */
-	unsigned int magic: 32;
+  enum TPTypeID type_id : 32;
+  unsigned int magic: 32;
 } TPTypeInfo;
 
 enum TPFuncMagic {
-	TP_FUNC_MASK_C = 1,
-	TP_FUNC_MASK_METHOD = 2,
-	TP_FUNC_MASK_CPP = 3,
-	TP_FUNC_MASK_METHOD_CPP = 4,
+  TP_FUNC_MASK_C = 1,
+  TP_FUNC_MASK_METHOD = 2,
+  TP_FUNC_MASK_CPP = 3,
+  TP_FUNC_MASK_METHOD_CPP = 4,
 };
 
 enum TPStringMagic {
-	TP_STRING_NONE = 0,
-	TP_STRING_ATOM = 1,
-	TP_STRING_EXTERN = 2,
-	TP_STRING_VIEW = 3,
-	//TP_STRING_STD = 4,  // std::string is not allowed in a union
+  TP_STRING_NONE = 0,
+  TP_STRING_ATOM = 1,
+  TP_STRING_EXTERN = 2,
+  TP_STRING_VIEW = 3,
 };
 
-// not quite big enough?
 typedef double tp_num;
 //typedef long double tp_num;
 
@@ -158,87 +126,66 @@ typedef double tp_num;
 // https://stackoverflow.com/questions/3615001/why-union-cant-be-used-in-inheritance
 // https://stackoverflow.com/questions/34075606/using-inheritance-within-a-union/34076227
 
-/*
-typedef union tp_obj {
-	TPTypeInfo type;
-	struct { TPTypeInfo type; int * gci; } gc;
-	struct { TPTypeInfo type; tp_num val; } number;
-	struct { TPTypeInfo type; struct tpd_func *info; void *cfnc; } func;
-	struct { TPTypeInfo type; struct tpd_data *info; void *val; } data;
-
-	struct { TPTypeInfo type; struct tpd_obj *info; } obj;
-	struct { TPTypeInfo type; struct tpd_list *val; } list;
-	struct { TPTypeInfo type; struct tpd_dict *val; } dict;
-	struct { TPTypeInfo type; struct tpd_dict *val; } object;
-	struct { TPTypeInfo type; struct tpd_dict *val; } interface;
-	struct { TPTypeInfo type; struct tpd_string *info; const char * val;} string;
-} tp_obj;
-*/
 
 struct tp_vm;
 
 typedef class tp_obj {
-public:
-	union {
-		TPTypeInfo type;
-		struct { TPTypeInfo type; int * gci; } gc;
-		struct { TPTypeInfo type; tp_num val; } number;
-		struct { TPTypeInfo type; int val; } integer;
-		//error: union member ‘tp_obj::<unnamed union>::func’ with non-trivial ‘tp_obj::<unnamed union>::<unnamed struct>::~<constructor>()’
-		//struct { TPTypeInfo type; struct tpd_func *info; void *cfnc; std::function<tp_obj(tp_vm*)> cppfunc;} func;
-		struct { TPTypeInfo type; struct tpd_func *info; void *cfnc;} func;
-		struct { TPTypeInfo type; struct tpd_data *info; void *val; } data;
-		struct { TPTypeInfo type; struct tpd_obj *info; } obj;  // what type of object is this?
-		struct { TPTypeInfo type; struct tpd_list *val; } list;
-		struct { TPTypeInfo type; struct tpd_dict *val; } dict;
-		struct { TPTypeInfo type; struct tpd_dict *val; } object;
-		struct { TPTypeInfo type; struct tpd_dict *val; } interface;
-		struct { TPTypeInfo type; struct tpd_string *info; const char * val;} string;
-	};
-	//std::function<tp_obj(tp_vm*)> *__cppfunc__;  // this will crash
-	//tp_obj(){
-	//	this->type.type_id = TP_NONE;
-		//this->__cppfunc__ = std::function<tp_obj(tp_vm*)>(); 
-	//}
-	//tp_obj(TPTypeID etype){ 
-	//	this->type.type_id = etype;
-		//this->__cppfunc__ = std::function<tp_obj(tp_vm*)>(); 
-	//}
-	/*
-	tp_obj(double num) {
-		this->type.type_id = TP_NUMBER;
-		this->number.val = num;
-	}
-	*/
-	operator char() const;
-	operator uint8_t() const;
-	tp_obj operator[] (int index);
-	tp_obj operator+ (const tp_obj & first) const {
-		tp_obj val = {TP_NUMBER};
-		val.number.val = this->number.val + first.number.val;
-		return val;
-	}
-	tp_obj operator- (const tp_obj & first) const {
-		tp_obj val = {TP_NUMBER};
-		val.number.val = this->number.val - first.number.val;
-		return val;
-	}
-	tp_obj operator* (const tp_obj & first) const {
-		tp_obj val = {TP_NUMBER};
-		val.number.val = this->number.val * first.number.val;
-		return val;
-	}
-	tp_obj operator/ (const tp_obj & first) const {
-		tp_obj val = {TP_NUMBER};
-		val.number.val = this->number.val / first.number.val;
-		return val;
-	}
-	friend std::ostream & operator << (std::ostream &out, const tp_obj &self);
-	void append(const char *s);
-	void append(std::string s);
-	void append(double n);
-	void append(int n);
-	void append(tp_obj ob);
+ public:
+  union {
+  TPTypeInfo type;
+  struct { TPTypeInfo type; int * gci; } gc;
+  struct { TPTypeInfo type; tp_num val; } number;
+  struct { TPTypeInfo type; int val; } integer;
+  struct { TPTypeInfo type; struct tpd_func *info; void *cfnc;} func;
+  struct { TPTypeInfo type; struct tpd_data *info; void *val; } data;
+  struct { TPTypeInfo type; struct tpd_obj *info; } obj;  // what type of object is this?
+  struct { TPTypeInfo type; struct tpd_list *val; } list;
+  struct { TPTypeInfo type; struct tpd_dict *val; } dict;
+  struct { TPTypeInfo type; struct tpd_dict *val; } object;
+  struct { TPTypeInfo type; struct tpd_dict *val; } interface;
+  struct { TPTypeInfo type; struct tpd_string *info; const char * val;} string;
+ };
+//tp_obj(){
+//	this->type.type_id = TP_NONE;
+//this->__cppfunc__ = std::function<tp_obj(tp_vm*)>(); 
+//}
+//tp_obj(TPTypeID etype){ 
+//	this->type.type_id = etype;
+//this->__cppfunc__ = std::function<tp_obj(tp_vm*)>(); 
+//}
+//tp_obj(double num) {
+//this->type.type_id = TP_NUMBER;
+//this->number.val = num;
+//}
+ operator char() const;
+ operator uint8_t() const;
+ tp_obj operator[] (int index);
+ tp_obj operator+ (const tp_obj & first) const {
+  tp_obj val = {TP_NUMBER};
+  val.number.val = this->number.val + first.number.val;
+  return val;
+ }
+ tp_obj operator- (const tp_obj & first) const {
+  tp_obj val = {TP_NUMBER};
+  val.number.val = this->number.val - first.number.val;
+  return val;
+ }
+ tp_obj operator* (const tp_obj & first) const {
+  tp_obj val = {TP_NUMBER};
+  val.number.val = this->number.val * first.number.val;
+  return val;
+ }
+ tp_obj operator/ (const tp_obj & first) const {
+  tp_obj val = {TP_NUMBER};
+  val.number.val = this->number.val / first.number.val;
+  return val;
+ }
+ friend std::ostream & operator << (std::ostream &out, const tp_obj &self);
+ void append(const char *s);
+ void append(std::string s);
+ void append(double n);
+ void append(int n);
+ void append(tp_obj ob);
 } tp_obj;
 
 
@@ -263,74 +210,73 @@ Functions are into several namespaces from lower-level to higher-level:
 */
 
 typedef struct tpd_obj {
-	int gci;
-	tp_obj meta;
+  int gci;
+  tp_obj meta;
 } tpd_obj;
 
 typedef struct tpd_string {
-	int gci;
-	tp_obj meta;
-	tp_obj base;
-	char * s;
-	int len;
+  int gci;
+  tp_obj meta;
+  tp_obj base;
+  char * s;
+  int len;
 } tpd_string;
 
 typedef struct tpd_list {
-	int gci;
-	tp_obj meta;
-	tp_obj *items;
-	int len;
-	int alloc;
+  int gci;
+  tp_obj meta;
+  tp_obj *items;
+  int len;
+  int alloc;
 } tpd_list;
 
 typedef struct tpd_item {
-	int used;
-	int hash;
-	tp_obj key;
-	tp_obj val;
+  int used;
+  int hash;
+  tp_obj key;
+  tp_obj val;
 } tpd_item;
 
 typedef struct tpd_dict {
-	int gci;
-	tp_obj meta;
-	tpd_item *items;
-	int len;
-	int alloc;
-	int cur;
-	int mask;
-	int used;
+  int gci;
+  tp_obj meta;
+  tpd_item *items;
+  int len;
+  int alloc;
+  int cur;
+  int mask;
+  int used;
 } tpd_dict;
 
 typedef struct tpd_func {
-	int gci;
-	tp_obj instance;
-	tp_obj globals;
-	tp_obj code;
-	std::function<tp_obj(tp_vm*)> cppfunc;
+  int gci;
+  tp_obj instance;
+  tp_obj globals;
+  tp_obj code;
+  std::function<tp_obj(tp_vm*)> cppfunc;
 } tpd_func;
 
 typedef union tpd_code {
-	unsigned char i;
-	struct { unsigned char i,a,b,c; } regs;
-	struct { char val[4]; } string;
-	struct { float val; } number;
+  unsigned char i;
+  struct { unsigned char i,a,b,c; } regs;
+  struct { char val[4]; } string;
+  struct { float val; } number;
 } tpd_code;
 
 typedef struct tpd_frame {
-/*    tpd_code *codes; */
-	tp_obj code;
-	tpd_code *cur;
-	tpd_code *jmp;
-	tp_obj *regs;
-	tp_obj *ret_dest;
-	tp_obj fname;
-	tp_obj name;
-	tp_obj line;
-	tp_obj globals;
-	int lineno;
-	int cregs;
-	//tp_obj __fast_locals__[256] = {};
-	//int __const_ints__[64] = {};
+  tp_obj code;
+  tpd_code *cur;
+  tpd_code *jmp;
+  tp_obj *regs;
+  tp_obj *ret_dest;
+  tp_obj fname;
+  tp_obj name;
+  tp_obj line;
+  tp_obj globals;
+  int lineno;
+  int cregs;
+  //tp_obj __fast_locals__[256] = {};
+  //int __const_ints__[64] = {};
 } tpd_frame;
 
 
@@ -357,45 +303,46 @@ typedef struct tpd_frame {
 static tp_obj __string_meta__;
 
 typedef struct tp_vm {
-	tp_obj builtins;
-	tp_obj modules;
-	tp_obj _list_meta;
-	tp_obj _dict_meta;
-	//tp_obj _string_meta;
-	tpd_frame frames[TP_FRAMES];
-	tp_obj _params;
-	tp_obj params;
-	tp_obj _regs;
-	tp_obj *regs;
-	tp_obj root;
-	jmp_buf buf;
-#ifdef CPYTHON_MOD
-	jmp_buf nextexpr;
-#endif
-	int jmp;
-	tp_obj ex;
-	tp_obj last_result;
-	char chars[256][2];
-	int cur;
-	void (*echo)(const char* data, int length);
-	/* gc */
-	tpd_list *white;
-	tpd_list *grey;
-	tpd_list *black;
-	int steps;
-	/* sandbox */
-	clock_t clocks;
-	double time_elapsed;
-	double time_limit;
-	unsigned long mem_limit;
-	unsigned long mem_used;
-	int mem_exceeded;
+  tp_obj builtins;
+  tp_obj modules;
+  tp_obj _list_meta;
+  tp_obj _dict_meta;
+  //tp_obj _string_meta;
+  tpd_frame frames[TP_FRAMES];
+  tp_obj _params;
+  tp_obj params;
+  tp_obj _regs;
+  tp_obj *regs;
+  tp_obj root;
+  jmp_buf buf;
+  #ifdef CPYTHON_MOD
+    jmp_buf nextexpr;
+  #endif
+  int jmp;
+  tp_obj ex;
+  tp_obj last_result;
+  char chars[256][2];
+  int cur;
+  void (*echo)(const char* data, int length);
+  ## gc ##
+  tpd_list *white;
+  tpd_list *grey;
+  tpd_list *black;
+  int steps;
+  ## sandbox ##
+  clock_t clocks;
+  double time_elapsed;
+  double time_limit;
+  unsigned long mem_limit;
+  unsigned long mem_used;
+  int mem_exceeded;
 } tp_vm;
 
 #define TP tp_vm *tp
+
 typedef struct tpd_data {
-	int gci;
-	void (*free)(TP,tp_obj);
+  int gci;
+  void (*free)(TP,tp_obj);
 } tpd_data;
 
 #define tp_True tp_number(1)
@@ -468,18 +415,18 @@ tp_obj tp_string_t(TP, int n);
 char * tp_cstr(TP, tp_obj v);
 
 
-tp_inline static
-tp_obj tp_check_type(TP, int t, tp_obj v) {
-	if (v.type.type_id != t) {
-		tp_raise(tp_None,
-			tp_string_atom(tp, "(tp_check_type) TypeError: unexpected type"));
-	}
-	return v;
-}
-/* 
- * Macros for obtaining objects from the parameter list of the current
- * function scope.
- * */
+@static
+def tp_check_type(TP, int t, tp_obj v) -> tp_obj:
+	if v.type.type_id != t:
+		tp_raise(
+		  tp_None,
+		  tp_string_atom(tp, "(tp_check_type) TypeError: unexpected type"))
+	return v
+
+
+## Macros for obtaining objects from the parameter list of the current
+## function scope.
+
 #define TP_NO_LIMIT 0
 #define TP_OBJ() (tp_get(tp, tp->params, tp_None))
 #define TP_TYPE(t) tp_check_type(tp, t, TP_OBJ())
@@ -505,27 +452,28 @@ tp_obj tp_check_type(TP, int t, tp_obj v) {
  * > }
  */
 tp_obj tpd_list_get(TP, tpd_list *self, int k, const char *error);
-#define TP_LOOP(e) \
-	int __l = tp->params.list.val->len; \
-	int __i; for (__i=0; __i<__l; __i++) { \
-		(e) = tpd_list_get(tp, tp->params.list.val, __i, "TP_LOOP");
-#define TP_END \
-	}
 
-/* Function: tp_number
- * Creates a new numeric object.
- */
-//tp_inline static tp_obj tp_number(tp_num v) noexcept {
-tp_inline static tp_obj tp_number(tp_num v) {
+#define TP_LOOP(e) \
+int __l = tp->params.list.val->len; \
+int __i; for (__i=0; __i<__l; __i++) { \
+(e) = tpd_list_get(tp, tp->params.list.val, __i, "TP_LOOP");
+#define TP_END }
+
+## Function: tp_number
+## Creates a new numeric object.
+
+@static
+def tp_number(tp_num v) -> tp_obj:
 	tp_obj val = {TP_NUMBER};
-	val.number.val = v;
-	return val;
-}
-tp_inline static tp_obj tp_integer(int v) {
+	val.number.val = v
+	return val
+
+@static
+def tp_integer(int v) -> tp_obj:
 	tp_obj val = {TP_INTEGER};
-	val.integer.val = v;
-	return val;
-}
+	val.integer.val = v
+	return val
+
 
 /* Function: tp_string_from_const (was tp_string_n)
  * Creates a new string object from a partial C string.
@@ -534,8 +482,8 @@ tp_inline static tp_obj tp_integer(int v) {
  * use for the string object. The *note* also applies for this function, as the
  * string reference and length are kept, but no actual substring is stored.
  */
-tp_inline static
-tp_obj tp_string_from_const(TP, char const * v, int n);
+
+static tp_obj tp_string_from_const(TP, char const * v, int n);
 tp_obj tp_string_from_stdstring(TP, std::string s);
 
 
@@ -559,8 +507,10 @@ tp_obj tp_data(TP, int magic, void *v);  // tracked by default
 
 tp_obj tp_len(TP,tp_obj self);
 int len(tp_obj ob);
+
 tp_obj tp_list_t(TP);
 #define tp_list tp_list_t
+
 tp_obj tp_list_nt(TP);
 void tpd_list_append(TP,tpd_list *self, tp_obj v);
 
@@ -600,90 +550,87 @@ void tp_module_compiler_init(TP);
 void tp_module_corelib_init(TP);
 
 
-tp_inline static std::string tp_as_string(TP, tp_obj self) {
-	std::stringstream ss;
-	int type = self.type.type_id;
-	switch( type ) {
-		case TP_STRING: {
-			if(self.type.magic == TP_STRING_VIEW) {
+@static
+def tp_as_string(TP, tp_obj self) ->std::string:
+	std::stringstream ss
+	int type = self.type.type_id
+	switch type:
+		case TP_STRING:
+			if self.type.magic == TP_STRING_VIEW:
 				#ifdef DEBUG
-					std::cout << "STRING VIEW" << std::endl;
+				  std::cout << "STRING VIEW" << std::endl;
 				#endif
-				ss << "\"" << tp_as_string(tp, self.string.info->base) << "\"";
-
-			} else {
-
-					if(self.type.magic == TP_STRING_ATOM) {
-						//std::cout << "STRING ATOM" << std::endl;
-						ss << "\"" << self.string.val << "\"";
-					} else if(self.type.magic == TP_STRING_EXTERN) {
-						//std::cout << "STRING EXTERN" << std::endl;
-						ss << "\"" << self.string.info->s << "\"";
-					} else {
-						//std::cout << "STRING TYPE" << std::endl;
-						ss << "\"" << self.string.info->s << "\"";
-					}
-			} 
-		} break;
+				ss << "\"" << tp_as_string(tp, self.string.info->base) << "\""
+			else:
+				if self.type.magic == TP_STRING_ATOM:
+					//std::cout << "STRING ATOM" << std::endl;
+					ss << "\"" << self.string.val << "\"";
+				elif self.type.magic == TP_STRING_EXTERN:
+					//std::cout << "STRING EXTERN" << std::endl;
+					ss << "\"" << self.string.info->s << "\"";
+				else:
+					//std::cout << "STRING TYPE" << std::endl;
+					ss << "\"" << self.string.info->s << "\"";
+			break
 		case TP_INTEGER: ss << self.integer.val; break;
 		case TP_NUMBER: ss << self.number.val; break;
 		case TP_NONE: ss << "None"; break;
 		case TP_FUNC: ss << "function<" << self.func.cfnc << ">"; break;
-		case TP_LIST: {
-			ss << "[";
-			for (int i=0; i<self.list.val->len; i++){
-				ss << tp_as_string(tp, self.list.val->items[i]) << ",";
-			}
-			ss << "]";
-		} break;
-		case TP_DICT: {
-			ss << "{";
-			for (int i=0; i<self.dict.val->len; i++){
-				tpd_item item = self.dict.val->items[i];
-				ss << tp_as_string(tp, item.key) << ":";
-				ss << tp_as_string(tp, item.val);
-				ss << ",";
-			}
-			ss << "}";
-		} break;
-		case TP_OBJECT: {
-			ss << "object<" << self.object.val << ">";
-		} break;
-		case TP_INTERFACE: {
-			ss << "interface<" << self.interface.val << ">";
-		} break;
-		case TP_DATA: {
-			ss << "data<" << self.data.val << ">";
-		} break;
+		case TP_LIST:
+			ss << "["
+			for (int i=0; i<self.list.val->len; i++):
+				ss << tp_as_string(tp, self.list.val->items[i]) << ","
+			ss << "]"
+			break
+		case TP_DICT:
+			ss << "{"
+			for (int i=0; i<self.dict.val->len; i++):
+				tpd_item item = self.dict.val->items[i]
+				ss << tp_as_string(tp, item.key) << ":"
+				ss << tp_as_string(tp, item.val)
+				ss << ","
+			ss << "}"
+			break
+		case TP_OBJECT:
+			ss << "object<" << self.object.val << ">"
+			break
+		case TP_INTERFACE:
+			ss << "interface<" << self.interface.val << ">"
+			break
+		case TP_DATA:
+			ss << "data<" << self.data.val << ">"
+			break
 		default:
-			ss << "<unknown type>";
+			ss << "<unknown type>"
+	return ss.str()
 
-	}
-
-	return ss.str();
-}
 
 tp_obj tp_get_by_char(TP, tp_obj d, char c);
 void tp_set_by_char(TP, tp_obj d, char c, tp_obj v);
 
-// python-style print helper funcs //
-static void print(const char *s) {
+## python-style print helper funcs ##
+
+@static
+def print(const char *s):
 	std::cout << s << std::endl;
-}
-static void print(tp_obj ob) {
+
+@static
+def print(tp_obj ob):
 	std::cout << ob << std::endl;
-}
-static void print(double num) {
+
+@static
+def print(double num):
 	std::cout << num << std::endl;
-}
-static void print(int num) {
+
+@static
+def print(int num):
 	std::cout << num << std::endl;
-}
-static void print(std::string s) {
+
+@static
+def print(std::string s):
 	std::cout << s << std::endl;
-}
 
 
-#include "tp_ops.h"
+import "tp_ops.h"
 
 #endif

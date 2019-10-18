@@ -6,7 +6,7 @@
 	#include <Python.h>
 #endif
 
-#include "tp.h"
+#include "tp.gen.h"
 #include <thread>
 
 #include <stdio.h>

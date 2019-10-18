@@ -1,5 +1,5 @@
-import "tp.h"
-import "tp_internal.h"
+import "tp.gen.h"
+import "tp_internal.gen.h"
 
 tp_obj tp_None = {TP_NONE};
 
