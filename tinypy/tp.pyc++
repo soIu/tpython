@@ -24,7 +24,7 @@ import "tp_repr.cpp"
 
 import "tpy_string.cpp"
 import "tpy_dict.cpp"
-import "tpy_list.cpp"
+import "tpy_list.gen.cpp"
 
 import "tp_vm.gen.cpp"
 
