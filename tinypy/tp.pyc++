@@ -3,8 +3,8 @@ import "tp_internal.h"
 
 tp_obj tp_None = {TP_NONE};
 
-import "tpd_list.cpp"
-import "tpd_dict.cpp"
+import "tpd_list.gen.cpp"
+import "tpd_dict.gen.cpp"
 
 import "tp_echo.gen.cpp"
 import "tp_param.gen.cpp"
