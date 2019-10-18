@@ -158,7 +158,8 @@ def pythonicpp( source, header='' ):
 			else:
 				args = []
 
-			rawargs = s.split('(')[-1].split(')')[0]
+			#rawargs = s.split('(')[-1].split(')')[0]
+			rawargs = s.split('->')[0][ s.index('(')+1 : s.rindex(')') ]
 			for i, arg in enumerate(rawargs.split(',')):
 				arg = arg.strip()
 				if not arg:

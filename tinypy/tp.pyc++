@@ -18,14 +18,11 @@ import "tp_string.cpp"
 import "tp_meta.cpp"
 import "tp_frame.cpp"
 import "tp_data.cpp"
-import "tp_func.cpp"
-
-import "tp_repr.cpp"
-
+import "tp_func.gen.cpp"
+import "tp_repr.gen.cpp"
 import "tpy_string.gen.cpp"
 import "tpy_dict.gen.cpp"
 import "tpy_list.gen.cpp"
-
 import "tp_vm.gen.cpp"
 
 /* FIXME: after string / dict gets a meta, register these methods
