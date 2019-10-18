@@ -40,4 +40,4 @@ import "interp/sandbox.cpp"
 #endif
 
 
-import "tpy_builtins.cpp"
+import "tpy_builtins.gen.cpp"

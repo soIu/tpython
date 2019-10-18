@@ -309,7 +309,8 @@ def pythonicpp( source, header='' ):
 			if not s.endswith( ('{', '}', '(', ',', ':') ) and not s.startswith('#'):
 				if not s=='else' and not s.startswith( ('if ', 'if(') ):
 					if not s.endswith(';') and s:
-						ln += ';'
+						if not s.startswith("TP_LOOP("):
+							ln += ';'
 			out.append(ln)
 
 		prev = ln
