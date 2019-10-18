@@ -192,7 +192,7 @@ def pythonicpp( source, header='' ):
 							tpargs.append(('\t'*(indent+1))+'auto %s = TP_OBJ();' %arg)
 
 				else:
-					if ' ' not in arg and arg != 'TP' and arg != 'void':
+					if ' ' not in arg and arg != 'TP' and arg != 'void' and arg != '...':
 						arg = 'auto ' + arg
 					args.append( arg )
 			if in_class:
