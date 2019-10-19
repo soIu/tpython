@@ -110,6 +110,8 @@ def gen_interpreter():
 	]
 	if '--debug' in sys.argv:
 		cmd.append('--debug')
+	if '--secure' in sys.argv:
+		cmd.append('--secure')
 	subprocess.check_call(cmd)
 
 def rebuild():

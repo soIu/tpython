@@ -631,6 +631,6 @@ def print(std::string s):
 	std::cout << s << std::endl;
 
 
-import "tp_ops.h"
+import "tp_ops.gen.h"
 
 #endif
