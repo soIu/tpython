@@ -95,3 +95,5 @@ https://medium.com/@judge_raptor/the-smallest-fastest-python-ever-827a36390fbf
 https://medium.com/@judge_raptor/tpython-with-c-abc90e32d760
 
 https://medium.com/@judge_raptor/pythonic-2869545fcad6
+
+https://medium.com/@judge_raptor/tpythonos-a959ec82793a

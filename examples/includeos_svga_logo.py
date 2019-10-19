@@ -104,28 +104,44 @@ ZZZZZZZZZXXX2Sono22222oX#Zn2nvlilllvoZXZZZZZXXXXSSSSSSSSXX2noXS2SoSXmZ###mmmmmmm
 ZZZZZZZZZZZXZXXS222S2S22XooonlllIvuXXXZXXXXXXXXSSS2SSSSSS1oXZXS2XXmZ###mmmmmmmmmmmmm#mmmmmmmmmmmBmmmmmmmmBmmBmBmBmmmmmmmmmmmmmmmBmmmmmmmmmmmmmmmmmmmmmmmm#######'''
 
 with c++:
+	import <timers>
 	import <x86intrin.h>
 	static char backbuffer[320*200] __attribute__((aligned(16)))
 	def set_pixel(int x, int y, char cl):
 		if x >= 0 && x < 320 && y >= 0 && y < 200:
 			backbuffer[y * 320 + x] = cl
 	@module( mymodule )
-	def start( logo ):
+	def redraw( logo, shift ):
+		int y = 0
+		while y < len(logo):
+			tp_obj line = logo[y]
+			int x = 0
+			while x < len(line):
+				char color = line[x]
+				set_pixel(x,y, color+shift.number.val)
+				x += 1
+			y += 1
+		VGA_gfx::blit_from(backbuffer)
+		return None
+	@module( mymodule )
+	def reset():
 		VGA_gfx::set_mode(VGA_gfx::MODE_320_200_256)
 		VGA_gfx::clear()
 		VGA_gfx::apply_default_palette()
-		while 1:
-			memset(backbuffer, 0, sizeof(backbuffer))
-			int y = 0
-			while y < len(logo):
-				tp_obj line = logo[y]
-				int x = 0
-				while x < len(line):
-					char color = line[x]
-					set_pixel(x,y, color-100)
-					x += 1
-				y += 1
-			VGA_gfx::blit_from(backbuffer)
+		return None
+
 
 import mymodule
-mymodule.start( Logo.splitlines() )
+
+lines = Logo.splitlines()
+
+def test():
+	s = -128
+	for i in range(100000):
+		mymodule.reset()
+		mymodule.redraw( lines, s )
+		s += 1
+		if s >= 32:
+			s = -128
+
+test()
