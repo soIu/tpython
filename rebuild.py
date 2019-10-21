@@ -112,6 +112,9 @@ def gen_interpreter():
 		cmd.append('--debug')
 	if '--secure' in sys.argv:
 		cmd.append('--secure')
+	if '--secure-binary' in sys.argv:
+		cmd.append('--secure')
+		cmd.append('--secure-binary')
 	subprocess.check_call(cmd)
 
 def rebuild():
@@ -220,7 +223,8 @@ def rebuild():
 		opts += ' -g -rdynamic'
 	elif mode == 'linux':
 		#opts += ' -fno-exceptions'  ## TODO
-		pass
+		if '--secure-binary' in sys.argv:
+			opts += ' -rdynamic'
 
 	if '--sdl' in sys.argv:
 		#mods += ' module_sdl.cpp'  # the entire sdl module is actually just in module_sdl.h

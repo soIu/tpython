@@ -1,31 +1,32 @@
-tp_obj tp_copy(TP, tp_obj obj);
-void   tp_set(TP, tp_obj, tp_obj, tp_obj);
-int    tp_iget(TP,tp_obj *r, tp_obj self, tp_obj k);
+def tp_copy(TP, tp_obj obj) ->tp_obj;
+def tp_set(TP, tp_obj, tp_obj, tp_obj);
+def tp_iget(TP,tp_obj *r, tp_obj self, tp_obj k) ->int;
 
-tp_obj tp_mget(TP, tp_obj, tp_obj);
-tp_obj tp_get(TP, tp_obj, tp_obj);
-tp_obj tp_has(TP, tp_obj self, tp_obj k);
-tp_obj tp_len(TP, tp_obj);
-tp_obj tp_call(TP, tp_obj func, tp_obj params);
-tp_obj tp_iter(TP, tp_obj self, tp_obj k);
+def tp_mget(TP, tp_obj, tp_obj) ->tp_obj;
+def tp_get(TP, tp_obj, tp_obj) ->tp_obj;
+def tp_has(TP, tp_obj self, tp_obj k) ->tp_obj;
+def tp_len(TP, tp_obj) ->tp_obj;
+def tp_call(TP, tp_obj func, tp_obj params) ->tp_obj;
+def tp_iter(TP, tp_obj self, tp_obj k) ->tp_obj;
 
-void   tp_del(TP, tp_obj, tp_obj);
-tp_obj tp_str(TP, tp_obj);
-tp_obj tp_repr(TP, tp_obj);
-int    tp_true(TP, tp_obj);
-int    tp_cmp(TP, tp_obj, tp_obj);
-tp_obj tp_add(TP,tp_obj a, tp_obj b) ;
-tp_obj tp_mul(TP, tp_obj a, tp_obj b);
-int    tp_hash(TP, tp_obj v);
+def tp_del(TP, tp_obj, tp_obj);
 
-tp_obj tp_bitwise_and(TP,tp_obj a, tp_obj b) ;
-tp_obj tp_bitwise_or(TP,tp_obj a, tp_obj b) ;
-tp_obj tp_bitwise_xor(TP,tp_obj a, tp_obj b) ;
-tp_obj tp_lsh(TP,tp_obj a, tp_obj b) ;
-tp_obj tp_rsh(TP,tp_obj a, tp_obj b) ;
-tp_obj tp_sub(TP,tp_obj a, tp_obj b) ;
-tp_obj tp_mod(TP,tp_obj a, tp_obj b) ;
-tp_obj tp_div(TP,tp_obj a, tp_obj b) ;
-tp_obj tp_pow(TP,tp_obj a, tp_obj b) ;
-tp_obj tp_bitwise_not(TP, tp_obj);
+def tp_str(TP, tp_obj) ->tp_obj;
+def tp_repr(TP, tp_obj) ->tp_obj;
+def tp_true(TP, tp_obj) ->int;
+def tp_cmp(TP, tp_obj, tp_obj) ->int;
+def tp_add(TP,tp_obj a, tp_obj b) ->tp_obj;
+def tp_mul(TP, tp_obj a, tp_obj b) ->tp_obj;
+def tp_hash(TP, tp_obj v) ->int;
+
+def tp_bitwise_and(TP,tp_obj a, tp_obj b) ->tp_obj;
+def tp_bitwise_or(TP,tp_obj a, tp_obj b) ->tp_obj;
+def tp_bitwise_xor(TP,tp_obj a, tp_obj b) ->tp_obj;
+def tp_lsh(TP,tp_obj a, tp_obj b) ->tp_obj;
+def tp_rsh(TP,tp_obj a, tp_obj b) ->tp_obj;
+def tp_sub(TP,tp_obj a, tp_obj b) ->tp_obj;
+def tp_mod(TP,tp_obj a, tp_obj b) ->tp_obj;
+def tp_div(TP,tp_obj a, tp_obj b) ->tp_obj;
+def tp_pow(TP,tp_obj a, tp_obj b) ->tp_obj;
+def tp_bitwise_not(TP, tp_obj) ->tp_obj;
 

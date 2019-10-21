@@ -7,7 +7,7 @@ def tpd_list_realloc(TP, tpd_list *self, int len):
 
 def tpd_list_set(TP, tpd_list *self,int k, tp_obj v, const char *error):
 	if k >= self->len:
-		tp_raise(,tp_string_atom(tp, "(tpd_list_set) KeyError"))
+		tp_raise(,tp_string_atom(tp, "tpd_list_set KeyError"))
 	self->items[k] = v
 	if tp:
 		tp_grey(tp, v)
@@ -24,7 +24,7 @@ def tpd_list_free(TP, tpd_list *self):
 
 def tpd_list_get(TP, tpd_list *self, int k, const char *error) ->tp_obj:
 	if k >= self->len:
-		tp_raise(tp_None, tp_printf(tp, "(tpd_list_get) KeyError : Index %d request, but length is %d", k, self->len))
+		tp_raise(tp_None, tp_printf(tp, "tpd_list_get KeyError : Index %d request, but length is %d", k, self->len))
 	return self->items[k]
 
 

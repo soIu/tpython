@@ -4,6 +4,8 @@
 #ifndef TP_H
 #define TP_H
 
+import <cstddef>
+
 #ifdef INCLUDEOS
   import <os>
   #ifdef INCLUDEOS_VGA
@@ -14,6 +16,9 @@
     import <hw/ps2.hpp>
     import <hw/vga_gfx.hpp>
   #endif
+#else
+  import <dlfcn.h>
+  static void* __libself__ = NULL
 #endif
 
 import <functional>
@@ -363,12 +368,12 @@ void tp_free(TP, void *);
 #define tp_free(TP,x) free(x)
 #endif
 
-void tp_sandbox(TP, double, unsigned long);
-void tp_time_update(TP);
-void tp_mem_update(TP);
+def tp_sandbox(TP, double, unsigned long);
+def tp_time_update(TP);
+def tp_mem_update(TP);
 
-tp_obj tp_track(TP, tp_obj);
-void   tp_grey(TP,tp_obj);
+def tp_track(TP, tp_obj)->tp_obj;
+def tp_grey(TP,tp_obj);
 
 /* __func__ __VA_ARGS__ __FILE__ __LINE__ */
 
@@ -378,7 +383,8 @@ void   tp_grey(TP,tp_obj);
  * This macro will return from the current function returning "r". The
  * remaining parameters are used to format the exception message.
  */
-void   _tp_raise(TP,tp_obj);
+def _tp_raise(TP,tp_obj);
+
 #define tp_raise(r, obj) { \
 	_tp_raise(tp, obj); \
 	return r; \
@@ -401,18 +407,19 @@ void   _tp_raise(TP,tp_obj);
  * use <tp_string_t> or <tp_string_slice> to create a string where tinypy
  * manages storage for you.
  */
-tp_obj tp_string_atom(TP, const char * v);
-int tp_string_len(tp_obj s);
-char * tp_string_getptr(tp_obj s);
 
-tp_obj tp_string_t(TP, int n);
-/* Function: tp_cstr
- *
- * Fill a C string from a tinypy string, and return as a buffer
- * that needs to be freed by tp_free
- *
- */
-char * tp_cstr(TP, tp_obj v);
+def tp_string_atom(TP, const char * v)->tp_obj;
+
+def tp_string_len(tp_obj s) ->int;
+
+def tp_string_getptr(tp_obj s) ->char*;
+
+def tp_string_t(TP, int n)->tp_obj;
+
+## Function: tp_cstr
+## Fill a C string from a tinypy string, and return as a buffer
+## that needs to be freed by tp_free
+def tp_cstr(TP, tp_obj v) ->char*;
 
 
 @static
@@ -451,7 +458,7 @@ def tp_check_type(TP, int t, tp_obj v) -> tp_obj:
  * >     TP_END
  * > }
  */
-tp_obj tpd_list_get(TP, tpd_list *self, int k, const char *error);
+def tpd_list_get(TP, tpd_list *self, int k, const char *error)->tp_obj;
 
 #define TP_LOOP(e) \
 int __l = tp->params.list.val->len; \
@@ -483,71 +490,74 @@ def tp_integer(int v) -> tp_obj:
  * string reference and length are kept, but no actual substring is stored.
  */
 
-static tp_obj tp_string_from_const(TP, char const * v, int n);
-tp_obj tp_string_from_stdstring(TP, std::string s);
+@static
+def tp_string_from_const(TP, char const * v, int n)->tp_obj;
+
+def tp_string_from_stdstring(TP, std::string s)->tp_obj;
 
 
-tp_obj tp_params(TP);
-tp_obj tp_params_n(TP, int n, tp_obj argv[]);
-tp_obj tp_params_v(TP, int n, ...);
+def tp_params(TP)->tp_obj;
+def tp_params_n(TP, int n, tp_obj argv[])->tp_obj;
+def tp_params_v(TP, int n, ...)->tp_obj;
 
-tp_obj tp_import(TP, tp_obj name, tp_obj code, tp_obj fname);
+def tp_import(TP, tp_obj name, tp_obj code, tp_obj fname)->tp_obj;
 
-tp_obj tp_import_from_buffer(TP, const char * fname, const char * name, void *codes, int len);
-tp_obj tp_import_from_buffer(TP, const char * name, unsigned char *codes, int len);
+def tp_import_from_buffer(TP, const char * fname, const char * name, void *codes, int len)->tp_obj;
+def tp_import_from_buffer(TP, const char * name, unsigned char *codes, int len)->tp_obj;
 
 
-tp_obj tp_ez_call(TP, const char *mod, const char *func, tp_obj params);
-tp_obj tp_eval_from_cstr(TP, const char *text, tp_obj globals);
-tp_obj tp_exec(TP, tp_obj code, tp_obj globals);
-tp_obj tp_compile(TP, tp_obj text, tp_obj fname);
+def tp_ez_call(TP, const char *mod, const char *func, tp_obj params)->tp_obj;
+def tp_eval_from_cstr(TP, const char *text, tp_obj globals)->tp_obj;
+def tp_exec(TP, tp_obj code, tp_obj globals)->tp_obj;
+def tp_compile(TP, tp_obj text, tp_obj fname)->tp_obj;
 
-tp_obj tp_data_t(TP, int magic, void *v);
-tp_obj tp_data(TP, int magic, void *v);  // tracked by default
+def tp_data_t(TP, int magic, void *v)->tp_obj;
+def tp_data(TP, int magic, void *v)->tp_obj;
 
-tp_obj tp_len(TP,tp_obj self);
-int len(tp_obj ob);
+def tp_len(TP,tp_obj self)->tp_obj;
+def len(tp_obj ob)->int;
 
-tp_obj tp_list_t(TP);
+def tp_list_t(TP)->tp_obj;
 #define tp_list tp_list_t
 
-tp_obj tp_list_nt(TP);
-void tpd_list_append(TP,tpd_list *self, tp_obj v);
+def tp_list_nt(TP)->tp_obj;
+def tpd_list_append(TP,tpd_list *self, tp_obj v);
 
-tp_obj tp_dict_t(TP);
-tp_obj tp_dict(TP);  // tracked by default
-tpd_dict *tpd_dict_new(TP);
+def tp_dict_t(TP)->tp_obj;
+def tp_dict(TP)->tp_obj;
 
-tp_obj tp_object_t(TP);
+def tpd_dict_new(TP) ->tpd_dict*;
+
+def tp_object_t(TP)->tp_obj;
 #define tp_object tp_object_t
-tp_obj tp_dict_nt(TP);
+def tp_dict_nt(TP)->tp_obj;
 
-tp_obj tp_function(TP, tp_obj v(TP));
+def tp_function(TP, tp_obj v(TP))->tp_obj;
 
-// note: when this is used from user c++, the lamba must capture by `[=]`
-// the pointer to self, it is up to the user to delete the pointer later.
-tp_obj tp_function(TP, std::function<tp_obj(tp_vm*)>);
+## note: when this is used from user c++, the lamba must capture by `[=]`
+## the pointer to self, it is up to the user to delete the pointer later.
+def tp_function(TP, std::function<tp_obj(tp_vm*)>) ->tp_obj;
 
-tp_obj tp_method(TP, tp_obj self,tp_obj v(TP));
+def tp_method(TP, tp_obj self,tp_obj v(TP)) ->tp_obj;
 
-// note: if below is used for user defined c++ classes,
-// the data members of those class instances will be lost on the `self` below,
-// because when created on the stack, those members are lost when passed to another function
-// TODO capture `self` as a pointer instead for this case.
-tp_obj tp_method(TP, tp_obj self, std::function<tp_obj(tp_vm*)>);
+## note: if below is used for user defined c++ classes,
+## the data members of those class instances will be lost on the `self` below,
+## because when created on the stack, those members are lost when passed to another function
+## TODO capture `self` as a pointer instead for this case.
+def tp_method(TP, tp_obj self, std::function<tp_obj(tp_vm*)>) ->tp_obj;
 
-tp_obj tp_def(TP, tp_obj code, tp_obj g);
-tp_obj tp_bind(TP, tp_obj function, tp_obj self);
+def tp_def(TP, tp_obj code, tp_obj g) ->tp_obj;
+def tp_bind(TP, tp_obj function, tp_obj self)->tp_obj;
 
-tp_obj tp_printf(TP, const char * fmt, ...);
+def tp_printf(TP, const char * fmt, ...)->tp_obj;
 
-tp_vm * tp_init(int argc, char *argv[]);
-void tp_deinit(TP);
+def tp_init(int argc, char *argv[]) ->tp_vm*;
+def tp_deinit(TP);
 
-void tp_module_sys_init(TP, int argc, char * argv[]);
-void tp_module_builtins_init(TP);
-void tp_module_compiler_init(TP);
-void tp_module_corelib_init(TP);
+def tp_module_sys_init(TP, int argc, char * argv[]);
+def tp_module_builtins_init(TP);
+def tp_module_compiler_init(TP);
+def tp_module_corelib_init(TP);
 
 
 @static
@@ -605,8 +615,8 @@ def tp_as_string(TP, tp_obj self) ->std::string:
 	return ss.str()
 
 
-tp_obj tp_get_by_char(TP, tp_obj d, char c);
-void tp_set_by_char(TP, tp_obj d, char c, tp_obj v);
+def tp_get_by_char(TP, tp_obj d, char c)->tp_obj;
+def tp_set_by_char(TP, tp_obj d, char c, tp_obj v);
 
 ## python-style print helper funcs ##
 
@@ -630,6 +640,12 @@ def print(int num):
 def print(std::string s):
 	std::cout << s << std::endl;
 
+#ifndef INCLUDEOS
+@static
+def __init_libself__():
+	__libself__=dlopen(NULL, 1)
+
+#endif
 
 import "tp_ops.gen.h"
 

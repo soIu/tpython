@@ -67,7 +67,7 @@ def tpy_str_index(TP) ->tp_obj:
 	int n = tp_str_index(s,v)
 	if n >= 0:
 		return tp_number(n)
-	tp_raise(tp_None,tp_string_atom(tp, "(tp_str_index) ValueError: substring not found"))
+	tp_raise(tp_None,tp_string_atom(tp, "tp_str_index ValueError: substring not found"))
 
 
 def tpy_chr(TP) ->tp_obj:
@@ -78,7 +78,7 @@ def tpy_chr(TP) ->tp_obj:
 def tpy_ord(TP) ->tp_obj:
 	tp_obj s = TP_STR()
 	if tp_string_len(s) != 1:
-		tp_raise(tp_None,tp_string_atom(tp, "(tp_ord) TypeError: ord() expected a character"))
+		tp_raise(tp_None,tp_string_atom(tp, "tp_ord TypeError: `ord()` expected a character"))
 	return tp_number((unsigned char)tp_string_getptr(s)[0])
 
 

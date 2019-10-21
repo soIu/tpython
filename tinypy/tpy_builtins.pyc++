@@ -1,7 +1,7 @@
 ## File: Builtins
 ## Builtin tinypy functions.
 
-tp_obj tpy_print(TP);
+def tpy_print(TP) ->tp_obj;
 
 def tpy_bind(TP) ->tp_obj:
 	tp_obj r = TP_TYPE(TP_FUNC)
@@ -34,7 +34,7 @@ def tpy_copy(TP) ->tp_obj:
 		return tp_list_copy(tp,r)
 	elif type == TP_DICT:
 		return tp_dict_copy(tp,r)
-	tp_raise(tp_None,tp_string_atom(tp, "(tp_copy) TypeError: ?"))
+	tp_raise(tp_None,tp_string_atom(tp, "tp_copy TypeError: ?"))
 
 
 
@@ -46,7 +46,7 @@ def tpy_len(TP) ->tp_obj:
 def tpy_assert(TP) ->tp_obj:
 	int a = TP_NUM()
 	if (a) { return tp_None; }
-	tp_raise(tp_None, tp_string_atom(tp, "(tp_assert) AssertionError"));
+	tp_raise(tp_None, tp_string_atom(tp, "tp_assert AssertionError"));
 
 
 def tpy_range(TP) ->tp_obj:
@@ -115,7 +115,7 @@ def tpy_float(TP) ->tp_obj:
 		if strchr(s,'.'):
 			return tp_number(atof(s))
 		return(tp_number(strtol(s,0,ord)))
-	tp_raise(tp_None,tp_string_atom(tp, "(tpy_float) TypeError: ?"));
+	tp_raise(tp_None,tp_string_atom(tp, "tpy_float TypeError: ?"));
 
 def tpy_fpack(TP) ->tp_obj:
 	tp_num v = TP_NUM()
@@ -176,7 +176,7 @@ def tpy_setmeta(TP) ->tp_obj:
 	if self.type.type_id < TP_HAS_META:
 		tp_raise(
 		  tp_None,
-		  tp_string_atom(tp, "(tp_check_type) TypeError: type does not support meta."))
+		  tp_string_atom(tp, "tp_check_type TypeError: type does not support meta."))
 	tp_obj meta = TP_TYPE(TP_INTERFACE)
 	self.obj.info->meta = meta
 	return tp_None
@@ -187,7 +187,7 @@ def tpy_getmeta(TP) ->tp_obj:
 	if self.type.type_id < TP_HAS_META:
 		tp_raise(
 		  tp_None,
-		  tp_string_atom(tp, "(tp_check_type) TypeError: type does not support meta."))
+		  tp_string_atom(tp, "tp_check_type TypeError: type does not support meta."))
 	return self.obj.info->meta
 
 ## Function: tp_object
@@ -280,7 +280,7 @@ def tpy_import(TP) ->tp_obj:
 	tp_obj modname = TP_OBJ()
 	tp_obj member = TP_OBJ()
 	if not tp_has(tp, tp->modules, modname).number.val:
-		tp_raise(tp_None, tp_string_atom(tp, "(tpy_import) cannot import module"))
+		tp_raise(tp_None, tp_string_atom(tp, "tpy_import: cannot import module"))
 	tp_obj mod = tp_get(tp, tp->modules, modname)
 	if member.type.type_id == TP_NONE:
 		## the entire module
@@ -309,7 +309,7 @@ def tpy_import(TP) ->tp_obj:
 			tp_obj v = tp_mget(tp, mod, k)
 			tp_dict_set(tp, ret, k, v)
 		return ret
-	tp_raise(tp_None, tp_string_atom(tp, "(tpy_import) cannot import the given member "))
+	tp_raise(tp_None, tp_string_atom(tp, "tpy_import: cannot import the given member "))
 	return tp_None
 
 

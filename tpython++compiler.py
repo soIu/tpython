@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import os, sys, subprocess, random
 
-def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=False ):
+def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=False, binary_scramble=False ):
 	if not type(source) is list:
 		source = source.splitlines()
 	out = []
@@ -40,9 +40,16 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 						if sig not in functions[fname]['calls']:
 							functions[fname]['calls'].append(sig)
 						if 'scramble' in functions[fname]:
-							scram = functions[fname]['scramble']
-							#ln = ln.replace(fname, scram + '/*%s*/'%fname)
-							ln = ln.replace(fname, scram)
+							finfo = functions[fname]
+							scram = finfo['scramble']
+							if binary_scramble and fname != '__init_libself__' and not 'static' in finfo and 'auto' not in finfo['arg_types'] and 'std::function<tp_obj(tp_vm*)>' not in finfo['arg_types'] and len(finfo['defs'])==1 and '...' not in finfo['arg_types']:
+								#bscram = 'reinterpret_cast<%s (*)(%s)>(dlsym(__libself__,"%s"))' %(finfo['returns'], ' '.join(finfo['arg_types']), scram)
+								bscram = '( (%s (*)(%s))(dlsym(__libself__,"%s")) )' %(finfo['returns'], ','.join(finfo['arg_types']), scram)
+								ln = ln.replace(fname, bscram)
+
+							else:
+								ln = ln.replace(fname, scram)
+
 							s = ln.strip()
 
 
@@ -151,10 +158,15 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			out.append( '	public:')
 
 		elif s.startswith('def '):
-			if not s.endswith(':'):
-				raise SyntaxError(ln)
-			autobrace += 1
-			autofunc += 1
+			is_forward_decl = False
+			if s.endswith(';'):
+				is_forward_decl = True
+			else:
+				if not s.endswith( ':' ):
+					raise SyntaxError(ln)
+				autobrace += 1
+				autofunc += 1
+
 			func_name = s[len('def ') : ].split('(')[0].strip()
 			is_scram = False
 
@@ -185,6 +197,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 			#rawargs = s.split('(')[-1].split(')')[0]
 			rawargs = s.split('->')[0][ s.index('(')+1 : s.rindex(')') ]
+			arg_types = []
 			for i, arg in enumerate(rawargs.split(',')):
 				arg = arg.strip()
 				if not arg:
@@ -219,11 +232,44 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				else:
 					if ' ' not in arg and arg != 'TP' and arg != 'void' and arg != '...':
 						arg = 'auto ' + arg
+						arg_types.append('auto')
+					elif arg == 'TP':
+						arg_types.append('tp_vm*')
+					elif arg == '...':
+						arg_types.append('...')
+					else:
+						if ' ' in arg:
+							atype = arg[ : arg.rindex(' ') ].strip()
+							aname = arg.split()[-1]
+							pointers = aname.count('*')
+							if aname.endswith(']'):
+								assert aname.count('[') == aname.count(']')
+								pointers += aname.count(']')
+							if pointers:
+								atype += '*' * pointers
+							if atype=='TP':
+								arg_types.append('tp_vm*')
+							else:
+								arg_types.append(atype)
+
 					args.append( arg )
-			if in_class:
-				func = '\t' * indent
-			else:
-				func = '\t'
+
+
+
+			if not in_class and not is_scram and not is_forward_decl:
+				if func_name not in functions:
+					functions[ func_name ] = {'defs':[], 'calls':[]}
+
+				functions[ func_name ]['returns'] = returns
+				functions[ func_name ]['args'] = args
+				functions[ func_name ]['arg_types'] = arg_types
+				if prevs == '@static':
+					functions[ func_name ]['static'] = True
+
+				sig = '%s:%s `%s`' %(file_name, line_num, s)
+				if sig not in functions[func_name]['defs']:
+					functions[func_name]['defs'].append(sig)
+
 
 			exopts = ''
 			if prevs == '@const':
@@ -231,10 +277,22 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			if prevs == '@static':
 				returns = 'static ' + returns
 
-			if in_class and func_name == class_name:
-				func += '%s(%s) %s{' %(func_name, ','.join(args), exopts)
+			if in_class:
+				func = '\t' * indent
 			else:
-				func += '%s %s(%s) %s{' %(returns, func_name, ','.join(args), exopts)
+				func = '\t'
+
+			if is_forward_decl:
+				if in_class and func_name == class_name:
+					func += '%s(%s) %s;' %(func_name, rawargs, exopts)
+				else:
+					func += '%s %s(%s) %s;' %(returns, func_name, rawargs, exopts)
+			else:
+				if in_class and func_name == class_name:
+					func += '%s(%s) %s{' %(func_name, ','.join(args), exopts)
+				else:
+					func += '%s %s(%s) %s{' %(returns, func_name, ','.join(args), exopts)
+
 			out.append(func)
 
 			if prevs.startswith('@module'):
@@ -254,12 +312,6 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					out.append('			tp_set(tp, *this, tp_string_atom(tp, "%s"), tp_function(tp, __%s_wrapper));' %(methname, methname))
 			elif in_class:
 				classes[ class_name ][ func_name ] = args
-			elif not is_scram:
-				if func_name not in functions:
-					functions[ func_name ] = {'defs':[], 'calls':[]}
-				sig = '%s:%s `%s`' %(file_name, line_num, s)
-				if sig not in functions[func_name]['defs']:
-					functions[func_name]['defs'].append(sig)
 
 		elif s.startswith('switch ') and s.endswith(':'):
 			autobrace += 1
@@ -435,7 +487,7 @@ def metapy2tinypypp( source ):
 	cpp = pythonicpp( cpp, swap_self_to_this=True )
 	return scripts, cpp
 
-def pythonicpp_translate( path, secure=False ):
+def pythonicpp_translate( path, secure=False, secure_binary=False ):
 	info = {'classes':{}, 'functions':{}}
 
 	if secure:
@@ -451,22 +503,25 @@ def pythonicpp_translate( path, secure=False ):
 			print('	' + cname)
 		print('functions:')
 		alphabet = 'abcdefghijklmnopqrstuvwxyz'
-		skip = 'main _tp_min _tp_gcinc tp_default_echo tp_string_len tp_string_getptr tp_string_atom tp_str tp_true len'.split()
+		skip = 'main _tp_min _tp_gcinc tp_default_echo tp_string_len tp_string_getptr tp_string_atom tp_str tp_true len tp_params_v tpd_list_find'.split()
 		for fname in info['functions']:
 			print('	' + fname)
 			if fname not in skip:
 				if 'operator' in fname or '::' in fname:
 					continue
 				scram = [random.choice(alphabet) for i in range(16)]
-				info['functions'][fname]['scramble'] = ''.join(scram)
+				if '--debug' in sys.argv:
+					info['functions'][fname]['scramble'] = ''.join(scram) + '_' + fname.upper()
+				else:
+					info['functions'][fname]['scramble'] = ''.join(scram)
 
 	## final pass apply scrambling
 	for file in os.listdir( path ):
 		if file.endswith( '.pyc++' ):
-			cpp = pythonicpp( open(os.path.join(path,file),'rb').read(), header="/*generated from: %s*/" %file, info=info )
+			cpp = pythonicpp( open(os.path.join(path,file),'rb').read(), header="/*generated from: %s*/" %file, info=info, binary_scramble=secure_binary )
 			open(os.path.join(path, file.replace('.pyc++', '.gen.cpp') ),'wb').write(cpp)
 		elif file.endswith( '.pyh' ):
-			cpp = pythonicpp( open(os.path.join(path,file),'rb').read(), header="/*generated from: %s*/" %file, info=info )
+			cpp = pythonicpp( open(os.path.join(path,file),'rb').read(), header="/*generated from: %s*/" %file, info=info, binary_scramble=secure_binary )
 			open(os.path.join(path, file.replace('.pyh', '.gen.h') ),'wb').write(cpp)
 
 	return info
@@ -506,7 +561,7 @@ def main():
 	if pythonicpp_paths:
 		for path in pythonicpp_paths:
 			print('translate path: ', path)
-			pythonicpp_translate( path, secure='--secure' in sys.argv )
+			pythonicpp_translate( path, secure='--secure' in sys.argv, secure_binary='--secure-binary' in sys.argv )
 
 main()
 

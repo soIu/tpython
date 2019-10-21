@@ -79,9 +79,10 @@ def crash_handler(int sig):
 	#endif
 	exit(1);
 
-void * _tp_import_modules(TP);
-/* from runtime */
-tp_obj tp_load(TP, const char*);
+def _tp_import_modules(TP) ->void*;
+
+## from runtime.pyc++
+def tp_load(TP, const char*) ->tp_obj;
 
 
 #ifdef USE_EMBEDDED_BYTECODE
@@ -129,6 +130,7 @@ def main(int argc,  char *argv[]) -> int:
 	  signal(SIGABRT, crash_handler); // some old places in tinypy code had used `abort()`
 	  signal(SIGINT, crash_handler);  // allow CTRL+C to halt the program
 	#endif
+	__init_libself__()
 	#ifdef USE_PYTHON
 	  Py_SetStandardStreamEncoding("utf-8", "surrogateescape");
 	  Py_Initialize();

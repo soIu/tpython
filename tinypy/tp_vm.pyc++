@@ -112,7 +112,7 @@ def tp_handle(TP):
 	  longjmp(tp->nextexpr,1)
 	#endif
 
-int tp_step(TP)
+def tp_step(TP) ->int;
 
 def tp_continue_frame(TP, int cur):
 	jmp_buf tmp

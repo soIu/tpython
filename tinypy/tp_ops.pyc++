@@ -365,25 +365,66 @@ def tp_mod(TP, tp_obj a, tp_obj b) -> tp_obj:
 	throw "TypeError in tp_ops.cpp:tp_mod invalid object type to use modulus operator with"
 
 
-//tp_raise(tp_None,tp_string_atom(tp, "(" #name ") TypeError: unsupported operand type(s)")); \
 
-#define TP_OP(name,expr) \
-	tp_obj name(TP,tp_obj _a,tp_obj _b) { \
-	if (_a.type.type_id == TP_NUMBER && _a.type.type_id == _b.type.type_id) { \
-		tp_num a = _a.number.val; tp_num b = _b.number.val; \
-		return tp_number(expr); \
-	} \
-	throw "TypeError in tp_ops.cpp unsupported operand type: (" #name ")"; \
-}
+def tp_bitwise_and(TP,tp_obj _a,tp_obj _b) ->tp_obj:
+	if _a.type.type_id == TP_NUMBER && _a.type.type_id == _b.type.type_id:
+		tp_num a = _a.number.val
+		tp_num b = _b.number.val
+		return tp_number( ((long)a) & ((long)b) )
+	throw "TypeError: operand type `bitwise and` requires numbers"
 
-TP_OP(tp_bitwise_and,((long)a)&((long)b));
-TP_OP(tp_bitwise_or,((long)a)|((long)b));
-TP_OP(tp_bitwise_xor,((long)a)^((long)b));
-TP_OP(tp_lsh,((long)a)<<((long)b));
-TP_OP(tp_rsh,((long)a)>>((long)b));
-TP_OP(tp_sub,a-b);
-TP_OP(tp_div,a/b);
-TP_OP(tp_pow,pow(a,b));
+def tp_bitwise_or(TP,tp_obj _a,tp_obj _b) ->tp_obj:
+	if _a.type.type_id == TP_NUMBER && _a.type.type_id == _b.type.type_id:
+		tp_num a = _a.number.val
+		tp_num b = _b.number.val
+		return tp_number( ((long)a) | ((long)b) )
+	throw "TypeError: operand type `bitwise or` requires numbers"
+
+
+def tp_bitwise_xor(TP,tp_obj _a,tp_obj _b) ->tp_obj:
+	if _a.type.type_id == TP_NUMBER && _a.type.type_id == _b.type.type_id:
+		tp_num a = _a.number.val
+		tp_num b = _b.number.val
+		return tp_number( ((long)a) ^ ((long)b) )
+	throw "TypeError: operand type `bitwise xor` requires numbers"
+
+
+def tp_lsh(TP,tp_obj _a,tp_obj _b) ->tp_obj:
+	if _a.type.type_id == TP_NUMBER && _a.type.type_id == _b.type.type_id:
+		tp_num a = _a.number.val
+		tp_num b = _b.number.val
+		return tp_number( ((long)a) << ((long)b) )
+	throw "TypeError: operand type `bitwise left shift` requires numbers"
+
+def tp_rsh(TP,tp_obj _a,tp_obj _b) ->tp_obj:
+	if _a.type.type_id == TP_NUMBER && _a.type.type_id == _b.type.type_id:
+		tp_num a = _a.number.val
+		tp_num b = _b.number.val
+		return tp_number( ((long)a) >> ((long)b) )
+	throw "TypeError: operand type `bitwise right shift` requires numbers"
+
+
+def tp_sub(TP,tp_obj _a,tp_obj _b) ->tp_obj:
+	if _a.type.type_id == TP_NUMBER && _a.type.type_id == _b.type.type_id:
+		tp_num a = _a.number.val
+		tp_num b = _b.number.val
+		return tp_number( ((long)a) - ((long)b) )
+	throw "TypeError: operand type `-` requires numbers"
+
+def tp_div(TP,tp_obj _a,tp_obj _b) ->tp_obj:
+	if _a.type.type_id == TP_NUMBER && _a.type.type_id == _b.type.type_id:
+		tp_num a = _a.number.val
+		tp_num b = _b.number.val
+		return tp_number( ((long)a) / ((long)b) )
+	throw "TypeError: operand type `/` requires numbers"
+
+def tp_pow(TP,tp_obj _a,tp_obj _b) ->tp_obj:
+	if _a.type.type_id == TP_NUMBER && _a.type.type_id == _b.type.type_id:
+		tp_num a = _a.number.val
+		tp_num b = _b.number.val
+		return tp_number( pow(a,b) )
+	throw "TypeError: operand type `**` requires numbers"
+
 
 def tp_bitwise_not(TP, tp_obj a) ->tp_obj:
 	if a.type.type_id == TP_NUMBER:
