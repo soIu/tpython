@@ -1,8 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-import os, sys, subprocess, random
+import os, sys, subprocess, random, json
 
-def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=False, binary_scramble=False ):
+def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=False, binary_scramble=False, mangle_map=None ):
 	if not type(source) is list:
 		source = source.splitlines()
 	out = []
@@ -42,9 +42,25 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 						if 'scramble' in functions[fname]:
 							finfo = functions[fname]
 							scram = finfo['scramble']
-							if binary_scramble and fname != '__init_libself__' and not 'static' in finfo and 'auto' not in finfo['arg_types'] and 'std::function<tp_obj(tp_vm*)>' not in finfo['arg_types'] and len(finfo['defs'])==1 and '...' not in finfo['arg_types']:
-								#bscram = 'reinterpret_cast<%s (*)(%s)>(dlsym(__libself__,"%s"))' %(finfo['returns'], ' '.join(finfo['arg_types']), scram)
-								bscram = '( (%s (*)(%s))(dlsym(__libself__,"%s")) )' %(finfo['returns'], ','.join(finfo['arg_types']), scram)
+
+							ok = False
+							if mangle_map and binary_scramble:
+								if fname != '__init_libself__' and not 'static' in finfo and 'auto' not in finfo['arg_types'] and 'std::function<tp_obj(tp_vm*)>' not in finfo['arg_types'] and len(finfo['defs'])==1 and '...' not in finfo['arg_types']:
+									for mangled in mangle_map:
+										if scram in mangled:
+											scram = mangled
+											ok = True
+									if not ok:
+										print('WARN: can not unmangle: ' + scram)
+
+							if ok and binary_scramble:
+
+								if '--debug' in sys.argv:
+									bscram = '( (%s (*)(%s)) ( [](){std::cout<<__libself__<<std::endl<<"%s"<<std::endl; auto fptr=dlsym(__libself__,"%s"); std::cout<<fptr<<std::endl; return fptr;}() ) )' %(finfo['returns'], ','.join(finfo['arg_types']), scram, scram)
+								else:
+									#bscram = 'reinterpret_cast<%s (*)(%s)>(dlsym(__libself__,"%s"))' %(finfo['returns'], ' '.join(finfo['arg_types']), scram)
+									bscram = '( (%s (*)(%s))(dlsym(__libself__,"%s")) )' %(finfo['returns'], ','.join(finfo['arg_types']), scram)
+
 								ln = ln.replace(fname, bscram)
 
 							else:
@@ -487,9 +503,9 @@ def metapy2tinypypp( source ):
 	cpp = pythonicpp( cpp, swap_self_to_this=True )
 	return scripts, cpp
 
-def pythonicpp_translate( path, secure=False, secure_binary=False ):
-	info = {'classes':{}, 'functions':{}}
-
+def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=None, obfuscate_map=None ):
+	new_obfuscate = {}
+	info = {'classes':{}, 'functions':{}, 'obfuscations':new_obfuscate}
 	if secure:
 		## first pass gather function info
 		for file in os.listdir( path ):
@@ -498,30 +514,39 @@ def pythonicpp_translate( path, secure=False, secure_binary=False ):
 			elif file.endswith( '.pyh' ):
 				cpp = pythonicpp( open(os.path.join(path,file),'rb').read(), header="/*generated from: %s*/" %file, info=info )
 
+
 		print('classes:')
 		for cname in info['classes']:
 			print('	' + cname)
 		print('functions:')
 		alphabet = 'abcdefghijklmnopqrstuvwxyz'
-		skip = 'main _tp_min _tp_gcinc tp_default_echo tp_string_len tp_string_getptr tp_string_atom tp_str tp_true len tp_params_v tpd_list_find'.split()
+		skip = 'main crash_handler _tp_min _tp_gcinc tp_default_echo tp_string_len tp_string_getptr tp_string_atom tp_str tp_true len tp_params_v tpd_list_find'.split()
 		for fname in info['functions']:
 			print('	' + fname)
 			if fname not in skip:
 				if 'operator' in fname or '::' in fname:
 					continue
-				scram = [random.choice(alphabet) for i in range(16)]
-				if '--debug' in sys.argv:
-					info['functions'][fname]['scramble'] = ''.join(scram) + '_' + fname.upper()
-				else:
+				if obfuscate_map:
+					assert fname in obfuscate_map
+					scram = obfuscate_map[fname]
 					info['functions'][fname]['scramble'] = ''.join(scram)
+
+				else:
+					scram = [random.choice(alphabet) for i in range(16)]
+					if '--debug' in sys.argv:
+						info['functions'][fname]['scramble'] = ''.join(scram) + '_' + fname.upper()
+					else:
+						info['functions'][fname]['scramble'] = ''.join(scram)
+
+					new_obfuscate[fname] =info['functions'][fname]['scramble']
 
 	## final pass apply scrambling
 	for file in os.listdir( path ):
 		if file.endswith( '.pyc++' ):
-			cpp = pythonicpp( open(os.path.join(path,file),'rb').read(), header="/*generated from: %s*/" %file, info=info, binary_scramble=secure_binary )
+			cpp = pythonicpp( open(os.path.join(path,file),'rb').read(), header="/*generated from: %s*/" %file, info=info, binary_scramble=secure_binary, mangle_map=mangle_map )
 			open(os.path.join(path, file.replace('.pyc++', '.gen.cpp') ),'wb').write(cpp)
 		elif file.endswith( '.pyh' ):
-			cpp = pythonicpp( open(os.path.join(path,file),'rb').read(), header="/*generated from: %s*/" %file, info=info, binary_scramble=secure_binary )
+			cpp = pythonicpp( open(os.path.join(path,file),'rb').read(), header="/*generated from: %s*/" %file, info=info, binary_scramble=secure_binary, mangle_map=mangle_map )
 			open(os.path.join(path, file.replace('.pyh', '.gen.h') ),'wb').write(cpp)
 
 	return info
@@ -530,6 +555,9 @@ def main():
 	input_file = None
 	exargs = []
 	pythonicpp_paths = []
+	mangle_map = []
+	obfuscate_map = {}
+
 	for arg in sys.argv[1:]:
 		if arg.endswith('.py'):
 			input_file = arg
@@ -537,6 +565,10 @@ def main():
 			exargs.append(arg)
 		elif os.path.isdir(arg):
 			pythonicpp_paths.append( arg )
+		elif arg.startswith('[') and arg.endswith(']'):
+			mangle_map = json.loads(arg)
+		elif arg.endswith('.json'):
+			obfuscate_map = json.loads(open(arg,'rb').read())
 
 	if input_file:
 		path, name = os.path.split(input_file)
@@ -561,7 +593,16 @@ def main():
 	if pythonicpp_paths:
 		for path in pythonicpp_paths:
 			print('translate path: ', path)
-			pythonicpp_translate( path, secure='--secure' in sys.argv, secure_binary='--secure-binary' in sys.argv )
+			info = pythonicpp_translate(
+				path, 
+				secure='--secure' in sys.argv, 
+				secure_binary='--secure-binary' in sys.argv, 
+				mangle_map=mangle_map,
+				obfuscate_map=obfuscate_map
+			)
+			if not obfuscate_map:
+				p = path.split('/')[-1]
+				open('/tmp/%s.json' %p, 'wb').write(json.dumps(info['obfuscations']))
 
 main()
 

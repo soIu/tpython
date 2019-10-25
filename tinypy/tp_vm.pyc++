@@ -535,7 +535,7 @@ def tp_step(TP) ->int:
 					break;
 				default:
 					printf("INVALID BYTE CODE: %i \n", e.i);
-					tp_raise(0,tp_string_atom(tp, "(tp_step) RuntimeError: invalid instruction"));
+					tp_raise(0,tp_string_atom(tp, "tp_step RuntimeError: invalid instruction"));
 					break;
 				#endif
 		#ifdef TP_SANDBOX

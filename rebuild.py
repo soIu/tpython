@@ -103,25 +103,40 @@ os_add_stdout(tpythonos default_stdout)
 
 #gcc -c -Q -O3 --help=optimizers | grep enabled
 
-def gen_interpreter():
+def parse_exe_symbols():
+	symbols = subprocess.check_output(['strings', './tpython++'])
+	ret = []
+	for name in symbols.splitlines():
+		if name.startswith('_Z') and '.' not in name:
+			ret.append(name)
+	return ret
+
+def gen_interpreter(stage=None):
 	cmd = [
 		'./tpython++compiler.py', 
 		'./tinypy'
 	]
-	if '--debug' in sys.argv:
+	if '--debug' in sys.argv or stage==1:
 		cmd.append('--debug')
 	if '--secure' in sys.argv:
 		cmd.append('--secure')
 	if '--secure-binary' in sys.argv:
 		cmd.append('--secure')
 		cmd.append('--secure-binary')
+		if stage==2:
+			cmd.append( json.dumps(parse_exe_symbols()) )  ## generated at stage 1
+			cmd.append( '/tmp/tinypy.json' )  ## generated at stage 1
+	#print(cmd)
 	subprocess.check_call(cmd)
 
-def rebuild():
+def rebuild(stage=None):
 	os.system('rm -f tinypy/__user__.gen.h')
 	os.system('rm -f tinypy/*.gcda')
+	if stage is None or stage < 2:
+		os.system('rm -f /tmp/tinypy.json')
+
 	gen_interpreter_codes( randomize='--secure' in sys.argv)
-	gen_interpreter()
+	gen_interpreter(stage=stage)
 
 	mode = 'linux'
 	exe = 'tpython++'
@@ -143,7 +158,7 @@ def rebuild():
 				'--gen-header=embedded_bytecode.gen.h', 
 				arg
 			]
-			if '--debug' in sys.argv:
+			if '--debug' in sys.argv or stage==1:
 				cmd.append('--debug')
 			subprocess.check_call(cmd)
 			os.system('cp -v /tmp/embedded_bytecode.gen.h ./tinypy/.')
@@ -218,7 +233,7 @@ def rebuild():
 			assert os.path.isfile(CC)
 
 	###############################
-	if '--debug' in sys.argv:
+	if '--debug' in sys.argv or stage==1:
 		defs += ' -DDEBUG'
 		opts += ' -g -rdynamic'
 	elif mode == 'linux':
@@ -334,4 +349,12 @@ def rebuild():
 				else:
 					os.system('cp -v /usr/lib/gcc/x86_64-w64-mingw32/5.3-posix/%s ./%s' %(dll, dll))
 
-rebuild()
+
+def main():
+	if '--secure-binary' in sys.argv:
+		rebuild(stage=1)
+		rebuild(stage=2)
+	else:
+		rebuild()
+
+main()
