@@ -158,7 +158,7 @@ def rebuild(stage=None):
 				'--gen-header=embedded_bytecode.gen.h', 
 				arg
 			]
-			if '--debug' in sys.argv or stage==1:
+			if '--debug' in sys.argv:
 				cmd.append('--debug')
 			subprocess.check_call(cmd)
 			os.system('cp -v /tmp/embedded_bytecode.gen.h ./tinypy/.')
@@ -233,13 +233,15 @@ def rebuild(stage=None):
 			assert os.path.isfile(CC)
 
 	###############################
-	if '--debug' in sys.argv or stage==1:
+	if '--debug' in sys.argv:
 		defs += ' -DDEBUG'
 		opts += ' -g -rdynamic'
 	elif mode == 'linux':
 		#opts += ' -fno-exceptions'  ## TODO
-		if '--secure-binary' in sys.argv:
-			opts += ' -rdynamic'
+		pass
+	if '--secure-binary' in sys.argv:
+		opts += ' -rdynamic'
+		exeopts += ' -fPIC -Wl,--export-dynamic'
 
 	if '--sdl' in sys.argv:
 		#mods += ' module_sdl.cpp'  # the entire sdl module is actually just in module_sdl.h

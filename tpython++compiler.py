@@ -51,11 +51,11 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 											scram = mangled
 											ok = True
 									if not ok:
-										print('WARN: can not unmangle: ' + scram)
+										print('WARN: can not find mangled version of: ' + scram)
 
 							if ok and binary_scramble:
 
-								if '--debug' in sys.argv:
+								if '--debug-obfuscate' in sys.argv:
 									bscram = '( (%s (*)(%s)) ( [](){std::cout<<__libself__<<std::endl<<"%s"<<std::endl; auto fptr=dlsym(__libself__,"%s"); std::cout<<fptr<<std::endl; return fptr;}() ) )' %(finfo['returns'], ','.join(finfo['arg_types']), scram, scram)
 								else:
 									#bscram = 'reinterpret_cast<%s (*)(%s)>(dlsym(__libself__,"%s"))' %(finfo['returns'], ' '.join(finfo['arg_types']), scram)
