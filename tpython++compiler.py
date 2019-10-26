@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 import os, sys, subprocess, random, json
 
+__xorscrams__ = {}
+
 def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=False, binary_scramble=False, mangle_map=None ):
 	if not type(source) is list:
 		source = source.splitlines()
@@ -58,8 +60,28 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 								if '--debug-obfuscate' in sys.argv:
 									bscram = '( (%s (*)(%s)) ( [](){std::cout<<__libself__<<std::endl<<"%s"<<std::endl; auto fptr=dlsym(__libself__,"%s"); std::cout<<fptr<<std::endl; return fptr;}() ) )' %(finfo['returns'], ','.join(finfo['arg_types']), scram, scram)
 								else:
-									#bscram = 'reinterpret_cast<%s (*)(%s)>(dlsym(__libself__,"%s"))' %(finfo['returns'], ' '.join(finfo['arg_types']), scram)
-									bscram = '( (%s (*)(%s))(dlsym(__libself__,"%s")) )' %(finfo['returns'], ','.join(finfo['arg_types']), scram)
+									#bscram = '( (%s (*)(%s))(dlsym(__libself__,"%s")) )' %(finfo['returns'], ','.join(finfo['arg_types']), scram)
+									#if scram not in __xorscrams__:
+									xorkey = []
+									xscram = []
+									for i in range(len(scram)):
+										x = int( random.uniform(0,255) )
+										xorkey.append(x)
+										c = ord(scram[i]) ^ x
+										xscram.append( c )
+
+									sid = int( random.uniform(0,255) ) #len(__xorscrams__)
+									#__xorscrams__[ scram ] = sid
+							
+									lambda_scram = [
+										'char _[%s];' %len(scram),
+										'int __[%s]{%s};' %(len(scram), str(xscram)[1:-1] ),
+										'int ___[%s]{%s};' %(len(scram), str(xorkey)[1:-1] ),
+										'for (int _i=0; _i<%s; _i++) _[_i]=__[_i]^___[_i];' %len(scram),
+										'return std::string(_, %s);' %len(scram)
+									]
+									lambda_scram = ' '.join(lambda_scram)
+									bscram = '( (%s (*)(%s))(dlsym(__libself__,[](){%s}().c_str() )) )' %(finfo['returns'], ','.join(finfo['arg_types']), lambda_scram)
 
 								ln = ln.replace(fname, bscram)
 
