@@ -116,7 +116,7 @@ def gen_interpreter(stage=None):
 		'./tpython++compiler.py', 
 		'./tinypy'
 	]
-	if '--debug' in sys.argv or stage==1:
+	if '--debug' in sys.argv:
 		cmd.append('--debug')
 	if '--secure' in sys.argv:
 		cmd.append('--secure')
@@ -163,7 +163,7 @@ def rebuild(stage=None):
 				cmd.append('--debug')
 			subprocess.check_call(cmd)
 			os.system('cp -v /tmp/embedded_bytecode.gen.h ./tinypy/__user_bytecode__.gen.h')
-			if os.path.isfile('./tinypy/__user_bytecode__.gen.h'):
+			if os.path.isfile('./tinypy/__user_pythonic__.pyh'):
 				defs += ' -DUSE_USER_CUSTOM_CPP'
 			break
 
@@ -244,7 +244,8 @@ def rebuild(stage=None):
 		#opts += ' -fno-exceptions'  ## TODO
 		pass
 	if '--secure-binary' in sys.argv:
-		opts += ' -rdynamic'
+		if '-rdynamic' not in opts:
+			opts += ' -rdynamic'
 		exeopts += ' -fPIC -Wl,--export-dynamic'
 
 	if '--sdl' in sys.argv:

@@ -53,9 +53,12 @@ def main(args=None):
 	posargs = []
 	options = {}
 	save_as_header = None
+	do_debug = False
 	for arg in args:
 		if arg.startswith('--gen-header='):
 			save_as_header = arg.split('=')[-1]
+		elif arg == '--debug':
+			do_debug = True
 
 	opts, args = getopt(args[1:], 'cn:o:d')
 	opts = dict(opts)
@@ -88,6 +91,10 @@ def main(args=None):
 		out = '\n'.join(out)
 	elif save_as_header:
 		out = []
+		if do_debug:
+			out.append('/*')
+			out.append(s)
+			out.append('*/')
 		cols = 16
 		name = save_as_header.replace('.', '_')
 		out.append("""static unsigned char __%s__[] = {""" % name)

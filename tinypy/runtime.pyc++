@@ -188,6 +188,9 @@ def tp_module_corelib_init(TP):
 	  tp_module_vga_init(tp)
 	#endif
 	#ifdef USE_USER_CUSTOM_CPP
+	  #ifdef DEBUG
+	    std::cout << "runtime.cpp: module_init USER Pythonic++" << std::endl
+	  #endif
 	  module_init(tp)
 	#endif
 

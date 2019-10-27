@@ -644,10 +644,17 @@ def print(int num):
 def print(std::string s):
 	std::cout << s << std::endl;
 
+@static
+def print(void* v):
+	std::cout << v << std::endl;
+
 #ifndef INCLUDEOS
 @static
 def __init_libself__():
 	__libself__=dlopen(NULL, 1)
+	#ifdef DEBUG
+	print(__libself__)
+	#endif
 
 #endif
 

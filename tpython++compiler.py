@@ -2,8 +2,16 @@
 # -*- coding: utf-8 -*-
 import os, sys, subprocess, random, json
 
-def bin_scramble(fname, finfo):
+def bin_scramble(fname, finfo, mangle_map):
 	scram = finfo['scramble']
+	ok = False
+	for mangled in mangle_map:
+		if scram in mangled:
+			scram = mangled
+			ok = True
+	if not ok:
+		print('WARN: can not find mangled version of: ' + scram)
+		return scram
 
 	xorkey = []
 	xscram = []
@@ -18,10 +26,12 @@ def bin_scramble(fname, finfo):
 		'int __[%s]{%s};' %(len(scram), str(xscram)[1:-1] ),
 		'int ___[%s]{%s};' %(len(scram), str(xorkey)[1:-1] ),
 		'for (int _i=0; _i<%s; _i++) _[_i]=__[_i]^___[_i];' %len(scram),
+		##'std::cout<< std::string(_, %s) <<std::endl;' %len(scram),
 		'return std::string(_, %s);' %len(scram)
 	]
 	lambda_scram = ' '.join(lambda_scram)
 	bscram = '( (%s (*)(%s))(dlsym(__libself__,[](){%s}().c_str() )) )' %(finfo['returns'], ','.join(finfo['arg_types']), lambda_scram)
+	#bscram = '( (%s (*)(%s))(dlsym(dlopen(NULL, 1),[](){%s}().c_str() )) )' %(finfo['returns'], ','.join(finfo['arg_types']), lambda_scram)
 	return bscram
 
 def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=False, binary_scramble=False, mangle_map=None ):
@@ -81,7 +91,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 									bscram = '( (%s (*)(%s)) ( [](){std::cout<<__libself__<<std::endl<<"%s"<<std::endl; auto fptr=dlsym(__libself__,"%s"); std::cout<<fptr<<std::endl; return fptr;}() ) )' %(finfo['returns'], ','.join(finfo['arg_types']), scram, scram)
 								else:
 									#bscram = '( (%s (*)(%s))(dlsym(__libself__,"%s")) )' %(finfo['returns'], ','.join(finfo['arg_types']), scram)
-									bscram = bin_scramble(fname, finfo)
+									bscram = bin_scramble(fname, finfo, mangle_map)
 
 								ln = ln.replace(fname, bscram)
 
@@ -207,13 +217,15 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 			func_name = s[len('def ') : ].split('(')[0].strip()
 			is_scram = False
+			unscram_name = None
 
 			if func_name == '__init__':
 				assert in_class
 				func_name = class_name
 			elif not in_class and func_name in functions and 'scramble' in functions[func_name]:
-				func_name = functions[func_name]['scramble']
 				is_scram = True
+				unscram_name = func_name
+				func_name = functions[func_name]['scramble']
 
 			if '->' in s:
 				returns = s[:-1].split('->')[-1]
@@ -334,7 +346,12 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			out.append(func)
 
 			if prevs.startswith('@module'):
-				mods[modname].append(func_name)
+				if is_scram:
+					mods[modname].append( {'scram':func_name, 'unscram':unscram_name} )
+				else:
+					mods[modname].append(func_name)
+
+
 				out.extend(tpargs)
 
 			if in_class and func_name==class_name:
@@ -456,15 +473,27 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		tp_set = 'tp_set'
 		tp_function = 'tp_function'
 		if binary_scramble:
-			tp_import = bin_scramble('tp_import', functions['tp_import'])
-			tp_set = bin_scramble('tp_set', functions['tp_set'])
-			tp_function = bin_scramble('tp_function', functions['tp_function'])
+			tp_import = bin_scramble('tp_import', functions['tp_import'], mangle_map)
+			tp_set = bin_scramble('tp_set', functions['tp_set'], mangle_map)
+			tp_function = bin_scramble('tp_function', functions['tp_function'], mangle_map)
+		elif functions and 'tp_import' in functions:
+			if 'scramble' in functions['tp_import']:
+				tp_import = functions['tp_import']['scramble']
+			if 'scramble' in functions['tp_set']:
+				tp_set = functions['tp_set']['scramble']
+			if 'scramble' in functions['tp_function']:
+				tp_function = functions['tp_function']['scramble']
 
 		for i,modname in enumerate(mods):
 			m = 'mod%s' %i
 			out.append('	tp_obj %s = %s(tp, tp_string_atom(tp, "%s"),tp_None, tp_string_atom(tp, "<c++>"));' %(m, tp_import, modname))
 			for func in mods[modname]:
-				out.append('	%s(tp, %s, tp_string_atom(tp, "%s"), %s(tp, %s));' %(tp_set, m,func, tp_function, func))
+				if type(func) is dict:
+					scram = func['scram']
+					unscram = func['unscram']
+					out.append('	%s(tp, %s, tp_string_atom(tp, "%s"), %s(tp, %s));' %(tp_set, m, unscram, tp_function, scram))
+				else:
+					out.append('	%s(tp, %s, tp_string_atom(tp, "%s"), %s(tp, %s));' %(tp_set, m,func, tp_function, func))
 		out.append('}')
 
 	cpp = '\n'.join(out)
@@ -557,7 +586,7 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 			print('functions:')
 
 		alphabet = 'abcdefghijklmnopqrstuvwxyz'
-		skip = 'main crash_handler _tp_min _tp_gcinc tp_default_echo tp_string_len tp_string_getptr tp_string_atom tp_str tp_true len tp_params_v tpd_list_find'.split()
+		skip = 'main crash_handler print _tp_min _tp_gcinc tp_default_echo tp_string_len tp_string_getptr tp_string_atom tp_str tp_true len tp_params_v tpd_list_find'.split()
 		for fname in info['functions']:
 
 			if '--debug' in sys.argv:
