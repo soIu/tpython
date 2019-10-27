@@ -1,8 +1,12 @@
-/* File: General
- * Things defined in tp.h.
- */
+##TPython Main Header - becomes tp.gen.h
+
 #ifndef TP_H
 #define TP_H
+
+#ifdef USE_EMBEDDED_BYTECODE
+  import "__user_bytecode__.gen.h"
+#endif
+
 
 import <cstddef>
 

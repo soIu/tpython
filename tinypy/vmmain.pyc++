@@ -86,7 +86,6 @@ def tp_load(TP, const char*) ->tp_obj;
 
 
 #ifdef USE_EMBEDDED_BYTECODE
-#include "embedded_bytecode.gen.h"
 def run_vm_embedded(int argc, char *argv[]):
 	tp_vm *tp = tp_init(argc, argv);
 	std::cout << "tp_init OK..." << std::endl;

@@ -169,7 +169,7 @@ def tp_module_vga_init(TP):
 #endif
 
 #ifdef USE_USER_CUSTOM_CPP
-  import "__user__.gen.h"
+  import "__user_pythonic__.gen.h"
 #endif
 
 def tp_module_corelib_init(TP):

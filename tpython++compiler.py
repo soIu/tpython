@@ -2,7 +2,27 @@
 # -*- coding: utf-8 -*-
 import os, sys, subprocess, random, json
 
-__xorscrams__ = {}
+def bin_scramble(fname, finfo):
+	scram = finfo['scramble']
+
+	xorkey = []
+	xscram = []
+	for i in range(len(scram)):
+		x = int( random.uniform(0,255) )
+		xorkey.append(x)
+		c = ord(scram[i]) ^ x
+		xscram.append( c )
+
+	lambda_scram = [
+		'char _[%s];' %len(scram),
+		'int __[%s]{%s};' %(len(scram), str(xscram)[1:-1] ),
+		'int ___[%s]{%s};' %(len(scram), str(xorkey)[1:-1] ),
+		'for (int _i=0; _i<%s; _i++) _[_i]=__[_i]^___[_i];' %len(scram),
+		'return std::string(_, %s);' %len(scram)
+	]
+	lambda_scram = ' '.join(lambda_scram)
+	bscram = '( (%s (*)(%s))(dlsym(__libself__,[](){%s}().c_str() )) )' %(finfo['returns'], ','.join(finfo['arg_types']), lambda_scram)
+	return bscram
 
 def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=False, binary_scramble=False, mangle_map=None ):
 	if not type(source) is list:
@@ -61,27 +81,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 									bscram = '( (%s (*)(%s)) ( [](){std::cout<<__libself__<<std::endl<<"%s"<<std::endl; auto fptr=dlsym(__libself__,"%s"); std::cout<<fptr<<std::endl; return fptr;}() ) )' %(finfo['returns'], ','.join(finfo['arg_types']), scram, scram)
 								else:
 									#bscram = '( (%s (*)(%s))(dlsym(__libself__,"%s")) )' %(finfo['returns'], ','.join(finfo['arg_types']), scram)
-									#if scram not in __xorscrams__:
-									xorkey = []
-									xscram = []
-									for i in range(len(scram)):
-										x = int( random.uniform(0,255) )
-										xorkey.append(x)
-										c = ord(scram[i]) ^ x
-										xscram.append( c )
-
-									sid = int( random.uniform(0,255) ) #len(__xorscrams__)
-									#__xorscrams__[ scram ] = sid
-							
-									lambda_scram = [
-										'char _[%s];' %len(scram),
-										'int __[%s]{%s};' %(len(scram), str(xscram)[1:-1] ),
-										'int ___[%s]{%s};' %(len(scram), str(xorkey)[1:-1] ),
-										'for (int _i=0; _i<%s; _i++) _[_i]=__[_i]^___[_i];' %len(scram),
-										'return std::string(_, %s);' %len(scram)
-									]
-									lambda_scram = ' '.join(lambda_scram)
-									bscram = '( (%s (*)(%s))(dlsym(__libself__,[](){%s}().c_str() )) )' %(finfo['returns'], ','.join(finfo['arg_types']), lambda_scram)
+									bscram = bin_scramble(fname, finfo)
 
 								ln = ln.replace(fname, bscram)
 
@@ -450,11 +450,21 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	if mods:
 		## generate module_init
 		out.append('void module_init(TP) {')
+
+		tp_import = 'tp_import'
+		tp_string_atom = 'tp_string_atom'
+		tp_set = 'tp_set'
+		tp_function = 'tp_function'
+		if binary_scramble:
+			tp_import = bin_scramble('tp_import', functions['tp_import'])
+			tp_set = bin_scramble('tp_set', functions['tp_set'])
+			tp_function = bin_scramble('tp_function', functions['tp_function'])
+
 		for i,modname in enumerate(mods):
 			m = 'mod%s' %i
-			out.append('	tp_obj %s = tp_import(tp, tp_string_atom(tp, "%s"),tp_None, tp_string_atom(tp, "<c++>"));' %(m,modname))
+			out.append('	tp_obj %s = %s(tp, tp_string_atom(tp, "%s"),tp_None, tp_string_atom(tp, "<c++>"));' %(m, tp_import, modname))
 			for func in mods[modname]:
-				out.append('	tp_set(tp, %s, tp_string_atom(tp, "%s"), tp_function(tp, %s));' %(m,func,func))
+				out.append('	%s(tp, %s, tp_string_atom(tp, "%s"), %s(tp, %s));' %(tp_set, m,func, tp_function, func))
 		out.append('}')
 
 	cpp = '\n'.join(out)
@@ -522,34 +532,43 @@ def metapy2tinypypp( source ):
 		script = '\n'.join(shared)
 		scripts.append(script)
 
-	cpp = pythonicpp( cpp, swap_self_to_this=True )
+	#cpp = pythonicpp( cpp, swap_self_to_this=True )
+	cpp = '\n'.join(cpp)
 	return scripts, cpp
 
 def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=None, obfuscate_map=None ):
+	print(path)
 	new_obfuscate = {}
 	info = {'classes':{}, 'functions':{}, 'obfuscations':new_obfuscate}
 	if secure:
 		## first pass gather function info
 		for file in os.listdir( path ):
 			if file.endswith( '.pyc++' ):
+				print(file)
 				cpp = pythonicpp( open(os.path.join(path,file),'rb').read(), header="/*generated from: %s*/" %file, info=info )
 			elif file.endswith( '.pyh' ):
+				print(file)
 				cpp = pythonicpp( open(os.path.join(path,file),'rb').read(), header="/*generated from: %s*/" %file, info=info )
 
+		if '--debug' in sys.argv:
+			print('classes:')
+			for cname in info['classes']:
+				print('	' + cname)
+			print('functions:')
 
-		print('classes:')
-		for cname in info['classes']:
-			print('	' + cname)
-		print('functions:')
 		alphabet = 'abcdefghijklmnopqrstuvwxyz'
 		skip = 'main crash_handler _tp_min _tp_gcinc tp_default_echo tp_string_len tp_string_getptr tp_string_atom tp_str tp_true len tp_params_v tpd_list_find'.split()
 		for fname in info['functions']:
-			print('	' + fname)
+
+			if '--debug' in sys.argv:
+				print('	' + fname)
+
 			if fname not in skip:
 				if 'operator' in fname or '::' in fname:
 					continue
 				if obfuscate_map:
-					assert fname in obfuscate_map
+					if fname not in obfuscate_map:
+						raise RuntimeError(fname)
 					scram = obfuscate_map[fname]
 					info['functions'][fname]['scramble'] = ''.join(scram)
 
@@ -598,7 +617,7 @@ def main():
 		scripts, cpp = metapy2tinypypp( open(input_file, 'rb').read().decode('utf-8') )
 
 		if cpp:
-			open('./tinypy/__user__.gen.h', 'wb').write(cpp.encode('utf-8'))
+			open('./tinypy/__user_pythonic__.pyh', 'wb').write(cpp.encode('utf-8'))
 
 		if len(scripts) == 1:
 			source = scripts[0]

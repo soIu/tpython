@@ -80,7 +80,7 @@ def main(args=None):
 		out = []
 		cols = 16
 		name = opts.get('-n', '_tp_' + basename(src) + '_tpc')
-		out.append("""unsigned char %s[] = {""" % name)
+		out.append("""static unsigned char %s[] = {""" % name)
 		for n in range(0, len(data), cols):
 			out.append(",".join(["0x%02x" % ord(v) for v in data[n:n+cols]]) + ',')
 
@@ -90,7 +90,7 @@ def main(args=None):
 		out = []
 		cols = 16
 		name = save_as_header.replace('.', '_')
-		out.append("""unsigned char __%s__[] = {""" % name)
+		out.append("""static unsigned char __%s__[] = {""" % name)
 		for n in range(0, len(data), cols):
 			out.append(",".join(["0x%02x" % ord(v) for v in data[n:n+cols]]) + ',')
 

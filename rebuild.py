@@ -130,13 +130,14 @@ def gen_interpreter(stage=None):
 	subprocess.check_call(cmd)
 
 def rebuild(stage=None):
-	os.system('rm -f tinypy/__user__.gen.h')
+	os.system('rm -f tinypy/__user_bytecode__.gen.h')
+	os.system('rm -f tinypy/__user_pythonic__.gen.h')
+	os.system('rm -f tinypy/__user_pythonic__.pyh')
 	os.system('rm -f tinypy/*.gcda')
 	if stage is None or stage < 2:
 		os.system('rm -f /tmp/tinypy.json')
 
 	gen_interpreter_codes( randomize='--secure' in sys.argv)
-	gen_interpreter(stage=stage)
 
 	mode = 'linux'
 	exe = 'tpython++'
@@ -161,10 +162,13 @@ def rebuild(stage=None):
 			if '--debug' in sys.argv:
 				cmd.append('--debug')
 			subprocess.check_call(cmd)
-			os.system('cp -v /tmp/embedded_bytecode.gen.h ./tinypy/.')
-			if os.path.isfile('./tinypy/__user__.gen.h'):
+			os.system('cp -v /tmp/embedded_bytecode.gen.h ./tinypy/__user_bytecode__.gen.h')
+			if os.path.isfile('./tinypy/__user_bytecode__.gen.h'):
 				defs += ' -DUSE_USER_CUSTOM_CPP'
 			break
+
+	gen_interpreter(stage=stage)
+
 
 	if '--cpython' in sys.argv:
 		defs += ' -DUSE_PYTHON'
