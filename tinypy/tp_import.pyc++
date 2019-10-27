@@ -29,7 +29,7 @@ def tp_import(TP, tp_obj name, tp_obj code, tp_obj fname) ->tp_obj:
 ## len - The length of the bytecode.
 ## Returns:
 ## The module object.
-def tp_import_from_buffer(TP, const char * fname, const char * name, void *codes, int len) ->tp_obj:
+def tp_import_from_buffer_with_filename(TP, const char * fname, const char * name, void *codes, int len) ->tp_obj:
 	#ifdef DEBUG
 	  print("tp_import.cpp tp_import_from_buffer:")
 	  print(fname)

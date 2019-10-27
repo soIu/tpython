@@ -1,7 +1,7 @@
 def tp_main(TP,char *fname, void *code, int len) ->tp_obj:
 	print("tp_interp.cpp:tp_main")
 	print(fname)
-	return tp_import_from_buffer(tp,fname, "__main__", code, len)
+	return tp_import_from_buffer_with_filename(tp,fname, "__main__", code, len)
 
 def tp_ez_call(TP, const char *mod, const char *func, tp_obj params) ->tp_obj:
 	tp_obj tmp

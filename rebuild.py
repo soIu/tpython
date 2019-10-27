@@ -230,7 +230,10 @@ def rebuild(stage=None):
 		#	raise RuntimeError('unable to git clone from: https://github.com/georgik/sdl2-android-example.git')
 
 	else:  ## linux
-		opts += ' -O3 -fno-rtti -funroll-loops -finline-small-functions -march=native -ffast-math -fno-math-errno -funsafe-math-optimizations -fno-signed-zeros -fno-trapping-math -frename-registers'
+		if '--secure-binary' in sys.argv:
+			opts += ' -O2 -fno-rtti -finline-small-functions -march=native'
+		else:
+			opts += ' -O3 -fno-rtti -funroll-loops -finline-small-functions -march=native -ffast-math -fno-math-errno -funsafe-math-optimizations -fno-signed-zeros -fno-trapping-math -frename-registers'
 		exeopts += opts
 		if '--gcc5' in sys.argv:
 			CC = '/usr/bin/g++-5'

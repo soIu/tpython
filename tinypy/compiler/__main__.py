@@ -1,7 +1,7 @@
 from tinypy.compiler import py2bc
 from tinypy.compiler.boot import *
 from tinypy.compiler import disasm
-import os
+import os, random
 
 def do_shorts(opts, optstring, shortopts, args):
 	while optstring != '':
@@ -97,11 +97,28 @@ def main(args=None):
 			out.append('*/')
 		cols = 16
 		name = save_as_header.replace('.', '_')
+
+		xdata = []
+		xmap  = []
+		for c in data:
+			xor = int(random.uniform(1,255))
+			xdata.append( chr(ord(c)^xor) )
+			xmap.append(xor)
+		data = ''.join(xdata)
+
 		out.append("""static unsigned char __%s__[] = {""" % name)
 		for n in range(0, len(data), cols):
 			out.append(",".join(["0x%02x" % ord(v) for v in data[n:n+cols]]) + ',')
 
 		out.append("""};""")
+
+		out.append('static unsigned char* decrypt_user_bytecode(unsigned char* data){')
+		out.append('	unsigned char* out = new unsigned char[%s];' %len(xmap))
+		for i, xor in enumerate(xmap):
+			out.append('	out[%s] = data[%s]^%s;' %(i,i,xor))
+		out.append('	return out;')
+		out.append('};')
+
 		out = '\n'.join(out)
 		pth,fname = os.path.split( args[-1] )
 		dest = os.path.join(pth, save_as_header)

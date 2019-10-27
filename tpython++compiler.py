@@ -16,7 +16,7 @@ def bin_scramble(fname, finfo, mangle_map):
 	xorkey = []
 	xscram = []
 	for i in range(len(scram)):
-		x = int( random.uniform(0,255) )
+		x = int( random.uniform(1,255) )
 		xorkey.append(x)
 		c = ord(scram[i]) ^ x
 		xscram.append( c )
@@ -319,6 +319,14 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				sig = '%s:%s `%s`' %(file_name, line_num, s)
 				if sig not in functions[func_name]['defs']:
 					functions[func_name]['defs'].append(sig)
+			elif not in_class and not is_scram and is_forward_decl and func_name=='module_init':  ## special case
+				if func_name not in functions:
+					functions[ func_name ] = {'defs':[], 'calls':[]}
+				functions[ func_name ]['returns'] = returns
+				functions[ func_name ]['args'] = args
+				functions[ func_name ]['arg_types'] = arg_types
+				if prevs == '@static':
+					functions[ func_name ]['static'] = True
 
 
 			exopts = ''
@@ -466,7 +474,13 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 	if mods:
 		## generate module_init
-		out.append('void module_init(TP) {')
+		mod_init = 'module_init'
+		if functions and 'module_init' in functions:
+			if 'scramble' in functions['module_init']:
+				mod_init = functions['module_init']['scramble']
+
+
+		out.append('void %s(TP) {' %mod_init)
 
 		tp_import = 'tp_import'
 		tp_string_atom = 'tp_string_atom'

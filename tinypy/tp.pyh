@@ -506,7 +506,7 @@ def tp_params_v(TP, int n, ...)->tp_obj;
 
 def tp_import(TP, tp_obj name, tp_obj code, tp_obj fname)->tp_obj;
 
-def tp_import_from_buffer(TP, const char * fname, const char * name, void *codes, int len)->tp_obj;
+def tp_import_from_buffer_with_filename(TP, const char * fname, const char * name, void *codes, int len)->tp_obj;
 def tp_import_from_buffer(TP, const char * name, unsigned char *codes, int len)->tp_obj;
 
 
