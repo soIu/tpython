@@ -31,7 +31,12 @@
 #ifndef ERROR_MACROS_H
 #define ERROR_MACROS_H
 
+#include <iostream>
 #include "typedefs.h"
+
+static bool _err_error_exists = false;
+
+
 /**
  * Error macros. Unlike exceptions and asserts, these macros try to maintain consistency and stability
  * inside the code. It is recommended to always return processable data, so in case of an error, the
@@ -76,7 +81,11 @@ struct ErrorHandlerList {
 void add_error_handler(ErrorHandlerList *p_handler);
 void remove_error_handler(ErrorHandlerList *p_handler);
 
-void _err_print_error(const char *p_function, const char *p_file, int p_line, const char *p_error, ErrorHandlerType p_type = ERR_HANDLER_ERROR);
+static void _err_print_error(const char *p_function, const char *p_file, int p_line, const char *p_error, ErrorHandlerType p_type = ERR_HANDLER_ERROR) {
+	std::cout << p_function << std::endl;
+	std::cout << p_file << ":" << p_line << std::endl;
+	std::cout << p_error << std::endl;
+}
 void _err_print_index_error(const char *p_function, const char *p_file, int p_line, int64_t p_index, int64_t p_size, const char *p_index_str, const char *p_size_str, bool fatal = false);
 
 #ifndef _STR

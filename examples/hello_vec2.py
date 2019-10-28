@@ -10,5 +10,6 @@ def test():
 	print(v.y)
 	ratio = v.aspect()
 	print(ratio)
+	print(v.length())
 
 test()

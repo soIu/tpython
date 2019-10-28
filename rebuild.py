@@ -41,7 +41,7 @@ Makefile = '''
 
 TINYPYC=./tpc
 
-VMLIB_FILES=tp.gen.cpp dummy-compiler.cpp runtime.gen.cpp <MODULES>
+VMLIB_FILES=tp.gen.cpp dummy-compiler.cpp runtime.gen.cpp blendot/math_funcs.cpp blendot/vector2.cpp <MODULES>
 TPLIB_FILES=tp.gen.cpp compiler.cpp runtime.gen.cpp
 
 #MODULES=math random re
@@ -80,9 +80,7 @@ tinypy/tp.o : tinypy/tp.gen.cpp tinypy/tp*.cpp tinypy/tp*.h
 clean:
 	rm -rf <EXE>
 	rm -rf tinypy/*.o
-	#rm -rf modules/*/*.o
-	#rm -rf modules/*.a
-	#rm -rf modules/modules.cpp
+	rm -rf tinypy/blendot/*.o
 
 '''
 

@@ -39,6 +39,10 @@
 
 #include <float.h>
 #include <math.h>
+#include <random>
+
+extern std::mt19937 *__rand_engine;
+
 
 class Math {
 
