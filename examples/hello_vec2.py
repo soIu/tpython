@@ -8,5 +8,7 @@ def test():
 	print(v.x)
 	v.y += 400
 	print(v.y)
+	ratio = v.aspect()
+	print(ratio)
 
 test()
