@@ -7,6 +7,9 @@
   import "__user_bytecode__.gen.h"
 #endif
 
+import "blendot/vector2.h"
+import "blendot/vector3.h"
+
 
 import <cstddef>
 
@@ -74,6 +77,7 @@ enum TPTypeID {
   TP_NONE = 0,
   TP_NUMBER = 1,
   TP_INTEGER = 2,
+  TP_VEC2 = 3,
   TP_GC_TRACKED = 10,
   TP_FUNC = 10,
   TP_DATA = 11,
@@ -140,6 +144,8 @@ struct tp_vm;
 
 typedef class tp_obj {
  public:
+  tp_obj(){};
+  tp_obj(TPTypeID t){ type.type_id=t; };
   union {
   TPTypeInfo type;
   struct { TPTypeInfo type; int * gci; } gc;
@@ -153,15 +159,8 @@ typedef class tp_obj {
   struct { TPTypeInfo type; struct tpd_dict *val; } object;
   struct { TPTypeInfo type; struct tpd_dict *val; } interface;
   struct { TPTypeInfo type; struct tpd_string *info; const char * val;} string;
+  struct { TPTypeInfo type; struct Vector2 vec; } vec2;
  };
-//tp_obj(){
-//	this->type.type_id = TP_NONE;
-//this->__cppfunc__ = std::function<tp_obj(tp_vm*)>(); 
-//}
-//tp_obj(TPTypeID etype){ 
-//	this->type.type_id = etype;
-//this->__cppfunc__ = std::function<tp_obj(tp_vm*)>(); 
-//}
 //tp_obj(double num) {
 //this->type.type_id = TP_NUMBER;
 //this->number.val = num;
