@@ -93,8 +93,8 @@ typedef struct TPTypeInfo {
 enum TPFuncMagic {
   TP_FUNC_MASK_C = 1,
   TP_FUNC_MASK_METHOD = 2,
-  TP_FUNC_MASK_CPP = 3,
-  TP_FUNC_MASK_METHOD_CPP = 4,
+  TP_FUNC_MASK_CPP = 100,
+  TP_FUNC_MASK_METHOD_CPP = 101,
 };
 
 enum TPStringMagic {

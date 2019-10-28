@@ -449,30 +449,54 @@ def tp_bitwise_not(TP, tp_obj a) ->tp_obj:
 
 def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 	#ifdef DEBUG
-	  print("tp_call...")
+	  print("tp_call:")
 	#endif
 	## Im not sure we should have to do this, but just for giggles we will.
 	tp->params = params
 	if self.type.type_id == TP_INTERFACE:
+		#ifdef DEBUG
+		  print("	TP_INTERFACE")
+		#endif
 		tp_obj meta
 		if tp_vget(tp, self, tp_string_atom(tp, "__new__"), &meta, 1):
+			#ifdef DEBUG
+			  print("	TP_INTERFACE has __new__")
+			#endif
 			tpd_list_insert(tp, params.list.val, 0, self)
 			return tp_call(tp, meta, params)
+		#ifdef DEBUG
+		  print("	TP_INTERFACE missing __new__")
+		#endif
 	elif self.type.magic == TP_OBJECT:
+		#ifdef DEBUG
+		  print("	TP_OBJECT __call__")
+		#endif
 		TP_META_BEGIN(self,"__call__")
 		  return tp_call(tp, meta, params)
 		TP_META_END
 	if self.type.type_id == TP_FUNC:
+		#ifdef DEBUG
+		  print("	TP_FUNC")
+		#endif
 		if self.type.magic == TP_FUNC_MASK_CPP:
+			#ifdef DEBUG
+			  print("	TP_FUNC_MASK_CPP")
+			#endif
 			tp_obj r = self.func.info->cppfunc(tp)
 			tp_grey(tp, r)
 			return r
 		elif self.type.magic == TP_FUNC_MASK_METHOD_CPP:
+			#ifdef DEBUG
+			  print("	TP_FUNC_MASK_METHOD_CPP")
+			#endif
 			tpd_list_insert(tp, tp->params.list.val, 0, self.func.info->instance)
 			tp_obj r = self.func.info->cppfunc(tp)
 			tp_grey(tp, r)
 			return r
 		elif not self.type.magic & TP_FUNC_MASK_C:
+			#ifdef DEBUG
+			  print("	TP_FUNC_MASK_C")
+			#endif
 			if self.type.magic & TP_FUNC_MASK_METHOD:
 				tpd_list_insert(tp, tp->params.list.val, 0, self.func.info->instance)
 			tp_obj (* cfunc)(tp_vm *)
@@ -481,6 +505,9 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 			tp_grey(tp, r)
 			return r
 		else:
+			#ifdef DEBUG
+			  print("	BYTECODE FUNCTION")
+			#endif
 			## compiled Python function
 			tp_obj dest = tp_None
 			tp_enter_frame(tp, self.func.info->globals,self.func.info->code, &dest)
