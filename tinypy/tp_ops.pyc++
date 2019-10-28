@@ -251,34 +251,42 @@ def tp_iget(TP,tp_obj *r, tp_obj self, tp_obj k) ->int:
 ## This is the counterpart of tp_get, it does the same as self[k] = v would do
 ## in actual tinypy code.
 
-def tp_set(TP,tp_obj self, tp_obj k, tp_obj v):
+def tp_set(TP,tp_obj self, tp_obj k, tp_obj v) -> tp_obj:
 	int type = self.type.type_id
-	if type == TP_DICT:
+	if type == TP_VEC2:
+		if k == "x":
+			self.vec2.vec.x = v.number.val
+		elif k == "y":
+			self.vec2.vec.y = v.number.val
+		else:
+			throw "vector2 type missing member"
+		return self
+	elif type == TP_DICT:
 		tp_dict_set(tp, self, k, v)
-		return
+		return self
 	elif type == TP_LIST:
 		if k.type.type_id == TP_NUMBER:
 			tpd_list_set(tp, self.list.val, k.number.val, v, "tp_set")
-			return
+			return self
 		elif k.type.type_id == TP_NONE:
 			tpd_list_append(tp, self.list.val, v)
-			return
+			return self
 		elif k.type.type_id == TP_STRING:
 			## WTF is this syntax? a['*'] = b will extend a by b ??
-			## FIXME: remove this support. Use a + b */
+			## FIXME: remove this support. Use a + b
 			if tp_cmp(tp, tp_string_atom(tp, "*"), k) == 0:
 				tpd_list_extend(tp, self.list.val, v.list.val)
-				return
+				return self
 	elif type == TP_INTERFACE:
 		tp_dict_set(tp, self, k, v)
-		return
+		return self
 	elif type == TP_OBJECT:
 		TP_META_BEGIN(self,"__set__")
 		  tp_call(tp,meta,tp_params_v(tp,2,k,v))
-		  return
+		  return self
 		TP_META_END
 		tp_dict_set(tp, self, k, v)
-		return
+		return self
 	//tp_raise(,tp_string_atom(tp, "(tp_set) TypeError: object does not support item assignment"));
 	throw "TypeError in tp_ops.cpp:tp_set object does not support item assignment"
 

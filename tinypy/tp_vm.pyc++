@@ -460,7 +460,7 @@ def tp_step(TP) ->int:
 				case TP_ICMP: RA = tp_number(tp_cmp(tp,RB,RC)); break;
 				case TP_IMGET: RA = tp_mget(tp,RB,RC); GA; break;
 				case TP_IGET: RA = tp_get(tp,RB,RC); GA; break;
-				case TP_ISET: tp_set(tp,RA,RB,RC); break;
+				case TP_ISET: RA = tp_set(tp,RA,RB,RC); break;
 				case TP_INE: RA = tp_number(tp_cmp(tp,RB,RC)!=0); break;
 				case TP_INOT: RA = tp_number(!tp_true(tp,RB)); break;
 				case TP_IIFN: if (!tp_true(tp,RA)) { cur += 1; } break;
