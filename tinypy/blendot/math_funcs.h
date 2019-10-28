@@ -42,7 +42,7 @@
 
 class Math {
 
-	static RandomPCG default_rand;
+	//static RandomPCG default_rand;
 
 public:
 	Math() {} // useless to instance

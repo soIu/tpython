@@ -31,9 +31,9 @@
 #ifndef SAFE_REFCOUNT_H
 #define SAFE_REFCOUNT_H
 
-#include "core/os/mutex.h"
-#include "core/typedefs.h"
-#include "platform_config.h"
+#include "mutex.h"
+#include "typedefs.h"
+//#include "platform_config.h"
 
 // Atomic functions, these are used for multithread safe reference counters!
 

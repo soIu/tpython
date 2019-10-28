@@ -31,8 +31,8 @@
 #ifndef VECTOR3_H
 #define VECTOR3_H
 
-#include "core/math/math_funcs.h"
-#include "core/ustring.h"
+#include "math_funcs.h"
+#include "ustring.h"
 
 class Basis;
 
@@ -155,7 +155,7 @@ struct Vector3 {
 };
 
 // Should be included after class definition, otherwise we get circular refs
-#include "core/math/basis.h"
+#include "basis.h"
 
 Vector3 Vector3::cross(const Vector3 &p_b) const {
 

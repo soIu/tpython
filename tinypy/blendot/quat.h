@@ -29,14 +29,14 @@
 /*************************************************************************/
 
 // Circular dependency between Vector3 and Basis :/
-#include "core/math/vector3.h"
+#include "vector3.h"
 
 #ifndef QUAT_H
 #define QUAT_H
 
-#include "core/math/math_defs.h"
-#include "core/math/math_funcs.h"
-#include "core/ustring.h"
+#include "math_defs.h"
+#include "math_funcs.h"
+#include "ustring.h"
 
 class Quat {
 public:
