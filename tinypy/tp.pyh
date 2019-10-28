@@ -78,6 +78,7 @@ enum TPTypeID {
   TP_NUMBER = 1,
   TP_INTEGER = 2,
   TP_VEC2 = 3,
+  TP_VEC3 = 4,
   TP_GC_TRACKED = 10,
   TP_FUNC = 10,
   TP_DATA = 11,
@@ -160,6 +161,7 @@ typedef class tp_obj {
   struct { TPTypeInfo type; struct tpd_dict *val; } interface;
   struct { TPTypeInfo type; struct tpd_string *info; const char * val;} string;
   struct { TPTypeInfo type; struct Vector2 vec; } vec2;
+  struct { TPTypeInfo type; struct Vector3 vec; } vec3;
  };
 //tp_obj(double num) {
 //this->type.type_id = TP_NUMBER;
@@ -488,10 +490,17 @@ def tp_integer(int v) -> tp_obj:
 @static
 def tp_vec2(double x, double y) -> tp_obj:
 	tp_obj val = {TP_VEC2};
-	val.vec2.vec.x = x;
-	val.vec2.vec.y = y;
+	val.vec2.vec.x = x
+	val.vec2.vec.y = y
 	return val
 
+@static
+def tp_vec3(double x, double y, double z) -> tp_obj:
+	tp_obj val = {TP_VEC3};
+	val.vec3.vec.x = x
+	val.vec3.vec.y = y
+	val.vec3.vec.z = z
+	return val
 
 /* Function: tp_string_from_const (was tp_string_n)
  * Creates a new string object from a partial C string.
@@ -624,9 +633,9 @@ def tp_as_string(TP, tp_obj self) ->std::string:
 		case TP_VEC2:
 			ss << "vec2(" << self.vec2.vec.x << ", " << self.vec2.vec.y << ")"
 			break
-		//case TP_VEC3:
-		//	ss << "vec3(" << self.vec3.vec.x << ", " << self.vec3.vec.y << ", " << self.vec3.vec.z << ")"
-		//	break
+		case TP_VEC3:
+			ss << "vec3(" << self.vec3.vec.x << ", " << self.vec3.vec.y << ", " << self.vec3.vec.z << ")"
+			break
 		default:
 			ss << "<unknown type>"
 	return ss.str()

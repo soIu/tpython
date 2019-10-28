@@ -370,6 +370,12 @@ def tpy_vec2(TP) ->tp_obj:
 	tp_obj y = TP_OBJ()
 	return tp_vec2(x.number.val, y.number.val)
 
+def tpy_vec3(TP) ->tp_obj:
+	tp_obj x = TP_OBJ()
+	tp_obj y = TP_OBJ()
+	tp_obj z = TP_OBJ()
+	return tp_vec3(x.number.val, y.number.val, z.number.val)
+
 
 ## https://stackoverflow.com/questions/1591361/understanding-typedefs-for-function-pointers-in-c
 typedef tp_obj (*tp_func_pointer)(tp_vm*);
@@ -414,6 +420,7 @@ def tp_module_builtins_init(TP):
 	{"module", tpy_module},
 	{"repr", tpy_repr},
 	{"vec2", tpy_vec2},
+	{"vec3", tpy_vec3},
 	#ifdef TP_SANDBOX
 	{"sandbox",tpy_sandbox_},
 	#endif
