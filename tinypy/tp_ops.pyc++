@@ -111,7 +111,12 @@ def tp_set_by_char(TP, tp_obj self, char c, tp_obj value):
 def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 	int type = self.type.type_id
 	tp_obj r
-	if type >= TP_HAS_META:
+	if type == TP_VEC2:
+		if k == "x":
+			return tp_number(self.vec2.vec.x)
+		elif k == "y":
+			return tp_number(self.vec2.vec.y)
+	elif type >= TP_HAS_META:
 		if type == TP_DICT:
 			## '.' looks for methods of a raw dict.
 			## [] looks for members
@@ -191,6 +196,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 		elif type == TP_STRING:
 			return tp_string_view(tp,self,a,b)
 	elif k.type.type_id == TP_STRING:
+		## this is not correct, unknowntype.foo should not return unknowntype
 		return tp_copy(tp, self)
 	print("_tp_get: self =")
 	print(tp_as_string(tp, self))
@@ -203,6 +209,10 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 def tp_copy(TP, tp_obj self) -> tp_obj:
 	int type = self.type.type_id
 	if type == TP_NUMBER:
+		return self
+	elif type == TP_INTEGER:
+		return self
+	elif type == TP_VEC2:
 		return self
 	elif type == TP_STRING:
 		return tp_string_from_buffer(tp, tp_string_getptr(self), tp_string_len(self))
@@ -533,6 +543,10 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 
 
 ## tp_obj methods
+
+@const
+def tp_obj::operator==(const char* s) ->bool:
+	return std::string(tp_string_getptr(*this))==std::string(s);
 
 @const
 def tp_obj::operator char():

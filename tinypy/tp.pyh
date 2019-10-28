@@ -165,6 +165,7 @@ typedef class tp_obj {
 //this->type.type_id = TP_NUMBER;
 //this->number.val = num;
 //}
+ bool operator==(const char* s) const;
  operator char() const;
  operator uint8_t() const;
  tp_obj operator[] (int index);
@@ -405,7 +406,7 @@ def _tp_raise(TP,tp_obj);
  * same string.
  * 
  * *Note* Only a reference to the string will be kept by tinypy, so make sure
- * it does not go out of scope, and don't de-allocate it. Also be aware that
+ * it does not go out of scope, and dont de-allocate it. Also be aware that
  * tinypy will not delete the string for you. In many cases, it is best to
  * use <tp_string_t> or <tp_string_slice> to create a string where tinypy
  * manages storage for you.
@@ -482,6 +483,13 @@ def tp_number(tp_num v) -> tp_obj:
 def tp_integer(int v) -> tp_obj:
 	tp_obj val = {TP_INTEGER};
 	val.integer.val = v
+	return val
+
+@static
+def tp_vec2(double x, double y) -> tp_obj:
+	tp_obj val = {TP_VEC2};
+	val.vec2.vec.x = x;
+	val.vec2.vec.y = y;
 	return val
 
 
@@ -613,6 +621,12 @@ def tp_as_string(TP, tp_obj self) ->std::string:
 		case TP_DATA:
 			ss << "data<" << self.data.val << ">"
 			break
+		case TP_VEC2:
+			ss << "vec2(" << self.vec2.vec.x << ", " << self.vec2.vec.y << ")"
+			break
+		//case TP_VEC3:
+		//	ss << "vec3(" << self.vec3.vec.x << ", " << self.vec3.vec.y << ", " << self.vec3.vec.z << ")"
+		//	break
 		default:
 			ss << "<unknown type>"
 	return ss.str()
