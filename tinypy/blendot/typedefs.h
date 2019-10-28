@@ -37,7 +37,7 @@
  * Basic definitions and simple functions to be used everywhere.
  */
 
-#include "platform_config.h"
+//#include "platform_config.h"
 
 #ifndef _STR
 #define _STR(m_x) #m_x
@@ -105,10 +105,10 @@ T *_nullptr() {
 #undef CONNECT_DEFERRED // override from Windows SDK, clashes with Object enum
 #endif
 
-#include "core/int_types.h"
+#include "int_types.h"
 
-#include "core/error_list.h"
-#include "core/error_macros.h"
+#include "error_list.h"
+#include "error_macros.h"
 
 /** Generic ABS function, for math uses please use Math::abs */
 

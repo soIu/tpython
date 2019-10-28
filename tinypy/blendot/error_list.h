@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  array.h                                                              */
+/*  error_list.h                                                         */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,77 +28,66 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef ARRAY_H
-#define ARRAY_H
+#ifndef ERROR_LIST_H
+#define ERROR_LIST_H
 
-#include "typedefs.h"
+/** Error List. Please never compare an error against FAILED
+ * Either do result != OK , or !result. This way, Error fail
+ * values can be more detailed in the future.
+ *
+ * This is a generic error list, mainly for organizing a language of returning errors.
+ */
 
-class Variant;
-class ArrayPrivate;
-class Object;
-class StringName;
-
-class Array {
-
-	mutable ArrayPrivate *_p;
-	void _ref(const Array &p_from) const;
-	void _unref() const;
-
-public:
-	Variant &operator[](int p_idx);
-	const Variant &operator[](int p_idx) const;
-
-	void set(int p_idx, const Variant &p_value);
-	const Variant &get(int p_idx) const;
-
-	int size() const;
-	bool empty() const;
-	void clear();
-
-	bool operator==(const Array &p_array) const;
-
-	uint32_t hash() const;
-	void operator=(const Array &p_array);
-
-	void push_back(const Variant &p_value);
-	_FORCE_INLINE_ void append(const Variant &p_value) { push_back(p_value); } //for python compatibility
-	Error resize(int p_new_size);
-
-	void insert(int p_pos, const Variant &p_value);
-	void remove(int p_pos);
-
-	Variant front() const;
-	Variant back() const;
-
-	Array &sort();
-	Array &sort_custom(Object *p_obj, const StringName &p_function);
-	void shuffle();
-	int bsearch(const Variant &p_value, bool p_before = true);
-	int bsearch_custom(const Variant &p_value, Object *p_obj, const StringName &p_function, bool p_before = true);
-	Array &invert();
-
-	int find(const Variant &p_value, int p_from = 0) const;
-	int rfind(const Variant &p_value, int p_from = -1) const;
-	int find_last(const Variant &p_value) const;
-	int count(const Variant &p_value) const;
-	bool has(const Variant &p_value) const;
-
-	void erase(const Variant &p_value);
-
-	void push_front(const Variant &p_value);
-	Variant pop_back();
-	Variant pop_front();
-
-	Array duplicate(bool p_deep = false) const;
-
-	Variant min() const;
-	Variant max() const;
-
-	const void *id() const;
-
-	Array(const Array &p_from);
-	Array();
-	~Array();
+enum Error {
+	OK, // (0)
+	FAILED, ///< Generic fail error
+	ERR_UNAVAILABLE, ///< What is requested is unsupported/unavailable
+	ERR_UNCONFIGURED, ///< The object being used hasn't been properly set up yet
+	ERR_UNAUTHORIZED, ///< Missing credentials for requested resource
+	ERR_PARAMETER_RANGE_ERROR, ///< Parameter given out of range (5)
+	ERR_OUT_OF_MEMORY, ///< Out of memory
+	ERR_FILE_NOT_FOUND,
+	ERR_FILE_BAD_DRIVE,
+	ERR_FILE_BAD_PATH,
+	ERR_FILE_NO_PERMISSION, // (10)
+	ERR_FILE_ALREADY_IN_USE,
+	ERR_FILE_CANT_OPEN,
+	ERR_FILE_CANT_WRITE,
+	ERR_FILE_CANT_READ,
+	ERR_FILE_UNRECOGNIZED, // (15)
+	ERR_FILE_CORRUPT,
+	ERR_FILE_MISSING_DEPENDENCIES,
+	ERR_FILE_EOF,
+	ERR_CANT_OPEN, ///< Can't open a resource/socket/file
+	ERR_CANT_CREATE, // (20)
+	ERR_QUERY_FAILED,
+	ERR_ALREADY_IN_USE,
+	ERR_LOCKED, ///< resource is locked
+	ERR_TIMEOUT,
+	ERR_CANT_CONNECT, // (25)
+	ERR_CANT_RESOLVE,
+	ERR_CONNECTION_ERROR,
+	ERR_CANT_ACQUIRE_RESOURCE,
+	ERR_CANT_FORK,
+	ERR_INVALID_DATA, ///< Data passed is invalid (30)
+	ERR_INVALID_PARAMETER, ///< Parameter passed is invalid
+	ERR_ALREADY_EXISTS, ///< When adding, item already exists
+	ERR_DOES_NOT_EXIST, ///< When retrieving/erasing, if item does not exist
+	ERR_DATABASE_CANT_READ, ///< database is full
+	ERR_DATABASE_CANT_WRITE, ///< database is full (35)
+	ERR_COMPILATION_FAILED,
+	ERR_METHOD_NOT_FOUND,
+	ERR_LINK_FAILED,
+	ERR_SCRIPT_FAILED,
+	ERR_CYCLIC_LINK, // (40)
+	ERR_INVALID_DECLARATION,
+	ERR_DUPLICATE_SYMBOL,
+	ERR_PARSE_ERROR,
+	ERR_BUSY,
+	ERR_SKIP, // (45)
+	ERR_HELP, ///< user requested help!!
+	ERR_BUG, ///< a bug in the software certainly happened, due to a double check failing or unexpected behavior.
+	ERR_PRINTER_ON_FIRE, /// the parallel port printer is engulfed in flames
 };
 
-#endif // ARRAY_H
+#endif

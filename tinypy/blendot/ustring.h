@@ -31,10 +31,10 @@
 #ifndef USTRING_H
 #define USTRING_H
 
-#include "core/array.h"
-#include "core/cowdata.h"
-#include "core/typedefs.h"
-#include "core/vector.h"
+#include "array.h"
+#include "cowdata.h"
+#include "typedefs.h"
+#include "vector.h"
 
 template <class T>
 class CharProxy {

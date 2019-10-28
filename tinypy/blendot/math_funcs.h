@@ -31,11 +31,11 @@
 #ifndef MATH_FUNCS_H
 #define MATH_FUNCS_H
 
-#include "core/math/math_defs.h"
-#include "core/math/random_pcg.h"
-#include "core/typedefs.h"
+#include "math_defs.h"
+//#include "core/math/random_pcg.h"
+#include "typedefs.h"
 
-#include "thirdparty/misc/pcg.h"
+//#include "thirdparty/misc/pcg.h"
 
 #include <float.h>
 #include <math.h>

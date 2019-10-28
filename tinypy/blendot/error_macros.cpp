@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  array.h                                                              */
+/*  error_macros.cpp                                                     */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,77 +28,80 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef ARRAY_H
-#define ARRAY_H
+#include "error_macros.h"
 
-#include "typedefs.h"
+#include "core/io/logger.h"
+#include "os/os.h"
 
-class Variant;
-class ArrayPrivate;
-class Object;
-class StringName;
+bool _err_error_exists = false;
 
-class Array {
+static ErrorHandlerList *error_handler_list = NULL;
 
-	mutable ArrayPrivate *_p;
-	void _ref(const Array &p_from) const;
-	void _unref() const;
+void _err_set_last_error(const char *p_err) {
 
-public:
-	Variant &operator[](int p_idx);
-	const Variant &operator[](int p_idx) const;
+	OS::get_singleton()->set_last_error(p_err);
+}
 
-	void set(int p_idx, const Variant &p_value);
-	const Variant &get(int p_idx) const;
+void _err_clear_last_error() {
 
-	int size() const;
-	bool empty() const;
-	void clear();
+	OS::get_singleton()->clear_last_error();
+}
 
-	bool operator==(const Array &p_array) const;
+void add_error_handler(ErrorHandlerList *p_handler) {
 
-	uint32_t hash() const;
-	void operator=(const Array &p_array);
+	_global_lock();
+	p_handler->next = error_handler_list;
+	error_handler_list = p_handler;
+	_global_unlock();
+}
 
-	void push_back(const Variant &p_value);
-	_FORCE_INLINE_ void append(const Variant &p_value) { push_back(p_value); } //for python compatibility
-	Error resize(int p_new_size);
+void remove_error_handler(ErrorHandlerList *p_handler) {
 
-	void insert(int p_pos, const Variant &p_value);
-	void remove(int p_pos);
+	_global_lock();
 
-	Variant front() const;
-	Variant back() const;
+	ErrorHandlerList *prev = NULL;
+	ErrorHandlerList *l = error_handler_list;
 
-	Array &sort();
-	Array &sort_custom(Object *p_obj, const StringName &p_function);
-	void shuffle();
-	int bsearch(const Variant &p_value, bool p_before = true);
-	int bsearch_custom(const Variant &p_value, Object *p_obj, const StringName &p_function, bool p_before = true);
-	Array &invert();
+	while (l) {
 
-	int find(const Variant &p_value, int p_from = 0) const;
-	int rfind(const Variant &p_value, int p_from = -1) const;
-	int find_last(const Variant &p_value) const;
-	int count(const Variant &p_value) const;
-	bool has(const Variant &p_value) const;
+		if (l == p_handler) {
 
-	void erase(const Variant &p_value);
+			if (prev)
+				prev->next = l->next;
+			else
+				error_handler_list = l->next;
+			break;
+		}
+		prev = l;
+		l = l->next;
+	}
 
-	void push_front(const Variant &p_value);
-	Variant pop_back();
-	Variant pop_front();
+	_global_unlock();
+}
 
-	Array duplicate(bool p_deep = false) const;
+void _err_print_error(const char *p_function, const char *p_file, int p_line, const char *p_error, ErrorHandlerType p_type) {
 
-	Variant min() const;
-	Variant max() const;
+	OS::get_singleton()->print_error(p_function, p_file, p_line, p_error, _err_error_exists ? OS::get_singleton()->get_last_error() : "", (Logger::ErrorType)p_type);
 
-	const void *id() const;
+	_global_lock();
+	ErrorHandlerList *l = error_handler_list;
+	while (l) {
 
-	Array(const Array &p_from);
-	Array();
-	~Array();
-};
+		l->errfunc(l->userdata, p_function, p_file, p_line, p_error, _err_error_exists ? OS::get_singleton()->get_last_error() : "", p_type);
+		l = l->next;
+	}
 
-#endif // ARRAY_H
+	_global_unlock();
+
+	if (_err_error_exists) {
+		OS::get_singleton()->clear_last_error();
+		_err_error_exists = false;
+	}
+}
+
+void _err_print_index_error(const char *p_function, const char *p_file, int p_line, int64_t p_index, int64_t p_size, const char *p_index_str, const char *p_size_str, bool fatal) {
+
+	String fstr(fatal ? "FATAL: " : "");
+	String err(fstr + "Index " + p_index_str + "=" + itos(p_index) + " out of size (" + p_size_str + "=" + itos(p_size) + ")");
+	_err_print_error(p_function, p_file, p_line, err.utf8().get_data());
+}

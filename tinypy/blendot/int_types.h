@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  array.h                                                              */
+/*  int_types.h                                                          */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,77 +28,30 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef ARRAY_H
-#define ARRAY_H
+#ifdef _MSC_VER
 
-#include "typedefs.h"
+typedef signed __int8 int8_t;
+typedef unsigned __int8 uint8_t;
+typedef signed __int16 int16_t;
+typedef unsigned __int16 uint16_t;
+typedef signed __int32 int32_t;
+typedef unsigned __int32 uint32_t;
+typedef signed __int64 int64_t;
+typedef unsigned __int64 uint64_t;
 
-class Variant;
-class ArrayPrivate;
-class Object;
-class StringName;
+#else
 
-class Array {
+#ifdef NO_STDINT_H
+typedef unsigned char uint8_t;
+typedef signed char int8_t;
+typedef unsigned short uint16_t;
+typedef signed short int16_t;
+typedef unsigned int uint32_t;
+typedef signed int int32_t;
+typedef long long int64_t;
+typedef unsigned long long uint64_t;
+#else
+#include <stdint.h>
+#endif
 
-	mutable ArrayPrivate *_p;
-	void _ref(const Array &p_from) const;
-	void _unref() const;
-
-public:
-	Variant &operator[](int p_idx);
-	const Variant &operator[](int p_idx) const;
-
-	void set(int p_idx, const Variant &p_value);
-	const Variant &get(int p_idx) const;
-
-	int size() const;
-	bool empty() const;
-	void clear();
-
-	bool operator==(const Array &p_array) const;
-
-	uint32_t hash() const;
-	void operator=(const Array &p_array);
-
-	void push_back(const Variant &p_value);
-	_FORCE_INLINE_ void append(const Variant &p_value) { push_back(p_value); } //for python compatibility
-	Error resize(int p_new_size);
-
-	void insert(int p_pos, const Variant &p_value);
-	void remove(int p_pos);
-
-	Variant front() const;
-	Variant back() const;
-
-	Array &sort();
-	Array &sort_custom(Object *p_obj, const StringName &p_function);
-	void shuffle();
-	int bsearch(const Variant &p_value, bool p_before = true);
-	int bsearch_custom(const Variant &p_value, Object *p_obj, const StringName &p_function, bool p_before = true);
-	Array &invert();
-
-	int find(const Variant &p_value, int p_from = 0) const;
-	int rfind(const Variant &p_value, int p_from = -1) const;
-	int find_last(const Variant &p_value) const;
-	int count(const Variant &p_value) const;
-	bool has(const Variant &p_value) const;
-
-	void erase(const Variant &p_value);
-
-	void push_front(const Variant &p_value);
-	Variant pop_back();
-	Variant pop_front();
-
-	Array duplicate(bool p_deep = false) const;
-
-	Variant min() const;
-	Variant max() const;
-
-	const void *id() const;
-
-	Array(const Array &p_from);
-	Array();
-	~Array();
-};
-
-#endif // ARRAY_H
+#endif

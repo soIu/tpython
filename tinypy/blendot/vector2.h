@@ -31,8 +31,8 @@
 #ifndef VECTOR2_H
 #define VECTOR2_H
 
-#include "core/math/math_funcs.h"
-#include "core/ustring.h"
+#include "math_funcs.h"
+#include "ustring.h"
 
 struct Vector2i;
 
