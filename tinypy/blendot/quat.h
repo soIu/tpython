@@ -38,8 +38,8 @@
 #include "math_funcs.h"
 #include "ustring.h"
 
-class Quat {
-public:
+struct Quat {
+//public:
 	real_t x, y, z, w;
 
 	_FORCE_INLINE_ real_t length_squared() const;
@@ -120,20 +120,25 @@ public:
 	Quat(const Vector3 &axis, const real_t &angle) { set_axis_angle(axis, angle); }
 
 	Quat(const Vector3 &euler) { set_euler(euler); }
-	Quat(const Quat &q) :
-			x(q.x),
-			y(q.y),
-			z(q.z),
-			w(q.w) {
-	}
 
-	Quat operator=(const Quat &q) {
-		x = q.x;
-		y = q.y;
-		z = q.z;
-		w = q.w;
-		return *this;
-	}
+
+	// non-trivial not allowed in union
+	//Quat(const Quat &q) :
+	//		x(q.x),
+	//		y(q.y),
+	//		z(q.z),
+	//		w(q.w) {
+	//}
+
+
+	// non-trivial not allowed in union
+	//Quat operator=(const Quat &q) {
+	//	x = q.x;
+	//	y = q.y;
+	//	z = q.z;
+	//	w = q.w;
+	//	return *this;
+	//}
 
 	Quat(const Vector3 &v0, const Vector3 &v1) // shortest arc
 	{
@@ -156,7 +161,6 @@ public:
 			w = s * 0.5;
 		}
 	}
-
 	inline Quat() :
 			x(0),
 			y(0),

@@ -41,7 +41,7 @@ Makefile = '''
 
 TINYPYC=./tpc
 
-VMLIB_FILES=tp.gen.cpp dummy-compiler.cpp runtime.gen.cpp blendot/math_funcs.cpp blendot/vector2.cpp <MODULES>
+VMLIB_FILES=tp.gen.cpp dummy-compiler.cpp runtime.gen.cpp blendot/math_funcs.cpp blendot/basis.cpp blendot/vector2.cpp blendot/vector3.cpp blendot/quat.cpp <MODULES>
 TPLIB_FILES=tp.gen.cpp compiler.cpp runtime.gen.cpp
 
 #MODULES=math random re

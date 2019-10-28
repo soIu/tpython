@@ -30,9 +30,9 @@
 
 #include "basis.h"
 
-#include "core/math/math_funcs.h"
-#include "core/os/copymem.h"
-#include "core/print_string.h"
+#include "math_funcs.h"
+#include "copymem.h"
+//#include "core/print_string.h"
 
 #define cofac(row1, col1, row2, col2) \
 	(elements[row1][col1] * elements[row2][col2] - elements[row1][col2] * elements[row2][col1])
@@ -598,6 +598,7 @@ bool Basis::operator!=(const Basis &p_matrix) const {
 	return (!(*this == p_matrix));
 }
 
+/*
 Basis::operator String() const {
 
 	String mtx;
@@ -614,6 +615,7 @@ Basis::operator String() const {
 
 	return mtx;
 }
+*/
 
 Quat Basis::get_quat() const {
 

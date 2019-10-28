@@ -30,8 +30,8 @@
 
 #include "quat.h"
 
-#include "core/math/basis.h"
-#include "core/print_string.h"
+#include "basis.h"
+//#include "core/print_string.h"
 
 // set_euler_xyz expects a vector containing the Euler angles in the format
 // (ax,ay,az), where ax is the angle of rotation around x axis,
@@ -226,10 +226,12 @@ Quat Quat::cubic_slerp(const Quat &q, const Quat &prep, const Quat &postq, const
 	return sp.slerpni(sq, t2);
 }
 
+/*
 Quat::operator String() const {
 
 	return String::num(x) + ", " + String::num(y) + ", " + String::num(z) + ", " + String::num(w);
 }
+*/
 
 void Quat::set_axis_angle(const Vector3 &axis, const real_t &angle) {
 #ifdef MATH_CHECKS
