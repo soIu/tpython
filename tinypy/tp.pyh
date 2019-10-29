@@ -12,6 +12,7 @@ import "blendot/vector3.h"
 import "blendot/quat.h"
 import "blendot/color.h"
 import "blendot/rect2.h"
+import "blendot/face3.h"
 
 
 import <cstddef>
@@ -85,6 +86,8 @@ enum TPTypeID {
   TP_QUAT = 5,
   TP_COLOR = 6,
   TP_RECT = 7,
+  TP_TRI = 8,
+
   TP_GC_TRACKED = 10,
   TP_FUNC = 10,
   TP_DATA = 11,
@@ -171,6 +174,7 @@ typedef class tp_obj {
   struct { TPTypeInfo type; struct Quat q; } quat;
   struct { TPTypeInfo type; struct Color c; } color;
   struct { TPTypeInfo type; struct Rect2 r; } rect;
+  struct { TPTypeInfo type; struct Face3 t; } tri;
  };
 //tp_obj(double num) {
 //this->type.type_id = TP_NUMBER;
@@ -512,6 +516,12 @@ def tp_vec3(double x, double y, double z) -> tp_obj:
 	return val
 
 @static
+def tp_vec3(Vector3 v) -> tp_obj:
+	tp_obj val = {TP_VEC3};
+	val.vec3.vec = v
+	return val
+
+@static
 def tp_quat(double x, double y, double z, double w) -> tp_obj:
 	tp_obj val = {TP_QUAT};
 	val.quat.q.x = x
@@ -533,6 +543,12 @@ def tp_color(double r, double g, double b, double a) -> tp_obj:
 def tp_rect(double x, double y, double w, double h) -> tp_obj:
 	tp_obj val = {TP_RECT};
 	val.rect.r = Rect2(x,y,w,h)
+	return val
+
+@static
+def tp_tri(Vector3 a, Vector3 b, Vector3 c) -> tp_obj:
+	tp_obj val = {TP_TRI};
+	val.tri.t = Face3(a,b,c)
 	return val
 
 
@@ -678,6 +694,13 @@ def tp_as_string(TP, tp_obj self) ->std::string:
 			break
 		case TP_RECT:
 			ss << "rect( x=" << self.rect.r.position.x << ", y=" << self.rect.r.position.y << ", width=" << self.rect.r.size.x << ", height=" << self.rect.r.size.y << ")"
+			break
+		case TP_TRI:
+			ss << "tri(" << std::endl
+			ss << "	a:  x=" << self.tri.t.vertex[0].x << ", y=" << self.tri.t.vertex[0].y << ", z=" << self.tri.t.vertex[0].z << std::endl
+			ss << "	b:  x=" << self.tri.t.vertex[1].x << ", y=" << self.tri.t.vertex[1].y << ", z=" << self.tri.t.vertex[1].z << std::endl
+			ss << "	c:  x=" << self.tri.t.vertex[2].x << ", y=" << self.tri.t.vertex[2].y << ", z=" << self.tri.t.vertex[2].z << std::endl
+			ss << ")"
 			break
 		default:
 			ss << "<unknown type>"
