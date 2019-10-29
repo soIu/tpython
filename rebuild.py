@@ -41,7 +41,7 @@ Makefile = '''
 
 TINYPYC=./tpc
 
-VMLIB_FILES=tp.gen.cpp dummy-compiler.cpp runtime.gen.cpp blendot/memory.cpp blendot/pool_allocator.cpp blendot/pool_vector.cpp blendot/variant.cpp blendot/array.cpp blendot/core_string_names.cpp blendot/dictionary.cpp blendot/ustring.cpp blendot/math_funcs.cpp blendot/basis.cpp blendot/vector2.cpp blendot/vector3.cpp blendot/quat.cpp blendot/color.cpp <MODULES>
+VMLIB_FILES=tp.gen.cpp dummy-compiler.cpp runtime.gen.cpp blendot/mutex.cpp blendot/memory.cpp blendot/pool_allocator.cpp blendot/pool_vector.cpp blendot/message_queue.cpp blendot/object.cpp blendot/node_path.cpp blendot/ip_address.cpp blendot/class_db.cpp blendot/resource.cpp blendot/method_bind.cpp blendot/reference.cpp blendot/ref_ptr.cpp blendot/array.cpp blendot/variant_op.cpp blendot/variant.cpp blendot/string_name.cpp blendot/print_string.cpp blendot/core_string_names.cpp blendot/dictionary.cpp blendot/ustring.cpp blendot/math_funcs.cpp blendot/basis.cpp blendot/vector2.cpp blendot/vector3.cpp blendot/quat.cpp blendot/color.cpp blendot/aabb.cpp blendot/transform.cpp blendot/transform_2d.cpp <MODULES>
 TPLIB_FILES=tp.gen.cpp compiler.cpp runtime.gen.cpp
 
 #MODULES=math random re
@@ -229,9 +229,9 @@ def rebuild(stage=None):
 
 	else:  ## linux
 		if '--secure-binary' in sys.argv:
-			opts += ' -O2 -fno-rtti -finline-small-functions -march=native'
+			opts += ' -O2 -finline-small-functions -march=native'
 		else:
-			opts += ' -O3 -fno-rtti -funroll-loops -finline-small-functions -march=native -ffast-math -fno-math-errno -funsafe-math-optimizations -fno-signed-zeros -fno-trapping-math -frename-registers'
+			opts += ' -O3 -funroll-loops -finline-small-functions -march=native -ffast-math -fno-math-errno -funsafe-math-optimizations -fno-signed-zeros -fno-trapping-math -frename-registers'
 		exeopts += opts
 		if '--gcc5' in sys.argv:
 			CC = '/usr/bin/g++-5'

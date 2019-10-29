@@ -30,7 +30,9 @@
 
 #include "reference.h"
 
-#include "core/script_language.h"
+#ifdef BLENDOT
+	#include "core/script_language.h"
+#endif
 
 bool Reference::init_ref() {
 
@@ -65,7 +67,7 @@ int Reference::reference_get_count() const {
 
 bool Reference::reference() {
 	bool success = refcount.ref();
-
+#ifdef BLENDOT
 	if (success && refcount.get() <= 2 /* higher is not relevant */) {
 		if (get_script_instance()) {
 			get_script_instance()->refcount_incremented();
@@ -78,14 +80,14 @@ bool Reference::reference() {
 			}
 		}
 	}
-
+#endif
 	return success;
 }
 
 bool Reference::unreference() {
 
 	bool die = refcount.unref();
-
+#ifdef BLENDOT
 	if (refcount.get() <= 1 /* higher is not relevant */) {
 		if (get_script_instance()) {
 			bool script_ret = get_script_instance()->refcount_decremented();
@@ -100,7 +102,7 @@ bool Reference::unreference() {
 			}
 		}
 	}
-
+#endif
 	return die;
 }
 

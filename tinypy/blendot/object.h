@@ -396,7 +396,26 @@ public:                                                        \
                                                                \
 private:
 
+#ifdef BLENDOT
 class ScriptInstance;
+#else
+#include "pair.h"
+#include "list.h"
+class ScriptInstance {
+	public:
+	bool set(const StringName &p_name, const Variant &p_value) {return false;}
+	bool get(const StringName &p_name, Variant &r_ret) {return false;}
+	void get_property_list(List<PropertyInfo> *p_properties) {}
+	//Variant::Type get_property_type(const StringName &p_name, bool *r_is_valid = NULL) const = 0;
+
+	Object *get_owner() { return NULL; }
+	void get_property_state(List<Pair<StringName, Variant> > &state) {}
+	void get_method_list(List<MethodInfo> *p_list) {}
+	bool has_method(const StringName &p_method) { return false; }
+
+};
+#endif
+
 typedef uint64_t ObjectID;
 
 class Object {

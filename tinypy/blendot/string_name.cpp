@@ -30,8 +30,8 @@
 
 #include "string_name.h"
 
-#include "core/os/os.h"
-#include "core/print_string.h"
+//#include "core/os/os.h"
+#include "print_string.h"
 
 StaticCString StaticCString::create(const char *p_ptr) {
 	StaticCString scs;
@@ -72,6 +72,7 @@ void StringName::cleanup() {
 
 			_Data *d = _table[i];
 			lost_strings++;
+			/*
 			if (OS::get_singleton()->is_stdout_verbose()) {
 				if (d->cname) {
 					print_line("Orphan StringName: " + String(d->cname));
@@ -79,6 +80,7 @@ void StringName::cleanup() {
 					print_line("Orphan StringName: " + String(d->name));
 				}
 			}
+			*/
 
 			_table[i] = _table[i]->next;
 			memdelete(d);

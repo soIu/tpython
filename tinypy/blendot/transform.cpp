@@ -30,9 +30,9 @@
 
 #include "transform.h"
 
-#include "core/math/math_funcs.h"
-#include "core/os/copymem.h"
-#include "core/print_string.h"
+#include "math_funcs.h"
+#include "copymem.h"
+#include "print_string.h"
 
 void Transform::affine_invert() {
 
@@ -205,8 +205,9 @@ Transform Transform::operator*(const Transform &p_transform) const {
 }
 
 Transform::operator String() const {
-
+#ifdef BLENDOT
 	return basis.operator String() + " - " + origin.operator String();
+#endif
 }
 
 Transform::Transform(const Basis &p_basis, const Vector3 &p_origin) :

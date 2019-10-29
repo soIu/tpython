@@ -30,8 +30,8 @@
 
 #include "ref_ptr.h"
 
-#include "core/reference.h"
-#include "core/resource.h"
+#include "reference.h"
+#include "resource.h"
 
 void RefPtr::operator=(const RefPtr &p_other) {
 

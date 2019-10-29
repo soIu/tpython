@@ -30,7 +30,7 @@
 
 #include "aabb.h"
 
-#include "core/print_string.h"
+#include "print_string.h"
 
 real_t AABB::get_area() const {
 
@@ -392,6 +392,7 @@ void AABB::get_edge(int p_edge, Vector3 &r_from, Vector3 &r_to) const {
 }
 
 AABB::operator String() const {
-
+#ifdef BLENDOT
 	return String() + position + " - " + size;
+#endif
 }

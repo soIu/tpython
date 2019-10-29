@@ -30,11 +30,17 @@
 
 #include "resource.h"
 
-#include "core/core_string_names.h"
-#include "core/io/resource_loader.h"
-#include "core/os/file_access.h"
-#include "core/script_language.h"
-#include "scene/main/node.h" //only so casting works
+#include "core_string_names.h"
+#ifdef BLENDOT
+	#include "core/io/resource_loader.h"
+#endif
+
+#include "file_access.h"
+
+#ifdef BLENDOT
+	#include "core/script_language.h"
+	#include "scene/main/node.h" //only so casting works
+#endif
 
 #include <stdio.h>
 
@@ -122,6 +128,7 @@ bool Resource::editor_can_reload_from_file() {
 }
 
 void Resource::reload_from_file() {
+#ifdef BLENDOT
 
 	String path = get_path();
 	if (!path.is_resource_file())
@@ -144,6 +151,7 @@ void Resource::reload_from_file() {
 
 		set(E->get().name, s->get(E->get().name));
 	}
+#endif
 }
 
 Ref<Resource> Resource::duplicate_for_local_scene(Node *p_for_scene, Map<Ref<Resource>, Ref<Resource> > &remap_cache) {
@@ -329,14 +337,17 @@ Node *Resource::get_local_scene() const {
 }
 
 void Resource::setup_local_to_scene() {
+#ifdef BLENDOT
 
 	if (get_script_instance())
 		get_script_instance()->call("_setup_local_to_scene");
+#endif
 }
 
 Node *(*Resource::_get_local_scene_func)() = NULL;
 
 void Resource::set_as_translation_remapped(bool p_remapped) {
+#ifdef BLENDOT
 
 	if (remapped_list.in_list() == p_remapped)
 		return;
@@ -354,6 +365,7 @@ void Resource::set_as_translation_remapped(bool p_remapped) {
 	if (ResourceCache::lock) {
 		ResourceCache::lock->write_unlock();
 	}
+#endif
 }
 
 bool Resource::is_translation_remapped() const {
@@ -434,8 +446,9 @@ HashMap<String, Resource *> ResourceCache::resources;
 RWLock *ResourceCache::lock = NULL;
 
 void ResourceCache::setup() {
-
+#ifdef BLENDOT
 	lock = RWLock::create();
+#endif
 }
 
 void ResourceCache::clear() {

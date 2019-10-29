@@ -29,10 +29,12 @@
 /*************************************************************************/
 
 #include "class_db.h"
+#include "mutex.h"
 
-#include "core/engine.h"
-#include "core/os/mutex.h"
-#include "core/version.h"
+#ifdef BLENDOT
+	#include "core/engine.h"
+	#include "core/version.h"
+#endif
 
 #define OBJTYPE_RLOCK RWLockRead _rw_lockr_(lock);
 #define OBJTYPE_WLOCK RWLockWrite _rw_lockw_(lock);
@@ -1385,6 +1387,7 @@ Variant ClassDB::class_get_default_property_value(const StringName &p_class, con
 		Object *c = NULL;
 		bool cleanup_c = false;
 
+#ifdef BLENDOT
 		if (Engine::get_singleton()->has_singleton(p_class)) {
 			c = Engine::get_singleton()->get_singleton_object(p_class);
 			cleanup_c = false;
@@ -1392,6 +1395,7 @@ Variant ClassDB::class_get_default_property_value(const StringName &p_class, con
 			c = ClassDB::instance(p_class);
 			cleanup_c = true;
 		}
+#endif
 
 		if (c) {
 
@@ -1432,8 +1436,9 @@ Variant ClassDB::class_get_default_property_value(const StringName &p_class, con
 RWLock *ClassDB::lock = NULL;
 
 void ClassDB::init() {
-
+#ifdef BLENDOT
 	lock = RWLock::create();
+#endif
 }
 
 void ClassDB::cleanup_defaults() {

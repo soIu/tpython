@@ -1403,6 +1403,7 @@ Variant::operator String() const {
 }
 
 String Variant::stringify(List<const void *> &stack) const {
+#ifdef BLENDOT
 	switch (type) {
 
 		case NIL: return "Null";
@@ -1592,7 +1593,7 @@ String Variant::stringify(List<const void *> &stack) const {
 			return "[" + get_type_name(type) + "]";
 		}
 	}
-
+#endif
 	return "";
 }
 
@@ -3185,6 +3186,8 @@ bool Variant::is_shared() const {
 
 Variant Variant::call(const StringName &p_method, VARIANT_ARG_DECLARE) {
 	VARIANT_ARGPTRS;
+
+#ifdef BLENDOT
 	int argc = 0;
 	for (int i = 0; i < VARIANT_ARG_MAX; i++) {
 		if (argptr[i]->get_type() == Variant::NIL)
@@ -3219,6 +3222,11 @@ Variant Variant::call(const StringName &p_method, VARIANT_ARG_DECLARE) {
 	}
 
 	return ret;
+#else
+
+	return Variant::NIL;
+
+#endif
 }
 
 void Variant::construct_from_string(const String &p_string, Variant &r_value, ObjectConstruct p_obj_construct, void *p_construct_ud) {
@@ -3229,8 +3237,9 @@ void Variant::construct_from_string(const String &p_string, Variant &r_value, Ob
 String Variant::get_construct_string() const {
 
 	String vars;
+#ifdef BLENDOT
 	VariantWriter::write_to_string(*this, vars);
-
+#endif
 	return vars;
 }
 

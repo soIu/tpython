@@ -30,14 +30,16 @@
 
 #include "object.h"
 
-#include "core/class_db.h"
-#include "core/core_string_names.h"
-#include "core/message_queue.h"
-#include "core/os/os.h"
-#include "core/print_string.h"
-#include "core/resource.h"
-#include "core/script_language.h"
-#include "core/translation.h"
+#include "class_db.h"
+#include "core_string_names.h"
+#include "message_queue.h"
+#include "print_string.h"
+#include "resource.h"
+#ifdef BLENDOT
+	#include "core/os/os.h"
+	#include "core/script_language.h"
+#endif
+//#include "core/translation.h"
 
 #ifdef DEBUG_ENABLED
 
@@ -761,10 +763,12 @@ void Object::call_multilevel(const StringName &p_method, const Variant **p_args,
 
 	Variant::CallError error;
 
+#ifdef BLENDOT
 	if (script_instance) {
 		script_instance->call_multilevel(p_method, p_args, p_argcount);
 		//_test_call_error(p_method,error);
 	}
+#endif
 
 	MethodBind *method = ClassDB::get_method(get_class_name(), p_method);
 
@@ -789,11 +793,14 @@ void Object::call_multilevel_reversed(const StringName &p_method, const Variant 
 	}
 
 	//Variant ret;
+#ifdef BLENDOT
 
 	if (script_instance) {
 		script_instance->call_multilevel_reversed(p_method, p_args, p_argcount);
 		//_test_call_error(p_method,error);
 	}
+
+#endif
 }
 
 bool Object::has_method(const StringName &p_method) const {
@@ -906,6 +913,9 @@ Variant Object::call(const StringName &p_method, const Variant **p_args, int p_a
 
 	Variant ret;
 	OBJ_DEBUG_LOCK
+
+#ifdef BLENDOT
+
 	if (script_instance) {
 		ret = script_instance->call(p_method, p_args, p_argcount, r_error);
 		//force jumptable
@@ -923,6 +933,7 @@ Variant Object::call(const StringName &p_method, const Variant **p_args, int p_a
 			}
 		}
 	}
+#endif
 
 	MethodBind *method = ClassDB::get_method(get_class_name(), p_method);
 
@@ -939,19 +950,25 @@ Variant Object::call(const StringName &p_method, const Variant **p_args, int p_a
 void Object::notification(int p_notification, bool p_reversed) {
 
 	_notificationv(p_notification, p_reversed);
+#ifdef BLENDOT
 
 	if (script_instance) {
 		script_instance->notification(p_notification);
 	}
+#endif
+
 }
 
 String Object::to_string() {
+#ifdef BLENDOT
 	if (script_instance) {
 		bool valid;
 		String ret = script_instance->to_string(&valid);
 		if (valid)
 			return ret;
 	}
+#endif
+
 	return "[" + get_class() + ":" + itos(get_instance_id()) + "]";
 }
 
@@ -991,6 +1008,8 @@ void Object::set_script_and_instance(const RefPtr &p_script, ScriptInstance *p_i
 
 void Object::set_script(const RefPtr &p_script) {
 
+#ifdef BLENDOT
+
 	if (script == p_script)
 		return;
 
@@ -1014,9 +1033,12 @@ void Object::set_script(const RefPtr &p_script) {
 
 	_change_notify(); //scripts may add variables, so refresh is desired
 	emit_signal(CoreStringNames::get_singleton()->script_changed);
+
+#endif
 }
 
 void Object::set_script_instance(ScriptInstance *p_instance) {
+#ifdef BLENDOT
 
 	if (script_instance == p_instance)
 		return;
@@ -1030,6 +1052,7 @@ void Object::set_script_instance(ScriptInstance *p_instance) {
 		script = p_instance->get_script().get_ref_ptr();
 	else
 		script = RefPtr();
+#endif
 }
 
 RefPtr Object::get_script() const {
@@ -1364,6 +1387,7 @@ Array Object::_get_incoming_connections() const {
 }
 
 void Object::get_signal_list(List<MethodInfo> *p_signals) const {
+#ifdef BLENDOT
 
 	if (!script.is_null()) {
 		Ref<Script> scr = script;
@@ -1371,6 +1395,7 @@ void Object::get_signal_list(List<MethodInfo> *p_signals) const {
 			scr->get_script_signal_list(p_signals);
 		}
 	}
+#endif
 
 	ClassDB::get_signal_list(get_class_name(), p_signals);
 	//find maybe usersignals?
@@ -1443,21 +1468,25 @@ Error Object::connect(const StringName &p_signal, Object *p_to_object, const Str
 	Signal *s = signal_map.getptr(p_signal);
 	if (!s) {
 		bool signal_is_valid = ClassDB::has_signal(get_class_name(), p_signal);
+
+#ifdef BLENDOT
+
 		//check in script
 		if (!signal_is_valid && !script.is_null()) {
 
 			if (Ref<Script>(script)->has_script_signal(p_signal)) {
 				signal_is_valid = true;
 			}
-#ifdef TOOLS_ENABLED
+			#ifdef TOOLS_ENABLED
 			else {
 				//allow connecting signals anyway if script is invalid, see issue #17070
 				if (!Ref<Script>(script)->is_valid()) {
 					signal_is_valid = true;
 				}
 			}
-#endif
+			#endif
 		}
+#endif
 
 		ERR_FAIL_COND_V_MSG(!signal_is_valid, ERR_INVALID_PARAMETER, "In Object of type '" + String(get_class()) + "': Attempt to connect nonexistent signal '" + p_signal + "' to method '" + p_to_object->get_class() + "." + p_to_method + "'.");
 
@@ -1504,8 +1533,12 @@ bool Object::is_connected(const StringName &p_signal, Object *p_to_object, const
 		if (signal_is_valid)
 			return false;
 
+#ifdef BLENDOT
+
 		if (!script.is_null() && Ref<Script>(script)->has_script_signal(p_signal))
 			return false;
+
+#endif
 
 		ERR_FAIL_V_MSG(false, "Nonexistent signal: " + p_signal + ".");
 	}
@@ -1582,11 +1615,10 @@ void Object::initialize_class() {
 }
 
 StringName Object::tr(const StringName &p_message) const {
-
-	if (!_can_translate || !TranslationServer::get_singleton())
-		return p_message;
-
-	return TranslationServer::get_singleton()->translate(p_message);
+	return p_message;
+	//if (!_can_translate || !TranslationServer::get_singleton())
+	//	return p_message;
+	//return TranslationServer::get_singleton()->translate(p_message);
 }
 
 void Object::_clear_internal_resource_paths(const Variant &p_var) {
@@ -1815,9 +1847,12 @@ Variant::Type Object::get_static_property_type(const StringName &p_property, boo
 		return t;
 	}
 
+#ifdef BLENDOT
+
 	if (get_script_instance()) {
 		return get_script_instance()->get_property_type(p_property, r_valid);
 	}
+#endif
 	if (r_valid)
 		*r_valid = false;
 
@@ -1825,7 +1860,7 @@ Variant::Type Object::get_static_property_type(const StringName &p_property, boo
 }
 
 Variant::Type Object::get_static_property_type_indexed(const Vector<StringName> &p_path, bool *r_valid) const {
-
+#ifdef BLENDOT
 	if (p_path.size() == 0) {
 		if (r_valid)
 			*r_valid = false;
@@ -1866,6 +1901,11 @@ Variant::Type Object::get_static_property_type_indexed(const Vector<StringName> 
 		*r_valid = true;
 
 	return check.get_type();
+#else
+
+	return Variant::NIL;
+
+#endif
 }
 
 bool Object::is_queued_for_deletion() const {
@@ -1900,6 +1940,7 @@ void *Object::get_script_instance_binding(int p_script_language_index) {
 	//if you want to put a big lock in the entire function and keep allocated pointers in a map or something, feel free to do it
 	//as it should not really affect performance much (won't be called too often), as in far most caes the condition below will be false afterwards
 
+#ifdef BLENDOT
 	if (!_script_instance_bindings[p_script_language_index]) {
 		void *script_data = ScriptServer::get_language(p_script_language_index)->alloc_instance_binding_data(this);
 		if (script_data) {
@@ -1907,7 +1948,7 @@ void *Object::get_script_instance_binding(int p_script_language_index) {
 			_script_instance_bindings[p_script_language_index] = script_data;
 		}
 	}
-
+#endif
 	return _script_instance_bindings[p_script_language_index];
 }
 
@@ -1983,6 +2024,7 @@ Object::~Object() {
 	_instance_id = 0;
 	_predelete_ok = 2;
 
+#ifdef BLENDOT
 	if (!ScriptServer::are_languages_finished()) {
 		for (int i = 0; i < MAX_SCRIPT_INSTANCE_BINDINGS; i++) {
 			if (_script_instance_bindings[i]) {
@@ -1990,6 +2032,8 @@ Object::~Object() {
 			}
 		}
 	}
+#endif
+
 }
 
 bool predelete_handler(Object *p_object) {
@@ -2067,8 +2111,9 @@ int ObjectDB::get_object_count() {
 RWLock *ObjectDB::rw_lock = NULL;
 
 void ObjectDB::setup() {
-
+#ifdef BLENDOT
 	rw_lock = RWLock::create();
+#endif
 }
 
 void ObjectDB::cleanup() {
@@ -2077,6 +2122,7 @@ void ObjectDB::cleanup() {
 	if (instances.size()) {
 
 		WARN_PRINT("ObjectDB Instances still exist!");
+#ifdef BLENDOT
 		if (OS::get_singleton()->is_stdout_verbose()) {
 			const ObjectID *K = NULL;
 			while ((K = instances.next(K))) {
@@ -2089,6 +2135,7 @@ void ObjectDB::cleanup() {
 				print_line("Leaked instance: " + String(instances[*K]->get_class()) + ":" + itos(*K) + node_name);
 			}
 		}
+#endif
 	}
 	instances.clear();
 	instance_checks.clear();
