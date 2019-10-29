@@ -403,6 +403,11 @@ def tpy_tri(TP) ->tp_obj:
 	tp_obj c = TP_OBJ()
 	return tp_tri(a.vec3.vec, b.vec3.vec, c.vec3.vec)
 
+def tpy_plane(TP) ->tp_obj:
+	tp_obj normal = TP_OBJ()
+	tp_obj length = TP_OBJ()
+	return tp_plane(normal.vec3.vec, length.number.val)
+
 ## https://stackoverflow.com/questions/1591361/understanding-typedefs-for-function-pointers-in-c
 typedef tp_obj (*tp_func_pointer)(tp_vm*);
 
@@ -451,6 +456,7 @@ def tp_module_builtins_init(TP):
 	{"color", tpy_color},
 	{"rect", tpy_rect},
 	{"tri", tpy_tri},
+	{"plane", tpy_plane},
 	#ifdef TP_SANDBOX
 	{"sandbox",tpy_sandbox_},
 	#endif

@@ -222,6 +222,18 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			return tp_vec3(self.tri.t.vertex[2])
 		else:
 			throw "tri missing member"
+	elif type == TP_PLANE:
+		if k == "normal":
+			return tp_vec3(self.plane.p.normal)
+		elif k == "length":
+			return tp_number(self.plane.p.d)
+		elif k == "distance_to":
+			auto fn = def[=](TP):
+				auto point = TP_OBJ()
+				return tp_number(self.plane.p.distance_to(point.vec3.vec))
+			return tp_function(tp, fn)
+		else:
+			throw "plane missing member"
 	elif type >= TP_HAS_META:
 		if type == TP_DICT:
 			## '.' looks for methods of a raw dict.

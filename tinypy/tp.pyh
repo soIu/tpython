@@ -13,6 +13,7 @@ import "blendot/quat.h"
 import "blendot/color.h"
 import "blendot/rect2.h"
 import "blendot/face3.h"
+import "blendot/plane.h"
 
 
 import <cstddef>
@@ -87,6 +88,7 @@ enum TPTypeID {
   TP_COLOR = 6,
   TP_RECT = 7,
   TP_TRI = 8,
+  TP_PLANE = 9,
 
   TP_GC_TRACKED = 10,
   TP_FUNC = 10,
@@ -175,6 +177,7 @@ typedef class tp_obj {
   struct { TPTypeInfo type; struct Color c; } color;
   struct { TPTypeInfo type; struct Rect2 r; } rect;
   struct { TPTypeInfo type; struct Face3 t; } tri;
+  struct { TPTypeInfo type; struct Plane p; } plane;
  };
 //tp_obj(double num) {
 //this->type.type_id = TP_NUMBER;
@@ -551,6 +554,12 @@ def tp_tri(Vector3 a, Vector3 b, Vector3 c) -> tp_obj:
 	val.tri.t = Face3(a,b,c)
 	return val
 
+@static
+def tp_plane(Vector3 normal, double length) -> tp_obj:
+	tp_obj val = {TP_PLANE};
+	val.plane.p = Plane(normal, length)
+	return val
+
 
 /* Function: tp_string_from_const (was tp_string_n)
  * Creates a new string object from a partial C string.
@@ -700,6 +709,12 @@ def tp_as_string(TP, tp_obj self) ->std::string:
 			ss << "	a:  x=" << self.tri.t.vertex[0].x << ", y=" << self.tri.t.vertex[0].y << ", z=" << self.tri.t.vertex[0].z << std::endl
 			ss << "	b:  x=" << self.tri.t.vertex[1].x << ", y=" << self.tri.t.vertex[1].y << ", z=" << self.tri.t.vertex[1].z << std::endl
 			ss << "	c:  x=" << self.tri.t.vertex[2].x << ", y=" << self.tri.t.vertex[2].y << ", z=" << self.tri.t.vertex[2].z << std::endl
+			ss << ")"
+			break
+		case TP_PLANE:
+			ss << "plane(" << std::endl
+			ss << "	normal:  x=" << self.plane.p.normal.x << ", y=" << self.plane.p.normal.y << ", z=" << self.plane.p.normal.z << std::endl
+			ss << "	length:  " << self.plane.p.d << std::endl
 			ss << ")"
 			break
 		default:
