@@ -31,8 +31,8 @@
 #ifndef COLOR_H
 #define COLOR_H
 
-#include "core/math/math_funcs.h"
-#include "core/ustring.h"
+#include "math_funcs.h"
+#include "ustring.h"
 
 struct Color {
 

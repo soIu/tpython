@@ -30,9 +30,9 @@
 
 #include "memory.h"
 
-#include "core/error_macros.h"
-#include "core/os/copymem.h"
-#include "core/safe_refcount.h"
+#include "error_macros.h"
+#include "copymem.h"
+#include "safe_refcount.h"
 
 #include <stdio.h>
 #include <stdlib.h>

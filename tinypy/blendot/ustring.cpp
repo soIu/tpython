@@ -34,14 +34,14 @@
 
 #include "ustring.h"
 
-#include "core/color.h"
-#include "core/crypto/crypto_core.h"
-#include "core/math/math_funcs.h"
-#include "core/os/memory.h"
-#include "core/print_string.h"
-#include "core/translation.h"
-#include "core/ucaps.h"
-#include "core/variant.h"
+#include "color.h"
+//#include "core/crypto/crypto_core.h"
+#include "math_funcs.h"
+#include "memory.h"
+#include "print_string.h"
+//#include "core/translation.h"
+#include "ucaps.h"
+#include "variant.h"
 
 #include <wchar.h>
 #include <cstdint>
@@ -2275,6 +2275,7 @@ uint64_t String::hash64() const {
 	return hashv;
 }
 
+/*
 String String::md5_text() const {
 
 	CharString cs = utf8();
@@ -2337,6 +2338,7 @@ Vector<uint8_t> String::sha256_buffer() const {
 	}
 	return ret;
 }
+*/
 
 String String::insert(int p_at_pos, const String &p_string) const {
 
@@ -4352,6 +4354,7 @@ String String::unquote() const {
 	return substr(1, length() - 2);
 }
 
+/*
 #ifdef TOOLS_ENABLED
 String TTR(const String &p_text) {
 
@@ -4377,3 +4380,4 @@ String RTR(const String &p_text) {
 
 	return p_text;
 }
+*/

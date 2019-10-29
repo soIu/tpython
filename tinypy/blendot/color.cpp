@@ -30,10 +30,10 @@
 
 #include "color.h"
 
-#include "core/color_names.inc"
-#include "core/map.h"
-#include "core/math/math_funcs.h"
-#include "core/print_string.h"
+#include "color_names.inc"
+#include "map.h"
+#include "math_funcs.h"
+//#include "core/print_string.h"
 
 uint32_t Color::to_argb32() const {
 
@@ -510,10 +510,12 @@ float Color::gray() const {
 	return (r + g + b) / 3.0;
 }
 
+/*
 Color::operator String() const {
 
 	return rtos(r) + ", " + rtos(g) + ", " + rtos(b) + ", " + rtos(a);
 }
+*/
 
 Color Color::operator+(const Color &p_color) const {
 
