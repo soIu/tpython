@@ -80,7 +80,7 @@ tinypy/tp.o : tinypy/tp.gen.cpp tinypy/tp*.cpp tinypy/tp*.h
 clean:
 	rm -rf <EXE>
 	rm -rf tinypy/*.o
-	rm -rf tinypy/blendot/*.o
+	#rm -rf tinypy/blendot/*.o
 
 '''
 
