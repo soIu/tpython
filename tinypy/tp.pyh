@@ -517,6 +517,14 @@ def tp_quat(double x, double y, double z, double w) -> tp_obj:
 	val.quat.q.w = w
 	return val
 
+@static
+def tp_color(double r, double g, double b, double a) -> tp_obj:
+	tp_obj val = {TP_COLOR};
+	val.color.c.r = r
+	val.color.c.g = g
+	val.color.c.b = b
+	val.color.c.a = a
+	return val
 
 /* Function: tp_string_from_const (was tp_string_n)
  * Creates a new string object from a partial C string.
@@ -654,6 +662,9 @@ def tp_as_string(TP, tp_obj self) ->std::string:
 			break
 		case TP_QUAT:
 			ss << "quat(" << self.quat.q.x << ", " << self.quat.q.y << ", " << self.quat.q.z << ", " << self.quat.q.w << ")"
+			break
+		case TP_COLOR:
+			ss << "color(" << self.color.c.r << ", " << self.color.c.g << ", " << self.color.c.b << ", " << self.color.c.a << ")"
 			break
 		default:
 			ss << "<unknown type>"
