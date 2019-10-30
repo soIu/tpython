@@ -498,6 +498,7 @@ def tp_mul(TP,tp_obj a, tp_obj b) -> tp_obj:
 	if a.type.type_id == TP_NUMBER && a.type.type_id == b.type.type_id:
 		return tp_number(a.number.val*b.number.val)
 	if a.type.type_id == TP_NUMBER:
+		## TODO what cases are this for?
 		tp_obj c = a; a = b; b = c
 	if a.type.type_id == TP_STRING && b.type.type_id == TP_NUMBER:
 		int n = b.number.val
@@ -505,6 +506,10 @@ def tp_mul(TP,tp_obj a, tp_obj b) -> tp_obj:
 	if a.type.type_id == TP_LIST && b.type.type_id == TP_NUMBER:
 		int n = b.number.val
 		return tp_list_mul(tp, a, n)
+	if a.type.type_id == TP_MAT3:
+		## note `a` is already a copy
+		a.mat3.m *= b.mat3.m
+		return a
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_mul) TypeError: ?"));
 	throw "TypeError in tp_ops.cpp:tp_mul invalid object type to use the multiply operator with"
 

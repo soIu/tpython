@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 class Token:
 	def __init__(self,pos=(0,0),type='symbol',val=None,items=None):
 		self.pos,self.type,self.val,self.items=pos,type,val,items
@@ -29,9 +31,13 @@ def u_error(ctx,s,i):
 	r += "     "+" "*x+"^" +'\n'
 	raise Exception('error: '+ctx+'\n'+r)
 
-ISYMBOLS = '`-=[];,./~!@$%^&*()+{}:<>?|'
+ISYMBOLS = u'`-=[];,./~!@$%^&*()+{}:<>?|×÷'
+UNISYMBOLS = {
+	u'×' : '*',
+	u'÷' : '/',
+}
 SYMBOLS = [
-	'loop',  ## hartsantler
+	#u'×',
 	'def','class','yield','return','pass','and','or','not','in','as', 'with', 'import',
 	'is','while','break','for','continue','if','else','elif','try',
 	'except','raise','assert','True','False','None','global','del','from',
@@ -67,6 +73,7 @@ def do_tokenize(s,i,l):
 		if T.nl: T.nl = False; i = do_indent(s,i,l)
 		elif c == '\n': i = do_nl(s,i,l)
 		elif c in ISYMBOLS: i = do_symbol(s,i,l)
+		#elif c in UNISYMBOLS: i = do_symbol(s,i,l)
 		elif c >= '0' and c <= '9': i = do_number(s,i,l)
 		elif (c >= 'a' and c <= 'z') or \
 			(c >= 'A' and c <= 'Z') or c == '_':  i = do_name(s,i,l)
@@ -112,7 +119,10 @@ def indent(v):
 def do_symbol(s,i,l):
 	symbols = []
 	v,f,i = s[i],i,i+1
-	if v in SYMBOLS: symbols.append(v)
+	if v in UNISYMBOLS:
+		symbols.append( UNISYMBOLS[v] )
+	elif v in SYMBOLS:
+		symbols.append(v)
 	while i<l:
 		c = s[i]
 		if not c in ISYMBOLS: break

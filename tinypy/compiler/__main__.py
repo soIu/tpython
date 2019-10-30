@@ -75,7 +75,8 @@ def main(args=None):
 		print('Usage tinypyc [-c] [-n variable] [-o output_file_name] src.py')
 		return 
 
-	s = read(src)
+	#s = read(src)
+	s = open(src, 'rb').read().decode('utf-8')
 	data = py2bc.compile(s, src)
 	if '-d' in opts:
 		out = disasm.disassemble(data)

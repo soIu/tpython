@@ -14,6 +14,7 @@ import "blendot/color.h"
 import "blendot/rect2.h"
 import "blendot/face3.h"
 import "blendot/plane.h"
+import "blendot/basis.h"
 
 
 import <cstddef>
@@ -89,10 +90,12 @@ enum TPTypeID {
   TP_RECT = 7,
   TP_TRI = 8,
   TP_PLANE = 9,
+  TP_MAT3 = 10,
 
-  TP_GC_TRACKED = 10,
-  TP_FUNC = 10,
-  TP_DATA = 11,
+  TP_GC_TRACKED = 32,
+  TP_FUNC = 33,
+  TP_DATA = 34,
+
   TP_HAS_META = 99,     // this is not a type, any type >= TP_HAS_META can have a metatype
   TP_STRING = 100,
   TP_LIST = 101,
@@ -178,6 +181,7 @@ typedef class tp_obj {
   struct { TPTypeInfo type; struct Rect2 r; } rect;
   struct { TPTypeInfo type; struct Face3 t; } tri;
   struct { TPTypeInfo type; struct Plane p; } plane;
+  struct { TPTypeInfo type; struct Basis m; } mat3;
  };
 //tp_obj(double num) {
 //this->type.type_id = TP_NUMBER;
@@ -560,6 +564,12 @@ def tp_plane(Vector3 normal, double length) -> tp_obj:
 	val.plane.p = Plane(normal, length)
 	return val
 
+@static
+def tp_mat3(Vector3 a, Vector3 b, Vector3 c) -> tp_obj:
+	tp_obj val = {TP_MAT3};
+	val.mat3.m = Basis(a,b,c)
+	return val
+
 
 /* Function: tp_string_from_const (was tp_string_n)
  * Creates a new string object from a partial C string.
@@ -715,6 +725,13 @@ def tp_as_string(TP, tp_obj self) ->std::string:
 			ss << "plane(" << std::endl
 			ss << "	normal:  x=" << self.plane.p.normal.x << ", y=" << self.plane.p.normal.y << ", z=" << self.plane.p.normal.z << std::endl
 			ss << "	length:  " << self.plane.p.d << std::endl
+			ss << ")"
+			break
+		case TP_MAT3:
+			ss << "mat3(" << std::endl
+			ss << "	" << self.mat3.m.elements[0].x << ", " << self.mat3.m.elements[0].y << ", " << self.mat3.m.elements[0].z << std::endl
+			ss << "	" << self.mat3.m.elements[1].x << ", " << self.mat3.m.elements[1].y << ", " << self.mat3.m.elements[1].z << std::endl
+			ss << "	" << self.mat3.m.elements[2].x << ", " << self.mat3.m.elements[2].y << ", " << self.mat3.m.elements[2].z << std::endl
 			ss << ")"
 			break
 		default:
