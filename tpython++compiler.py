@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import os, sys, subprocess, random, json
 
@@ -42,7 +42,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		out.append(header)
 	prev = ''
 	prevs = ''
-	previ = None
+	previ = -1
 	autobrace = 0
 	autofunc = 0
 	mods = {}
@@ -588,10 +588,10 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 		for file in os.listdir( path ):
 			if file.endswith( '.pyc++' ):
 				print(file)
-				cpp = pythonicpp( open(os.path.join(path,file),'rb').read(), header="/*generated from: %s*/" %file, info=info )
+				cpp = pythonicpp( open(os.path.join(path,file),'rb').read().decode('utf-8'), header="/*generated from: %s*/" %file, info=info )
 			elif file.endswith( '.pyh' ):
 				print(file)
-				cpp = pythonicpp( open(os.path.join(path,file),'rb').read(), header="/*generated from: %s*/" %file, info=info )
+				cpp = pythonicpp( open(os.path.join(path,file),'rb').read().decode('utf-8'), header="/*generated from: %s*/" %file, info=info )
 
 		if '--debug' in sys.argv:
 			print('classes:')
@@ -627,11 +627,11 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 	## final pass apply scrambling
 	for file in os.listdir( path ):
 		if file.endswith( '.pyc++' ):
-			cpp = pythonicpp( open(os.path.join(path,file),'rb').read(), header="/*generated from: %s*/" %file, info=info, binary_scramble=secure_binary, mangle_map=mangle_map )
-			open(os.path.join(path, file.replace('.pyc++', '.gen.cpp') ),'wb').write(cpp)
+			cpp = pythonicpp( open(os.path.join(path,file),'rb').read().decode('utf-8'), header="/*generated from: %s*/" %file, info=info, binary_scramble=secure_binary, mangle_map=mangle_map )
+			open(os.path.join(path, file.replace('.pyc++', '.gen.cpp') ),'wb').write(cpp.encode('utf-8'))
 		elif file.endswith( '.pyh' ):
-			cpp = pythonicpp( open(os.path.join(path,file),'rb').read(), header="/*generated from: %s*/" %file, info=info, binary_scramble=secure_binary, mangle_map=mangle_map )
-			open(os.path.join(path, file.replace('.pyh', '.gen.h') ),'wb').write(cpp)
+			cpp = pythonicpp( open(os.path.join(path,file),'rb').read().decode('utf-8'), header="/*generated from: %s*/" %file, info=info, binary_scramble=secure_binary, mangle_map=mangle_map )
+			open(os.path.join(path, file.replace('.pyh', '.gen.h') ),'wb').write(cpp.encode('utf-8'))
 
 	return info
 
@@ -686,7 +686,7 @@ def main():
 			)
 			if not obfuscate_map:
 				p = path.split('/')[-1]
-				open('/tmp/%s.json' %p, 'wb').write(json.dumps(info['obfuscations']))
+				open('/tmp/%s.json' %p, 'wb').write( json.dumps(info['obfuscations']).encode('utf-8') )
 
 main()
 
