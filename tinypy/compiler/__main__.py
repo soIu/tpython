@@ -103,7 +103,8 @@ def main(args=None):
 		xmap  = []
 		for c in data:
 			xor = int(random.uniform(1,255))
-			xdata.append( chr(ord(c)^xor) )
+			#xdata.append( chr(ord(c)^xor) )  ## Python2
+			xdata.append( chr(c^xor) )
 			xmap.append(xor)
 		data = ''.join(xdata)
 

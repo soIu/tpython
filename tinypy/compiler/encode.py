@@ -971,11 +971,17 @@ def encode(fname,s,t):
 			print(chunk)
 
 	map_tags()
-	out = D.out
+	out = []
+	for part in D.out:
+		if type(part) is str:
+			out.append(part.encode('latin1'))
+		else:
+			out.append(part)
 	D = None
 	# Use a function instead of ''.join() so that bytes and
 	# strings during bootstrap
 	if '--inspect-bytecode' in sys.argv:
 		print(out)
-	return join(out)
+
+	return b''.join(out)
 

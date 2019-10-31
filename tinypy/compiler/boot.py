@@ -5,8 +5,8 @@ if not "tinypy" in sys.version:
 	ARGV = sys.argv
 
 	def join(v):
-		#out = ''.encode('latin1')
-		out = ''
+		out = ''.encode('latin1')
+		#out = ''
 		for el in v:
 			try:
 				out += el
@@ -58,7 +58,7 @@ if not "tinypy" in sys.version:
 
 	def save(fname,v):
 		f = open(fname,'wb')
-		f.write(v)
+		f.write(v.encode('latin1'))
 		f.close()
 else:
 	from __builtins__ import *
