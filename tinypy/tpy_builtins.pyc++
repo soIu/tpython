@@ -408,11 +408,22 @@ def tpy_plane(TP) ->tp_obj:
 	tp_obj length = TP_OBJ()
 	return tp_plane(normal.vec3.vec, length.number.val)
 
+def tpy_aabb(TP) ->tp_obj:
+	tp_obj a = TP_OBJ()
+	tp_obj b = TP_OBJ()
+	return tp_aabb(a.vec3.vec, b.vec3.vec)
+
+
 def tpy_mat3(TP) ->tp_obj:
 	tp_obj a = TP_OBJ()
 	tp_obj b = TP_OBJ()
 	tp_obj c = TP_OBJ()
 	return tp_mat3(a.vec3.vec, b.vec3.vec, c.vec3.vec)
+
+def tpy_trans(TP) ->tp_obj:
+	tp_obj a = TP_OBJ()
+	tp_obj b = TP_OBJ()
+	return tp_trans(a.mat3.m, b.vec3.vec)
 
 
 ## https://stackoverflow.com/questions/1591361/understanding-typedefs-for-function-pointers-in-c
@@ -465,6 +476,8 @@ def tp_module_builtins_init(TP):
 	{"tri", tpy_tri},
 	{"plane", tpy_plane},
 	{"mat3", tpy_mat3},
+	{"aabb", tpy_aabb},
+	{"trans", tpy_trans},
 	#ifdef TP_SANDBOX
 	{"sandbox",tpy_sandbox_},
 	#endif

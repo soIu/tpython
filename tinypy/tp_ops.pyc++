@@ -234,6 +234,20 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			return tp_function(tp, fn)
 		else:
 			throw "plane missing member"
+	elif type == TP_AABB:
+		if k == "position":
+			return tp_vec3(self.aabb.a.position)
+		elif k == "size":
+			return tp_vec3(self.aabb.a.size)
+		elif k == "merge":
+			auto fn = def[=](TP):
+				auto other = TP_OBJ()
+				auto a = self
+				a.aabb.a = self.aabb.a.merge( other.aabb.a )
+				return a
+			return tp_function(tp, fn)
+		else:
+			throw "plane missing member"
 	elif type >= TP_HAS_META:
 		if type == TP_DICT:
 			## '.' looks for methods of a raw dict.
