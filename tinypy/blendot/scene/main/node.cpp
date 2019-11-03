@@ -30,10 +30,10 @@
 
 #include "node.h"
 
-#include "core/core_string_names.h"
-#include "core/io/resource_loader.h"
-#include "core/message_queue.h"
-#include "core/print_string.h"
+#include "core_string_names.h"
+#include "resource_loader.h"
+#include "message_queue.h"
+#include "print_string.h"
 #include "instance_placeholder.h"
 #include "scene/resources/packed_scene.h"
 #include "scene/scene_string_names.h"
@@ -208,10 +208,11 @@ void Node::_propagate_enter_tree() {
 
 		data.depth = 1;
 	}
-
+#ifdef BLENDOT
 	data.viewport = Object::cast_to<Viewport>(this);
 	if (!data.viewport && data.parent)
 		data.viewport = data.parent->data.viewport;
+#endif
 
 	data.inside_tree = true;
 
@@ -492,12 +493,16 @@ int Node::get_network_master() const {
 bool Node::is_network_master() const {
 
 	ERR_FAIL_COND_V(!is_inside_tree(), false);
-
+#ifdef BLENDOT
 	return get_multiplayer()->get_network_unique_id() == data.network_master;
+#else
+	return true;
+#endif
 }
 
 /***** RPC CONFIG ********/
 
+#ifdef BLENDOT
 void Node::rpc_config(const StringName &p_method, MultiplayerAPI::RPCMode p_mode) {
 
 	if (p_mode == MultiplayerAPI::RPC_MODE_DISABLED) {
@@ -515,6 +520,7 @@ void Node::rset_config(const StringName &p_property, MultiplayerAPI::RPCMode p_m
 		data.rpc_properties[p_property] = p_mode;
 	};
 }
+#endif
 
 /***** RPC FUNCTIONS ********/
 
@@ -682,14 +688,19 @@ Variant Node::_rpc_unreliable_id_bind(const Variant **p_args, int p_argcount, Va
 	return Variant();
 }
 
+
 void Node::rpcp(int p_peer_id, bool p_unreliable, const StringName &p_method, const Variant **p_arg, int p_argcount) {
 	ERR_FAIL_COND(!is_inside_tree());
+#ifdef BLENDOT
 	get_multiplayer()->rpcp(this, p_peer_id, p_unreliable, p_method, p_arg, p_argcount);
+#endif
 }
 
 void Node::rsetp(int p_peer_id, bool p_unreliable, const StringName &p_property, const Variant &p_value) {
 	ERR_FAIL_COND(!is_inside_tree());
+#ifdef BLENDOT
 	get_multiplayer()->rsetp(this, p_peer_id, p_unreliable, p_property, p_value);
+#endif
 }
 
 /******** RSET *********/
@@ -714,6 +725,9 @@ void Node::rset_unreliable_id(int p_peer_id, const StringName &p_property, const
 }
 
 //////////// end of rpc
+#ifdef BLENDOT
+
+
 Ref<MultiplayerAPI> Node::get_multiplayer() const {
 	if (multiplayer.is_valid())
 		return multiplayer;
@@ -738,6 +752,8 @@ const Map<StringName, MultiplayerAPI::RPCMode>::Element *Node::get_node_rpc_mode
 const Map<StringName, MultiplayerAPI::RPCMode>::Element *Node::get_node_rset_mode(const StringName &p_property) {
 	return data.rpc_properties.find(p_property);
 }
+
+#endif
 
 bool Node::can_process_notification(int p_what) const {
 	switch (p_what) {
@@ -1051,6 +1067,8 @@ void Node::_generate_serial_child_name(const Node *p_child, StringName &name) co
 		//no name and a new nade is needed, create one.
 
 		name = p_child->get_class();
+#ifdef BLENDOT
+
 		// Adjust casing according to project setting. The current type name is expected to be in PascalCase.
 		switch (ProjectSettings::get_singleton()->get("node/name_casing").operator int()) {
 			case NAME_CASING_PASCAL_CASE:
@@ -1064,6 +1082,7 @@ void Node::_generate_serial_child_name(const Node *p_child, StringName &name) co
 				name = String(name).camelcase_to_underscore(true);
 				break;
 		}
+#endif
 	}
 
 	//quickly test if proposed name exists
@@ -1952,24 +1971,27 @@ Node *Node::_duplicate(int p_flags, Map<const Node *, Node *> *r_duplimap) const
 
 	if (Object::cast_to<InstancePlaceholder>(this)) {
 
+#ifdef BLENDOT
 		const InstancePlaceholder *ip = Object::cast_to<const InstancePlaceholder>(this);
 		InstancePlaceholder *nip = memnew(InstancePlaceholder);
 		nip->set_instance_path(ip->get_instance_path());
 		node = nip;
+#endif
 
 	} else if ((p_flags & DUPLICATE_USE_INSTANCING) && get_filename() != String()) {
 
+#ifdef BLENDOT
 		Ref<PackedScene> res = ResourceLoader::load(get_filename());
 		ERR_FAIL_COND_V(res.is_null(), NULL);
 		PackedScene::GenEditState ges = PackedScene::GEN_EDIT_STATE_DISABLED;
-#ifdef TOOLS_ENABLED
+		#ifdef TOOLS_ENABLED
 		if (p_flags & DUPLICATE_FROM_EDITOR)
 			ges = PackedScene::GEN_EDIT_STATE_INSTANCE;
-#endif
+		#endif
 		node = res->instance(ges);
 		ERR_FAIL_COND_V(!node, NULL);
-
 		instanced = true;
+#endif
 
 	} else {
 
@@ -2156,11 +2178,12 @@ void Node::_duplicate_and_reown(Node *p_new_parent, const Map<Node *, Node *> &p
 	Node *node = NULL;
 
 	if (get_filename() != "") {
-
+#ifdef BLENDOT
 		Ref<PackedScene> res = ResourceLoader::load(get_filename());
 		ERR_FAIL_COND(res.is_null());
 		node = res->instance();
 		ERR_FAIL_COND(!node);
+#endif
 	} else {
 
 		Object *obj = ClassDB::instance(get_class());
@@ -2690,6 +2713,7 @@ void Node::request_ready() {
 }
 
 void Node::_bind_methods() {
+#ifdef BLENDOT
 
 	GLOBAL_DEF("node/name_num_separator", 0);
 	ProjectSettings::get_singleton()->set_custom_property_info("node/name_num_separator", PropertyInfo(Variant::INT, "node/name_num_separator", PROPERTY_HINT_ENUM, "None,Space,Underscore,Dash"));
@@ -2782,15 +2806,17 @@ void Node::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("is_network_master"), &Node::is_network_master);
 
+	ClassDB::bind_method(D_METHOD("_set_import_path", "import_path"), &Node::set_import_path);
+	ClassDB::bind_method(D_METHOD("_get_import_path"), &Node::get_import_path);
+	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "_import_path", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NOEDITOR | PROPERTY_USAGE_INTERNAL), "_set_import_path", "_get_import_path");
+
+
 	ClassDB::bind_method(D_METHOD("get_multiplayer"), &Node::get_multiplayer);
 	ClassDB::bind_method(D_METHOD("get_custom_multiplayer"), &Node::get_custom_multiplayer);
 	ClassDB::bind_method(D_METHOD("set_custom_multiplayer", "api"), &Node::set_custom_multiplayer);
 	ClassDB::bind_method(D_METHOD("rpc_config", "method", "mode"), &Node::rpc_config);
 	ClassDB::bind_method(D_METHOD("rset_config", "property", "mode"), &Node::rset_config);
 
-	ClassDB::bind_method(D_METHOD("_set_import_path", "import_path"), &Node::set_import_path);
-	ClassDB::bind_method(D_METHOD("_get_import_path"), &Node::get_import_path);
-	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "_import_path", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NOEDITOR | PROPERTY_USAGE_INTERNAL), "_set_import_path", "_get_import_path");
 
 	{
 		MethodInfo mi;
@@ -2814,6 +2840,7 @@ void Node::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("rset_id", "peer_id", "property", "value"), &Node::rset_id);
 	ClassDB::bind_method(D_METHOD("rset_unreliable", "property", "value"), &Node::rset_unreliable);
 	ClassDB::bind_method(D_METHOD("rset_unreliable_id", "peer_id", "property", "value"), &Node::rset_unreliable_id);
+#endif
 
 	BIND_CONSTANT(NOTIFICATION_ENTER_TREE);
 	BIND_CONSTANT(NOTIFICATION_EXIT_TREE);
@@ -2875,6 +2902,8 @@ void Node::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "name", PROPERTY_HINT_NONE, "", 0), "set_name", "get_name");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "filename", PROPERTY_HINT_NONE, "", 0), "set_filename", "get_filename");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "owner", PROPERTY_HINT_RESOURCE_TYPE, "Node", 0), "set_owner", "get_owner");
+#ifdef BLENDOT
+
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "multiplayer", PROPERTY_HINT_RESOURCE_TYPE, "MultiplayerAPI", 0), "", "get_multiplayer");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "custom_multiplayer", PROPERTY_HINT_RESOURCE_TYPE, "MultiplayerAPI", 0), "set_custom_multiplayer", "get_custom_multiplayer");
 
@@ -2887,18 +2916,22 @@ void Node::_bind_methods() {
 	BIND_VMETHOD(MethodInfo("_unhandled_input", PropertyInfo(Variant::OBJECT, "event", PROPERTY_HINT_RESOURCE_TYPE, "InputEvent")));
 	BIND_VMETHOD(MethodInfo("_unhandled_key_input", PropertyInfo(Variant::OBJECT, "event", PROPERTY_HINT_RESOURCE_TYPE, "InputEventKey")));
 	BIND_VMETHOD(MethodInfo(Variant::STRING, "_get_configuration_warning"));
+#endif
 
 	//ClassDB::bind_method(D_METHOD("get_child",&Node::get_child,PH("index")));
 	//ClassDB::bind_method(D_METHOD("get_node",&Node::get_node,PH("path")));
 }
 
 String Node::_get_name_num_separator() {
+#ifdef BLENDOT
+
 	switch (ProjectSettings::get_singleton()->get("node/name_num_separator").operator int()) {
 		case 0: return "";
 		case 1: return " ";
 		case 2: return "_";
 		case 3: return "-";
 	}
+#endif
 	return " ";
 }
 

@@ -38,8 +38,8 @@
 #include "variant_parser.h"
 #ifdef BLENDOT
 	#include "scene/gui/control.h"
-	#include "scene/main/node.h"
 #endif
+#include "scene/main/node.h"
 
 String Variant::get_type_name(Variant::Type p_type) {
 

@@ -429,6 +429,9 @@ def tpy_rid(TP) ->tp_obj:
 	tp_obj a = TP_OBJ()
 	return tp_rid( (int)a.number.val )
 
+def tpy_spatial(TP) ->tp_obj:
+	return tp_spatial()
+
 ## https://stackoverflow.com/questions/1591361/understanding-typedefs-for-function-pointers-in-c
 typedef tp_obj (*tp_func_pointer)(tp_vm*);
 
@@ -482,6 +485,7 @@ def tp_module_builtins_init(TP):
 	{"aabb", tpy_aabb},
 	{"trans", tpy_trans},
 	{"RID", tpy_rid},
+	{"spatial", tpy_spatial},
 	#ifdef TP_SANDBOX
 	{"sandbox",tpy_sandbox_},
 	#endif

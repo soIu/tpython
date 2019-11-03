@@ -36,10 +36,9 @@
 VisualServer *VisualServer::singleton = NULL;
 VisualServer *(*VisualServer::create_func)() = NULL;
 
-VisualServer *VisualServer::get_singleton() {
-
-	return singleton;
-}
+//VisualServer *VisualServer::get_singleton() {
+//	return singleton;
+//}
 
 VisualServer *VisualServer::create() {
 
@@ -2360,7 +2359,7 @@ RID VisualServer::instance_create2(RID p_base, RID p_scenario) {
 VisualServer::VisualServer() {
 
 	//ERR_FAIL_COND(singleton);
-	singleton = this;
+	__visual_singleton__ = this;
 
 	GLOBAL_DEF_RST("rendering/vram_compression/import_bptc", false);
 	GLOBAL_DEF_RST("rendering/vram_compression/import_s3tc", true);

@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  main_loop.h                                                          */
+/*  instance_placeholder.h                                               */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,54 +28,42 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef MAIN_LOOP_H
-#define MAIN_LOOP_H
+#ifndef INSTANCE_PLACEHOLDER_H
+#define INSTANCE_PLACEHOLDER_H
 
-#include "input_event.h"
-#include "reference.h"
-#include "script_language.h"
+#include "scene/main/node.h"
 
-class MainLoop : public Object {
+class PackedScene;
 
-	GDCLASS(MainLoop, Object);
-	OBJ_CATEGORY("Main Loop");
+class InstancePlaceholder : public Node {
 
-	Ref<Script> init_script;
+	GDCLASS(InstancePlaceholder, Node);
+
+	String path;
+	struct PropSet {
+		StringName name;
+		Variant value;
+	};
+
+	List<PropSet> stored_values;
 
 protected:
+	bool _set(const StringName &p_name, const Variant &p_value);
+	bool _get(const StringName &p_name, Variant &r_ret) const;
+	void _get_property_list(List<PropertyInfo> *p_list) const;
+
 	static void _bind_methods();
 
 public:
-	enum {
-		//make sure these are replicated in Node
-		NOTIFICATION_WM_MOUSE_ENTER = 1002,
-		NOTIFICATION_WM_MOUSE_EXIT = 1003,
-		NOTIFICATION_WM_FOCUS_IN = 1004,
-		NOTIFICATION_WM_FOCUS_OUT = 1005,
-		NOTIFICATION_WM_QUIT_REQUEST = 1006,
-		NOTIFICATION_WM_GO_BACK_REQUEST = 1007,
-		NOTIFICATION_WM_UNFOCUS_REQUEST = 1008,
-		NOTIFICATION_OS_MEMORY_WARNING = 1009,
-		NOTIFICATION_TRANSLATION_CHANGED = 1010,
-		NOTIFICATION_WM_ABOUT = 1011,
-		NOTIFICATION_CRASH = 1012,
-		NOTIFICATION_OS_IME_UPDATE = 1013,
-	};
+	void set_instance_path(const String &p_name);
+	String get_instance_path() const;
 
-	virtual void input_event(const Ref<InputEvent> &p_event);
-	virtual void input_text(const String &p_text);
+	Dictionary get_stored_values(bool p_with_order = false);
 
-	virtual void init();
-	virtual bool iteration(float p_time);
-	virtual bool idle(float p_time);
-	virtual void finish();
+	Node *create_instance(bool p_replace = false, const Ref<PackedScene> &p_custom_scene = Ref<PackedScene>());
+	void replace_by_instance(const Ref<PackedScene> &p_custom_scene = Ref<PackedScene>());
 
-	virtual void drop_files(const Vector<String> &p_files, int p_from_screen = 0);
-
-	void set_init_script(const Ref<Script> &p_init_script);
-
-	MainLoop();
-	virtual ~MainLoop();
+	InstancePlaceholder();
 };
 
-#endif
+#endif // INSTANCE_PLACEHOLDER_H

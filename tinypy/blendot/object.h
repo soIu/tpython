@@ -39,6 +39,9 @@
 #include "variant.h"
 #include "vmap.h"
 
+//#include "script_language.h"
+class ScriptInstance;
+
 #define VARIANT_ARG_LIST const Variant &p_arg1 = Variant(), const Variant &p_arg2 = Variant(), const Variant &p_arg3 = Variant(), const Variant &p_arg4 = Variant(), const Variant &p_arg5 = Variant()
 #define VARIANT_ARG_PASS p_arg1, p_arg2, p_arg3, p_arg4, p_arg5
 #define VARIANT_ARG_DECLARE const Variant &p_arg1, const Variant &p_arg2, const Variant &p_arg3, const Variant &p_arg4, const Variant &p_arg5
@@ -396,25 +399,6 @@ public:                                                        \
                                                                \
 private:
 
-#ifdef BLENDOT
-class ScriptInstance;
-#else
-#include "pair.h"
-#include "list.h"
-class ScriptInstance {
-	public:
-	bool set(const StringName &p_name, const Variant &p_value) {return false;}
-	bool get(const StringName &p_name, Variant &r_ret) {return false;}
-	void get_property_list(List<PropertyInfo> *p_properties) {}
-	//Variant::Type get_property_type(const StringName &p_name, bool *r_is_valid = NULL) const = 0;
-
-	Object *get_owner() { return NULL; }
-	void get_property_state(List<Pair<StringName, Variant> > &state) {}
-	void get_method_list(List<MethodInfo> *p_list) {}
-	bool has_method(const StringName &p_method) { return false; }
-
-};
-#endif
 
 typedef uint64_t ObjectID;
 

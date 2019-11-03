@@ -30,8 +30,8 @@
 
 #include "spatial.h"
 
-#include "core/engine.h"
-#include "core/message_queue.h"
+#include "engine.h"
+#include "message_queue.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/viewport.h"
 #include "scene/scene_string_names.h"
@@ -164,19 +164,19 @@ void Spatial::_notification(int p_what) {
 		case NOTIFICATION_ENTER_WORLD: {
 
 			data.inside_world = true;
+#ifdef BLENDOT
 			data.viewport = NULL;
 			Node *parent = get_parent();
 			while (parent && !data.viewport) {
 				data.viewport = Object::cast_to<Viewport>(parent);
 				parent = parent->get_parent();
 			}
-
 			ERR_FAIL_COND(!data.viewport);
-
 			if (get_script_instance()) {
-
 				get_script_instance()->call_multilevel(SceneStringNames::get_singleton()->_enter_world, NULL, 0);
 			}
+#endif
+
 #ifdef TOOLS_ENABLED
 			if (Engine::get_singleton()->is_editor_hint() && get_tree()->is_node_being_edited(this)) {
 
@@ -205,11 +205,12 @@ void Spatial::_notification(int p_what) {
 			}
 #endif
 
+#ifdef BLENDOT
 			if (get_script_instance()) {
 
 				get_script_instance()->call_multilevel(SceneStringNames::get_singleton()->_exit_world, NULL, 0);
 			}
-
+#endif
 			data.viewport = NULL;
 			data.inside_world = false;
 
@@ -504,11 +505,12 @@ bool Spatial::is_set_as_toplevel() const {
 }
 
 Ref<World> Spatial::get_world() const {
-
+#ifdef BLENDOT
 	ERR_FAIL_COND_V(!is_inside_world(), Ref<World>());
 	ERR_FAIL_COND_V(!data.viewport, Ref<World>());
-
 	return data.viewport->find_world();
+#endif
+
 }
 
 void Spatial::_propagate_visibility_changed() {
@@ -753,7 +755,10 @@ void Spatial::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("is_set_as_toplevel"), &Spatial::is_set_as_toplevel);
 	ClassDB::bind_method(D_METHOD("set_disable_scale", "disable"), &Spatial::set_disable_scale);
 	ClassDB::bind_method(D_METHOD("is_scale_disabled"), &Spatial::is_scale_disabled);
+
+#ifdef BLENDOT
 	ClassDB::bind_method(D_METHOD("get_world"), &Spatial::get_world);
+#endif
 
 	ClassDB::bind_method(D_METHOD("force_update_transform"), &Spatial::force_update_transform);
 

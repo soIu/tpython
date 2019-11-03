@@ -98,6 +98,7 @@ enum TPTypeID {
   TP_MAT3 = 11,
   TP_TRANS = 12,
   TP_RID   = 13,
+  TP_SPATIAL   = 14,
 
   TP_GC_TRACKED = 32,
   TP_FUNC = 33,
@@ -192,6 +193,7 @@ typedef class tp_obj {
   struct { TPTypeInfo type; struct Basis m; } mat3;
   struct { TPTypeInfo type; struct Transform t; } trans;
   struct { TPTypeInfo type; struct RID r; } rid;
+  struct { TPTypeInfo type; struct Spatial *ptr; } spatial;
  };
 //tp_obj(double num) {
 //this->type.type_id = TP_NUMBER;
@@ -598,6 +600,13 @@ def tp_rid(int id) -> tp_obj:
 	tp_obj val = {TP_RID};
 	val.rid.r = RID(id)
 	return val
+
+@static
+def tp_spatial() -> tp_obj:
+	tp_obj val = {TP_SPATIAL};
+	val.spatial.ptr = new Spatial()
+	return val
+
 
 /* Function: tp_string_from_const (was tp_string_n)
  * Creates a new string object from a partial C string.

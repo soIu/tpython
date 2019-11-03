@@ -30,9 +30,10 @@
 
 #include <iostream>
 #include "main_loop.h"
-#include "core/script_language.h"
+#include "script_language.h"
 
 void MainLoop::_bind_methods() {
+#ifdef BLENDOT
 
 	ClassDB::bind_method(D_METHOD("input_event", "event"), &MainLoop::input_event);
 	ClassDB::bind_method(D_METHOD("input_text", "text"), &MainLoop::input_text);
@@ -42,6 +43,7 @@ void MainLoop::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("finish"), &MainLoop::finish);
 
 	BIND_VMETHOD(MethodInfo("_input_event", PropertyInfo(Variant::OBJECT, "event", PROPERTY_HINT_RESOURCE_TYPE, "InputEvent")));
+
 	BIND_VMETHOD(MethodInfo("_input_text", PropertyInfo(Variant::STRING, "text")));
 	BIND_VMETHOD(MethodInfo("_initialize"));
 	BIND_VMETHOD(MethodInfo(Variant::BOOL, "_iteration", PropertyInfo(Variant::REAL, "delta")));
@@ -61,6 +63,9 @@ void MainLoop::_bind_methods() {
 	BIND_CONSTANT(NOTIFICATION_WM_ABOUT);
 	BIND_CONSTANT(NOTIFICATION_CRASH);
 	BIND_CONSTANT(NOTIFICATION_OS_IME_UPDATE);
+
+#endif
+
 };
 
 void MainLoop::set_init_script(const Ref<Script> &p_init_script) {

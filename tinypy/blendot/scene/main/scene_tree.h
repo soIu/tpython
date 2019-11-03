@@ -33,12 +33,14 @@
 
 #ifdef BLENDOT
 	#include "core/io/multiplayer_api.h"
+	#include "thread_safe.h"
 #else
 	class MultiplayerAPI;
 	class NetworkedMultiplayerPeer;
+	#define _THREAD_SAFE_CLASS_
+
 #endif
 #include "main_loop.h"
-#include "thread_safe.h"
 #include "self_list.h"
 
 #include "scene/resources/mesh.h"
@@ -187,8 +189,10 @@ private:
 	List<Ref<SceneTreeTimer> > timers;
 
 	///network///
-
+#ifdef BLENDOT
 	Ref<MultiplayerAPI> multiplayer;
+#endif
+
 	bool multiplayer_poll;
 
 	void _network_peer_connected(int p_id);
@@ -416,12 +420,15 @@ public:
 
 	//network API
 
-	Ref<MultiplayerAPI> get_multiplayer() const;
 	void set_multiplayer_poll_enabled(bool p_enabled);
 	bool is_multiplayer_poll_enabled() const;
+#ifdef BLENDOT
+	Ref<MultiplayerAPI> get_multiplayer() const;
 	void set_multiplayer(Ref<MultiplayerAPI> p_multiplayer);
 	void set_network_peer(const Ref<NetworkedMultiplayerPeer> &p_network_peer);
 	Ref<NetworkedMultiplayerPeer> get_network_peer() const;
+#endif
+
 	bool is_network_server() const;
 	bool has_network_peer() const;
 	int get_network_unique_id() const;

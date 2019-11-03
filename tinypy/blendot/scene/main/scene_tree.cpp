@@ -30,16 +30,22 @@
 
 #include "scene_tree.h"
 
-#include "core/io/marshalls.h"
-#include "core/io/resource_loader.h"
-#include "core/message_queue.h"
-#include "core/os/keyboard.h"
-#include "core/os/os.h"
-#include "core/print_string.h"
-#include "core/project_settings.h"
-#include "main/input_default.h"
+#include "marshalls.h"
+#include "resource_loader.h"
+#include "message_queue.h"
+#include "print_string.h"
+
+#ifdef BLENDOT
+	#include "core/os/keyboard.h"
+	#include "core/os/os.h"
+	#include "core/project_settings.h"
+	#include "main/input_default.h"
+#endif
+
 #include "node.h"
-#include "scene/resources/dynamic_font.h"
+#ifdef BLENDOT
+	#include "scene/resources/dynamic_font.h"
+#endif
 #include "scene/resources/material.h"
 #include "scene/resources/mesh.h"
 #include "scene/resources/packed_scene.h"
@@ -402,9 +408,10 @@ bool SceneTree::is_input_handled() {
 }
 
 void SceneTree::input_event(const Ref<InputEvent> &p_event) {
-
+#ifdef BLENDOT
 	if (Engine::get_singleton()->is_editor_hint() && (Object::cast_to<InputEventJoypadButton>(p_event.ptr()) || Object::cast_to<InputEventJoypadMotion>(*p_event)))
 		return; //avoid joy input on editor
+#endif
 
 	current_event++;
 	root_lock++;
@@ -417,6 +424,7 @@ void SceneTree::input_event(const Ref<InputEvent> &p_event) {
 
 	call_group_flags(GROUP_CALL_REALTIME, "_viewports", "_vp_input", ev); //special one for GUI, as controls use their own process check
 
+#ifdef BLENDOT
 	if (ScriptDebugger::get_singleton() && ScriptDebugger::get_singleton()->is_remote()) {
 		//quit from game window using F8
 		Ref<InputEventKey> k = ev;
@@ -424,7 +432,7 @@ void SceneTree::input_event(const Ref<InputEvent> &p_event) {
 			ScriptDebugger::get_singleton()->request_quit();
 		}
 	}
-
+#endif
 	_flush_ugc();
 	root_lock--;
 	//MessageQueue::get_singleton()->flush(); //flushing here causes UI and other places slowness
@@ -482,11 +490,12 @@ bool SceneTree::iteration(float p_time) {
 }
 
 void SceneTree::_update_font_oversampling(float p_ratio) {
-
+#ifdef BLENDOT
 	if (use_font_oversampling) {
 		DynamicFontAtSize::font_oversampling = p_ratio;
 		DynamicFont::update_oversampling();
 	}
+#endif
 }
 
 bool SceneTree::idle(float p_time) {
@@ -501,9 +510,11 @@ bool SceneTree::idle(float p_time) {
 
 	idle_process_time = p_time;
 
+#ifdef BLENDOT
 	if (multiplayer_poll) {
 		multiplayer->poll();
 	}
+#endif
 
 	emit_signal("idle_frame");
 
@@ -514,7 +525,11 @@ bool SceneTree::idle(float p_time) {
 	_notify_group_pause("idle_process_internal", Node::NOTIFICATION_INTERNAL_PROCESS);
 	_notify_group_pause("idle_process", Node::NOTIFICATION_PROCESS);
 
+#ifdef BLENDOT
 	Size2 win_size = Size2(OS::get_singleton()->get_window_size().width, OS::get_singleton()->get_window_size().height);
+#else
+	Size2 win_size = Size2(640,480);
+#endif
 
 	if (win_size != last_screen_size) {
 
@@ -646,19 +661,22 @@ void SceneTree::_notification(int p_notification) {
 		case NOTIFICATION_WM_FOCUS_OUT:
 		case NOTIFICATION_WM_ABOUT: {
 
+#ifdef BLENDOT
 			if (p_notification == NOTIFICATION_WM_FOCUS_IN) {
 				InputDefault *id = Object::cast_to<InputDefault>(Input::get_singleton());
 				if (id) {
 					id->ensure_touch_mouse_raised();
 				}
 			}
-
+#endif
 			get_root()->propagate_notification(p_notification);
 		} break;
 		case NOTIFICATION_TRANSLATION_CHANGED: {
+#ifdef BLENDOT
 			if (!Engine::get_singleton()->is_editor_hint()) {
 				get_root()->propagate_notification(p_notification);
 			}
+#endif
 		} break;
 		case NOTIFICATION_WM_UNFOCUS_REQUEST: {
 
@@ -1133,7 +1151,11 @@ void SceneTree::_update_root_rect() {
 	}
 
 	//actual screen video mode
+#ifdef BLENDOT
 	Size2 video_mode = Size2(OS::get_singleton()->get_window_size().width, OS::get_singleton()->get_window_size().height);
+#else
+	Size2 video_mode = Size2(640, 480);
+#endif
 	Size2 desired_res = stretch_min;
 
 	Size2 viewport_size;
@@ -1282,12 +1304,12 @@ void SceneTree::_change_scene(Node *p_to) {
 }
 
 Error SceneTree::change_scene(const String &p_path) {
-
+#ifdef BLENDOT
 	Ref<PackedScene> new_scene = ResourceLoader::load(p_path);
 	if (new_scene.is_null())
 		return ERR_CANT_OPEN;
-
 	return change_scene_to(new_scene);
+#endif
 }
 Error SceneTree::change_scene_to(const Ref<PackedScene> &p_scene) {
 
@@ -1465,6 +1487,7 @@ void SceneTree::_live_edit_create_node_func(const NodePath &p_parent, const Stri
 	}
 }
 void SceneTree::_live_edit_instance_node_func(const NodePath &p_parent, const String &p_path, const String &p_name) {
+#ifdef BLENDOT
 
 	Ref<PackedScene> ps = ResourceLoader::load(p_path);
 
@@ -1498,6 +1521,7 @@ void SceneTree::_live_edit_instance_node_func(const NodePath &p_parent, const St
 		no->set_name(p_name);
 		n2->add_child(no);
 	}
+#endif
 }
 void SceneTree::_live_edit_remove_node_func(const NodePath &p_at) {
 
@@ -1708,16 +1732,17 @@ void SceneTree::_server_disconnected() {
 	emit_signal("server_disconnected");
 }
 
-Ref<MultiplayerAPI> SceneTree::get_multiplayer() const {
-	return multiplayer;
-}
-
 void SceneTree::set_multiplayer_poll_enabled(bool p_enabled) {
 	multiplayer_poll = p_enabled;
 }
 
 bool SceneTree::is_multiplayer_poll_enabled() const {
 	return multiplayer_poll;
+}
+
+#ifdef BLENDOT
+Ref<MultiplayerAPI> SceneTree::get_multiplayer() const {
+	return multiplayer;
 }
 
 void SceneTree::set_multiplayer(Ref<MultiplayerAPI> p_multiplayer) {
@@ -1740,7 +1765,6 @@ void SceneTree::set_multiplayer(Ref<MultiplayerAPI> p_multiplayer) {
 	multiplayer->connect("connection_failed", this, "_connection_failed");
 	multiplayer->connect("server_disconnected", this, "_server_disconnected");
 }
-
 void SceneTree::set_network_peer(const Ref<NetworkedMultiplayerPeer> &p_network_peer) {
 
 	multiplayer->set_network_peer(p_network_peer);
@@ -1750,39 +1774,52 @@ Ref<NetworkedMultiplayerPeer> SceneTree::get_network_peer() const {
 
 	return multiplayer->get_network_peer();
 }
+#endif
 
 bool SceneTree::is_network_server() const {
-
+#ifdef BLENDOT
 	return multiplayer->is_network_server();
+#endif
 }
 
 bool SceneTree::has_network_peer() const {
+#ifdef BLENDOT
 	return multiplayer->has_network_peer();
+#endif
 }
 
 int SceneTree::get_network_unique_id() const {
-
+#ifdef BLENDOT
 	return multiplayer->get_network_unique_id();
+#endif
 }
 
 Vector<int> SceneTree::get_network_connected_peers() const {
-
+#ifdef BLENDOT
 	return multiplayer->get_network_connected_peers();
+#endif
 }
 
 int SceneTree::get_rpc_sender_id() const {
+#ifdef BLENDOT
 	return multiplayer->get_rpc_sender_id();
+#endif
 }
 
 void SceneTree::set_refuse_new_network_connections(bool p_refuse) {
+#ifdef BLENDOT
 	multiplayer->set_refuse_new_network_connections(p_refuse);
+#endif
 }
 
 bool SceneTree::is_refusing_new_network_connections() const {
+#ifdef BLENDOT
 	return multiplayer->is_refusing_new_network_connections();
+#endif
 }
 
 void SceneTree::_bind_methods() {
+#ifdef BLENDOT
 
 	//ClassDB::bind_method(D_METHOD("call_group","call_flags","group","method","arg1","arg2"),&SceneMainLoop::_call_group,DEFVAL(Variant()),DEFVAL(Variant()));
 
@@ -1850,10 +1887,11 @@ void SceneTree::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_multiplayer", "multiplayer"), &SceneTree::set_multiplayer);
 	ClassDB::bind_method(D_METHOD("get_multiplayer"), &SceneTree::get_multiplayer);
-	ClassDB::bind_method(D_METHOD("set_multiplayer_poll_enabled", "enabled"), &SceneTree::set_multiplayer_poll_enabled);
-	ClassDB::bind_method(D_METHOD("is_multiplayer_poll_enabled"), &SceneTree::is_multiplayer_poll_enabled);
 	ClassDB::bind_method(D_METHOD("set_network_peer", "peer"), &SceneTree::set_network_peer);
 	ClassDB::bind_method(D_METHOD("get_network_peer"), &SceneTree::get_network_peer);
+
+	ClassDB::bind_method(D_METHOD("set_multiplayer_poll_enabled", "enabled"), &SceneTree::set_multiplayer_poll_enabled);
+	ClassDB::bind_method(D_METHOD("is_multiplayer_poll_enabled"), &SceneTree::is_multiplayer_poll_enabled);
 	ClassDB::bind_method(D_METHOD("is_network_server"), &SceneTree::is_network_server);
 	ClassDB::bind_method(D_METHOD("has_network_peer"), &SceneTree::has_network_peer);
 	ClassDB::bind_method(D_METHOD("get_network_connected_peers"), &SceneTree::get_network_connected_peers);
@@ -1878,6 +1916,7 @@ void SceneTree::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_font_oversampling"), "set_use_font_oversampling", "is_using_font_oversampling");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "edited_scene_root", PROPERTY_HINT_RESOURCE_TYPE, "Node", 0), "set_edited_scene_root", "get_edited_scene_root");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "current_scene", PROPERTY_HINT_RESOURCE_TYPE, "Node", 0), "set_current_scene", "get_current_scene");
+
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "network_peer", PROPERTY_HINT_RESOURCE_TYPE, "NetworkedMultiplayerPeer", 0), "set_network_peer", "get_network_peer");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "root", PROPERTY_HINT_RESOURCE_TYPE, "Node", 0), "", "get_root");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "multiplayer", PROPERTY_HINT_RESOURCE_TYPE, "MultiplayerAPI", 0), "set_multiplayer", "get_multiplayer");
@@ -1914,6 +1953,8 @@ void SceneTree::_bind_methods() {
 	BIND_ENUM_CONSTANT(STRETCH_ASPECT_KEEP_WIDTH);
 	BIND_ENUM_CONSTANT(STRETCH_ASPECT_KEEP_HEIGHT);
 	BIND_ENUM_CONSTANT(STRETCH_ASPECT_EXPAND);
+
+#endif
 }
 
 SceneTree *SceneTree::singleton = NULL;
@@ -1958,12 +1999,15 @@ SceneTree::SceneTree() {
 	debug_collisions_hint = false;
 	debug_navigation_hint = false;
 #endif
+
+#ifdef BLENDOT
 	debug_collisions_color = GLOBAL_DEF("debug/shapes/collision/shape_color", Color(0.0, 0.6, 0.7, 0.5));
 	debug_collision_contact_color = GLOBAL_DEF("debug/shapes/collision/contact_color", Color(1.0, 0.2, 0.1, 0.8));
 	debug_navigation_color = GLOBAL_DEF("debug/shapes/navigation/geometry_color", Color(0.1, 1.0, 0.7, 0.4));
 	debug_navigation_disabled_color = GLOBAL_DEF("debug/shapes/navigation/disabled_geometry_color", Color(1.0, 0.7, 0.1, 0.4));
 	collision_debug_contacts = GLOBAL_DEF("debug/shapes/collision/max_contacts_displayed", 10000);
 	ProjectSettings::get_singleton()->set_custom_property_info("debug/shapes/collision/max_contacts_displayed", PropertyInfo(Variant::INT, "debug/shapes/collision/max_contacts_displayed", PROPERTY_HINT_RANGE, "0,20000,1")); // No negative
+#endif
 
 	tree_version = 1;
 	physics_process_time = 1;
@@ -1993,8 +2037,8 @@ SceneTree::SceneTree() {
 
 	// Initialize network state
 	multiplayer_poll = true;
+#ifdef BLENDOT
 	set_multiplayer(Ref<MultiplayerAPI>(memnew(MultiplayerAPI)));
-
 	//root->set_world_2d( Ref<World2D>( memnew( World2D )));
 	root->set_as_audio_listener(true);
 	root->set_as_audio_listener_2d(true);
@@ -2015,6 +2059,7 @@ SceneTree::SceneTree() {
 	root->set_hdr(hdr);
 
 	VS::get_singleton()->scenario_set_reflection_atlas_size(root->get_world()->get_scenario(), ref_atlas_size, ref_atlas_subdiv);
+#endif
 
 	{ //load default fallback environment
 		//get possible extensions
@@ -2026,16 +2071,21 @@ SceneTree::SceneTree() {
 				ext_hint += ",";
 			ext_hint += "*." + E->get();
 		}
+#ifdef BLENDOT
 		//get path
 		String env_path = GLOBAL_DEF("rendering/environment/default_environment", "");
 		//setup property
 		ProjectSettings::get_singleton()->set_custom_property_info("rendering/environment/default_environment", PropertyInfo(Variant::STRING, "rendering/viewport/default_environment", PROPERTY_HINT_FILE, ext_hint));
+#else
+		String env_path = "";
+#endif
 		env_path = env_path.strip_edges();
 		if (env_path != String()) {
 			Ref<Environment> env = ResourceLoader::load(env_path);
 			if (env.is_valid()) {
 				root->get_world()->set_fallback_environment(env);
 			} else {
+#ifdef BLENDOT
 				if (Engine::get_singleton()->is_editor_hint()) {
 					//file was erased, clear the field.
 					ProjectSettings::get_singleton()->set("rendering/environment/default_environment", "");
@@ -2043,6 +2093,7 @@ SceneTree::SceneTree() {
 					//file was erased, notify user.
 					ERR_PRINTS(RTR("Default Environment as specified in Project Settings (Rendering -> Environment -> Default Environment) could not be loaded."));
 				}
+#endif
 			}
 		}
 	}
@@ -2051,14 +2102,16 @@ SceneTree::SceneTree() {
 	stretch_aspect = STRETCH_ASPECT_IGNORE;
 	stretch_shrink = 1;
 
+#ifdef BLENDOT
 	last_screen_size = Size2(OS::get_singleton()->get_window_size().width, OS::get_singleton()->get_window_size().height);
 	_update_root_rect();
+	root->set_physics_object_picking(GLOBAL_DEF("physics/common/enable_object_picking", true));
+#endif
 
 	if (ScriptDebugger::get_singleton()) {
 		ScriptDebugger::get_singleton()->set_request_scene_tree_message_func(_debugger_request_tree, this);
 	}
 
-	root->set_physics_object_picking(GLOBAL_DEF("physics/common/enable_object_picking", true));
 
 #ifdef TOOLS_ENABLED
 	edited_scene_root = NULL;

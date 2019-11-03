@@ -39,6 +39,9 @@
 #include "rid.h"
 #include "variant.h"
 
+class VisualServer;
+static VisualServer* __visual_singleton__ = NULL;
+
 class VisualServer : public Object {
 
 	GDCLASS(VisualServer, Object);
@@ -64,7 +67,7 @@ protected:
 	static void _bind_methods();
 
 public:
-	static VisualServer *get_singleton();
+	static VisualServer *get_singleton() {return __visual_singleton__;}
 	static VisualServer *create();
 
 	enum {

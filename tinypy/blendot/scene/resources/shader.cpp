@@ -64,32 +64,7 @@ String Shader::get_code() const {
 	return VisualServer::get_singleton()->shader_get_code(shader);
 }
 
-void Shader::get_param_list(List<PropertyInfo> *p_params) const {
-
-	_update_shader();
-
-	List<PropertyInfo> local;
-	VisualServer::get_singleton()->shader_get_param_list(shader, &local);
-	params_cache.clear();
-	params_cache_dirty = false;
-
-	for (List<PropertyInfo>::Element *E = local.front(); E; E = E->next()) {
-
-		PropertyInfo pi = E->get();
-		if (default_textures.has(pi.name)) { //do not show default textures
-			continue;
-		}
-		pi.name = "shader_param/" + pi.name;
-		params_cache[pi.name] = E->get().name;
-		if (p_params) {
-
-			//small little hack
-			if (pi.type == Variant::_RID)
-				pi.type = Variant::OBJECT;
-			p_params->push_back(pi);
-		}
-	}
-}
+// Shader::get_param_list moved to shader.h
 
 RID Shader::get_rid() const {
 
