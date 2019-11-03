@@ -52,6 +52,7 @@ public:
 	_FORCE_INLINE_ uint32_t get_id() const { return _id; }
 
 	virtual ~RID_Data();
+	RID_Data( int id ) {_id = id;}
 };
 
 class RID {
@@ -88,6 +89,9 @@ public:
 
 	_FORCE_INLINE_ RID() {
 		_data = NULL;
+	}
+	RID( int id ) {
+		_data = new RID_Data(id);
 	}
 };
 

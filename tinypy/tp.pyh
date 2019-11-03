@@ -17,6 +17,7 @@ import "blendot/plane.h"
 import "blendot/basis.h"
 import "blendot/aabb.h"
 import "blendot/transform.h"
+import "blendot/rid.h"
 
 
 import <cstddef>
@@ -95,6 +96,7 @@ enum TPTypeID {
   TP_AABB = 10,
   TP_MAT3 = 11,
   TP_TRANS = 12,
+  TP_RID   = 13,
 
   TP_GC_TRACKED = 32,
   TP_FUNC = 33,
@@ -188,6 +190,7 @@ typedef class tp_obj {
   struct { TPTypeInfo type; struct AABB a; } aabb;
   struct { TPTypeInfo type; struct Basis m; } mat3;
   struct { TPTypeInfo type; struct Transform t; } trans;
+  struct { TPTypeInfo type; struct RID r; } rid;
  };
 //tp_obj(double num) {
 //this->type.type_id = TP_NUMBER;
@@ -589,6 +592,11 @@ def tp_trans(Basis b, Vector3 origin) -> tp_obj:
 	val.trans.t = Transform(b, origin)
 	return val
 
+@static
+def tp_rid(int id) -> tp_obj:
+	tp_obj val = {TP_RID};
+	val.rid.r = RID(id)
+	return val
 
 /* Function: tp_string_from_const (was tp_string_n)
  * Creates a new string object from a partial C string.
@@ -768,6 +776,9 @@ def tp_as_string(TP, tp_obj self) ->std::string:
 			ss << "		" << self.trans.t.basis.elements[2].x << ", " << self.trans.t.basis.elements[2].y << ", " << self.trans.t.basis.elements[2].z << std::endl
 			ss << "	)" << std::endl
 			ss << ")"
+			break
+		case TP_RID:
+			ss << "RID( id=" << self.rid.r.get_id() << ")"
 			break
 		default:
 			ss << "<unknown type>"
