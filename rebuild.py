@@ -53,7 +53,7 @@ TPLIB_FILES=tp.gen.cpp compiler.cpp runtime.gen.cpp
 
 
 %.o : %.cpp
-	<CC> $(CFLAGS) <DEFINES> -std=c++11 <OPTIONS> <SDL_INCLUDE> -I . -c -o $@ $<
+	<CC> $(CFLAGS) <DEFINES> -std=c++11 <OPTIONS> <SDL_INCLUDE> -I .  -I ./tinypy/blendot -c -o $@ $<
 
 all: <EXE>
 

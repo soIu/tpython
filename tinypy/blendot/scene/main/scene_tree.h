@@ -31,10 +31,16 @@
 #ifndef SCENE_MAIN_LOOP_H
 #define SCENE_MAIN_LOOP_H
 
-#include "core/io/multiplayer_api.h"
-#include "core/os/main_loop.h"
-#include "core/os/thread_safe.h"
-#include "core/self_list.h"
+#ifdef BLENDOT
+	#include "core/io/multiplayer_api.h"
+#else
+	class MultiplayerAPI;
+	class NetworkedMultiplayerPeer;
+#endif
+#include "main_loop.h"
+#include "thread_safe.h"
+#include "self_list.h"
+
 #include "scene/resources/mesh.h"
 #include "scene/resources/world.h"
 #include "scene/resources/world_2d.h"

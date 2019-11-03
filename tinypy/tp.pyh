@@ -18,6 +18,7 @@ import "blendot/basis.h"
 import "blendot/aabb.h"
 import "blendot/transform.h"
 import "blendot/rid.h"
+import "blendot/scene/3d/spatial.h"
 
 
 import <cstddef>

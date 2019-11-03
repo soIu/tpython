@@ -31,13 +31,16 @@
 #ifndef NODE_H
 #define NODE_H
 
-#include "core/class_db.h"
-#include "core/map.h"
-#include "core/node_path.h"
-#include "core/object.h"
-#include "core/project_settings.h"
-#include "core/script_language.h"
+#include "class_db.h"
+#include "map.h"
+#include "node_path.h"
+#include "object.h"
 #include "scene/main/scene_tree.h"
+
+#ifdef BLENDOT
+	#include "core/project_settings.h"
+	#include "core/script_language.h"
+#endif
 
 class Viewport;
 class SceneState;
@@ -118,8 +121,10 @@ private:
 		Node *pause_owner;
 
 		int network_master;
+		#ifdef BLENDOT
 		Map<StringName, MultiplayerAPI::RPCMode> rpc_methods;
 		Map<StringName, MultiplayerAPI::RPCMode> rpc_properties;
+		#endif
 
 		// variables used to properly sort the node when processing, ignored otherwise
 		//should move all the stuff below to bits
@@ -149,8 +154,9 @@ private:
 		NAME_CASING_CAMEL_CASE,
 		NAME_CASING_SNAKE_CASE
 	};
-
+	#ifdef BLENDOT
 	Ref<MultiplayerAPI> multiplayer;
+	#endif
 
 	void _print_tree_pretty(const String &prefix, const bool last);
 	void _print_tree(const Node *p_node);
@@ -423,8 +429,10 @@ public:
 	int get_network_master() const;
 	bool is_network_master() const;
 
+	#ifdef BLENDOT
 	void rpc_config(const StringName &p_method, MultiplayerAPI::RPCMode p_mode); // config a local method for RPC
 	void rset_config(const StringName &p_property, MultiplayerAPI::RPCMode p_mode); // config a local property for RPC
+	#endif
 
 	void rpc(const StringName &p_method, VARIANT_ARG_LIST); //rpc call, honors RPCMode
 	void rpc_unreliable(const StringName &p_method, VARIANT_ARG_LIST); //rpc call, honors RPCMode
@@ -439,11 +447,13 @@ public:
 	void rpcp(int p_peer_id, bool p_unreliable, const StringName &p_method, const Variant **p_arg, int p_argcount);
 	void rsetp(int p_peer_id, bool p_unreliable, const StringName &p_property, const Variant &p_value);
 
+	#ifdef BLENDOT
 	Ref<MultiplayerAPI> get_multiplayer() const;
 	Ref<MultiplayerAPI> get_custom_multiplayer() const;
 	void set_custom_multiplayer(Ref<MultiplayerAPI> p_multiplayer);
 	const Map<StringName, MultiplayerAPI::RPCMode>::Element *get_node_rpc_mode(const StringName &p_method);
 	const Map<StringName, MultiplayerAPI::RPCMode>::Element *get_node_rset_mode(const StringName &p_property);
+	#endif
 
 	Node();
 	~Node();
