@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  shape.cpp                                                            */
+/*  convex_polygon_shape.cpp                                             */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,107 +28,63 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#include "shape.h"
-
-#ifdef BLENDOT
-	#include "core/os/os.h"
-#endif
-
-#include "scene/main/scene_tree.h"
-#include "scene/resources/mesh.h"
+#include "convex_polygon_shape.h"
+#include "quick_hull.h"
 #include "servers/physics_server.h"
 
-void Shape::add_vertices_to_array(PoolVector<Vector3> &array, const Transform &p_xform) {
+Vector<Vector3> ConvexPolygonShape::_gen_debug_mesh_lines() {
 
-	Vector<Vector3> toadd = _gen_debug_mesh_lines();
+	PoolVector<Vector3> points = get_points();
 
-	if (toadd.size()) {
+	if (points.size() > 3) {
 
-		int base = array.size();
-		array.resize(base + toadd.size());
-		PoolVector<Vector3>::Write w = array.write();
-		for (int i = 0; i < toadd.size(); i++) {
-			w[i + base] = p_xform.xform(toadd[i]);
-		}
-	}
-}
-
-real_t Shape::get_margin() const {
-	return margin;
-}
-
-void Shape::set_margin(real_t p_margin) {
-	margin = p_margin;
-	#ifdef BLENDOT
-	PhysicsServer::get_singleton()->shape_set_margin(shape, margin);
-	#endif
-}
-
-Ref<ArrayMesh> Shape::get_debug_mesh() {
-
-	if (debug_mesh_cache.is_valid())
-		return debug_mesh_cache;
-
-	Vector<Vector3> lines = _gen_debug_mesh_lines();
-
-	debug_mesh_cache = Ref<ArrayMesh>(memnew(ArrayMesh));
-
-	if (!lines.empty()) {
-		//make mesh
-		PoolVector<Vector3> array;
-		array.resize(lines.size());
-		{
-
-			PoolVector<Vector3>::Write w = array.write();
-			for (int i = 0; i < lines.size(); i++) {
-				w[i] = lines[i];
+		Vector<Vector3> varr = Variant(points);
+		Geometry::MeshData md;
+		Error err = QuickHull::build(varr, md);
+		if (err == OK) {
+			Vector<Vector3> lines;
+			lines.resize(md.edges.size() * 2);
+			for (int i = 0; i < md.edges.size(); i++) {
+				lines.write[i * 2 + 0] = md.vertices[md.edges[i].a];
+				lines.write[i * 2 + 1] = md.vertices[md.edges[i].b];
 			}
+			return lines;
 		}
-
-		Array arr;
-		arr.resize(Mesh::ARRAY_MAX);
-		arr[Mesh::ARRAY_VERTEX] = array;
-
-#ifdef BLENDOT
-// TODO this is not the proper way to get the main scene
-		SceneTree *st = Object::cast_to<SceneTree>(OS::get_singleton()->get_main_loop());
-		debug_mesh_cache->add_surface_from_arrays(Mesh::PRIMITIVE_LINES, arr);
-		if (st) {
-			debug_mesh_cache->surface_set_material(0, st->get_debug_collision_material());
-		}
-#endif
 	}
 
-	return debug_mesh_cache;
+	return Vector<Vector3>();
 }
 
-void Shape::_update_shape() {
-	emit_changed();
-	debug_mesh_cache.unref();
-}
-
-void Shape::_bind_methods() {
-
-	ClassDB::bind_method(D_METHOD("set_margin", "margin"), &Shape::set_margin);
-	ClassDB::bind_method(D_METHOD("get_margin"), &Shape::get_margin);
-
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "margin", PROPERTY_HINT_RANGE, "0.001,10,0.001"), "set_margin", "get_margin");
-}
-
-Shape::Shape() :
-		margin(0.04) {
-
-	ERR_PRINT("Constructor must not be called!");
-}
-
-Shape::Shape(RID p_shape) :
-		margin(0.04) {
-
-	shape = p_shape;
-}
-
-Shape::~Shape() {
+void ConvexPolygonShape::_update_shape() {
 #ifdef BLENDOT
-	PhysicsServer::get_singleton()->free(shape);
+	PhysicsServer::get_singleton()->shape_set_data(get_shape(), points);
 #endif
+	Shape::_update_shape();
 }
+
+void ConvexPolygonShape::set_points(const PoolVector<Vector3> &p_points) {
+
+	points = p_points;
+	_update_shape();
+	notify_change_to_owners();
+}
+
+PoolVector<Vector3> ConvexPolygonShape::get_points() const {
+
+	return points;
+}
+
+void ConvexPolygonShape::_bind_methods() {
+
+	ClassDB::bind_method(D_METHOD("set_points", "points"), &ConvexPolygonShape::set_points);
+	ClassDB::bind_method(D_METHOD("get_points"), &ConvexPolygonShape::get_points);
+
+	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "points"), "set_points", "get_points");
+}
+#ifdef BLENDOT
+ConvexPolygonShape::ConvexPolygonShape() :
+		Shape(PhysicsServer::get_singleton()->shape_create(PhysicsServer::SHAPE_CONVEX_POLYGON)) {
+}
+#else
+ConvexPolygonShape::ConvexPolygonShape() {}
+#endif

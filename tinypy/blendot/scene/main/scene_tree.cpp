@@ -57,13 +57,12 @@
 #include <stdio.h>
 
 void SceneTreeTimer::_bind_methods() {
-
+#ifdef BLENDOT
 	ClassDB::bind_method(D_METHOD("set_time_left", "time"), &SceneTreeTimer::set_time_left);
 	ClassDB::bind_method(D_METHOD("get_time_left"), &SceneTreeTimer::get_time_left);
-
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "time_left"), "set_time_left", "get_time_left");
-
 	ADD_SIGNAL(MethodInfo("timeout"));
+#endif
 }
 
 void SceneTreeTimer::set_time_left(float p_time) {
@@ -886,8 +885,10 @@ void SceneTree::set_pause(bool p_enabled) {
 	if (p_enabled == pause)
 		return;
 	pause = p_enabled;
+	#ifdef BLENDOT
 	PhysicsServer::get_singleton()->set_active(!p_enabled);
 	Physics2DServer::get_singleton()->set_active(!p_enabled);
+	#endif
 	if (get_root())
 		get_root()->propagate_notification(p_enabled ? Node::NOTIFICATION_PAUSED : Node::NOTIFICATION_UNPAUSED);
 }
@@ -1102,12 +1103,12 @@ static void _fill_array(Node *p_node, Array &array, int p_level) {
 }
 
 void SceneTree::_debugger_request_tree(void *self) {
-
+#ifdef BLENDOT
 	SceneTree *sml = (SceneTree *)self;
-
 	Array arr;
-	_fill_array(sml->root, arr, 0);
+	fill_array(sml->root, arr, 0);
 	ScriptDebugger::get_singleton()->send_message("scene_tree", arr);
+#endif
 }
 
 void SceneTree::_flush_delete_queue() {
@@ -1140,13 +1141,14 @@ int SceneTree::get_node_count() const {
 void SceneTree::_update_root_rect() {
 
 	if (stretch_mode == STRETCH_MODE_DISABLED) {
-
+		#ifdef BLENDOT
 		_update_font_oversampling(1.0);
 		root->set_size((last_screen_size / stretch_shrink).floor());
 		root->set_attach_to_screen_rect(Rect2(Point2(), last_screen_size));
 		root->set_size_override_stretch(false);
 		root->set_size_override(false, Size2());
 		root->update_canvas_items();
+		#endif
 		return; //user will take care
 	}
 
@@ -1314,11 +1316,12 @@ Error SceneTree::change_scene(const String &p_path) {
 Error SceneTree::change_scene_to(const Ref<PackedScene> &p_scene) {
 
 	Node *new_scene = NULL;
+	#ifdef BLENDOT
 	if (p_scene.is_valid()) {
 		new_scene = p_scene->instance();
 		ERR_FAIL_COND_V(!new_scene, ERR_CANT_CREATE);
 	}
-
+	#endif
 	call_deferred("_change_scene", new_scene);
 	return OK;
 }
@@ -2028,6 +2031,7 @@ SceneTree::SceneTree() {
 	node_count = 0;
 
 	//create with mainloop
+#ifdef BLENDOT
 
 	root = memnew(Viewport);
 	root->set_name("root");
@@ -2037,7 +2041,6 @@ SceneTree::SceneTree() {
 
 	// Initialize network state
 	multiplayer_poll = true;
-#ifdef BLENDOT
 	set_multiplayer(Ref<MultiplayerAPI>(memnew(MultiplayerAPI)));
 	//root->set_world_2d( Ref<World2D>( memnew( World2D )));
 	root->set_as_audio_listener(true);
@@ -2059,7 +2062,6 @@ SceneTree::SceneTree() {
 	root->set_hdr(hdr);
 
 	VS::get_singleton()->scenario_set_reflection_atlas_size(root->get_world()->get_scenario(), ref_atlas_size, ref_atlas_subdiv);
-#endif
 
 	{ //load default fallback environment
 		//get possible extensions
@@ -2071,21 +2073,16 @@ SceneTree::SceneTree() {
 				ext_hint += ",";
 			ext_hint += "*." + E->get();
 		}
-#ifdef BLENDOT
 		//get path
 		String env_path = GLOBAL_DEF("rendering/environment/default_environment", "");
 		//setup property
 		ProjectSettings::get_singleton()->set_custom_property_info("rendering/environment/default_environment", PropertyInfo(Variant::STRING, "rendering/viewport/default_environment", PROPERTY_HINT_FILE, ext_hint));
-#else
-		String env_path = "";
-#endif
 		env_path = env_path.strip_edges();
 		if (env_path != String()) {
 			Ref<Environment> env = ResourceLoader::load(env_path);
 			if (env.is_valid()) {
 				root->get_world()->set_fallback_environment(env);
 			} else {
-#ifdef BLENDOT
 				if (Engine::get_singleton()->is_editor_hint()) {
 					//file was erased, clear the field.
 					ProjectSettings::get_singleton()->set("rendering/environment/default_environment", "");
@@ -2093,7 +2090,6 @@ SceneTree::SceneTree() {
 					//file was erased, notify user.
 					ERR_PRINTS(RTR("Default Environment as specified in Project Settings (Rendering -> Environment -> Default Environment) could not be loaded."));
 				}
-#endif
 			}
 		}
 	}
@@ -2102,15 +2098,14 @@ SceneTree::SceneTree() {
 	stretch_aspect = STRETCH_ASPECT_IGNORE;
 	stretch_shrink = 1;
 
-#ifdef BLENDOT
 	last_screen_size = Size2(OS::get_singleton()->get_window_size().width, OS::get_singleton()->get_window_size().height);
 	_update_root_rect();
 	root->set_physics_object_picking(GLOBAL_DEF("physics/common/enable_object_picking", true));
-#endif
 
 	if (ScriptDebugger::get_singleton()) {
 		ScriptDebugger::get_singleton()->set_request_scene_tree_message_func(_debugger_request_tree, this);
 	}
+#endif
 
 
 #ifdef TOOLS_ENABLED

@@ -35,7 +35,13 @@
 #include "rect2.h"
 #include "mutex.h"
 #include "rw_lock.h"
-#include "thread_safe.h"
+
+#ifdef BLENDOT
+	#include "thread_safe.h"
+#else
+	#define _THREAD_SAFE_CLASS_
+#endif
+
 #include "resource.h"
 #include "scene/resources/curve.h"
 #include "scene/resources/gradient.h"

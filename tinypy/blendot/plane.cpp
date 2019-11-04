@@ -29,8 +29,7 @@
 /*************************************************************************/
 
 #include "plane.h"
-
-#include "core/math/math_funcs.h"
+#include "math_funcs.h"
 
 #define _PLANE_EQ_DOT_EPSILON 0.999
 #define _PLANE_EQ_D_EPSILON 0.0001

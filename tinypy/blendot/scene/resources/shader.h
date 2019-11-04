@@ -115,7 +115,7 @@ public:
 };
 
 
-void Shader::get_param_list(List<PropertyInfo> *p_params) const {
+_FORCE_INLINE_ void Shader::get_param_list(List<PropertyInfo> *p_params) const {
 
 	_update_shader();
 

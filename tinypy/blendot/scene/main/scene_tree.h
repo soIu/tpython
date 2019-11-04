@@ -38,6 +38,7 @@
 	class MultiplayerAPI;
 	class NetworkedMultiplayerPeer;
 	#define _THREAD_SAFE_CLASS_
+	#define _THREAD_SAFE_METHOD_
 
 #endif
 #include "main_loop.h"

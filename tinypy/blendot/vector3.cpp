@@ -133,9 +133,8 @@ Vector3 Vector3::move_toward(const Vector3 &p_to, const real_t p_delta) const {
 	real_t len = vd.length();
 	return len <= p_delta || len < CMP_EPSILON ? p_to : v + vd / len * p_delta;
 }
-/*
-Vector3::operator String() const {
 
+Vector3::operator String() const {
 	return (rtos(x) + ", " + rtos(y) + ", " + rtos(z));
 }
-*/
+

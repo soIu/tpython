@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  camera_server.h                                                      */
+/*  concave_polygon_shape.cpp                                            */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,77 +28,72 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef CAMERA_SERVER_H
-#define CAMERA_SERVER_H
+#include "concave_polygon_shape.h"
 
-#include "object.h"
+#include "servers/physics_server.h"
+
+Vector<Vector3> ConcavePolygonShape::_gen_debug_mesh_lines() {
+
+	Set<DrawEdge> edges;
+
+	PoolVector<Vector3> data = get_faces();
+	int datalen = data.size();
+	ERR_FAIL_COND_V((datalen % 3) != 0, Vector<Vector3>());
+
+	PoolVector<Vector3>::Read r = data.read();
+
+	for (int i = 0; i < datalen; i += 3) {
+
+		for (int j = 0; j < 3; j++) {
+
+			DrawEdge de(r[i + j], r[i + ((j + 1) % 3)]);
+			edges.insert(de);
+		}
+	}
+
+	Vector<Vector3> points;
+	points.resize(edges.size() * 2);
+	int idx = 0;
+	for (Set<DrawEdge>::Element *E = edges.front(); E; E = E->next()) {
+
+		points.write[idx + 0] = E->get().a;
+		points.write[idx + 1] = E->get().b;
+		idx += 2;
+	}
+
+	return points;
+}
+
+void ConcavePolygonShape::_update_shape() {
+	Shape::_update_shape();
+}
+
+void ConcavePolygonShape::set_faces(const PoolVector<Vector3> &p_faces) {
+#ifdef BLENDOT
+	PhysicsServer::get_singleton()->shape_set_data(get_shape(), p_faces);
+	notify_change_to_owners();
+#endif
+}
+
+PoolVector<Vector3> ConcavePolygonShape::get_faces() const {
+#ifdef BLENDOT
+	return PhysicsServer::get_singleton()->shape_get_data(get_shape());
+#endif
+}
+
+void ConcavePolygonShape::_bind_methods() {
+
+	ClassDB::bind_method(D_METHOD("set_faces", "faces"), &ConcavePolygonShape::set_faces);
+	ClassDB::bind_method(D_METHOD("get_faces"), &ConcavePolygonShape::get_faces);
+	ADD_PROPERTY(PropertyInfo(Variant::POOL_VECTOR3_ARRAY, "data", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NOEDITOR | PROPERTY_USAGE_INTERNAL), "set_faces", "get_faces");
+}
 
 #ifdef BLENDOT
-	#include "thread_safe.h"
+ConcavePolygonShape::ConcavePolygonShape() :
+		Shape(PhysicsServer::get_singleton()->shape_create(PhysicsServer::SHAPE_CONCAVE_POLYGON)) {
+	//set_planes(Vector3(1,1,1));
+}
 #else
-	#define _THREAD_SAFE_CLASS_
-	#define _THREAD_SAFE_METHOD_
-
+ConcavePolygonShape::ConcavePolygonShape() {}
 #endif
 
-#include "reference.h"
-#include "rid.h"
-#include "variant.h"
-
-/**
-	@author Bastiaan Olij <mux213@gmail.com>
-
-	The camera server is a singleton object that gives access to the various
-	camera feeds that can be used as the background for our environment.
-**/
-
-class CameraFeed;
-
-class CameraServer : public Object {
-	GDCLASS(CameraServer, Object);
-	_THREAD_SAFE_CLASS_
-
-public:
-	enum FeedImage {
-		FEED_RGBA_IMAGE = 0,
-		FEED_YCBCR_IMAGE = 0,
-		FEED_Y_IMAGE = 0,
-		FEED_CBCR_IMAGE = 1,
-		FEED_IMAGES = 2
-	};
-
-private:
-protected:
-	Vector<Ref<CameraFeed> > feeds;
-
-	static CameraServer *singleton;
-
-	static void _bind_methods();
-
-public:
-	static CameraServer *get_singleton();
-
-	// Right now we identify our feed by it's ID when it's used in the background.
-	// May see if we can change this to purely relying on CameraFeed objects or by name.
-	int get_free_id();
-	int get_feed_index(int p_id);
-	Ref<CameraFeed> get_feed_by_id(int p_id);
-
-	// add and remove feeds
-	void add_feed(const Ref<CameraFeed> &p_feed);
-	void remove_feed(const Ref<CameraFeed> &p_feed);
-
-	// get our feeds
-	Ref<CameraFeed> get_feed(int p_idx);
-	int get_feed_count();
-	Array get_feeds();
-
-	RID feed_texture(int p_id, FeedImage p_texture);
-
-	CameraServer();
-	~CameraServer();
-};
-
-VARIANT_ENUM_CAST(CameraServer::FeedImage);
-
-#endif /* CAMERA_SERVER_H */

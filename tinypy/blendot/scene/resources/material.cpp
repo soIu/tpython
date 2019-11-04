@@ -82,7 +82,7 @@ void Material::_validate_property(PropertyInfo &property) const {
 }
 
 void Material::_bind_methods() {
-
+#ifdef BLENDOT
 	ClassDB::bind_method(D_METHOD("set_next_pass", "next_pass"), &Material::set_next_pass);
 	ClassDB::bind_method(D_METHOD("get_next_pass"), &Material::get_next_pass);
 
@@ -94,6 +94,7 @@ void Material::_bind_methods() {
 
 	BIND_CONSTANT(RENDER_PRIORITY_MAX);
 	BIND_CONSTANT(RENDER_PRIORITY_MIN);
+#endif
 }
 
 Material::Material() {
@@ -228,7 +229,7 @@ void ShaderMaterial::_shader_changed() {
 }
 
 void ShaderMaterial::_bind_methods() {
-
+#ifdef BLENDOT
 	ClassDB::bind_method(D_METHOD("set_shader", "shader"), &ShaderMaterial::set_shader);
 	ClassDB::bind_method(D_METHOD("get_shader"), &ShaderMaterial::get_shader);
 	ClassDB::bind_method(D_METHOD("set_shader_param", "param", "value"), &ShaderMaterial::set_shader_param);
@@ -236,8 +237,8 @@ void ShaderMaterial::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_shader_changed"), &ShaderMaterial::_shader_changed);
 	ClassDB::bind_method(D_METHOD("property_can_revert", "name"), &ShaderMaterial::property_can_revert);
 	ClassDB::bind_method(D_METHOD("property_get_revert", "name"), &ShaderMaterial::property_get_revert);
-
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "shader", PROPERTY_HINT_RESOURCE_TYPE, "Shader"), "set_shader", "get_shader");
+#endif
 }
 
 void ShaderMaterial::get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const {
@@ -1891,6 +1892,7 @@ Shader::Mode SpatialMaterial::get_shader_mode() const {
 }
 
 void SpatialMaterial::_bind_methods() {
+#ifdef BLENDOT
 
 	ClassDB::bind_method(D_METHOD("set_albedo", "albedo"), &SpatialMaterial::set_albedo);
 	ClassDB::bind_method(D_METHOD("get_albedo"), &SpatialMaterial::get_albedo);
@@ -2305,6 +2307,7 @@ void SpatialMaterial::_bind_methods() {
 	BIND_ENUM_CONSTANT(DISTANCE_FADE_PIXEL_ALPHA);
 	BIND_ENUM_CONSTANT(DISTANCE_FADE_PIXEL_DITHER);
 	BIND_ENUM_CONSTANT(DISTANCE_FADE_OBJECT_DITHER);
+#endif
 }
 
 SpatialMaterial::SpatialMaterial() :
