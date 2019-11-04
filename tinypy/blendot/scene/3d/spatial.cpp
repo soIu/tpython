@@ -823,10 +823,8 @@ void Spatial::_bind_methods() {
 
 Spatial::Spatial() :
 		xform_change(this) {
-
 	data.dirty = DIRTY_NONE;
 	data.children_lock = 0;
-
 	data.ignore_notification = false;
 	data.toplevel = false;
 	data.toplevel_active = false;
@@ -835,7 +833,6 @@ Spatial::Spatial() :
 	data.inside_world = false;
 	data.visible = true;
 	data.disable_scale = false;
-
 #ifdef TOOLS_ENABLED
 	data.gizmo_disabled = false;
 	data.gizmo_dirty = false;

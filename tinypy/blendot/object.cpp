@@ -37,9 +37,10 @@
 #include "resource.h"
 #ifdef BLENDOT
 	#include "core/os/os.h"
-	#include "core/script_language.h"
+	#include "core/translation.h"
 #endif
-//#include "core/translation.h"
+
+#include "script_language.h"
 
 #ifdef DEBUG_ENABLED
 
@@ -1965,7 +1966,6 @@ void Object::set_script_instance_binding(int p_script_language_index, void *p_da
 }
 
 Object::Object() {
-
 	_class_ptr = NULL;
 	_block_signals = false;
 	_predelete_ok = 0;
@@ -1977,7 +1977,6 @@ Object::Object() {
 	memset(_script_instance_bindings, 0, sizeof(void *) * MAX_SCRIPT_INSTANCE_BINDINGS);
 	script_instance = NULL;
 #ifdef TOOLS_ENABLED
-
 	_edited = false;
 	_edited_version = 0;
 #endif
@@ -2052,13 +2051,16 @@ HashMap<Object *, ObjectID, ObjectDB::ObjectPtrHash> ObjectDB::instance_checks;
 ObjectID ObjectDB::add_instance(Object *p_object) {
 
 	ERR_FAIL_COND_V(p_object->get_instance_id() != 0, 0);
-
+	#ifdef BLENDOT
 	rw_lock->write_lock();
+	#endif
 	ObjectID instance_id = ++instance_counter;
 	instances[instance_id] = p_object;
 	instance_checks[p_object] = instance_id;
 
+	#ifdef BLENDOT
 	rw_lock->write_unlock();
+	#endif
 
 	return instance_id;
 }
