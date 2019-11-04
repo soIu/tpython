@@ -435,6 +435,9 @@ def tpy_spatial(TP) ->tp_obj:
 	tp_obj scl = TP_OBJ()
 	return tp_spatial(pos.vec3.vec, rot.vec3.vec, scl.vec3.vec)
 
+def tpy_mesh(TP) ->tp_obj:
+	return tp_mesh()
+
 ## https://stackoverflow.com/questions/1591361/understanding-typedefs-for-function-pointers-in-c
 typedef tp_obj (*tp_func_pointer)(tp_vm*);
 
@@ -489,6 +492,7 @@ def tp_module_builtins_init(TP):
 	{"trans", tpy_trans},
 	{"RID", tpy_rid},
 	{"spatial", tpy_spatial},
+	{"mesh", tpy_mesh},
 	#ifdef TP_SANDBOX
 	{"sandbox",tpy_sandbox_},
 	#endif

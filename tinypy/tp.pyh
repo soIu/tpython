@@ -19,6 +19,8 @@ import "blendot/aabb.h"
 import "blendot/transform.h"
 import "blendot/rid.h"
 import "blendot/scene/3d/spatial.h"
+import "blendot/scene/resources/mesh.h"
+import "blendot/scene/3d/mesh_instance.h"
 
 
 import <cstddef>
@@ -98,7 +100,9 @@ enum TPTypeID {
   TP_MAT3 = 11,
   TP_TRANS = 12,
   TP_RID   = 13,
-  TP_SPATIAL   = 14,
+  TP_SPATIAL = 14,
+  TP_MESH    = 15,
+  TP_MESHI   = 16,
 
   TP_GC_TRACKED = 32,
   TP_FUNC = 33,
@@ -194,6 +198,8 @@ typedef class tp_obj {
   struct { TPTypeInfo type; struct Transform t; } trans;
   struct { TPTypeInfo type; struct RID r; } rid;
   struct { TPTypeInfo type; struct Spatial *ptr; } spatial;
+  struct { TPTypeInfo type; struct ArrayMesh *ptr; } mesh;
+  struct { TPTypeInfo type; struct MeshInstance *ptr; } meshi;
  };
 //tp_obj(double num) {
 //this->type.type_id = TP_NUMBER;
@@ -608,6 +614,12 @@ def tp_spatial(Vector3 pos, Vector3 rot, Vector3 scl) -> tp_obj:
 	val.spatial.ptr->set_translation(pos)
 	val.spatial.ptr->set_rotation_degrees(rot)
 	val.spatial.ptr->set_scale(scl)
+	return val
+
+@static
+def tp_mesh() -> tp_obj:
+	tp_obj val = {TP_MESH};
+	val.mesh.ptr = new ArrayMesh()
 	return val
 
 
