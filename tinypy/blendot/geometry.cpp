@@ -29,10 +29,11 @@
 /*************************************************************************/
 
 #include "geometry.h"
-
-#include "core/print_string.h"
-#include "thirdparty/misc/clipper.hpp"
-#include "thirdparty/misc/triangulator.h"
+#include "print_string.h"
+#ifdef BLENDOT
+	#include "thirdparty/misc/clipper.hpp"
+	#include "thirdparty/misc/triangulator.h"
+#endif
 
 #define SCALE_FACTOR 100000.0 // based on CMP_EPSILON
 
@@ -743,6 +744,8 @@ PoolVector<Face3> Geometry::wrap_geometry(PoolVector<Face3> p_array, real_t *p_e
 
 Vector<Vector<Vector2> > Geometry::decompose_polygon_in_convex(Vector<Point2> polygon) {
 	Vector<Vector<Vector2> > decomp;
+#ifdef BLENDOT
+
 	List<TriangulatorPoly> in_poly, out_poly;
 
 	TriangulatorPoly inp;
@@ -771,6 +774,7 @@ Vector<Vector<Vector2> > Geometry::decompose_polygon_in_convex(Vector<Point2> po
 
 		idx++;
 	}
+#endif
 
 	return decomp;
 }
@@ -1140,6 +1144,7 @@ void Geometry::make_atlas(const Vector<Size2i> &p_rects, Vector<Point2i> &r_resu
 
 Vector<Vector<Point2> > Geometry::_polypaths_do_operation(PolyBooleanOperation p_op, const Vector<Point2> &p_polypath_a, const Vector<Point2> &p_polypath_b, bool is_a_open) {
 
+#ifdef BLENDOT
 	using namespace ClipperLib;
 
 	ClipType op = ctUnion;
@@ -1188,10 +1193,11 @@ Vector<Vector<Point2> > Geometry::_polypaths_do_operation(PolyBooleanOperation p
 		polypaths.push_back(polypath);
 	}
 	return polypaths;
+#endif
 }
 
 Vector<Vector<Point2> > Geometry::_polypath_offset(const Vector<Point2> &p_polypath, real_t p_delta, PolyJoinType p_join_type, PolyEndType p_end_type) {
-
+#ifdef BLENDOT
 	using namespace ClipperLib;
 
 	JoinType jt = jtSquare;
@@ -1239,4 +1245,5 @@ Vector<Vector<Point2> > Geometry::_polypath_offset(const Vector<Point2> &p_polyp
 		polypaths.push_back(polypath);
 	}
 	return polypaths;
+#endif
 }

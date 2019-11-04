@@ -29,9 +29,10 @@
 /*************************************************************************/
 
 #include "visual_server.h"
-
-#include "core/method_bind_ext.gen.inc"
-#include "core/project_settings.h"
+#ifdef BLENDOT
+	#include "core/method_bind_ext.gen.inc"
+	#include "core/project_settings.h"
+#endif
 
 VisualServer *VisualServer::singleton = NULL;
 VisualServer *(*VisualServer::create_func)() = NULL;
@@ -1637,7 +1638,7 @@ Array VisualServer::_mesh_surface_get_skeleton_aabb_bind(RID p_mesh, int p_surfa
 }
 
 void VisualServer::_bind_methods() {
-
+#ifdef BLENDOT
 	ClassDB::bind_method(D_METHOD("force_sync"), &VisualServer::sync);
 	ClassDB::bind_method(D_METHOD("force_draw", "swap_buffers", "frame_step"), &VisualServer::draw, DEFVAL(true), DEFVAL(0.0));
 
@@ -2297,6 +2298,8 @@ void VisualServer::_bind_methods() {
 
 	ADD_SIGNAL(MethodInfo("frame_pre_draw"));
 	ADD_SIGNAL(MethodInfo("frame_post_draw"));
+
+#endif
 }
 
 void VisualServer::_canvas_item_add_style_box(RID p_item, const Rect2 &p_rect, const Rect2 &p_source, RID p_texture, const Vector<float> &p_margins, const Color &p_modulate) {
@@ -2358,9 +2361,10 @@ RID VisualServer::instance_create2(RID p_base, RID p_scenario) {
 
 VisualServer::VisualServer() {
 
-	//ERR_FAIL_COND(singleton);
+	ERR_FAIL_COND(singleton);
 	__visual_singleton__ = this;
 
+#ifdef BLENDOT
 	GLOBAL_DEF_RST("rendering/vram_compression/import_bptc", false);
 	GLOBAL_DEF_RST("rendering/vram_compression/import_s3tc", true);
 	GLOBAL_DEF_RST("rendering/vram_compression/import_etc", false);
@@ -2402,6 +2406,8 @@ VisualServer::VisualServer() {
 	GLOBAL_DEF("rendering/quality/depth_prepass/disable_for_vendors", "PowerVR,Mali,Adreno,Apple");
 
 	GLOBAL_DEF("rendering/quality/filters/use_nearest_mipmap_filter", false);
+
+#endif
 }
 
 VisualServer::~VisualServer() {

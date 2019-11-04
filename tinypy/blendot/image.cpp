@@ -30,14 +30,16 @@
 
 #include "image.h"
 
-#include "core/hash_map.h"
-#include "core/io/image_loader.h"
-#include "core/io/resource_loader.h"
-#include "core/math/math_funcs.h"
-#include "core/os/copymem.h"
-#include "core/print_string.h"
+#include "hash_map.h"
+#include "resource_loader.h"
+#include "math_funcs.h"
+#include "copymem.h"
+#include "print_string.h"
 
-#include "thirdparty/misc/hq2x.h"
+#ifdef BLENDOT
+	#include "core/io/image_loader.h"
+	#include "thirdparty/misc/hq2x.h"
+#endif
 
 #include <stdio.h>
 
@@ -1302,7 +1304,7 @@ static void _generate_po2_mipmap(const Component *p_src, Component *p_dst, uint3
 }
 
 void Image::expand_x2_hq2x() {
-
+#ifdef BLENDOT
 	ERR_FAIL_COND(!_can_modify(format));
 
 	bool used_mipmaps = has_mipmaps();
@@ -1337,6 +1339,7 @@ void Image::expand_x2_hq2x() {
 	if (mipmaps) {
 		generate_mipmaps();
 	}
+#endif
 }
 
 void Image::shrink_x2() {
@@ -1877,7 +1880,9 @@ Error Image::load(const String &p_path) {
 		WARN_PRINTS("Loaded resource as image file, this will not work on export: '" + p_path + "'. Instead, import the image file as an Image resource and load it normally as a resource.");
 	}
 #endif
+#ifdef BLENDOT
 	return ImageLoader::load_image(p_path, this);
+#endif
 }
 
 Error Image::save_png(const String &p_path) const {
