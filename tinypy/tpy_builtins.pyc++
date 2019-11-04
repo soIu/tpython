@@ -430,7 +430,10 @@ def tpy_rid(TP) ->tp_obj:
 	return tp_rid( (int)a.number.val )
 
 def tpy_spatial(TP) ->tp_obj:
-	return tp_spatial()
+	tp_obj pos = TP_OBJ()
+	tp_obj rot = TP_OBJ()
+	tp_obj scl = TP_OBJ()
+	return tp_spatial(pos.vec3.vec, rot.vec3.vec, scl.vec3.vec)
 
 ## https://stackoverflow.com/questions/1591361/understanding-typedefs-for-function-pointers-in-c
 typedef tp_obj (*tp_func_pointer)(tp_vm*);

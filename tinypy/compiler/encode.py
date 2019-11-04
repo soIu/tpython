@@ -536,12 +536,19 @@ def do_globals(t):
 	for t in t.items:
 		if t.val not in D.globals:
 			D.globals.append(t.val)
+
 def do_del(tt):
 	for t in tt.items:
-		r = do(t.items[0])
-		r2 = do(t.items[1])
-		code(DEL,r,r2)
-		free_tmp(r); free_tmp(r2) #REG
+		if t.type=='name':
+			r = do(t)
+			code(DEL, r)
+			free_tmp(r)
+		else:  ## assume dictionary `del foo['bar']`
+			r = do(t.items[0])
+			r2 = do(t.items[1])
+			code(DEL,r,r2)
+			free_tmp(r)
+			free_tmp(r2)
 
 def do_call(t,r=None):
 	assert t.type == 'call'

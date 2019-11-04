@@ -602,9 +602,12 @@ def tp_rid(int id) -> tp_obj:
 	return val
 
 @static
-def tp_spatial() -> tp_obj:
+def tp_spatial(Vector3 pos, Vector3 rot, Vector3 scl) -> tp_obj:
 	tp_obj val = {TP_SPATIAL};
 	val.spatial.ptr = new Spatial()
+	val.spatial.ptr->set_translation(pos)
+	val.spatial.ptr->set_rotation_degrees(rot)
+	val.spatial.ptr->set_scale(scl)
 	return val
 
 
@@ -791,7 +794,15 @@ def tp_as_string(TP, tp_obj self) ->std::string:
 			ss << "RID( id=" << self.rid.r.get_id() << ")"
 			break
 		case TP_SPATIAL:
-			ss << "spatial( addr=" << self.spatial.ptr << ")"
+			Vector3 pos = self.spatial.ptr->get_translation()
+			Vector3 rot = self.spatial.ptr->get_rotation_degrees()
+			Vector3 scl = self.spatial.ptr->get_scale()
+			ss << "spatial(" << std::endl
+			ss << "	addr:		" << self.spatial.ptr << std::endl
+			ss << "	position:	x=" << pos.x << ", y=" << pos.y << ", z=" << pos.z << std::endl
+			ss << "	rotation:	x=" << rot.x << ", y=" << rot.y << ", z=" << rot.z << std::endl
+			ss << "	scale:		x=" << scl.x << ", y=" << scl.y << ", z=" << scl.z << std::endl
+			ss << ")"
 			break
 		default:
 			ss << "<unknown type>"
