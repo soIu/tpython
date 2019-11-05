@@ -29,9 +29,10 @@
 /*************************************************************************/
 
 #include "rasterizer.h"
-
-#include "core/os/os.h"
-#include "core/print_string.h"
+#include "print_string.h"
+#ifdef BLENDOT
+	#include "core/os/os.h"
+#endif
 
 Rasterizer *(*Rasterizer::_create_func)() = NULL;
 

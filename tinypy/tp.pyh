@@ -817,6 +817,13 @@ def tp_as_string(TP, tp_obj self) ->std::string:
 			ss << "	scale:		x=" << scl.x << ", y=" << scl.y << ", z=" << scl.z << std::endl
 			ss << ")"
 			break
+		case TP_MESH:
+			ss << "mesh(" << std::endl
+			ss << "	addr:		" << self.mesh.ptr << std::endl
+			ss << "	id:		" << self.mesh.ptr->get_rid().get_id() << std::endl
+			ss << "	surfaces:	" << self.mesh.ptr->get_surface_count() << std::endl
+			ss << ")"
+			break
 		default:
 			ss << "<unknown type>"
 	return ss.str()

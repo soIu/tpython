@@ -215,12 +215,16 @@ bool VisualServerRaster::is_low_end() const {
 #endif
 }
 VisualServerRaster::VisualServerRaster() {
+	std::cout << "making new VisualServerRaster" << std::endl;
+	std::cout << this << std::endl;
+	singleton = this;
+
 #ifdef BLENDOT
 	VSG::canvas = memnew(VisualServerCanvas);
 	VSG::viewport = memnew(VisualServerViewport);
 	VSG::scene = memnew(VisualServerScene);
-	VSG::rasterizer = Rasterizer::create();
-	VSG::storage = VSG::rasterizer->get_storage();
+	VSG::rasterizer = Rasterizer::create();  // where is the create func set?
+	VSG::storage = VSG::rasterizer->get_storage();  // just an RID container?
 	VSG::canvas_render = VSG::rasterizer->get_canvas();
 	VSG::scene_render = VSG::rasterizer->get_scene();
 	for (int i = 0; i < 4; i++) {

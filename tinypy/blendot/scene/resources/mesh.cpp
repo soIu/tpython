@@ -1348,9 +1348,14 @@ void ArrayMesh::reload_from_file() {
 	_change_notify();
 }
 
-ArrayMesh::ArrayMesh() {
+uint __array_meshes__ = 0;
 
-	mesh = VisualServer::get_singleton()->mesh_create();
+ArrayMesh::ArrayMesh() {
+	#ifdef BLENDOT
+		mesh = VisualServer::get_singleton()->mesh_create();
+	#else
+		mesh = RID(++__array_meshes__);
+	#endif
 	blend_shape_mode = BLEND_SHAPE_MODE_RELATIVE;
 }
 

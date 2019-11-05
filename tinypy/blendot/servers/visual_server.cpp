@@ -37,9 +37,11 @@
 VisualServer *VisualServer::singleton = NULL;
 VisualServer *(*VisualServer::create_func)() = NULL;
 
-//VisualServer *VisualServer::get_singleton() {
-//	return singleton;
-//}
+VisualServer *VisualServer::get_singleton() {
+	if (singleton == NULL)
+		throw "VisualServer singleton is NULL";
+	return singleton;
+}
 
 VisualServer *VisualServer::create() {
 
@@ -2366,9 +2368,10 @@ RID VisualServer::instance_create2(RID p_base, RID p_scenario) {
 }
 
 VisualServer::VisualServer() {
-
+	std::cout << "making new VisualServer" << std::endl;
+	std::cout << this << std::endl;
 	ERR_FAIL_COND(singleton);
-	__visual_singleton__ = this;
+	singleton = this;
 
 #ifdef BLENDOT
 	GLOBAL_DEF_RST("rendering/vram_compression/import_bptc", false);
@@ -2417,6 +2420,6 @@ VisualServer::VisualServer() {
 }
 
 VisualServer::~VisualServer() {
-
+	std::cout << "delete VisualServer" << std::endl;
 	singleton = NULL;
 }

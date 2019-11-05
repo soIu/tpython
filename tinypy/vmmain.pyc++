@@ -149,7 +149,7 @@ def main(int argc,  char *argv[]) -> int:
 	#ifdef DEBUG
 	  std::cout << "ready to start VM..." << std::endl;
 	#endif
-	auto vs = new VisualServerRaster()
+	##auto vs = new VisualServerRaster()## this depends on rasterizer.cpp, which depends on a `create` function set somewhere
 	#ifdef USE_EMBEDDED_BYTECODE
 	  run_vm_embedded(argc, argv);
 	#else

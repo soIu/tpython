@@ -1139,27 +1139,21 @@ int SceneTree::get_node_count() const {
 }
 
 void SceneTree::_update_root_rect() {
+#ifdef BLENDOT
 
 	if (stretch_mode == STRETCH_MODE_DISABLED) {
-		#ifdef BLENDOT
 		_update_font_oversampling(1.0);
 		root->set_size((last_screen_size / stretch_shrink).floor());
 		root->set_attach_to_screen_rect(Rect2(Point2(), last_screen_size));
 		root->set_size_override_stretch(false);
 		root->set_size_override(false, Size2());
 		root->update_canvas_items();
-		#endif
 		return; //user will take care
 	}
 
 	//actual screen video mode
-#ifdef BLENDOT
 	Size2 video_mode = Size2(OS::get_singleton()->get_window_size().width, OS::get_singleton()->get_window_size().height);
-#else
-	Size2 video_mode = Size2(640, 480);
-#endif
 	Size2 desired_res = stretch_min;
-
 	Size2 viewport_size;
 	Size2 screen_size;
 
@@ -1255,6 +1249,7 @@ void SceneTree::_update_root_rect() {
 
 		} break;
 	}
+#endif
 }
 
 void SceneTree::set_screen_stretch(StretchMode p_mode, StretchAspect p_aspect, const Size2 &p_minsize, real_t p_shrink) {
