@@ -451,6 +451,12 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			w += 'else {'
 			out.append(w)
 
+		elif s == 'with scope:':
+			autobrace += 1
+			w = '\t' * indent
+			w += '{ // new scope'
+			out.append(w)
+
 		else:
 
 			if in_class and swap_self_to_this:
