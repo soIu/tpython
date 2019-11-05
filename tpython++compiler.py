@@ -579,13 +579,23 @@ def metapy2tinypypp( source ):
 	cpp = '\n'.join(cpp)
 	return scripts, cpp
 
+def walk_path(path, res):
+	for file in os.listdir(path):
+		if file.endswith(('.pyc++', '.pyh')):
+			res.append([path,file])
+		elif os.path.isdir(os.path.join(path,file)):
+			walk_path( os.path.join(path,file), res)
+
 def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=None, obfuscate_map=None ):
 	print(path)
 	new_obfuscate = {}
 	info = {'classes':{}, 'functions':{}, 'obfuscations':new_obfuscate}
+	files = []
+	walk_path(path, files)
+
 	if secure:
 		## first pass gather function info
-		for file in os.listdir( path ):
+		for path, file in files:
 			if file.endswith( '.pyc++' ):
 				print(file)
 				cpp = pythonicpp( open(os.path.join(path,file),'rb').read().decode('utf-8'), header="/*generated from: %s*/" %file, info=info )
@@ -625,7 +635,7 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 					new_obfuscate[fname] =info['functions'][fname]['scramble']
 
 	## final pass apply scrambling
-	for file in os.listdir( path ):
+	for path, file in files:
 		if file.endswith( '.pyc++' ):
 			cpp = pythonicpp( open(os.path.join(path,file),'rb').read().decode('utf-8'), header="/*generated from: %s*/" %file, info=info, binary_scramble=secure_binary, mangle_map=mangle_map )
 			open(os.path.join(path, file.replace('.pyc++', '.gen.cpp') ),'wb').write(cpp.encode('utf-8'))
