@@ -53,6 +53,7 @@ public:
 
 	virtual ~RID_Data();
 	RID_Data( int id ) {_id = id;}
+	RID_Data() {}
 };
 
 class RID {

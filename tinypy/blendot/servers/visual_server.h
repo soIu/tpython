@@ -111,6 +111,19 @@ public:
 		CUBEMAP_BACK
 	};
 
+	struct TextureInfo {
+		RID texture;
+		uint32_t width;
+		uint32_t height;
+		uint32_t depth;
+		Image::Format format;
+		int bytes;
+		String path;
+	};
+	typedef void (*TextureDetectCallback)(void *);
+
+#ifdef BLENDOT
+
 	virtual RID texture_create() = 0;
 	RID texture_create_from_image(const Ref<Image> &p_image, uint32_t p_flags = TEXTURE_FLAGS_DEFAULT); // helper
 	virtual void texture_allocate(RID p_texture,
@@ -147,21 +160,10 @@ public:
 
 	virtual void texture_set_shrink_all_x2_on_set_data(bool p_enable) = 0;
 
-	typedef void (*TextureDetectCallback)(void *);
-
 	virtual void texture_set_detect_3d_callback(RID p_texture, TextureDetectCallback p_callback, void *p_userdata) = 0;
 	virtual void texture_set_detect_srgb_callback(RID p_texture, TextureDetectCallback p_callback, void *p_userdata) = 0;
 	virtual void texture_set_detect_normal_callback(RID p_texture, TextureDetectCallback p_callback, void *p_userdata) = 0;
 
-	struct TextureInfo {
-		RID texture;
-		uint32_t width;
-		uint32_t height;
-		uint32_t depth;
-		Image::Format format;
-		int bytes;
-		String path;
-	};
 
 	virtual void texture_debug_usage(List<TextureInfo> *r_info) = 0;
 	Array _texture_debug_usage_bind();
@@ -170,6 +172,7 @@ public:
 
 	virtual void texture_set_proxy(RID p_proxy, RID p_base) = 0;
 	virtual void texture_set_force_redraw_if_visible(RID p_texture, bool p_enable) = 0;
+#endif
 
 	/* SKY API */
 
@@ -582,7 +585,7 @@ public:
 	virtual void particles_set_emission_transform(RID p_particles, const Transform &p_transform) = 0; //this is only used for 2D, in 3D it's automatic
 
 	/* CAMERA API */
-
+#ifdef BLENDOT
 	virtual RID camera_create() = 0;
 	virtual void camera_set_perspective(RID p_camera, float p_fovy_degrees, float p_z_near, float p_z_far) = 0;
 	virtual void camera_set_orthogonal(RID p_camera, float p_size, float p_z_near, float p_z_far) = 0;
@@ -591,7 +594,7 @@ public:
 	virtual void camera_set_cull_mask(RID p_camera, uint32_t p_layers) = 0;
 	virtual void camera_set_environment(RID p_camera, RID p_env) = 0;
 	virtual void camera_set_use_vertical_aspect(RID p_camera, bool p_enable) = 0;
-
+#endif
 	/*
 	enum ParticlesCollisionMode {
 		PARTICLES_COLLISION_NONE,
@@ -602,9 +605,51 @@ public:
 	virtual void particles_set_collision(RID p_particles,ParticlesCollisionMode p_mode,const Transform&, p_xform,const RID p_depth_tex,const RID p_normal_tex)=0;
 */
 	/* VIEWPORT TARGET API */
+	enum ViewportUpdateMode {
+		VIEWPORT_UPDATE_DISABLED,
+		VIEWPORT_UPDATE_ONCE, //then goes to disabled, must be manually updated
+		VIEWPORT_UPDATE_WHEN_VISIBLE, // default
+		VIEWPORT_UPDATE_ALWAYS
+	};
+	enum ViewportClearMode {
+
+		VIEWPORT_CLEAR_ALWAYS,
+		VIEWPORT_CLEAR_NEVER,
+		VIEWPORT_CLEAR_ONLY_NEXT_FRAME
+	};
+	enum ViewportMSAA {
+		VIEWPORT_MSAA_DISABLED,
+		VIEWPORT_MSAA_2X,
+		VIEWPORT_MSAA_4X,
+		VIEWPORT_MSAA_8X,
+		VIEWPORT_MSAA_16X,
+	};
+	enum ViewportUsage {
+		VIEWPORT_USAGE_2D,
+		VIEWPORT_USAGE_2D_NO_SAMPLING,
+		VIEWPORT_USAGE_3D,
+		VIEWPORT_USAGE_3D_NO_EFFECTS,
+	};
+	enum ViewportRenderInfo {
+
+		VIEWPORT_RENDER_INFO_OBJECTS_IN_FRAME,
+		VIEWPORT_RENDER_INFO_VERTICES_IN_FRAME,
+		VIEWPORT_RENDER_INFO_MATERIAL_CHANGES_IN_FRAME,
+		VIEWPORT_RENDER_INFO_SHADER_CHANGES_IN_FRAME,
+		VIEWPORT_RENDER_INFO_SURFACE_CHANGES_IN_FRAME,
+		VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME,
+		VIEWPORT_RENDER_INFO_MAX
+	};
+	enum ViewportDebugDraw {
+		VIEWPORT_DEBUG_DRAW_DISABLED,
+		VIEWPORT_DEBUG_DRAW_UNSHADED,
+		VIEWPORT_DEBUG_DRAW_OVERDRAW,
+		VIEWPORT_DEBUG_DRAW_WIREFRAME,
+	};
+
+#ifdef BLENDOT
 
 	virtual RID viewport_create() = 0;
-
 	virtual void viewport_set_use_arvr(RID p_viewport, bool p_use_arvr) = 0;
 	virtual void viewport_set_size(RID p_viewport, int p_width, int p_height) = 0;
 	virtual void viewport_set_active(RID p_viewport, bool p_active) = 0;
@@ -614,22 +659,8 @@ public:
 	virtual void viewport_set_render_direct_to_screen(RID p_viewport, bool p_enable) = 0;
 	virtual void viewport_detach(RID p_viewport) = 0;
 
-	enum ViewportUpdateMode {
-		VIEWPORT_UPDATE_DISABLED,
-		VIEWPORT_UPDATE_ONCE, //then goes to disabled, must be manually updated
-		VIEWPORT_UPDATE_WHEN_VISIBLE, // default
-		VIEWPORT_UPDATE_ALWAYS
-	};
-
 	virtual void viewport_set_update_mode(RID p_viewport, ViewportUpdateMode p_mode) = 0;
 	virtual void viewport_set_vflip(RID p_viewport, bool p_enable) = 0;
-
-	enum ViewportClearMode {
-
-		VIEWPORT_CLEAR_ALWAYS,
-		VIEWPORT_CLEAR_NEVER,
-		VIEWPORT_CLEAR_ONLY_NEXT_FRAME
-	};
 
 	virtual void viewport_set_clear_mode(RID p_viewport, ViewportClearMode p_clear_mode) = 0;
 
@@ -654,52 +685,14 @@ public:
 	virtual void viewport_set_shadow_atlas_size(RID p_viewport, int p_size) = 0;
 	virtual void viewport_set_shadow_atlas_quadrant_subdivision(RID p_viewport, int p_quadrant, int p_subdiv) = 0;
 
-	enum ViewportMSAA {
-		VIEWPORT_MSAA_DISABLED,
-		VIEWPORT_MSAA_2X,
-		VIEWPORT_MSAA_4X,
-		VIEWPORT_MSAA_8X,
-		VIEWPORT_MSAA_16X,
-	};
-
 	virtual void viewport_set_msaa(RID p_viewport, ViewportMSAA p_msaa) = 0;
-
-	enum ViewportUsage {
-		VIEWPORT_USAGE_2D,
-		VIEWPORT_USAGE_2D_NO_SAMPLING,
-		VIEWPORT_USAGE_3D,
-		VIEWPORT_USAGE_3D_NO_EFFECTS,
-	};
-
 	virtual void viewport_set_hdr(RID p_viewport, bool p_enabled) = 0;
 	virtual void viewport_set_usage(RID p_viewport, ViewportUsage p_usage) = 0;
-
-	enum ViewportRenderInfo {
-
-		VIEWPORT_RENDER_INFO_OBJECTS_IN_FRAME,
-		VIEWPORT_RENDER_INFO_VERTICES_IN_FRAME,
-		VIEWPORT_RENDER_INFO_MATERIAL_CHANGES_IN_FRAME,
-		VIEWPORT_RENDER_INFO_SHADER_CHANGES_IN_FRAME,
-		VIEWPORT_RENDER_INFO_SURFACE_CHANGES_IN_FRAME,
-		VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME,
-		VIEWPORT_RENDER_INFO_MAX
-	};
-
 	virtual int viewport_get_render_info(RID p_viewport, ViewportRenderInfo p_info) = 0;
-
-	enum ViewportDebugDraw {
-		VIEWPORT_DEBUG_DRAW_DISABLED,
-		VIEWPORT_DEBUG_DRAW_UNSHADED,
-		VIEWPORT_DEBUG_DRAW_OVERDRAW,
-		VIEWPORT_DEBUG_DRAW_WIREFRAME,
-	};
-
 	virtual void viewport_set_debug_draw(RID p_viewport, ViewportDebugDraw p_draw) = 0;
+#endif
 
 	/* ENVIRONMENT API */
-
-	virtual RID environment_create() = 0;
-
 	enum EnvironmentBG {
 
 		ENV_BG_CLEAR_COLOR,
@@ -711,6 +704,39 @@ public:
 		ENV_BG_CAMERA_FEED,
 		ENV_BG_MAX
 	};
+	enum EnvironmentDOFBlurQuality {
+		ENV_DOF_BLUR_QUALITY_LOW,
+		ENV_DOF_BLUR_QUALITY_MEDIUM,
+		ENV_DOF_BLUR_QUALITY_HIGH,
+	};
+	enum EnvironmentGlowBlendMode {
+		GLOW_BLEND_MODE_ADDITIVE,
+		GLOW_BLEND_MODE_SCREEN,
+		GLOW_BLEND_MODE_SOFTLIGHT,
+		GLOW_BLEND_MODE_REPLACE,
+	};
+	enum EnvironmentToneMapper {
+		ENV_TONE_MAPPER_LINEAR,
+		ENV_TONE_MAPPER_REINHARD,
+		ENV_TONE_MAPPER_FILMIC,
+		ENV_TONE_MAPPER_ACES
+	};
+	enum EnvironmentSSAOQuality {
+		ENV_SSAO_QUALITY_LOW,
+		ENV_SSAO_QUALITY_MEDIUM,
+		ENV_SSAO_QUALITY_HIGH,
+	};
+
+	enum EnvironmentSSAOBlur {
+		ENV_SSAO_BLUR_DISABLED,
+		ENV_SSAO_BLUR_1x1,
+		ENV_SSAO_BLUR_2x2,
+		ENV_SSAO_BLUR_3x3,
+	};
+
+#ifdef BLENDOT
+	virtual RID environment_create() = 0;
+
 
 	virtual void environment_set_background(RID p_env, EnvironmentBG p_bg) = 0;
 	virtual void environment_set_sky(RID p_env, RID p_sky) = 0;
@@ -726,58 +752,23 @@ public:
 	//set default SSR options
 	//set default SSSSS options
 
-	enum EnvironmentDOFBlurQuality {
-		ENV_DOF_BLUR_QUALITY_LOW,
-		ENV_DOF_BLUR_QUALITY_MEDIUM,
-		ENV_DOF_BLUR_QUALITY_HIGH,
-	};
 
 	virtual void environment_set_dof_blur_near(RID p_env, bool p_enable, float p_distance, float p_transition, float p_far_amount, EnvironmentDOFBlurQuality p_quality) = 0;
 	virtual void environment_set_dof_blur_far(RID p_env, bool p_enable, float p_distance, float p_transition, float p_far_amount, EnvironmentDOFBlurQuality p_quality) = 0;
 
-	enum EnvironmentGlowBlendMode {
-		GLOW_BLEND_MODE_ADDITIVE,
-		GLOW_BLEND_MODE_SCREEN,
-		GLOW_BLEND_MODE_SOFTLIGHT,
-		GLOW_BLEND_MODE_REPLACE,
-	};
 	virtual void environment_set_glow(RID p_env, bool p_enable, int p_level_flags, float p_intensity, float p_strength, float p_bloom_threshold, EnvironmentGlowBlendMode p_blend_mode, float p_hdr_bleed_threshold, float p_hdr_bleed_scale, float p_hdr_luminance_cap, bool p_bicubic_upscale) = 0;
-
-	enum EnvironmentToneMapper {
-		ENV_TONE_MAPPER_LINEAR,
-		ENV_TONE_MAPPER_REINHARD,
-		ENV_TONE_MAPPER_FILMIC,
-		ENV_TONE_MAPPER_ACES
-	};
-
 	virtual void environment_set_tonemap(RID p_env, EnvironmentToneMapper p_tone_mapper, float p_exposure, float p_white, bool p_auto_exposure, float p_min_luminance, float p_max_luminance, float p_auto_exp_speed, float p_auto_exp_grey) = 0;
 	virtual void environment_set_adjustment(RID p_env, bool p_enable, float p_brightness, float p_contrast, float p_saturation, RID p_ramp) = 0;
 
 	virtual void environment_set_ssr(RID p_env, bool p_enable, int p_max_steps, float p_fade_in, float p_fade_out, float p_depth_tolerance, bool p_roughness) = 0;
-
-	enum EnvironmentSSAOQuality {
-		ENV_SSAO_QUALITY_LOW,
-		ENV_SSAO_QUALITY_MEDIUM,
-		ENV_SSAO_QUALITY_HIGH,
-	};
-
-	enum EnvironmentSSAOBlur {
-		ENV_SSAO_BLUR_DISABLED,
-		ENV_SSAO_BLUR_1x1,
-		ENV_SSAO_BLUR_2x2,
-		ENV_SSAO_BLUR_3x3,
-	};
 
 	virtual void environment_set_ssao(RID p_env, bool p_enable, float p_radius, float p_intensity, float p_radius2, float p_intensity2, float p_bias, float p_light_affect, float p_ao_channel_affect, const Color &p_color, EnvironmentSSAOQuality p_quality, EnvironmentSSAOBlur p_blur, float p_bilateral_sharpness) = 0;
 
 	virtual void environment_set_fog(RID p_env, bool p_enable, const Color &p_color, const Color &p_sun_color, float p_sun_amount) = 0;
 	virtual void environment_set_fog_depth(RID p_env, bool p_enable, float p_depth_begin, float p_depth_end, float p_depth_curve, bool p_transmit, float p_transmit_curve) = 0;
 	virtual void environment_set_fog_height(RID p_env, bool p_enable, float p_min_height, float p_max_height, float p_height_curve) = 0;
-
+#endif
 	/* SCENARIO API */
-
-	virtual RID scenario_create() = 0;
-
 	enum ScenarioDebugMode {
 		SCENARIO_DEBUG_DISABLED,
 		SCENARIO_DEBUG_WIREFRAME,
@@ -785,12 +776,13 @@ public:
 		SCENARIO_DEBUG_SHADELESS,
 
 	};
-
+#ifdef BLENDOT
+	virtual RID scenario_create() = 0;
 	virtual void scenario_set_debug(RID p_scenario, ScenarioDebugMode p_debug_mode) = 0;
 	virtual void scenario_set_environment(RID p_scenario, RID p_environment) = 0;
 	virtual void scenario_set_reflection_atlas_size(RID p_scenario, int p_size, int p_subdiv) = 0;
 	virtual void scenario_set_fallback_environment(RID p_scenario, RID p_environment) = 0;
-
+#endif
 	/* INSTANCING API */
 
 	enum InstanceType {
@@ -862,7 +854,32 @@ public:
 	virtual void instance_geometry_set_as_instance_lod(RID p_instance, RID p_as_lod_of_instance) = 0;
 
 	/* CANVAS (2D) */
+	enum NinePatchAxisMode {
+		NINE_PATCH_STRETCH,
+		NINE_PATCH_TILE,
+		NINE_PATCH_TILE_FIT,
+	};
+	enum CanvasLightMode {
+		CANVAS_LIGHT_MODE_ADD,
+		CANVAS_LIGHT_MODE_SUB,
+		CANVAS_LIGHT_MODE_MIX,
+		CANVAS_LIGHT_MODE_MASK,
+	};
+	enum CanvasLightShadowFilter {
+		CANVAS_LIGHT_FILTER_NONE,
+		CANVAS_LIGHT_FILTER_PCF3,
+		CANVAS_LIGHT_FILTER_PCF5,
+		CANVAS_LIGHT_FILTER_PCF7,
+		CANVAS_LIGHT_FILTER_PCF9,
+		CANVAS_LIGHT_FILTER_PCF13,
+	};
+	enum CanvasOccluderPolygonCullMode {
+		CANVAS_OCCLUDER_POLYGON_CULL_DISABLED,
+		CANVAS_OCCLUDER_POLYGON_CULL_CLOCKWISE,
+		CANVAS_OCCLUDER_POLYGON_CULL_COUNTER_CLOCKWISE,
+	};
 
+#ifdef BLENDOT
 	virtual RID canvas_create() = 0;
 	virtual void canvas_set_item_mirroring(RID p_canvas, RID p_item, const Point2 &p_mirroring) = 0;
 	virtual void canvas_set_modulate(RID p_canvas, const Color &p_color) = 0;
@@ -887,11 +904,6 @@ public:
 
 	virtual void canvas_item_set_draw_behind_parent(RID p_item, bool p_enable) = 0;
 
-	enum NinePatchAxisMode {
-		NINE_PATCH_STRETCH,
-		NINE_PATCH_TILE,
-		NINE_PATCH_TILE_FIT,
-	};
 
 	virtual void canvas_item_add_line(RID p_item, const Point2 &p_from, const Point2 &p_to, const Color &p_color, float p_width = 1.0, bool p_antialiased = false) = 0;
 	virtual void canvas_item_add_polyline(RID p_item, const Vector<Point2> &p_points, const Vector<Color> &p_colors, float p_width = 1.0, bool p_antialiased = false) = 0;
@@ -938,23 +950,9 @@ public:
 	virtual void canvas_light_set_item_cull_mask(RID p_light, int p_mask) = 0;
 	virtual void canvas_light_set_item_shadow_cull_mask(RID p_light, int p_mask) = 0;
 
-	enum CanvasLightMode {
-		CANVAS_LIGHT_MODE_ADD,
-		CANVAS_LIGHT_MODE_SUB,
-		CANVAS_LIGHT_MODE_MIX,
-		CANVAS_LIGHT_MODE_MASK,
-	};
 
 	virtual void canvas_light_set_mode(RID p_light, CanvasLightMode p_mode) = 0;
 
-	enum CanvasLightShadowFilter {
-		CANVAS_LIGHT_FILTER_NONE,
-		CANVAS_LIGHT_FILTER_PCF3,
-		CANVAS_LIGHT_FILTER_PCF5,
-		CANVAS_LIGHT_FILTER_PCF7,
-		CANVAS_LIGHT_FILTER_PCF9,
-		CANVAS_LIGHT_FILTER_PCF13,
-	};
 
 	virtual void canvas_light_set_shadow_enabled(RID p_light, bool p_enabled) = 0;
 	virtual void canvas_light_set_shadow_buffer_size(RID p_light, int p_size) = 0;
@@ -974,12 +972,8 @@ public:
 	virtual void canvas_occluder_polygon_set_shape(RID p_occluder_polygon, const PoolVector<Vector2> &p_shape, bool p_closed) = 0;
 	virtual void canvas_occluder_polygon_set_shape_as_lines(RID p_occluder_polygon, const PoolVector<Vector2> &p_shape) = 0;
 
-	enum CanvasOccluderPolygonCullMode {
-		CANVAS_OCCLUDER_POLYGON_CULL_DISABLED,
-		CANVAS_OCCLUDER_POLYGON_CULL_CLOCKWISE,
-		CANVAS_OCCLUDER_POLYGON_CULL_COUNTER_CLOCKWISE,
-	};
 	virtual void canvas_occluder_polygon_set_cull_mode(RID p_occluder_polygon, CanvasOccluderPolygonCullMode p_mode) = 0;
+#endif
 
 	/* BLACK BARS */
 
@@ -1023,9 +1017,10 @@ public:
 	/* TESTING */
 
 	virtual RID get_test_cube() = 0;
-
+#ifdef BLENDOT
 	virtual RID get_test_texture();
 	virtual RID get_white_texture();
+#endif
 
 	virtual RID make_sphere_mesh(int p_lats, int p_lons, float p_radius);
 

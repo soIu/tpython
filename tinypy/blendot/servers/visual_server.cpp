@@ -50,7 +50,7 @@ VisualServer *VisualServer::create() {
 
 	return NULL;
 }
-
+#ifdef BLENDOT
 RID VisualServer::texture_create_from_image(const Ref<Image> &p_image, uint32_t p_flags) {
 
 	ERR_FAIL_COND_V(!p_image.is_valid(), RID());
@@ -82,6 +82,7 @@ Array VisualServer::_texture_debug_usage_bind() {
 	}
 	return arr;
 }
+#endif
 
 Array VisualServer::_shader_get_param_list_bind(RID p_shader) const {
 
@@ -124,13 +125,15 @@ Array VisualServer::_instances_cull_convex_bind(const Array &p_convex, RID p_sce
 	return to_array(ids);
 }
 
+#ifdef BLENDOT
+
 RID VisualServer::get_test_texture() {
 
 	if (test_texture.is_valid()) {
 		return test_texture;
 	};
 
-#define TEST_TEXTURE_SIZE 256
+	#define TEST_TEXTURE_SIZE 256
 
 	PoolVector<uint8_t> test_data;
 	test_data.resize(TEST_TEXTURE_SIZE * TEST_TEXTURE_SIZE * 3);
@@ -171,6 +174,7 @@ RID VisualServer::get_test_texture() {
 
 	return test_texture;
 }
+#endif
 
 void VisualServer::_free_internal_rids() {
 
@@ -320,6 +324,7 @@ RID VisualServer::make_sphere_mesh(int p_lats, int p_lons, float p_radius) {
 
 	return mesh;
 }
+#ifdef BLENDOT
 
 RID VisualServer::get_white_texture() {
 
@@ -339,6 +344,7 @@ RID VisualServer::get_white_texture() {
 	texture_set_data(white_texture, white);
 	return white_texture;
 }
+#endif
 
 #define SMALL_VEC2 Vector2(0.00001, 0.00001)
 #define SMALL_VEC3 Vector3(0.00001, 0.00001, 0.00001)
@@ -2307,11 +2313,11 @@ void VisualServer::_canvas_item_add_style_box(RID p_item, const Rect2 &p_rect, c
 	ERR_FAIL_COND(p_margins.size() != 4);
 	//canvas_item_add_style_box(p_item,p_rect,p_source,p_texture,Vector2(p_margins[0],p_margins[1]),Vector2(p_margins[2],p_margins[3]),true,p_modulate);
 }
-
+#ifdef BLENDOT
 void VisualServer::_camera_set_orthogonal(RID p_camera, float p_size, float p_z_near, float p_z_far) {
-
 	camera_set_orthogonal(p_camera, p_size, p_z_near, p_z_far);
 }
+#endif
 
 void VisualServer::mesh_add_surface_from_mesh_data(RID p_mesh, const Geometry::MeshData &p_mesh_data) {
 

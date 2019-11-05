@@ -1,18 +1,17 @@
 #ifdef INCLUDEOS
-	#include <service>
+	import <service>
 #endif
 
 #ifdef USE_PYTHON
-	#include <Python.h>
+	import <Python.h>
 #endif
 
-#include "tp.gen.h"
-#include <thread>
-
-#include <stdio.h>
-#include <signal.h>
-#include <stdlib.h>
-#include <unistd.h>
+import "tp.gen.h"
+import <thread>
+import <stdio.h>
+import <signal.h>
+import <stdlib.h>
+import <unistd.h>
 
 
 #ifndef __MINGW64__
@@ -150,6 +149,7 @@ def main(int argc,  char *argv[]) -> int:
 	#ifdef DEBUG
 	  std::cout << "ready to start VM..." << std::endl;
 	#endif
+	auto vs = new VisualServerRaster()
 	#ifdef USE_EMBEDDED_BYTECODE
 	  run_vm_embedded(argc, argv);
 	#else

@@ -21,6 +21,7 @@ import "blendot/rid.h"
 import "blendot/scene/3d/spatial.h"
 import "blendot/scene/resources/mesh.h"
 import "blendot/scene/3d/mesh_instance.h"
+import "servers/visual/visual_server_raster.h"
 
 
 import <cstddef>
