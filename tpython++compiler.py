@@ -418,6 +418,12 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			autobrace += 1
 			out.append(ln + '{')
 
+		elif s.startswith('goto ') and s.endswith(':'):
+			autobrace += 1
+			w = '\t' * indent
+			w += s[len('goto '):] + '{'
+			out.append(w)
+
 		elif s.startswith('while ') and s.endswith(':'):
 			autobrace += 1
 			w = '\t' * indent
