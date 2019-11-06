@@ -34,6 +34,15 @@ def bin_scramble(fname, finfo, mangle_map):
 	#bscram = '( (%s (*)(%s))(dlsym(dlopen(NULL, 1),[](){%s}().c_str() )) )' %(finfo['returns'], ','.join(finfo['arg_types']), lambda_scram)
 	return bscram
 
+def auto_semicolon(ln):
+	s = ln.strip()
+	if not s.endswith( ('{', '}', '(', ',', ':') ) and not s.startswith('#'):
+		if not s=='else' and not s.startswith( ('if ', 'if(') ):
+			if not s.endswith(';') and s:
+				if not s.startswith("TP_LOOP("):
+					ln += ';'
+	return ln
+
 def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=False, binary_scramble=False, mangle_map=None ):
 	if not type(source) is list:
 		source = source.splitlines()
@@ -54,6 +63,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	classes = {}
 	nsbrace = -1
 	lambdabrace = []
+	define = []
+	define_ident = -1
 	if 'functions' in info:
 		functions = info['functions']
 	else:
@@ -113,7 +124,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				break
 
 		#if s:
-		if True:
+		if not len(define):
 			if lambdabrace and indent <= lambdabrace[-1]:
 				brace = lambdabrace.pop()
 				b = '\t' * brace
@@ -159,15 +170,30 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			elif not inc.startswith('"'):
 				inc = '"' + inc + '"'
 			out.append('#include ' + inc)
-		elif ln.startswith('	define('):
+		elif s.startswith('define('):
 			assert s.endswith(')')
 			defname = s[len('define(') : s.index('=') ]
 			defval  = s[ s.index('=')+1 : -1]
-			out.append('	#define %s %s' %(defname, defval))
-		elif ln.startswith('	undef('):
+			out.append('#define %s %s' %(defname, defval))
+		elif s.startswith('define ') and s.endswith(':'):
+			define_ident = indent
+			defname = s[len('define ') : -1 ]
+			define.append('#define %s \\' %defname)
+			continue
+		elif len(define):
+			if indent <= define_ident:
+				assert define[-1].endswith('\\')
+				define[-1] = define[-1][:-1]
+				out.extend(define)
+				define = []
+				define_ident = -1
+				out.append( auto_semicolon(ln) )
+			else:
+				define.append(ln + '\\')
+		elif s.startswith('undef('):
 			assert s.endswith(')')
 			defname = s.split('(')[-1].split(')')[0]
-			out.append('	#undef %s' %defname)
+			out.append('#undef %s' %defname)
 
 		elif s.startswith('@module'):
 			assert s.count('(')==1
@@ -461,12 +487,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 			if in_class and swap_self_to_this:
 				ln = ln.replace('self.', 'this->')
-
-			if not s.endswith( ('{', '}', '(', ',', ':') ) and not s.startswith('#'):
-				if not s=='else' and not s.startswith( ('if ', 'if(') ):
-					if not s.endswith(';') and s:
-						if not s.startswith("TP_LOOP("):
-							ln += ';'
+			ln = auto_semicolon(ln)
 			out.append(ln)
 
 		prev = ln
