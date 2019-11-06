@@ -57,6 +57,12 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	mods = {}
 	modname = None
 	in_class = False
+	in_struct = False
+	struct_stack = []
+	struct_name = None
+	struct_indent = 0
+	in_enum = False
+	enum_indent = 0
 	class_indent = 0
 	class_name = None
 	class_has_init = False
@@ -149,6 +155,22 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				#out.append('	;// end of class: ' + class_name)
 				out[-1] += ';	// end of class: ' + class_name
 				class_name = None
+			elif in_struct and indent <= struct_indent:
+				#assert out[-1][-1] == '}'
+				out[-1] += ';	// end of struct: ' + struct_name
+				struct_stack.pop()
+				if len(struct_stack):
+					struct_name   = struct_stack[-1][0]
+					struct_indent = struct_stack[-1][1]
+				else:
+					in_struct = False
+					struct_name = None
+					struct_indent = 0
+			elif in_enum and indent <= enum_indent:
+				#assert out[-1][-1] == '}'
+				out[-1] += ';	// end of enum: ' + enum_name
+				in_enum = False
+
 
 		if not s:
 			in_class = False
@@ -223,6 +245,23 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			out.append( ln )
 			autobrace = 0
 
+		elif s.startswith('enum') and s.endswith(':'):
+			in_enum = True
+			enum_name = s.split()[-1][:-1]
+			enum_indent = indent
+			out.append( ('\t'*indent)+'enum %s {' %enum_name)
+		elif in_enum:
+			if not s.endswith(','):
+				s += ','
+			out.append('	' + s)
+
+		elif s.startswith('struct') and s.endswith(':'):
+			in_struct = True
+			struct_name = s.split()[-1][:-1]
+			struct_stack.append( [struct_name,indent] )
+			struct_indent = indent
+			out.append( ('\t'*indent)+'struct %s {' %struct_name)
+
 		elif s.startswith('class') and s.endswith(':'):
 			in_class = True
 			class_indent = indent
@@ -251,8 +290,12 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			unscram_name = None
 
 			if func_name == '__init__':
-				assert in_class
-				func_name = class_name
+				assert in_class or in_struct
+				if in_struct:
+					func_name = struct_stack[-1][0]
+					struct_name = func_name
+				else:
+					func_name = class_name
 			elif not in_class and func_name in functions and 'scramble' in functions[func_name]:
 				is_scram = True
 				unscram_name = func_name
@@ -263,6 +306,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			elif in_class and func_name == class_name:
 				returns = ''
 				class_has_init = True
+			elif in_struct and func_name == struct_name:
+				returns = ''
 			elif prevs.startswith('@module') or (in_class and class_has_init):
 				returns = 'tp_obj'
 			elif 'operator' in func_name or is_constructor:
