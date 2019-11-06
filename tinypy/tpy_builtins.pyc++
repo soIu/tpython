@@ -361,9 +361,10 @@ def tpy_module(TP) ->tp_obj:
 	tp_obj fname = TP_OBJ()
 	return tp_import(tp, name, code, fname)
 
-
 def tpy_dict(TP) ->tp_obj:
 	return tp_dict_copy(tp, TP_TYPE(TP_DICT))
+
+#ifdef BLENDOT_TYPES
 
 def tpy_vec2(TP) ->tp_obj:
 	tp_obj x = TP_OBJ()
@@ -438,6 +439,8 @@ def tpy_spatial(TP) ->tp_obj:
 def tpy_mesh(TP) ->tp_obj:
 	return tp_mesh()
 
+#endif
+
 ## https://stackoverflow.com/questions/1591361/understanding-typedefs-for-function-pointers-in-c
 typedef tp_obj (*tp_func_pointer)(tp_vm*);
 
@@ -480,6 +483,7 @@ def tp_module_builtins_init(TP):
 	{"getmeta",tpy_getmeta},
 	{"module", tpy_module},
 	{"repr", tpy_repr},
+	#ifdef BLENDOT_TYPES
 	{"vec2", tpy_vec2},
 	{"vec3", tpy_vec3},
 	{"quat", tpy_quat},
@@ -493,6 +497,7 @@ def tp_module_builtins_init(TP):
 	{"RID", tpy_rid},
 	{"spatial", tpy_spatial},
 	{"mesh", tpy_mesh},
+	#endif
 	#ifdef TP_SANDBOX
 	{"sandbox",tpy_sandbox_},
 	#endif

@@ -37,10 +37,12 @@ def tp_has(TP,tp_obj self, tp_obj k) ->tp_obj:
 ## Note that unlike with Python, you cannot use this to remove list items.
 def tp_del(TP, tp_obj self, tp_obj k):
 	int type = self.type.type_id
+	#ifdef BLENDOT_TYPES
 	if type == TP_SPATIAL:
 		delete self.spatial.ptr
 		return
-	elif type == TP_DICT:
+	#endif
+	if type == TP_DICT:
 		tp_dict_del(tp, self, k)
 		return
 	##tp_raise(,tp_string_atom(tp, "(tp_del) TypeError: object does not support item deletion"));
@@ -114,6 +116,7 @@ def tp_set_by_char(TP, tp_obj self, char c, tp_obj value):
 def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 	int type = self.type.type_id
 	tp_obj r
+	#ifdef BLENDOT_TYPES
 	if type == TP_VEC2:
 		if k == "x":
 			return tp_number(self.vec2.vec.x)
@@ -278,7 +281,8 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			return tp_function(tp, fn)
 		else:
 			throw "spatial missing member"
-	elif type >= TP_HAS_META:
+	#endif
+	if type >= TP_HAS_META:
 		if type == TP_DICT:
 			## '.' looks for methods of a raw dict.
 			## [] looks for members
@@ -417,6 +421,7 @@ def tp_iget(TP,tp_obj *r, tp_obj self, tp_obj k) ->int:
 
 def tp_set(TP,tp_obj self, tp_obj k, tp_obj v) -> tp_obj:
 	int type = self.type.type_id
+	#ifdef BLENDOT_TYPES
 	if type == TP_VEC2:
 		if k == "x":
 			self.vec2.vec.x = v.number.val
@@ -481,7 +486,8 @@ def tp_set(TP,tp_obj self, tp_obj k, tp_obj v) -> tp_obj:
 		else:
 			throw "tri type missing member"
 		return self
-	elif type == TP_DICT:
+	#endif
+	if type == TP_DICT:
 		tp_dict_set(tp, self, k, v)
 		return self
 	elif type == TP_LIST:
@@ -518,6 +524,7 @@ def tp_add(TP, tp_obj a, tp_obj b) -> tp_obj:
 		return tp_string_add(tp, a, b)
 	elif a.type.type_id == TP_LIST && a.type.type_id == b.type.type_id:
 		return tp_list_add(tp, a, b)
+	#ifdef BLENDOT_TYPES
 	elif a.type.type_id == TP_VEC2 && a.type.type_id == b.type.type_id:
 		## a is already a copy
 		a.vec2.vec = a.vec2.vec + b.vec2.vec
@@ -530,6 +537,7 @@ def tp_add(TP, tp_obj a, tp_obj b) -> tp_obj:
 		## a is already a copy
 		a.quat.q = a.quat.q + b.quat.q
 		return a
+	#endif
 	##tp_raise(tp_None,tp_string_atom(tp, "(tp_add) TypeError: ?"));
 	print("operand A::type_id ")
 	print(a.type.type_id)
@@ -550,10 +558,12 @@ def tp_mul(TP,tp_obj a, tp_obj b) -> tp_obj:
 	if a.type.type_id == TP_LIST && b.type.type_id == TP_NUMBER:
 		int n = b.number.val
 		return tp_list_mul(tp, a, n)
+	#ifdef BLENDOT_TYPES
 	if a.type.type_id == TP_MAT3:
 		## note `a` is already a copy
 		a.mat3.m *= b.mat3.m
 		return a
+	#endif
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_mul) TypeError: ?"));
 	throw "TypeError in tp_ops.cpp:tp_mul invalid object type to use the multiply operator with"
 

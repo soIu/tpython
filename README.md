@@ -49,6 +49,7 @@ Options for `rebuild.py`
 * `--wasm` (use Emscripten to compile wasm binary)
 * `--android` (compile exe for Android)
 * `--sdl` (link to SDL2 and make `sdl` module available)
+* `--no-blendot` (do not build with Blendot math and object types)
 * `--cpython` (link to libpython and allow calling CPython from TPython)
 * `--pgo` (compile exe twice, and use profile guided optimizations)
 * `--clean` (remove all cached `.o` files)
@@ -126,6 +127,26 @@ goto mylabel:
 To import an local header file, you can use either: `#include "myheader.h"` or `import "myheader.h"`.
 Importing external headers from the system can be done using: `import <someheader>`.
 Note if your header is written in Pythonic++, as a `.pyh` file, then you will import it as: `import "myheader.gen.h"`
+
+# Blendot Types
+
+Blendot is a hard fork of the Godot game engine. The Blendot rewrite replaces C++ with Pythonic++, and GDScript with TPython.
+By default TPython is built with the minimal core types of Blendot, and provides the following types:
+* vec2
+* vec3
+* quat
+* color
+* rect
+* tri
+* plane
+* aabb
+* mat3
+* transform
+* RID
+* spatial
+* mesh
+
+If you do not need these types, you can pass the option `--no-blendot` to `rebuild.py`
 
 # Optional CPython
 
