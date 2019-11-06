@@ -242,6 +242,11 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				autofunc += 1
 
 			func_name = s[len('def ') : ].split('(')[0].strip()
+			is_constructor = False
+			if func_name.count('::')==1:
+				a,b = func_name.split('::')
+				if a==b:
+					is_constructor = True
 			is_scram = False
 			unscram_name = None
 
@@ -260,7 +265,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				class_has_init = True
 			elif prevs.startswith('@module') or (in_class and class_has_init):
 				returns = 'tp_obj'
-			elif 'operator' in func_name:
+			elif 'operator' in func_name or is_constructor:
 				returns = ''
 			else:
 				returns = 'void'
