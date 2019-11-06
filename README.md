@@ -196,3 +196,7 @@ https://medium.com/@judge_raptor/tpython-with-c-abc90e32d760
 https://medium.com/@judge_raptor/pythonic-2869545fcad6
 
 https://medium.com/@judge_raptor/tpythonos-a959ec82793a
+
+https://medium.com/@judge_raptor/the-smallest-fastest-most-secure-python-ever-5fe2e33ce8cd
+
+https://medium.com/@judge_raptor/the-first-high-performance-game-engine-written-in-python-a2be13ff34f2
