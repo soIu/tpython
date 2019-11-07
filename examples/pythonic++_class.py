@@ -2,7 +2,7 @@
 #tp_set(tp, f, tp_string_atom(tp, "bar"), tp_function(tp, fn))
 
 with c++:
-	class Foo:
+	class Foo(object):
 		def add(self, u, v):
 			print("calling add")
 			return u + v

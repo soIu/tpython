@@ -67,6 +67,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	class_name = None
 	class_has_init = False
 	classes = {}
+	tp_obj_subclass = False
 	nsbrace = -1
 	lambdabrace = []
 	define = []
@@ -266,8 +267,22 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			in_class = True
 			class_indent = indent
 			class_name = s[:-1].split()[-1].strip()
+			base_classes = []
+			tp_obj_subclass = False
+			if s.count('(')==1 and s.count(')')==1:
+				class_name = class_name.split('(')[0].strip()
+				for base_class in s.split('(')[-1].split(')')[0].split(','):
+					base_class=base_class.strip()
+					if base_class == 'object':
+						base_class = 'tp_obj'
+					base_classes.append(base_class)
+				if 'tp_obj' in base_classes:
+					tp_obj_subclass = True
 			classes[ class_name ] = {}  ## methods
-			out.append( 'class %s: public tp_obj {' %class_name)
+			if len(base_classes):
+				out.append( 'class %s: public %s {' %(class_name, ','.join(base_classes)))
+			else:
+				out.append( 'class %s {' %class_name)
 			out.append( '	public:')
 
 		elif s.startswith('def '):
@@ -308,7 +323,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				class_has_init = True
 			elif in_struct and func_name == struct_name:
 				returns = ''
-			elif prevs.startswith('@module') or (in_class and class_has_init):
+			elif prevs.startswith('@module') or (in_class and tp_obj_subclass):
 				returns = 'tp_obj'
 			elif 'operator' in func_name or is_constructor:
 				returns = ''
@@ -329,7 +344,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				if not arg:
 					continue
 
-				if in_class:
+				if in_class and tp_obj_subclass:
 					if i==0:
 						assert arg == 'self'
 						if func_name == class_name:
@@ -541,7 +556,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 		else:
 
-			if in_class and swap_self_to_this:
+			if in_class and tp_obj_subclass and swap_self_to_this:
 				ln = ln.replace('self.', 'this->')
 			ln = auto_semicolon(ln)
 			out.append(ln)
@@ -684,7 +699,11 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 				cpp = pythonicpp( open(os.path.join(path,file),'rb').read().decode('utf-8'), header="/*generated from: %s*/" %file, info=info )
 			elif file.endswith( '.pyh' ):
 				print(file)
-				cpp = pythonicpp( open(os.path.join(path,file),'rb').read().decode('utf-8'), header="/*generated from: %s*/" %file, info=info )
+				cpp = pythonicpp(
+					open(os.path.join(path,file),'rb').read().decode('utf-8'), 
+					header="/*generated from: %s*/" %file, info=info,
+					swap_self_to_this=file=='__user_pythonic__.pyh'
+				)
 
 		if '--debug' in sys.argv:
 			print('classes:')
@@ -723,7 +742,12 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 			cpp = pythonicpp( open(os.path.join(path,file),'rb').read().decode('utf-8'), header="/*generated from: %s*/" %file, info=info, binary_scramble=secure_binary, mangle_map=mangle_map )
 			open(os.path.join(path, file.replace('.pyc++', '.gen.cpp') ),'wb').write(cpp.encode('utf-8'))
 		elif file.endswith( '.pyh' ):
-			cpp = pythonicpp( open(os.path.join(path,file),'rb').read().decode('utf-8'), header="/*generated from: %s*/" %file, info=info, binary_scramble=secure_binary, mangle_map=mangle_map )
+			cpp = pythonicpp( 
+				open(os.path.join(path,file),'rb').read().decode('utf-8'), 
+				header="/*generated from: %s*/" %file, info=info, 
+				binary_scramble=secure_binary, mangle_map=mangle_map,
+				swap_self_to_this=file=='__user_pythonic__.pyh'
+			)
 			open(os.path.join(path, file.replace('.pyh', '.gen.h') ),'wb').write(cpp.encode('utf-8'))
 
 	return info
