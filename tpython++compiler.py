@@ -152,7 +152,11 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			if in_class and indent <= class_indent:
 				in_class = False
 				class_indent = 0
-				assert out[-1][-1] == '}'
+				if not out[-1][-1] == '}':
+					#for outln in out:
+					#	print(outln)
+					#raise SyntaxError(class_name)
+					out.append('}')
 				#out.append('	;// end of class: ' + class_name)
 				out[-1] += ';	// end of class: ' + class_name
 				class_name = None
@@ -230,7 +234,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			pass
 		elif s == '@static':
 			pass
-
+		elif s.startswith('@template('):
+			out.append( 'template<%s>' % s[len('@template(') : -1] )
 		elif ' def[' in s and ln.endswith(':'):
 			ln = ln.replace(' def[', '[')
 			ln = ln[:-1]+ '{'
