@@ -87,6 +87,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		## black rightwards arrow head is a pointer
 		if u'⮞' in ln:
 			ln = ln.replace(u'⮞', '*')
+		if u'×' in ln:
+			ln = ln.replace(u'×', '*')
 		s = ln.strip()
 
 		## check for function calls, or forward defs
