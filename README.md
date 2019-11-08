@@ -128,6 +128,9 @@ To import an local header file, you can use either: `#include "myheader.h"` or `
 Importing external headers from the system can be done using: `import <someheader>`.
 Note if your header is written in Pythonic++, as a `.pyh` file, then you will import it as: `import "myheader.gen.h"`
 
+References can use standard C++ syntax `&`, or with the curved upwards arrow `⤴`.
+Pointers can use `*` or the black rightwards arrow head `⮞`
+
 # Blendot Types
 
 Blendot is a hard fork of the Godot game engine. The Blendot rewrite replaces C++ with Pythonic++, and GDScript with TPython.

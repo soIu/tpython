@@ -56,6 +56,9 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	autofunc = 0
 	mods = {}
 	modname = None
+	init_list = []
+	in_init_list = False
+	init_list_indent = 0
 	in_class = False
 	in_struct = False
 	struct_stack = []
@@ -78,6 +81,12 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		functions = {}
 
 	for line_num, ln in enumerate(source):
+		## curved upwards arrow is a reference
+		if u'⤴' in ln:
+			ln = ln.replace(u'⤴', '&')
+		## black rightwards arrow head is a pointer
+		if u'⮞' in ln:
+			ln = ln.replace(u'⮞', '*')
 		s = ln.strip()
 
 		## check for function calls, or forward defs
@@ -132,6 +141,17 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 		#if s:
 		if not len(define):
+			if in_init_list and indent <= init_list_indent:
+				if not out[-1][-1] == '{':
+					for outln in out:
+						print(outln)
+					raise SyntaxError("invalid init_list: syntax")
+				out[-1]  = out[-1][:-1]
+				out[-1] += ' : ' + ', '.join(init_list) + ' {'
+				in_init_list = False
+				init_list_indent = 0
+				init_list = []
+			######################################################
 			if lambdabrace and indent <= lambdabrace[-1]:
 				brace = lambdabrace.pop()
 				b = '\t' * brace
@@ -148,7 +168,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				b = '\t' * indent
 				b += '}'*braces
 				out.append(b)
-
+			############################################
 			if in_class and indent <= class_indent:
 				in_class = False
 				class_indent = 0
@@ -175,6 +195,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				#assert out[-1][-1] == '}'
 				out[-1] += ';	// end of enum: ' + enum_name
 				in_enum = False
+
 
 
 		if not s:
@@ -206,6 +227,15 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			define_ident = indent
 			defname = s[len('define ') : -1 ]
 			define.append('#define %s \\' %defname)
+			continue
+		elif s == 'init_list:':
+			init_list_indent = indent
+			init_list = []
+			in_init_list = True
+		elif in_init_list:
+			if s.endswith(','):
+				s = s[:-1]
+			init_list.append(s)
 			continue
 		elif len(define):
 			if indent <= define_ident:
@@ -302,10 +332,13 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 			func_name = s[len('def ') : ].split('(')[0].strip()
 			is_constructor = False
+			is_destructor = False
 			if func_name.count('::')==1:
 				a,b = func_name.split('::')
 				if a==b:
 					is_constructor = True
+				elif b.startswith('~') and a == b[1:]:
+					is_destructor = True
 			is_scram = False
 			unscram_name = None
 
@@ -330,7 +363,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				returns = ''
 			elif prevs.startswith('@module') or (in_class and tp_obj_subclass):
 				returns = 'tp_obj'
-			elif 'operator' in func_name or is_constructor:
+			elif 'operator' in func_name or is_constructor or is_destructor:
 				returns = ''
 			else:
 				returns = 'void'
@@ -376,7 +409,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 							tpargs.append(('\t'*(indent+1))+'auto %s = TP_OBJ();' %arg)
 
 				else:
-					if ' ' not in arg and arg != 'TP' and arg != 'void' and arg != '...':
+					if ' ' not in arg and arg != 'TP' and arg != 'void' and arg != '...' and arg != 'VARIANT_ARG_DECLARE':
 						arg = 'auto ' + arg
 						arg_types.append('auto')
 					elif arg == 'TP':
