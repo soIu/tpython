@@ -89,6 +89,16 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			ln = ln.replace(u'⮞', '*')
 		if u'×' in ln:
 			ln = ln.replace(u'×', '*')
+		if u'÷' in ln:
+			ln = ln.replace(u'÷', '/')
+		if u'≼' in ln:
+			ln = ln.replace(u'≼', '<')
+		if u'≽' in ln:
+			ln = ln.replace(u'≽', '>')
+		if u'🔒' in ln:
+			ln = ln.replace(u'🔒', ' const ')
+		if u'🠊' in ln:
+			ln = ln.replace(u'🠊', '->')
 		s = ln.strip()
 
 		## check for function calls, or forward defs
