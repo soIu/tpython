@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import os, sys, subprocess, random, json
+from xml.sax.saxutils import escape
 
 def bin_scramble(fname, finfo, mangle_map):
 	scram = finfo['scramble']
@@ -43,9 +44,25 @@ def auto_semicolon(ln):
 					ln += ';'
 	return ln
 
-def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=False, binary_scramble=False, mangle_map=None ):
+def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=False, binary_scramble=False, mangle_map=None, fodg=None ):
 	if not type(source) is list:
 		source = source.splitlines()
+	if type(fodg) is list:
+		fodg.append('<?xml version="1.0" encoding="UTF-8"?>')
+		fodg.append('<office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:meta="urn:oasis:names:tc:opendocument:xmlns:meta:1.0" xmlns:number="urn:oasis:names:tc:opendocument:xmlns:datastyle:1.0" xmlns:presentation="urn:oasis:names:tc:opendocument:xmlns:presentation:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" xmlns:chart="urn:oasis:names:tc:opendocument:xmlns:chart:1.0" xmlns:dr3d="urn:oasis:names:tc:opendocument:xmlns:dr3d:1.0" xmlns:math="http://www.w3.org/1998/Math/MathML" xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0" xmlns:script="urn:oasis:names:tc:opendocument:xmlns:script:1.0" xmlns:config="urn:oasis:names:tc:opendocument:xmlns:config:1.0" xmlns:ooo="http://openoffice.org/2004/office" xmlns:ooow="http://openoffice.org/2004/writer" xmlns:oooc="http://openoffice.org/2004/calc" xmlns:dom="http://www.w3.org/2001/xml-events" xmlns:xforms="http://www.w3.org/2002/xforms" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:smil="urn:oasis:names:tc:opendocument:xmlns:smil-compatible:1.0" xmlns:anim="urn:oasis:names:tc:opendocument:xmlns:animation:1.0" xmlns:rpt="http://openoffice.org/2005/report" xmlns:of="urn:oasis:names:tc:opendocument:xmlns:of:1.2" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:grddl="http://www.w3.org/2003/g/data-view#" xmlns:officeooo="http://openoffice.org/2009/office" xmlns:tableooo="http://openoffice.org/2009/table" xmlns:drawooo="http://openoffice.org/2010/draw" xmlns:calcext="urn:org:documentfoundation:names:experimental:calc:xmlns:calcext:1.0" xmlns:loext="urn:org:documentfoundation:names:experimental:office:xmlns:loext:1.0" xmlns:field="urn:openoffice:names:experimental:ooo-ms-interop:xmlns:field:1.0" xmlns:formx="urn:openoffice:names:experimental:ooxml-odf-interop:xmlns:form:1.0" xmlns:css3t="http://www.w3.org/TR/css3-text/" office:version="1.2" office:mimetype="application/vnd.oasis.opendocument.graphics">')
+		fodg.extend([
+			'<office:settings>',
+			'<config:config-item-set config:name="ooo:view-settings">',
+			'<config:config-item config:name="VisibleAreaTop" config:type="int">560</config:config-item>',
+			'<config:config-item config:name="VisibleAreaLeft" config:type="int">156</config:config-item>',
+			'<config:config-item config:name="VisibleAreaWidth" config:type="int">29131</config:config-item>',
+			'<config:config-item config:name="VisibleAreaHeight" config:type="int">14711</config:config-item>',
+			'</config:config-item-set>',
+			'</office:settings>',
+			'<office:body>',
+			'	<office:drawing>',
+			'		<draw:page draw:name="page1" draw:master-page-name="Default">',
+		])
 	out = []
 	if header:
 		out.append(header)
@@ -75,12 +92,28 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	lambdabrace = []
 	define = []
 	define_ident = -1
+	in_func = False
+	fodgx = -16
+	fodgy = 0
+	fid = 0
 	if 'functions' in info:
 		functions = info['functions']
 	else:
 		functions = {}
 
 	for line_num, ln in enumerate(source):
+		oline = ln
+		draw_type = 'rectangle'
+		if '(' in ln and ')' in ln:
+			draw_type= 'round-rectangle'
+		indent = 0
+		for c in ln:
+			if c == '\t':
+				indent += 1
+			else:
+				break
+
+
 		## curved upwards arrow is a reference
 		if u'⤴' in ln:
 			ln = ln.replace(u'⤴', '&')
@@ -144,12 +177,6 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			out.append(ln)
 			continue
 
-		indent = 0
-		for c in ln:
-			if c == '\t':
-				indent += 1
-			else:
-				break
 
 		#if s:
 		if not len(define):
@@ -212,6 +239,12 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 		if not s:
 			in_class = False
+			if in_func and fodg:
+				#fodg.append('<draw:enhanced-geometry svg:viewBox="0 0 21600 21600" draw:type="rectangle" draw:enhanced-path="M 0 0 L 21600 0 21600 21600 0 21600 0 0 Z N"/>')
+				#fodg.append('</draw:custom-shape>')
+				fodgx += 8
+
+			in_func = False
 
 		if s.startswith('##'):
 			ln = ln.replace('##', '//')
@@ -283,15 +316,18 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			ln = ln[:-1]+ '{'
 			lambdabrace.append(indent)
 			out.append(ln)
+			draw_type = 'flowchart-stored-data'
 
 		elif s.startswith('namespace ') and s.endswith(':'):
 			assert not nsbrace  ## no nested namespace defs
 			nsbrace = indent
 			out.append( ('\t'*indent) + s[:-1] + '{')
 			autobrace = 0
+			draw_type = 'flowchart-direct-access-storage'
 		elif s.startswith('namespace ') and s.endswith('{'):
 			out.append( ln )
 			autobrace = 0
+			draw_type = 'flowchart-direct-access-storage'
 
 		elif s.startswith('enum') and s.endswith(':'):
 			in_enum = True
@@ -333,6 +369,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			out.append( '	public:')
 
 		elif s.startswith('def '):
+			in_func = True
 			is_forward_decl = False
 			if s.endswith(';'):
 				is_forward_decl = True
@@ -343,6 +380,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				autofunc += 1
 
 			func_name = s[len('def ') : ].split('(')[0].strip()
+
 			is_constructor = False
 			is_destructor = False
 			if func_name.count('::')==1:
@@ -351,6 +389,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					is_constructor = True
 				elif b.startswith('~') and a == b[1:]:
 					is_destructor = True
+
 			is_scram = False
 			unscram_name = None
 
@@ -446,6 +485,23 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					args.append( arg )
 
 
+			if fodg:
+				fid += 1
+				fodgy = 0
+				fodg.append(
+					'<draw:custom-shape draw:text-style-name="P1" xml:id="id%s" draw:id="id%s" draw:layer="layout" svg:width="14.224cm" svg:height="8.001cm" svg:x="%scm" svg:y="%scm">' %(fid, fid, fodgx, fodgy)
+				)
+				fodg.append('<text:p><text:span>%s</text:span></text:p>' %escape(func_name))
+				for aidx, arg in enumerate(args):
+					fodg.append('<text:p><text:span> ⟹ %s</text:span></text:p>' %escape(arg))
+				fodg.append('<text:p><text:span> ⟸ %s</text:span></text:p>' %escape(returns))
+				fodg.append('<draw:enhanced-geometry draw:type="cube"/>')
+				fodg.append('</draw:custom-shape>')
+				#groups.append([fodgx])
+				draw_type = 'cube'
+				fodgy += len(args) * 1.5
+				fodgy += 1
+
 
 			if not in_class and not is_scram and not is_forward_decl:
 				if func_name not in functions:
@@ -522,28 +578,33 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			w = '\t' * indent
 			w += 'switch(' + s[len('switch '):-1] + ') {'
 			out.append(w)
+			draw_type = 'flowchart-multidocument'
 
 		elif s.startswith('case ') and s.endswith(':'):
 			autobrace += 1
 			w = '\t' * indent
 			w += 'case ' + s[len('case '):] + '{'
 			out.append(w)
+			draw_type = 'flowchart-punched-tape'
 
 		elif s == 'default:':
 			autobrace += 1
 			out.append(ln + '{')
+			draw_type = 'flowchart-document'
 
 		elif s.startswith('goto ') and s.endswith(':'):
 			autobrace += 1
 			w = '\t' * indent
 			w += s[len('goto '):] + '{'
 			out.append(w)
+			draw_type = 'chevron'
 
 		elif s.startswith('while ') and s.endswith(':'):
 			autobrace += 1
 			w = '\t' * indent
 			w += 'while(' + s[len('while '):-1] + ') {'
 			out.append(w)
+			draw_type = 'flowchart-preparation'
 
 		elif s.startswith( ('for ', 'for(','for (') ) and s.endswith(':'):
 			autobrace += 1
@@ -555,17 +616,18 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				loop += ')'
 			w += 'for ' + loop + ' {'
 			out.append(w)
+			draw_type = 'flowchart-display'
 
 		elif s.startswith('try') and s.endswith(':'):
 			autobrace += 1
 			w = '\t' * indent
-			w += 'try ' + s[len('while '):-1] + ' {'
+			w += 'try ' + s[len('try'):-1] + ' {'
 			out.append(w)
 
 		elif s.startswith('catch ') and s.endswith(':'):
 			autobrace += 1
 			w = '\t' * indent
-			w += 'catch ' + s[len('while '):-1] + ' {'
+			w += 'catch ' + s[len('catch '):-1] + ' {'
 			out.append(w)
 
 		elif s.startswith('if not ') and s.endswith(':'):
@@ -573,24 +635,28 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			w = '\t' * indent
 			w += 'if(!(' + s[len('if not '):-1] + ')) {'
 			out.append(w)
+			draw_type = 'down-arrow-callout'
 
 		elif s.startswith('if ') and s.endswith(':'):
 			autobrace += 1
 			w = '\t' * indent
 			w += 'if(' + s[len('if '):-1] + ') {'
 			out.append(w)
+			draw_type = 'down-arrow-callout'
 
 		elif s.startswith('elif not ') and s.endswith(':'):
 			autobrace += 1
 			w = '\t' * indent
 			w += 'else if(!(' + s[len('elif not '):-1] + ')) {'
 			out.append(w)
+			draw_type = 'down-arrow-callout'
 
 		elif s.startswith('elif ') and s.endswith(':'):
 			autobrace += 1
 			w = '\t' * indent
 			w += 'else if(' + s[len('elif '):-1] + ') {'
 			out.append(w)
+			draw_type = 'down-arrow-callout'
 
 		elif s == 'else:':
 			autobrace += 1
@@ -614,6 +680,66 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		prev = ln
 		prevs = s
 		previ = indent
+
+
+		if fodg and in_func and oline.strip() and draw_type != 'cube':
+			b = oline.replace('->', u'🠊')
+			s = b.strip()
+			fid += 1
+			a = None
+			if ln.count('=')==1 and not s.startswith( ('for ', 'for(', 'if ', 'while ') ):
+				a,b = s.split('=')
+				a += ' ='
+			else:
+				b = b.strip()
+				if b.startswith('return '):
+					b = b[len('return '):]
+					draw_type = 'left-arrow'
+			fodgy += 2
+			x = fodgx + (indent*2)
+			fodg.append(
+				'<draw:custom-shape draw:text-style-name="P1" xml:id="id%s" draw:id="id%s" draw:layer="layout" svg:width="14.224cm" svg:height="8.001cm" svg:x="%scm" svg:y="%scm">' %(fid, fid, x, fodgy)
+			)
+			fodg.append('<text:p><text:span>%s</text:span></text:p>' %escape(b))
+			#fodg.append('<draw:enhanced-geometry svg:viewBox="0 0 21600 21600" draw:type="rectangle" draw:enhanced-path="M 0 0 L 21600 0 21600 21600 0 21600 0 0 Z N"/>')
+			fodg.append('<draw:enhanced-geometry draw:type="%s"/>' %draw_type)
+			fodg.append('</draw:custom-shape>')
+			fodg.extend([
+				'<draw:connector ',
+				'	draw:style-name="gr11" draw:text-style-name="P8" draw:layer="layout" svg:x1="%scm" svg:y1="%scm" ' %(x, fodgy-1),
+				'	svg:x2="9.509cm" svg:y2="9.509cm" draw:start-shape="id%s" draw:start-glue-point="%s" ' %(fid-1, 2),  ## 2 is bottom, 3 is left, 1 is right
+				'	draw:end-shape="id%s" draw:end-glue-point="%s" svg:d="M3286 9001v573h3655v-566h2568v501" svg:viewBox="0 0 6224 574">' %(fid, 4),  ## 4 is top
+				'<text:p/>',
+				'</draw:connector>',
+			])
+			if a:
+				#fid += 1
+				fodg.append(
+					'<draw:custom-shape draw:text-style-name="P1" xml:id="sub-id%s" draw:id="sub-id%s" draw:layer="layout" svg:width="14.224cm" svg:height="8.001cm" svg:x="%scm" svg:y="%scm">' %(fid, fid, x-5, fodgy-0.5)
+				)
+				fodg.append('<text:p><text:span>%s</text:span></text:p>' %escape(a))
+				#fodg.append('<draw:enhanced-geometry svg:viewBox="0 0 21600 21600" draw:type="rectangle" draw:enhanced-path="M 0 0 L 21600 0 21600 21600 0 21600 0 0 Z N"/>')
+				if u'🠊' in a:
+					fodg.append('<draw:enhanced-geometry draw:type="notched-right-arrow"/>')
+				elif '[' in a:
+					fodg.append('<draw:enhanced-geometry draw:type="right-arrow-callout"/>')
+				elif '.' in a:
+					fodg.append('<draw:enhanced-geometry draw:type="pentagon-right"/>')
+				else:
+					fodg.append('<draw:enhanced-geometry draw:type="right-arrow"/>')
+				fodg.append('</draw:custom-shape>')
+				fodg.extend([
+					'<draw:connector ',
+					'	draw:style-name="gr11" draw:text-style-name="P8" draw:layer="layout" svg:x1="%scm" svg:y1="%scm" ' %(x, fodgy-1),
+					'	svg:x2="9.509cm" svg:y2="9.509cm" draw:start-shape="id%s" draw:start-glue-point="%s" ' %(fid, 3),  ## 2 is bottom, 3 is left, 1 is right
+					'	draw:end-shape="sub-id%s" draw:end-glue-point="%s" svg:d="M3286 9001v573h3655v-566h2568v501" svg:viewBox="0 0 6224 574">' %(fid, 1),  ## 4 is top
+					'<text:p/>',
+					'</draw:connector>',
+				])
+				fodgy += 2
+			if s.startswith(('if ', 'elif ', 'else', 'for ', 'while ')) and s.endswith(":"):
+				#fodgx += 0.5
+				pass
 
 	if previ >= 2:
 		out.append('}' * (previ-1) )
@@ -658,12 +784,22 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					out.append('	%s(tp, %s, tp_string_atom(tp, "%s"), %s(tp, %s));' %(tp_set, m,func, tp_function, func))
 		out.append('}')
 
+
 	cpp = '\n'.join(out)
 	if '--inspect-pythonic++' in sys.argv:
 		raise RuntimeError(cpp)
 
 	if 'classes' in info:
 		info['classes'].update( classes )
+
+	if fodg:
+		fodg.extend([
+			#'</draw:custom-shape>'
+			'			</draw:page>',
+			'		</office:drawing>',
+			'	</office:body>',
+			'</office:document>',
+		])
 
 	return cpp
 
@@ -789,8 +925,12 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 	## final pass apply scrambling
 	for path, file in files:
 		if file.endswith( '.pyc++' ):
-			cpp = pythonicpp( open(os.path.join(path,file),'rb').read().decode('utf-8'), header="/*generated from: %s*/" %file, info=info, binary_scramble=secure_binary, mangle_map=mangle_map )
+			fodg = []
+			cpp = pythonicpp( open(os.path.join(path,file),'rb').read().decode('utf-8'), header="/*generated from: %s*/" %file, info=info, binary_scramble=secure_binary, mangle_map=mangle_map, fodg=fodg )
 			open(os.path.join(path, file.replace('.pyc++', '.gen.cpp') ),'wb').write(cpp.encode('utf-8'))
+			fodg = '\n'.join(fodg)
+			open(os.path.join(path, file.replace('.pyc++', '.fodg') ),'wb').write(fodg.encode('utf-8'))
+
 		elif file.endswith( '.pyh' ):
 			cpp = pythonicpp( 
 				open(os.path.join(path,file),'rb').read().decode('utf-8'), 
