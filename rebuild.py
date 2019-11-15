@@ -366,12 +366,20 @@ def rebuild(stage=None):
 
 def main():
 	if '--clean' in sys.argv:
+		os.system('rm -rf tinypy/*.fodg')
+		os.system('rm -rf tinypy/blendot/*.fodg')
 		os.system('rm -rf tinypy/blendot/*.o')
+		os.system('rm -rf tinypy/blendot/servers/*.fodg')
 		os.system('rm -rf tinypy/blendot/servers/*.o')
+		os.system('rm -rf tinypy/blendot/servers/visual/*.fodg')
 		os.system('rm -rf tinypy/blendot/servers/visual/*.o')
+		os.system('rm -rf tinypy/blendot/scene/*.fodg')
 		os.system('rm -rf tinypy/blendot/scene/*.o')
+		os.system('rm -rf tinypy/blendot/scene/3d/*.fodg')
 		os.system('rm -rf tinypy/blendot/scene/3d/*.o')
+		os.system('rm -rf tinypy/blendot/scene/main/*.fodg')
 		os.system('rm -rf tinypy/blendot/scene/main/*.o')
+		os.system('rm -rf tinypy/blendot/scene/resources/*.fodg')
 		os.system('rm -rf tinypy/blendot/scene/resources/*.o')
 
 	if '--secure-binary' in sys.argv:

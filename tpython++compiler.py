@@ -59,6 +59,62 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			'<config:config-item config:name="VisibleAreaHeight" config:type="int">14711</config:config-item>',
 			'</config:config-item-set>',
 			'</office:settings>',
+
+			'<office:automatic-styles>',
+			'<style:page-layout style:name="PAGELAYOUT">',
+			'<style:page-layout-properties fo:margin-top="1cm" fo:margin-bottom="1cm" fo:margin-left="1cm" fo:margin-right="1cm" fo:page-width="21.59cm" fo:page-height="27.94cm" style:print-orientation="portrait"/>',
+			'</style:page-layout>',
+
+			'<style:style style:name="LIGHTBLUE" style:family="paragraph">',
+			'<loext:graphic-properties draw:fill-color="#e8f2a1"/>',
+			'<style:paragraph-properties fo:text-align="center"/>',
+			'</style:style>'
+			'<style:style style:name="RED" style:family="paragraph">',
+			'<loext:graphic-properties draw:fill-color="#ff0000"/>',
+			'<style:paragraph-properties fo:text-align="center"/>',
+			'</style:style>'
+			'<style:style style:name="GREEN" style:family="paragraph">',
+			'<loext:graphic-properties draw:fill-color="#00ff00"/>',
+			'<style:paragraph-properties fo:text-align="center"/>',
+			'</style:style>'
+			'<style:style style:name="BLUE" style:family="paragraph">',
+			'<loext:graphic-properties draw:fill-color="#0000ff"/>',
+			'<style:paragraph-properties fo:text-align="center"/>',
+			'</style:style>'
+			'<style:style style:name="YELLOW" style:family="paragraph">',
+			'<loext:graphic-properties draw:fill-color="#ffff00"/>',
+			'<style:paragraph-properties fo:text-align="center"/>',
+			'</style:style>'
+			'<style:style style:name="PURPLE" style:family="paragraph">',
+			'<loext:graphic-properties draw:fill-color="#ff00ff"/>',
+			'<style:paragraph-properties fo:text-align="center"/>',
+			'</style:style>'
+			'<style:style style:name="BLACK" style:family="paragraph">',
+			'<loext:graphic-properties draw:fill-color="#000000"/>',
+			'<style:paragraph-properties fo:text-align="center"/>',
+			'</style:style>'
+			'<style:style style:name="WHITE" style:family="paragraph">',
+			'<loext:graphic-properties draw:fill-color="#ffffff"/>',
+			'<style:paragraph-properties fo:text-align="center"/>',
+			'</style:style>'
+
+
+			'<style:style style:name="PAGESTYLE" style:family="drawing-page">',
+			'<style:drawing-page-properties draw:background-size="border" draw:fill="none"/>',
+			'</style:style>',
+
+			'<style:style style:name="DEF" style:family="text">',
+			'<style:text-properties fo:font-size="14pt" style:font-size-asian="14pt" style:font-size-complex="14pt"/>',
+			'</style:style>',
+
+			'<style:style style:name="FUNC" style:family="text">',
+			'<style:text-properties fo:font-size="18pt" style:font-size-asian="18pt" style:font-size-complex="18pt" fo:background-color="#000000" fo:color="#00ff00"/>',
+			'</style:style>',
+			'</office:automatic-styles>',
+			'<office:master-styles>',
+			'<style:master-page style:name="Default" style:page-layout-name="PAGELAYOUT" draw:style-name="PAGESTYLE"/>',
+			'</office:master-styles>',
+
 			'<office:body>',
 			'	<office:drawing>',
 			'		<draw:page draw:name="page1" draw:master-page-name="Default">',
@@ -104,6 +160,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	for line_num, ln in enumerate(source):
 		oline = ln
 		draw_type = 'rectangle'
+		color = 'LIGHTBLUE'
 		if '(' in ln and ')' in ln:
 			draw_type= 'round-rectangle'
 		indent = 0
@@ -242,7 +299,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			if in_func and fodg:
 				#fodg.append('<draw:enhanced-geometry svg:viewBox="0 0 21600 21600" draw:type="rectangle" draw:enhanced-path="M 0 0 L 21600 0 21600 21600 0 21600 0 0 Z N"/>')
 				#fodg.append('</draw:custom-shape>')
-				fodgx += 8
+				fodgx += 10
 
 			in_func = False
 
@@ -317,6 +374,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			lambdabrace.append(indent)
 			out.append(ln)
 			draw_type = 'flowchart-stored-data'
+			color = "GREEN"
 
 		elif s.startswith('namespace ') and s.endswith(':'):
 			assert not nsbrace  ## no nested namespace defs
@@ -489,12 +547,13 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				fid += 1
 				fodgy = 0
 				fodg.append(
-					'<draw:custom-shape draw:text-style-name="P1" xml:id="id%s" draw:id="id%s" draw:layer="layout" svg:width="14.224cm" svg:height="8.001cm" svg:x="%scm" svg:y="%scm">' %(fid, fid, fodgx, fodgy)
+					'<draw:custom-shape draw:text-style-name="GREEN" xml:id="id%s" draw:id="id%s" draw:layer="layout" svg:width="14.224cm" svg:height="8.001cm" svg:x="%scm" svg:y="%scm">' %(fid, fid, fodgx, fodgy)
 				)
-				fodg.append('<text:p><text:span>%s</text:span></text:p>' %escape(func_name))
+				fodg.append('<text:p><text:span text:style-name="FUNC">%s</text:span></text:p>' %escape(func_name))
 				for aidx, arg in enumerate(args):
-					fodg.append('<text:p><text:span> ⟹ %s</text:span></text:p>' %escape(arg))
-				fodg.append('<text:p><text:span> ⟸ %s</text:span></text:p>' %escape(returns))
+					arg = arg.replace('*', u'⮞').replace('&', u'⤴')
+					fodg.append('<text:p><text:span text:style-name="DEF"> ⟹ %s</text:span></text:p>' %escape(arg))
+				fodg.append('<text:p><text:span text:style-name="DEF"> ⟸ %s</text:span></text:p>' %escape(returns))
 				fodg.append('<draw:enhanced-geometry draw:type="cube"/>')
 				fodg.append('</draw:custom-shape>')
 				#groups.append([fodgx])
@@ -598,6 +657,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			w += s[len('goto '):] + '{'
 			out.append(w)
 			draw_type = 'chevron'
+			color = "RED"
 
 		elif s.startswith('while ') and s.endswith(':'):
 			autobrace += 1
@@ -617,6 +677,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			w += 'for ' + loop + ' {'
 			out.append(w)
 			draw_type = 'flowchart-display'
+			color = "PURPLE"
 
 		elif s.startswith('try') and s.endswith(':'):
 			autobrace += 1
@@ -643,6 +704,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			w += 'if(' + s[len('if '):-1] + ') {'
 			out.append(w)
 			draw_type = 'down-arrow-callout'
+			color = 'BLUE'
 
 		elif s.startswith('elif not ') and s.endswith(':'):
 			autobrace += 1
@@ -650,6 +712,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			w += 'else if(!(' + s[len('elif not '):-1] + ')) {'
 			out.append(w)
 			draw_type = 'down-arrow-callout'
+			color = 'BLUE'
 
 		elif s.startswith('elif ') and s.endswith(':'):
 			autobrace += 1
@@ -657,12 +720,15 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			w += 'else if(' + s[len('elif '):-1] + ') {'
 			out.append(w)
 			draw_type = 'down-arrow-callout'
+			color = 'BLUE'
 
 		elif s == 'else:':
 			autobrace += 1
 			w = '\t' * indent
 			w += 'else {'
 			out.append(w)
+			draw_type = 'down-arrow-callout'
+			color = 'BLUE'
 
 		elif s == 'with scope:':
 			autobrace += 1
@@ -683,24 +749,26 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 
 		if fodg and in_func and oline.strip() and draw_type != 'cube':
-			b = oline.replace('->', u'🠊')
+			b = oline.replace('->', u' 🠊 ').replace('<=', u'≤').replace('>=', u'≥').replace('==', u'≡').replace('!=', u'≢')
+			b = b.replace('(', u'❪').replace(')', u'❫').replace('{', u'❴').replace('}', u'❵')
 			s = b.strip()
 			fid += 1
 			a = None
-			if ln.count('=')==1 and not s.startswith( ('for ', 'for(', 'if ', 'while ') ):
+			if s.count('=')==1 and not s.startswith( ('for ', 'for(', u'for❪', 'if ', 'while ') ):
 				a,b = s.split('=')
 				a += ' ='
 			else:
 				b = b.strip()
 				if b.startswith('return '):
 					b = b[len('return '):]
-					draw_type = 'left-arrow'
-			fodgy += 2
+					draw_type = 'up-arrow-callout'
+					color = 'BLACK'
+			fodgy += 1.5
 			x = fodgx + (indent*2)
 			fodg.append(
-				'<draw:custom-shape draw:text-style-name="P1" xml:id="id%s" draw:id="id%s" draw:layer="layout" svg:width="14.224cm" svg:height="8.001cm" svg:x="%scm" svg:y="%scm">' %(fid, fid, x, fodgy)
+				'<draw:custom-shape draw:text-style-name="%s" xml:id="id%s" draw:id="id%s" draw:layer="layout" svg:width="14.224cm" svg:height="8.001cm" svg:x="%scm" svg:y="%scm">' %(color, fid, fid, x, fodgy)
 			)
-			fodg.append('<text:p><text:span>%s</text:span></text:p>' %escape(b))
+			fodg.append('<text:p><text:span text:style-name="DEF">%s</text:span></text:p>' %escape(b))
 			#fodg.append('<draw:enhanced-geometry svg:viewBox="0 0 21600 21600" draw:type="rectangle" draw:enhanced-path="M 0 0 L 21600 0 21600 21600 0 21600 0 0 Z N"/>')
 			fodg.append('<draw:enhanced-geometry draw:type="%s"/>' %draw_type)
 			fodg.append('</draw:custom-shape>')
@@ -715,9 +783,9 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			if a:
 				#fid += 1
 				fodg.append(
-					'<draw:custom-shape draw:text-style-name="P1" xml:id="sub-id%s" draw:id="sub-id%s" draw:layer="layout" svg:width="14.224cm" svg:height="8.001cm" svg:x="%scm" svg:y="%scm">' %(fid, fid, x-5, fodgy-0.5)
+					'<draw:custom-shape draw:text-style-name="YELLOW" xml:id="sub-id%s" draw:id="sub-id%s" draw:layer="layout" svg:width="14.224cm" svg:height="8.001cm" svg:x="%scm" svg:y="%scm">' %(fid, fid, x-5, fodgy-1)
 				)
-				fodg.append('<text:p><text:span>%s</text:span></text:p>' %escape(a))
+				fodg.append('<text:p><text:span text:style-name="DEF">%s</text:span></text:p>' %escape(a))
 				#fodg.append('<draw:enhanced-geometry svg:viewBox="0 0 21600 21600" draw:type="rectangle" draw:enhanced-path="M 0 0 L 21600 0 21600 21600 0 21600 0 0 Z N"/>')
 				if u'🠊' in a:
 					fodg.append('<draw:enhanced-geometry draw:type="notched-right-arrow"/>')
@@ -736,7 +804,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					'<text:p/>',
 					'</draw:connector>',
 				])
-				fodgy += 2
+				fodgy += 1.5
 			if s.startswith(('if ', 'elif ', 'else', 'for ', 'while ')) and s.endswith(":"):
 				#fodgx += 0.5
 				pass
@@ -928,8 +996,9 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 			fodg = []
 			cpp = pythonicpp( open(os.path.join(path,file),'rb').read().decode('utf-8'), header="/*generated from: %s*/" %file, info=info, binary_scramble=secure_binary, mangle_map=mangle_map, fodg=fodg )
 			open(os.path.join(path, file.replace('.pyc++', '.gen.cpp') ),'wb').write(cpp.encode('utf-8'))
-			fodg = '\n'.join(fodg)
-			open(os.path.join(path, file.replace('.pyc++', '.fodg') ),'wb').write(fodg.encode('utf-8'))
+			if fodg:
+				fodg = '\n'.join(fodg)
+				open(os.path.join(path, file.replace('.pyc++', '.pyc++.fodg') ),'wb').write(fodg.encode('utf-8'))
 
 		elif file.endswith( '.pyh' ):
 			cpp = pythonicpp( 

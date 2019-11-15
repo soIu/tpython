@@ -16,6 +16,26 @@ For better readablity, TPython also supports the unicode division symbol, so to 
 
 Another difference is `eval` and `exec` are not allowed in TPython, your scripts must be compiled ahead of time.
 
+# Blendot Types
+
+Blendot is a hard fork of the Godot game engine. The Blendot rewrite replaces C++ with Pythonic++, and GDScript with TPython.
+By default TPython is built with the minimal core types of Blendot, and provides the following types:
+* vec2
+* vec3
+* quat
+* color
+* rect
+* tri
+* plane
+* aabb
+* mat3
+* transform
+* RID
+* spatial
+* mesh
+
+If you do not need these types, you can pass the option `--no-blendot` to `rebuild.py`
+
 # Compile TPython++
 
 Use the helper script `rebuild.py` to compile for your target platform,
@@ -79,6 +99,8 @@ Pythonic++ is our own dialect of C++ that adopts the style of Python syntax,
 it is a minimal translator and binding generator, that will not get in your way when doing direct C++.
 The TPython interpreter is itself written in Pythonic++, and the Pythonic++ translator is itself written in Python.
 Pythonic++ files end with: `.pyc++` or `.pyh`, and when translated, they become: `.gen.cpp` and `.gen.h`
+The recommended code editor for Pythonic++ files is our custom fork of Gedit.
+https://gitlab.com/hartsantler/gedit
 
 # Pythonic++ Syntax
 
@@ -131,25 +153,7 @@ Note if your header is written in Pythonic++, as a `.pyh` file, then you will im
 References can use standard C++ syntax `&`, or with the curved upwards arrow `⤴`.
 Pointers can use `*` or the black rightwards arrow head `⮞`
 
-# Blendot Types
 
-Blendot is a hard fork of the Godot game engine. The Blendot rewrite replaces C++ with Pythonic++, and GDScript with TPython.
-By default TPython is built with the minimal core types of Blendot, and provides the following types:
-* vec2
-* vec3
-* quat
-* color
-* rect
-* tri
-* plane
-* aabb
-* mat3
-* transform
-* RID
-* spatial
-* mesh
-
-If you do not need these types, you can pass the option `--no-blendot` to `rebuild.py`
 
 # Optional CPython
 
@@ -203,3 +207,5 @@ https://medium.com/@judge_raptor/tpythonos-a959ec82793a
 https://medium.com/@judge_raptor/the-smallest-fastest-most-secure-python-ever-5fe2e33ce8cd
 
 https://medium.com/@judge_raptor/the-first-high-performance-game-engine-written-in-python-a2be13ff34f2
+
+https://medium.com/@judge_raptor/c-6e89c6bbc8f0
