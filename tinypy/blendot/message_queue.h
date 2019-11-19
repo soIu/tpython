@@ -33,7 +33,7 @@
 
 #include "object.h"
 #ifdef BLENDOT
-	#include "core/os/thread_safe.h"
+	#include "thread_safe.h"
 #else
 	#define _THREAD_SAFE_CLASS_ 
 #endif

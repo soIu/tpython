@@ -28,7 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#include "node.h"
+#include "node_object.gen.h"
 
 #include "core_string_names.h"
 #include "resource_loader.h"

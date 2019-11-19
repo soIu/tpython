@@ -189,6 +189,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			ln = ln.replace(u'🔒', ' const ')
 		if u'🠊' in ln:
 			ln = ln.replace(u'🠊', '->')
+		if u'⧟' in ln:
+			ln = ln.replace(u'⧟', ',')
 		s = ln.strip()
 
 		## check for function calls, or forward defs
@@ -278,7 +280,12 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				class_name = None
 			elif in_struct and indent <= struct_indent:
 				#assert out[-1][-1] == '}'
-				out[-1] += ';	// end of struct: ' + struct_name
+				if '.' in struct_name:
+					## inline struct def, with variable name at the end
+					struct_name, struct_var_name = struct_name.split('.')
+					out[-1] += '%s;	// end of struct: %s' %(struct_var_name, struct_name)
+				else:
+					out[-1] += ';	// end of struct: ' + struct_name
 				struct_stack.pop()
 				if len(struct_stack):
 					struct_name   = struct_stack[-1][0]
@@ -288,8 +295,13 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					struct_name = None
 					struct_indent = 0
 			elif in_enum and indent <= enum_indent:
-				#assert out[-1][-1] == '}'
-				out[-1] += ';	// end of enum: ' + enum_name
+				if enum_name == 'enum':
+					enum_name = 'unnamed'
+				if out[-1][-1] == '}':
+					out[-1] += ';	// end of enum: ' + enum_name
+				else:
+					out.append('')  ## just incase there is an #endif at the end of the enum
+					out[-1] += '};	// end of enum: ' + enum_name
 				in_enum = False
 
 
@@ -368,6 +380,10 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			pass
 		elif s.startswith('@template('):
 			out.append( 'template<%s>' % s[len('@template(') : -1] )
+		elif s.startswith('@virtual'):
+			out.append( 'virtual' )
+		elif s.startswith('@'):
+			raise SyntaxError( 'Unknown decorator syntax: ' + s )
 		elif ' def[' in s and ln.endswith(':'):
 			ln = ln.replace(' def[', '[')
 			ln = ln[:-1]+ '{'
@@ -389,9 +405,13 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 		elif s.startswith('enum') and s.endswith(':'):
 			in_enum = True
-			enum_name = s.split()[-1][:-1]
+			enum_name = s.split()[-1][:-1].strip()
 			enum_indent = indent
-			out.append( ('\t'*indent)+'enum %s {' %enum_name)
+			if enum_name != 'enum':
+				out.append( ('\t'*indent)+'enum %s {' %enum_name)
+			else:
+				## unnamed enum
+				out.append( ('\t'*indent)+'enum {')
 		elif in_enum:
 			if not s.endswith(','):
 				s += ','
@@ -402,7 +422,10 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			struct_name = s.split()[-1][:-1]
 			struct_stack.append( [struct_name,indent] )
 			struct_indent = indent
-			out.append( ('\t'*indent)+'struct %s {' %struct_name)
+			if '.' in struct_name:  ## dot syntax for a named struct with a var name
+				out.append( ('\t'*indent)+'struct %s {' %struct_name.split('.')[0])
+			else:
+				out.append( ('\t'*indent)+'struct %s {' %struct_name)
 
 		elif s.startswith('class') and s.endswith(':'):
 			in_class = True
@@ -411,7 +434,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			base_classes = []
 			tp_obj_subclass = False
 			if s.count('(')==1 and s.count(')')==1:
-				class_name = class_name.split('(')[0].strip()
+				class_name = s.split('(')[0].strip().split()[-1]
 				for base_class in s.split('(')[-1].split(')')[0].split(','):
 					base_class=base_class.strip()
 					if base_class == 'object':
@@ -484,7 +507,10 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				args = []
 
 			#rawargs = s.split('(')[-1].split(')')[0]
-			rawargs = s.split('->')[0][ s.index('(')+1 : s.rindex(')') ]
+			try:
+				rawargs = s.split('->')[0][ s.index('(')+1 : s.rindex(')') ]
+			except ValueError:
+				raise SyntaxError(s)
 			arg_types = []
 			for i, arg in enumerate(rawargs.split(',')):
 				arg = arg.strip()

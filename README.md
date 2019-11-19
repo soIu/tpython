@@ -153,7 +153,8 @@ Note if your header is written in Pythonic++, as a `.pyh` file, then you will im
 References can use standard C++ syntax `&`, or with the curved upwards arrow `⤴`.
 Pointers can use `*` or the black rightwards arrow head `⮞`
 
-
+Templates can use regular C++ syntax, `<>` or `≼≽`.
+Templates with multiple arguments can be separated with `,` or `⧟`.
 
 # Optional CPython
 

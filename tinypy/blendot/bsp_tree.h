@@ -35,7 +35,7 @@
 #include "face3.h"
 #include "plane.h"
 #ifdef BLENDOT
-	#include "core/method_ptrcall.h"
+	#include "method_ptrcall.h"
 #endif
 #include "pool_vector.h"
 #include "variant.h"

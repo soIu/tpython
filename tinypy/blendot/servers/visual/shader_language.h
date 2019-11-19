@@ -34,7 +34,7 @@
 #include "list.h"
 #include "map.h"
 #ifdef BLENDOT
-	#include "core/script_language.h"
+	#include "script_language.h"
 #else
 	class ScriptCodeCompletionOption;
 #endif

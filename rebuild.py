@@ -142,6 +142,7 @@ def rebuild(stage=None):
 	mode = 'linux'
 	exe = 'tpython++'
 	exeopts = ''
+
 	CC = 'c++'
 	libs = '-lm -ldl -lpthread'
 	if '--no-blendot' in sys.argv:
@@ -151,6 +152,13 @@ def rebuild(stage=None):
 		defs = '-DBLENDOT_TYPES'
 		mods = BlendotTypesFiles
 	opts = ''
+
+	if '--shared' in sys.argv:
+		exe = 'libtpython++.so'
+		exeopts = '-shared -fPIC '
+		opts = '-fPIC '
+		defs += ' -DSHAREDLIB'
+
 	sdl_inc = ''
 	embed_bytecode = False
 	for arg in sys.argv[1:]:

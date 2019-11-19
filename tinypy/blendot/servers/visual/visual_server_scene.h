@@ -38,7 +38,7 @@
 
 #ifdef BLENDOT
 	#include "core/os/semaphore.h"
-	#include "core/os/thread.h"
+	#include "thread.h"
 	#include "servers/arvr/arvr_interface.h"
 #endif
 
