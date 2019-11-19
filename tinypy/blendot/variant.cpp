@@ -39,7 +39,7 @@
 #ifdef BLENDOT
 	#include "scene/gui/control.h"
 #endif
-#include "scene/main/node.h"
+#include "scene/main/node_object.gen.h"
 
 String Variant::get_type_name(Variant::Type p_type) {
 

@@ -413,7 +413,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				## unnamed enum
 				out.append( ('\t'*indent)+'enum {')
 		elif in_enum:
-			if not s.endswith(','):
+			if not s.endswith(',') and not s.startswith('#'):
 				s += ','
 			out.append('	' + s)
 

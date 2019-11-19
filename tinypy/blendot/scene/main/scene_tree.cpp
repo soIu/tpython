@@ -42,7 +42,7 @@
 	#include "main/input_default.h"
 #endif
 
-#include "node.h"
+#include "node_object.gen.h"
 #ifdef BLENDOT
 	#include "scene/resources/dynamic_font.h"
 #endif

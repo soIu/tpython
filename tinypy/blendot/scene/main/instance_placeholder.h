@@ -31,7 +31,7 @@
 #ifndef INSTANCE_PLACEHOLDER_H
 #define INSTANCE_PLACEHOLDER_H
 
-#include "scene/main/node.h"
+#include "scene/main/node_object.gen.h"
 
 class PackedScene;
 

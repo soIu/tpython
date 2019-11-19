@@ -46,6 +46,7 @@ class SceneState;
 class Node( Object ):
 	GDCLASS(Node, Object)
 	OBJ_CATEGORY("Nodes")
+	public:
 	enum PauseMode:
 		PAUSE_MODE_INHERIT
 		PAUSE_MODE_STOP
@@ -250,19 +251,19 @@ class Node( Object ):
 	def get_parent() ->Node*;
 	@const
 	def find_parent(🔒String &p_mask) ->Node*;
-	_FORCE_INLINE_
+	//_FORCE_INLINE_
 	@const
-	SceneTree *get_tree() ->SceneTree*:
+	def get_tree() ->SceneTree*:
 		ERR_FAIL_COND_V(!data.tree, NULL)
 		return data.tree
-	_FORCE_INLINE_
+	//_FORCE_INLINE_
 	@const
 	def is_inside_tree() ->bool:
 		return data.inside_tree
 	@const
-	bool is_a_parent_of(🔒Node *p_node) ->bool;
+	def is_a_parent_of(🔒Node *p_node) ->bool;
 	@const
-	bool is_greater_than(🔒Node *p_node) ->bool;
+	def is_greater_than(🔒Node *p_node) ->bool;
 	@const
 	def get_path() ->NodePath;
 	@const
@@ -385,9 +386,9 @@ class Node( Object ):
 	@const
 	def get_argument_options(🔒StringName &p_function, int p_idx, List<String> *r_options);
 	def clear_internal_tree_resource_paths();
-	_FORCE_INLINE_
+	//_FORCE_INLINE_
 	@const
-	get_viewport() ->Viewport *:
+	def get_viewport() ->Viewport *:
 		return data.viewport
 	@virtual
 	@const

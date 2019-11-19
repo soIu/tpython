@@ -32,7 +32,7 @@
 #define VIEWPORT_H
 
 #include "transform_2d.h"
-#include "scene/main/node.h"
+#include "scene/main/node_object.gen.h"
 #include "scene/resources/texture.h"
 #include "scene/resources/world_2d.h"
 #include "servers/visual_server.h"

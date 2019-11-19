@@ -39,7 +39,8 @@
 
 #ifdef BLENDOT
 	#include "core/script_language.h"
-	#include "scene/main/node.h" //only so casting works
+	//only so casting works
+	#include "scene/main/node_object.gen.h"
 #endif
 
 #include <stdio.h>
