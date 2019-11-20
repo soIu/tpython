@@ -34,8 +34,9 @@
 #include <iostream>
 #include "typedefs.h"
 
-static bool _err_error_exists = false;
-
+#ifndef BLENDOT
+	static bool _err_error_exists = false;
+#endif
 
 /**
  * Error macros. Unlike exceptions and asserts, these macros try to maintain consistency and stability
@@ -81,15 +82,21 @@ struct ErrorHandlerList {
 void add_error_handler(ErrorHandlerList *p_handler);
 void remove_error_handler(ErrorHandlerList *p_handler);
 
-static void _err_print_error(const char *p_function, const char *p_file, int p_line, const char *p_error, ErrorHandlerType p_type = ERR_HANDLER_ERROR) {
-	std::cout << p_function << std::endl;
-	std::cout << p_file << ":" << p_line << std::endl;
-	std::cout << p_error << std::endl;
-}
-static void _err_print_index_error(const char *p_function, const char *p_file, int p_line, int64_t p_index, int64_t p_size, const char *p_index_str, const char *p_size_str, bool fatal = false) {
-	std::cout << p_function << std::endl;
-	std::cout << p_file << ":" << p_line << p_index << std::endl;
-}
+#ifdef BLENDOT
+	void _err_print_error(const char *p_function, const char *p_file, int p_line, const char *p_error, ErrorHandlerType p_type = ERR_HANDLER_ERROR);
+	void _err_print_index_error(const char *p_function, const char *p_file, int p_line, int64_t p_index, int64_t p_size, const char *p_index_str, const char *p_size_str, bool fatal = false);
+
+#else
+	static void _err_print_error(const char *p_function, const char *p_file, int p_line, const char *p_error, ErrorHandlerType p_type = ERR_HANDLER_ERROR) {
+		std::cout << p_function << std::endl;
+		std::cout << p_file << ":" << p_line << std::endl;
+		std::cout << p_error << std::endl;
+	}
+	static void _err_print_index_error(const char *p_function, const char *p_file, int p_line, int64_t p_index, int64_t p_size, const char *p_index_str, const char *p_size_str, bool fatal = false) {
+		std::cout << p_function << std::endl;
+		std::cout << p_file << ":" << p_line << p_index << std::endl;
+	}
+#endif
 
 #ifndef _STR
 #define _STR(m_x) #m_x

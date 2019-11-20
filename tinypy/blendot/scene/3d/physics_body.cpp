@@ -30,12 +30,12 @@
 
 #include "physics_body.h"
 
-#include "core/core_string_names.h"
-#include "core/engine.h"
-#include "core/list.h"
+#include "core_string_names.h"
+#include "engine.h"
+#include "list.h"
 #include "core/method_bind_ext.gen.inc"
-#include "core/object.h"
-#include "core/rid.h"
+#include "object.h"
+#include "rid.h"
 #include "scene/scene_string_names.h"
 
 #ifdef TOOLS_ENABLED

@@ -30,7 +30,7 @@
 
 #include "texture.h"
 
-#include "core/core_string_names.h"
+#include "core_string_names.h"
 #include "core/io/image_loader.h"
 #include "core/method_bind_ext.gen.inc"
 #include "core/os/os.h"

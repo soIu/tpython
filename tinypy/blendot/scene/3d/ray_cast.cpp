@@ -30,8 +30,8 @@
 
 #include "ray_cast.h"
 
-#include "collision_object.h"
-#include "core/engine.h"
+#include "scene/3d/collision_object.h"
+#include "engine.h"
 #include "mesh_instance.h"
 #include "servers/physics_server.h"
 

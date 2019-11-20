@@ -30,8 +30,8 @@
 
 #include "variant_parser.h"
 
-#include "core/io/resource_loader.h"
-#include "core/os/input_event.h"
+#include "resource_loader.h"
+#include "input_event.h"
 #include "core/os/keyboard.h"
 #include "core/string_buffer.h"
 

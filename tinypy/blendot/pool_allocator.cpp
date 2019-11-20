@@ -33,7 +33,11 @@
 #include "error_macros.h"
 #include "copymem.h"
 #include "memory.h"
-//#include "core/os/os.h"
+
+#ifdef BLENDOT
+	#include "core/os/os.h"
+#endif
+
 #include "print_string.h"
 
 #include <assert.h>

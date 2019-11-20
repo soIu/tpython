@@ -30,7 +30,7 @@
 
 #include "script_language.h"
 
-#include "core/core_string_names.h"
+#include "core_string_names.h"
 #include "core/project_settings.h"
 
 ScriptLanguage *ScriptServer::_languages[MAX_LANGUAGES];

@@ -30,8 +30,8 @@
 
 #include "camera_matrix.h"
 
-#include "core/math/math_funcs.h"
-#include "core/print_string.h"
+#include "math_funcs.h"
+#include "print_string.h"
 
 void CameraMatrix::set_identity() {
 

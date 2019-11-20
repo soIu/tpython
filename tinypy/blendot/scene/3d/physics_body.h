@@ -35,7 +35,7 @@
 #include "scene/3d/collision_object.h"
 #include "scene/resources/physics_material.h"
 #include "servers/physics_server.h"
-#include "skeleton.h"
+#include "scene/3d/skeleton.h"
 
 class PhysicsBody : public CollisionObject {
 

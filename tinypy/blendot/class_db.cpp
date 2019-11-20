@@ -32,7 +32,7 @@
 #include "mutex.h"
 
 #ifdef BLENDOT
-	#include "core/engine.h"
+	#include "engine.h"
 	#include "core/version.h"
 #endif
 

@@ -32,13 +32,13 @@
 
 #include "core_string_names.h"
 #ifdef BLENDOT
-	#include "core/io/resource_loader.h"
+	#include "resource_loader.h"
 #endif
 
 #include "file_access.h"
 
 #ifdef BLENDOT
-	#include "core/script_language.h"
+	#include "script_language.h"
 	//only so casting works
 	#include "scene/main/node_object.gen.h"
 #endif

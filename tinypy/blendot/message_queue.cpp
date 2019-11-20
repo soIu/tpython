@@ -31,7 +31,7 @@
 #include "message_queue.h"
 #ifdef BLENDOT
 	#include "core/project_settings.h"
-	#include "core/script_language.h"
+	#include "script_language.h"
 #else
 	#define _THREAD_SAFE_CLASS_ 
 	#define _THREAD_SAFE_LOCK_ 

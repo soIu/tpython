@@ -29,10 +29,10 @@
 /*************************************************************************/
 
 #include "resource_saver.h"
-#include "core/io/resource_loader.h"
-#include "core/os/file_access.h"
+#include "resource_loader.h"
+#include "file_access.h"
 #include "core/project_settings.h"
-#include "core/script_language.h"
+#include "script_language.h"
 
 Ref<ResourceFormatSaver> ResourceSaver::saver[MAX_SAVERS];
 

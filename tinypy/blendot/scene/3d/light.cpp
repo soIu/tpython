@@ -30,7 +30,7 @@
 
 #include "light.h"
 
-#include "core/engine.h"
+#include "engine.h"
 #include "core/project_settings.h"
 #include "scene/resources/surface_tool.h"
 

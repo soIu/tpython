@@ -33,7 +33,7 @@
 #include "core_string_names.h"
 #include "object.h"
 #ifdef BLENDOT
-	#include "core/script_language.h"
+	#include "script_language.h"
 #endif
 
 #define CASE_TYPE_ALL(PREFIX, OP) \

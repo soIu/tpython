@@ -91,8 +91,14 @@ public:
 	_FORCE_INLINE_ RID() {
 		_data = NULL;
 	}
-	RID( int id ) {
-		_data = new RID_Data(id);
+	// not compatible with variant_call.cpp, line 1218: `case _RID: return (RID(*p_args[0]));`
+	// because a Variant can hold and RID, and Variant can be auto-casted to an int, RID, and many other types
+	//RID( int id ) {
+	//	_data = new RID_Data(id);
+	//}
+	_FORCE_INLINE_ void set_id(int id) {
+		if (_data == NULL) _data = new RID_Data(id);
+		else throw "can not set_id on an RID that is already in use";
 	}
 };
 

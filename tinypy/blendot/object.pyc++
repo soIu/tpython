@@ -42,7 +42,7 @@ import "script_language.h"
 #ifdef DEBUG_ENABLED
 struct _ObjectDebugLock:
 	Object ⮞obj;
-	__init__(Object ⮞p_obj):
+	def __init__(Object ⮞p_obj):
 		obj = p_obj
 		obj->_lock_index.ref()
 	~_ObjectDebugLock() { obj->_lock_index.unref(); }

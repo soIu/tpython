@@ -609,7 +609,8 @@ def tp_trans(Basis b, Vector3 origin) -> tp_obj:
 @static
 def tp_rid(int id) -> tp_obj:
 	tp_obj val = {TP_RID};
-	val.rid.r = RID(id)
+	val.rid.r = RID()
+	val.rid.r.set_id(id)
 	return val
 
 @static

@@ -962,7 +962,8 @@ def ArrayMesh::ArrayMesh():
 	#ifdef BLENDOT
 	  mesh = VisualServer::get_singleton()->mesh_create()
 	#else
-	  mesh = RID(++__array_meshes__)
+	  mesh = RID()
+	  mesh.set_id(++__array_meshes__)
 	#endif
 	blend_shape_mode = BLEND_SHAPE_MODE_RELATIVE
 

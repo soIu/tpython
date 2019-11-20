@@ -1106,7 +1106,7 @@ void SceneTree::_debugger_request_tree(void *self) {
 #ifdef BLENDOT
 	SceneTree *sml = (SceneTree *)self;
 	Array arr;
-	fill_array(sml->root, arr, 0);
+	_fill_array(sml->root, arr, 0);
 	ScriptDebugger::get_singleton()->send_message("scene_tree", arr);
 #endif
 }
