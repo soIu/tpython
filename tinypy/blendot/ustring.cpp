@@ -35,11 +35,19 @@
 #include "ustring.h"
 
 #include "color.h"
-//#include "core/crypto/crypto_core.h"
+
+#ifdef BLENDOT
+	#include "core/crypto/crypto_core.h"
+#endif
+
 #include "math_funcs.h"
 #include "memory.h"
 #include "print_string.h"
-//#include "core/translation.h"
+
+#ifdef BLENDOT
+	#include "core/translation.h"
+#endif
+
 #include "ucaps.h"
 #include "variant.h"
 
@@ -2275,7 +2283,8 @@ uint64_t String::hash64() const {
 	return hashv;
 }
 
-/*
+#ifdef BLENDOT
+
 String String::md5_text() const {
 
 	CharString cs = utf8();
@@ -2338,7 +2347,7 @@ Vector<uint8_t> String::sha256_buffer() const {
 	}
 	return ret;
 }
-*/
+#endif
 
 String String::insert(int p_at_pos, const String &p_string) const {
 
@@ -4354,30 +4363,31 @@ String String::unquote() const {
 	return substr(1, length() - 2);
 }
 
-/*
-#ifdef TOOLS_ENABLED
-String TTR(const String &p_text) {
+#ifdef BLENDOT
 
-	if (TranslationServer::get_singleton()) {
-		return TranslationServer::get_singleton()->tool_translate(p_text);
+	#ifdef TOOLS_ENABLED
+		String TTR(const String &p_text) {
+
+			if (TranslationServer::get_singleton()) {
+				return TranslationServer::get_singleton()->tool_translate(p_text);
+			}
+
+			return p_text;
+		}
+	#endif
+
+	String RTR(const String &p_text) {
+
+		if (TranslationServer::get_singleton()) {
+			String rtr = TranslationServer::get_singleton()->tool_translate(p_text);
+			if (rtr == String() || rtr == p_text) {
+				return TranslationServer::get_singleton()->translate(p_text);
+			} else {
+				return rtr;
+			}
+		}
+
+		return p_text;
 	}
-
-	return p_text;
-}
-
 #endif
 
-String RTR(const String &p_text) {
-
-	if (TranslationServer::get_singleton()) {
-		String rtr = TranslationServer::get_singleton()->tool_translate(p_text);
-		if (rtr == String() || rtr == p_text) {
-			return TranslationServer::get_singleton()->translate(p_text);
-		} else {
-			return rtr;
-		}
-	}
-
-	return p_text;
-}
-*/

@@ -2370,8 +2370,13 @@ RID VisualServer::instance_create2(RID p_base, RID p_scenario) {
 VisualServer::VisualServer() {
 	std::cout << "making new VisualServer" << std::endl;
 	std::cout << this << std::endl;
-	ERR_FAIL_COND(singleton);
-	singleton = this;
+	if (this) {
+		std::cout << "WARN VisualServer already created" << std::endl;
+		return;
+	} else {
+		//ERR_FAIL_COND(singleton);
+		singleton = this;		
+	}
 
 #ifdef BLENDOT
 	GLOBAL_DEF_RST("rendering/vram_compression/import_bptc", false);

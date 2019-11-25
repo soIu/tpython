@@ -30,7 +30,7 @@
 
 #include "visual_server_raster.h"
 #ifdef BLENDOT
-	#include "core/io/marshalls.h"
+	#include "marshalls.h"
 	#include "core/os/os.h"
 	#include "core/project_settings.h"
 #endif

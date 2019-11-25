@@ -318,7 +318,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			  print(tp_as_string(tp,k))
 			#endif
 			TP_META_BEGIN(self,"__getitem__")
-			  return tp_call(tp, meta, tp_params_v(tp, 1, k))
+			  return tp_call(tp, meta, tp_params_v1(tp, k))
 			TP_META_END
 			#ifdef DEBUG
 			  print("	falling back to tp_vget")
@@ -508,7 +508,7 @@ def tp_set(TP,tp_obj self, tp_obj k, tp_obj v) -> tp_obj:
 		return self
 	elif type == TP_OBJECT:
 		TP_META_BEGIN(self,"__set__")
-		  tp_call(tp,meta,tp_params_v(tp,2,k,v))
+		  tp_call(tp,meta,tp_params_v2(tp,k,v))
 		  return self
 		TP_META_END
 		tp_dict_set(tp, self, k, v)
@@ -625,7 +625,7 @@ def tp_mod(TP, tp_obj a, tp_obj b) -> tp_obj:
 				return tp_number(((long)a.number.val) % ((long)b.number.val))
 			break
 		case TP_STRING:
-			return tp_ez_call(tp, "__builtins__", "format", tp_params_v(tp, 2, a, b))
+			return tp_ez_call(tp, "__builtins__", "format", tp_params_v2(tp, a, b))
 	//tp_raise(tp_None, tp_string_atom(tp, "(tp_mod) TypeError: ?"));
 	throw "TypeError in tp_ops.cpp:tp_mod invalid object type to use modulus operator with"
 

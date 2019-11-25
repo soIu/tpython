@@ -30,30 +30,42 @@
 
 #include "math_funcs.h"
 
-//RandomPCG Math::default_rand(RandomPCG::DEFAULT_SEED, RandomPCG::DEFAULT_INC);
+#ifdef BLENDOT
+	RandomPCG Math::default_rand(RandomPCG::DEFAULT_SEED, RandomPCG::DEFAULT_INC);
+#endif
 
 #define PHI 0x9e3779b9
 
 uint32_t Math::rand_from_seed(uint64_t *seed) {
-	//RandomPCG rng = RandomPCG(*seed, RandomPCG::DEFAULT_INC);
-	//uint32_t r = rng.rand();
-	//*seed = rng.get_seed();
-	//return r;
+#ifdef BLENDOT
+	RandomPCG rng = RandomPCG(*seed, RandomPCG::DEFAULT_INC);
+	uint32_t r = rng.rand();
+	*seed = rng.get_seed();
+	return r;
+#else
 	return 0;
+#endif
 }
 
 void Math::seed(uint64_t x) {
-	//default_rand.seed(x);
+#ifdef BLENDOT
+	default_rand.seed(x);
+#endif
 }
 
 void Math::randomize() {
-	//default_rand.randomize();
+#ifdef BLENDOT
+	default_rand.randomize();
+#endif
 }
 
 uint32_t Math::rand() {
-	//return default_rand.rand();  //TODO what was the range of this?
+#ifdef BLENDOT
+	return default_rand.rand();  //TODO what was the range of this?
+#else
 	std::uniform_int_distribution<uint32_t> unif(0, 100);
 	return unif(*__rand_engine);
+#endif
 }
 
 int Math::step_decimals(double p_step) {
@@ -176,13 +188,20 @@ uint32_t Math::larger_prime(uint32_t p_val) {
 }
 
 double Math::random(double from, double to) {
-	//return default_rand.random(from, to);
+#ifdef BLENDOT
+	return default_rand.random(from, to);
+#else
 	std::uniform_real_distribution<double> unif(from, to);
 	return unif(*__rand_engine);
+#endif
 }
 
 float Math::random(float from, float to) {
-	//return default_rand.random(from, to);
+#ifdef BLENDOT
+	return default_rand.random(from, to);
+#else
 	std::uniform_real_distribution<float> unif(from, to);
 	return unif(*__rand_engine);
+#endif
 }
+

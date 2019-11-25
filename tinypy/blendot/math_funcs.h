@@ -32,21 +32,28 @@
 #define MATH_FUNCS_H
 
 #include "math_defs.h"
-//#include "core/math/random_pcg.h"
+#ifdef BLENDOT
+	#include "core/math/random_pcg.h"
+#endif
 #include "typedefs.h"
 
-//#include "thirdparty/misc/pcg.h"
+#ifdef BLENDOT
+	#include "thirdparty/misc/pcg.h"
+#endif
 
 #include <float.h>
 #include <math.h>
-#include <random>
 
-extern std::mt19937 *__rand_engine;
-
+#ifndef BLENDOT
+	#include <random>
+	extern std::mt19937 *__rand_engine;
+#endif
 
 class Math {
 
-	//static RandomPCG default_rand;
+	#ifdef BLENDOT
+		static RandomPCG default_rand;
+	#endif
 
 public:
 	Math() {} // useless to instance
