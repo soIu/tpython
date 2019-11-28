@@ -3,6 +3,62 @@
 import os, sys, subprocess, random, json
 from xml.sax.saxutils import escape
 
+UPLUGIN_TEMPLATE = '''
+{
+	"FileVersion" : 3,
+	"FriendlyName" : "%s",
+	"Version" : 1,
+	"VersionName" : "1.0",
+	"CreatedBy" : "%s",
+	"CreatedByURL" : "%s",
+	"EngineVersion" : "4.2.0",
+	"Description" : "%s",
+	"Category" : "%s",
+	"EnabledByDefault" : %s,
+	"Modules" :
+	[
+		{
+			"Name" : "%s",
+			"Type" : "%s",
+			"LoadingPhase" : "%s"
+		}
+	]
+}
+'''
+
+UNREAL_BUILD_TEMPLATE = '''
+using UnrealBuildTool;
+using System.IO;
+ 
+public class %s : ModuleRules {
+	public %s(TargetInfo Target) {
+		PrivateIncludePaths.AddRange(new string[] { "%s/Private" });
+		PublicIncludePaths.AddRange(new string[] { "%s/Public" });
+		PublicDependencyModuleNames.AddRange(new string[] {%s});
+		var base_path = Path.GetFullPath(
+			Path.Combine(
+				Path.GetDirectoryName(ModuleDirectory), "../../../3rdparty")
+		);
+		if (!Directory.Exists(base_path)) {
+			Log.TraceError("can not find 3rdparty build folder");
+			Log.TraceError(base_path);
+		}
+		PublicIncludePaths.Add( base_path );
+		PublicIncludePaths.AddRange( new string[] {%s} );
+		var path = Path.Combine(base_path, "__CPPMODULE__");
+		PublicAdditionalLibraries.Add(path);
+		PublicAdditionalLibraries.AddRange( new string[] {%s});
+		PublicDependencyModuleNames.AddRange(
+			new string[] {
+				"CoreUObject", "Engine", "InputCore", "RHI",
+				"RenderCore", "HTTP", "UMG", "Slate", "SlateCore",
+				"ImageWrapper", "PhysX", "HeadMountedDisplay", "AIModule"
+			});
+	}
+}
+'''
+
+
 def bin_scramble(fname, finfo, mangle_map):
 	scram = finfo['scramble']
 	ok = False
@@ -382,6 +438,12 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			out.append( 'template<%s>' % s[len('@template(') : -1] )
 		elif s.startswith('@virtual'):
 			out.append( 'virtual' )
+		elif s.startswith('@UCLASS'):
+			out.append( 'UCLASS' )
+		elif s.startswith('@UFUNCTION'):
+			out.append( s[1:] )
+		elif s == '@export' or s == '@extern':
+			out.append( 'extern ' )
 		elif s.startswith('@'):
 			raise SyntaxError( 'Unknown decorator syntax: ' + s )
 		elif ' def[' in s and ln.endswith(':'):
@@ -964,12 +1026,15 @@ def walk_path(path, res):
 		elif os.path.isdir(os.path.join(path,file)):
 			walk_path( os.path.join(path,file), res)
 
-def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=None, obfuscate_map=None ):
+def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=None, obfuscate_map=None, unreal=False, unreal_project=None ):
 	print(path)
 	new_obfuscate = {}
 	info = {'classes':{}, 'functions':{}, 'obfuscations':new_obfuscate}
 	files = []
 	walk_path(path, files)
+	if unreal:
+		unreal_plugin_name = path.split('/')[-1].split('.')[0]
+
 
 	if secure:
 		## first pass gather function info
@@ -1021,7 +1086,22 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 		if file.endswith( '.pyc++' ):
 			fodg = []
 			cpp = pythonicpp( open(os.path.join(path,file),'rb').read().decode('utf-8'), header="/*generated from: %s*/" %file, info=info, binary_scramble=secure_binary, mangle_map=mangle_map, fodg=fodg )
-			open(os.path.join(path, file.replace('.pyc++', '.gen.cpp') ),'wb').write(cpp.encode('utf-8'))
+
+			if unreal:
+				if file == 'Plugin.pyc++':
+					upath = os.path.join(unreal_project, 'Plugins/%s/Source/%s/Private/' %(unreal_plugin_name, unreal_plugin_name) )
+					uname = unreal_plugin_name + '.cpp'
+				else:
+					upath = os.path.join(unreal_project, 'Plugins/%s/Source/%s/Private/' %(unreal_plugin_name, unreal_plugin_name) )
+					uname = file.replace('.pyc++', '.cpp')
+
+				if not os.path.isdir(upath):
+					os.makedirs(upath)
+				open(os.path.join(upath, uname ),'wb').write(cpp.encode('utf-8'))
+
+			else:
+				open(os.path.join(path, file.replace('.pyc++', '.gen.cpp') ),'wb').write(cpp.encode('utf-8'))
+
 			if fodg:
 				fodg = '\n'.join(fodg)
 				open(os.path.join(path, file.replace('.pyc++', '.pyc++.fodg') ),'wb').write(fodg.encode('utf-8'))
@@ -1033,7 +1113,46 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 				binary_scramble=secure_binary, mangle_map=mangle_map,
 				swap_self_to_this=file=='__user_pythonic__.pyh'
 			)
-			open(os.path.join(path, file.replace('.pyh', '.gen.h') ),'wb').write(cpp.encode('utf-8'))
+			if unreal:
+				if file == 'PrivatePCH.pyh':
+					upath = os.path.join(unreal_project, 'Plugins/%s/Source/%s/Private/' %(unreal_plugin_name, unreal_plugin_name) )
+					uname = unreal_plugin_name + 'PrivatePCH.h'
+				else:
+					upath = os.path.join(unreal_project, 'Plugins/%s/Source/%s/Classes/' %(unreal_plugin_name, unreal_plugin_name) )
+					uname = unreal_plugin_name + 'PrivatePCH.h'
+
+				if not os.path.isdir(upath):
+					os.makedirs(upath)
+				open(os.path.join(upath, uname ),'wb').write(cpp.encode('utf-8'))
+
+			else:
+				open(os.path.join(path, file.replace('.pyh', '.gen.h') ),'wb').write(cpp.encode('utf-8'))
+
+
+	if unreal:
+		uplugin = UPLUGIN_TEMPLATE %(
+			unreal_plugin_name, 
+			'tpython', 
+			'https://gitlab.com/hartsantler/tpythonpp',
+			'tpython plugin',
+			'Examples',
+			'true',
+			unreal_plugin_name,
+			'Developer',
+			'PreDefault'
+		)
+		upath = os.path.join(unreal_project, 'Plugins/%s/' %unreal_plugin_name )
+		if not os.path.isdir(upath):
+			os.makedirs(upath)
+		open(os.path.join(upath, '%s.uplugin' %unreal_plugin_name ),'wb').write(uplugin.encode('utf-8'))
+
+
+		buildcs = UNREAL_BUILD_TEMPLATE %tuple( [unreal_plugin_name]*7 )
+		upath = os.path.join(unreal_project, 'Plugins/%s/Source/%s/' %(unreal_plugin_name, unreal_plugin_name) )
+		if not os.path.isdir(upath):
+			os.makedirs(upath)
+		open(os.path.join(upath, '%s.Build.cs' %unreal_plugin_name ),'wb').write(buildcs.encode('utf-8'))
+
 
 	return info
 
@@ -1043,14 +1162,27 @@ def main():
 	pythonicpp_paths = []
 	mangle_map = []
 	obfuscate_map = {}
+	unreal_mode = False
+	unreal_plugin = None
+	unreal_project = None
 
 	for arg in sys.argv[1:]:
 		if arg.endswith('.py'):
 			input_file = arg
 		elif arg.startswith('--'):
-			exargs.append(arg)
+			if arg == '--unreal':
+				unreal_mode = True
+			else:
+				exargs.append(arg)
 		elif os.path.isdir(arg):
-			pythonicpp_paths.append( arg )
+			if unreal_mode:
+				if arg.endswith('.unreal'):
+					unreal_plugin = arg
+					pythonicpp_paths.append( arg )
+				else:
+					unreal_project = arg
+			else:
+				pythonicpp_paths.append( arg )
 		elif arg.startswith('[') and arg.endswith(']'):
 			mangle_map = json.loads(arg)
 		elif arg.endswith('.json'):
@@ -1084,7 +1216,9 @@ def main():
 				secure='--secure' in sys.argv, 
 				secure_binary='--secure-binary' in sys.argv, 
 				mangle_map=mangle_map,
-				obfuscate_map=obfuscate_map
+				obfuscate_map=obfuscate_map,
+				unreal=unreal_mode,
+				unreal_project = unreal_project
 			)
 			if not obfuscate_map:
 				p = path.split('/')[-1]

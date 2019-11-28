@@ -162,6 +162,8 @@ def rebuild(stage=None):
 
 	sdl_inc = ''
 	embed_bytecode = False
+	unreal_plugin = None
+	unreal_project = os.path.expanduser('~/Documents/Unreal Projects/MyProject')
 	for arg in sys.argv[1:]:
 		if arg.endswith('.py'):
 			embed_bytecode = True
@@ -179,6 +181,11 @@ def rebuild(stage=None):
 			if os.path.isfile('./tinypy/__user_pythonic__.pyh'):
 				defs += ' -DUSE_USER_CUSTOM_CPP'
 			break
+		elif arg.endswith('.unreal'):
+			unreal_plugin = arg
+			#mode = 'unreal'
+		elif os.path.isdir(arg):
+			unreal_project = arg
 
 	gen_interpreter(stage=stage)
 
@@ -278,7 +285,19 @@ def rebuild(stage=None):
 			sdl_inc = '-I/usr/local/include'
 			libs += ' -lSDL2'
 
-	if mode == 'includeos':
+	if unreal_plugin:
+		if not os.path.isdir(unreal_project):
+			os.makedirs( unreal_project )
+		cmd = [
+			'./tpython++compiler.py', 
+			'--beta', 
+			'--unreal', 
+			unreal_plugin,
+			unreal_project,
+		]
+		subprocess.check_call(cmd)
+
+	elif mode == 'includeos':
 		if not embed_bytecode:
 			raise RuntimeError('includeos builds require that you embed your bytecode')
 
