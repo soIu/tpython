@@ -163,7 +163,8 @@ def rebuild(stage=None):
 	sdl_inc = ''
 	embed_bytecode = False
 	unreal_plugin = None
-	unreal_project = os.path.expanduser('~/Documents/Unreal Projects/MyProject')
+	unreal_ver = None
+	unreal_project = os.path.expanduser('~/Documents/Unreal Projects/TPythonPluginTest')
 	for arg in sys.argv[1:]:
 		if arg.endswith('.py'):
 			embed_bytecode = True
@@ -186,6 +187,9 @@ def rebuild(stage=None):
 			#mode = 'unreal'
 		elif os.path.isdir(arg):
 			unreal_project = arg
+		elif arg.startswith('--unreal-'):
+			if arg.startswith('--unreal-version='):
+				unreal_ver = arg
 
 	gen_interpreter(stage=stage)
 
@@ -291,10 +295,14 @@ def rebuild(stage=None):
 		cmd = [
 			'./tpython++compiler.py', 
 			'--beta', 
-			'--unreal', 
+			'--unreal'
+		]
+		if unreal_ver:
+			cmd.append(unreal_ver)
+		cmd.extend([
 			unreal_plugin,
 			unreal_project,
-		]
+		])
 		subprocess.check_call(cmd)
 
 	elif mode == 'includeos':

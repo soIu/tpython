@@ -3,6 +3,8 @@
 import os, sys, subprocess, random, json
 from xml.sax.saxutils import escape
 
+UNREAL_VER = '4.2.0'   ## first tested with 4.2.0, current version is 4.23.1
+
 UPLUGIN_TEMPLATE = '''
 {
 	"FileVersion" : 3,
@@ -11,7 +13,7 @@ UPLUGIN_TEMPLATE = '''
 	"VersionName" : "1.0",
 	"CreatedBy" : "%s",
 	"CreatedByURL" : "%s",
-	"EngineVersion" : "4.2.0",
+	"EngineVersion" : "%s",
 	"Description" : "%s",
 	"Category" : "%s",
 	"EnabledByDefault" : %s,
@@ -100,7 +102,7 @@ def auto_semicolon(ln):
 					ln += ';'
 	return ln
 
-def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=False, binary_scramble=False, mangle_map=None, fodg=None ):
+def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=False, binary_scramble=False, mangle_map=None, fodg=None, unreal_plugin_name=None ):
 	if not type(source) is list:
 		source = source.splitlines()
 	if type(fodg) is list:
@@ -208,6 +210,10 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	fodgx = -16
 	fodgy = 0
 	fid = 0
+	in_unreal_plugin = False
+	unreal_plugin_cpp = []
+	extern_funcs = []
+
 	if 'functions' in info:
 		functions = info['functions']
 	else:
@@ -381,6 +387,17 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		#		autobrace = 0
 		#	continue
 
+		elif s == 'unreal.plugin:':
+			assert unreal_plugin_name
+			in_unreal_plugin = True
+			unreal_plugin_lib = list(out)
+			out = []
+			unreal_plugin_cpp.append('#include "%sPrivatePCH.h"' %unreal_plugin_name)
+			unreal_plugin_cpp.append('#include "I%s.h"' %unreal_plugin_name)
+			for efunc in extern_funcs:
+				unreal_plugin_cpp.append(efunc)
+			unreal_plugin_cpp.append('class F%s: I%s {' %(unreal_plugin_name, unreal_plugin_name))
+
 		elif s.startswith('import '):
 			inc = s.split()[-1]
 			if inc.startswith("<"):
@@ -523,6 +540,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				autofunc += 1
 
 			func_name = s[len('def ') : ].split('(')[0].strip()
+			if in_unreal_plugin:
+				assert func_name in ('StartupModule', 'ShutdownModule')
 
 			is_constructor = False
 			is_destructor = False
@@ -684,7 +703,11 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			else:
 				func = '\t'
 
-			if is_forward_decl:
+			if in_unreal_plugin:
+				assert len(args)==0
+				func += 'virtual %s() override {' %func_name
+
+			elif is_forward_decl:
 				if in_class and func_name == class_name:
 					func += '%s(%s) %s;' %(func_name, rawargs, exopts)
 				else:
@@ -694,6 +717,10 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					func += '%s(%s) %s{' %(func_name, ','.join(args), exopts)
 				else:
 					func += '%s %s(%s) %s{' %(returns, func_name, ','.join(args), exopts)
+					if prevs.startswith( ('@export', '@extern') ):
+						sig = 'extern %s %s(%s) %s;' %(returns, func_name, ','.join(args), exopts)
+						assert sig not in extern_funcs
+						extern_funcs.append(sig)
 
 			out.append(func)
 
@@ -1032,6 +1059,7 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 	info = {'classes':{}, 'functions':{}, 'obfuscations':new_obfuscate}
 	files = []
 	walk_path(path, files)
+	unreal_plugin_name=None
 	if unreal:
 		unreal_plugin_name = path.split('/')[-1].split('.')[0]
 
@@ -1085,12 +1113,23 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 	for path, file in files:
 		if file.endswith( '.pyc++' ):
 			fodg = []
-			cpp = pythonicpp( open(os.path.join(path,file),'rb').read().decode('utf-8'), header="/*generated from: %s*/" %file, info=info, binary_scramble=secure_binary, mangle_map=mangle_map, fodg=fodg )
+			cpp = pythonicpp( open(os.path.join(path,file),'rb').read().decode('utf-8'), header="/*generated from: %s*/" %file, info=info, binary_scramble=secure_binary, mangle_map=mangle_map, fodg=fodg, unreal_plugin_name=unreal_plugin_name )
 
 			if unreal:
 				if file == 'Plugin.pyc++':
+					assert type(cpp) is dict
+					uheader = cpp['header']
+					cpp = cpp['impl']
+
+					upath = os.path.join(unreal_project, 'Plugins/%s/Source/%s/Public/' %(unreal_plugin_name, unreal_plugin_name) )
+					uname = 'I' + unreal_plugin_name + '.h'
+					if not os.path.isdir(upath):
+						os.makedirs(upath)
+					open(os.path.join(upath, uname ),'wb').write(uheader.encode('utf-8'))
+
 					upath = os.path.join(unreal_project, 'Plugins/%s/Source/%s/Private/' %(unreal_plugin_name, unreal_plugin_name) )
 					uname = unreal_plugin_name + '.cpp'
+
 				else:
 					upath = os.path.join(unreal_project, 'Plugins/%s/Source/%s/Private/' %(unreal_plugin_name, unreal_plugin_name) )
 					uname = file.replace('.pyc++', '.cpp')
@@ -1134,6 +1173,7 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 			unreal_plugin_name, 
 			'tpython', 
 			'https://gitlab.com/hartsantler/tpythonpp',
+			UNREAL_VER,
 			'tpython plugin',
 			'Examples',
 			'true',
@@ -1157,6 +1197,7 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 	return info
 
 def main():
+	global UNREAL_VER
 	input_file = None
 	exargs = []
 	pythonicpp_paths = []
@@ -1172,6 +1213,8 @@ def main():
 		elif arg.startswith('--'):
 			if arg == '--unreal':
 				unreal_mode = True
+				if arg.startswith('--unreal-version='):
+					UNREAL_VER = arg.split('=')[-1]
 			else:
 				exargs.append(arg)
 		elif os.path.isdir(arg):
