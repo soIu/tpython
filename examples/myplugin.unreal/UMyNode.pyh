@@ -1,0 +1,11 @@
+// saved to: Plugins/myplugin/Source/myplugin/Classes/UMyNode.h
+
+
+@UCLASS
+class UMyNode( UObject ):
+	GENERATED_UCLASS_BODY()
+	@UFUNCTION(BlueprintCallable, Category="My Nodes")
+	def add( int a, int b ) -> int;
+
+
+

@@ -1,0 +1,16 @@
+def add( int a, int b ) ->int:
+	return a + b
+
+@export
+def foo( int a, int b ) ->int:
+	return add(a,b)
+
+
+unreal.plugin:
+	## `unreal.plugin` becomes `class Fmyplugin: public Imyplugin {`
+	def StartupModule():
+		print("hello world myplugin")
+		print( foo(1,2) )
+	def ShutdownModule():
+		print("exit myplugin")
+

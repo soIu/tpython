@@ -5,6 +5,21 @@ from xml.sax.saxutils import escape
 
 UNREAL_VER = '4.2.0'   ## first tested with 4.2.0, current version is 4.23.1
 
+UIFACE_TEMPLATE = '''
+#pragma('once')
+#include "ModuleManager.h"
+
+class I%s : public IModuleInterface {
+	public:
+		static I%s& Get() {
+			return FModuleManager::LoadModuleChecked<I%s>(FName("%s"));
+		}
+		static bool IsAvailable(){
+			return FModuleManager::Get().IsModuleLoaded(FName("%s"));
+		}
+};
+'''
+
 UPLUGIN_TEMPLATE = '''
 {
 	"FileVersion" : 3,
@@ -98,7 +113,7 @@ def auto_semicolon(ln):
 	if not s.endswith( ('{', '}', '(', ',', ':') ) and not s.startswith('#'):
 		if not s=='else' and not s.startswith( ('if ', 'if(') ):
 			if not s.endswith(';') and s:
-				if not s.startswith("TP_LOOP("):
+				if not s.startswith( ("TP_LOOP(", "GENERATED_UCLASS_BODY") ):
 					ln += ';'
 	return ln
 
@@ -210,8 +225,10 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	fodgx = -16
 	fodgy = 0
 	fid = 0
+
 	in_unreal_plugin = False
 	unreal_plugin_cpp = []
+	unreal_plugin_iface = []
 	extern_funcs = []
 
 	if 'functions' in info:
@@ -328,6 +345,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				b = '\t' * indent
 				b += '}'*braces
 				out.append(b)
+				if indent == 0 and in_unreal_plugin:
+					out[-1] += ';'
 			############################################
 			if in_class and indent <= class_indent:
 				in_class = False
@@ -397,6 +416,9 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			for efunc in extern_funcs:
 				unreal_plugin_cpp.append(efunc)
 			unreal_plugin_cpp.append('class F%s: I%s {' %(unreal_plugin_name, unreal_plugin_name))
+
+			unreal_plugin_iface.append(UIFACE_TEMPLATE % tuple([unreal_plugin_name]*5) )
+
 
 		elif s.startswith('import '):
 			inc = s.split()[-1]
@@ -968,7 +990,18 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		out.append('}')
 
 
-	cpp = '\n'.join(out)
+	if unreal_plugin_cpp:
+		unreal_plugin_cpp.extend(out)
+		unreal_plugin_cpp.append('IMPLEMENT_MODULE( F%s, %s )' %(unreal_plugin_name, unreal_plugin_name))
+		cpp = {
+			'lib': '\n'.join(unreal_plugin_lib),
+			'iface' : '\n'.join(unreal_plugin_iface),
+			'impl' : '\n'.join(unreal_plugin_cpp),
+		}
+	else:
+		cpp = '\n'.join(out)
+
+
 	if '--inspect-pythonic++' in sys.argv:
 		raise RuntimeError(cpp)
 
@@ -1118,7 +1151,7 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 			if unreal:
 				if file == 'Plugin.pyc++':
 					assert type(cpp) is dict
-					uheader = cpp['header']
+					uheader = cpp['iface']
 					cpp = cpp['impl']
 
 					upath = os.path.join(unreal_project, 'Plugins/%s/Source/%s/Public/' %(unreal_plugin_name, unreal_plugin_name) )
@@ -1133,6 +1166,7 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 				else:
 					upath = os.path.join(unreal_project, 'Plugins/%s/Source/%s/Private/' %(unreal_plugin_name, unreal_plugin_name) )
 					uname = file.replace('.pyc++', '.cpp')
+					cpp = ('#include "%s"\n' % file.replace('.pyc++', '.h')) + cpp
 
 				if not os.path.isdir(upath):
 					os.makedirs(upath)
@@ -1158,7 +1192,8 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 					uname = unreal_plugin_name + 'PrivatePCH.h'
 				else:
 					upath = os.path.join(unreal_project, 'Plugins/%s/Source/%s/Classes/' %(unreal_plugin_name, unreal_plugin_name) )
-					uname = unreal_plugin_name + 'PrivatePCH.h'
+					uname = file.replace('.pyh', '.h')
+					cpp = ('#include "%sPrivatePCH.h"\n' % unreal_plugin_name) + cpp
 
 				if not os.path.isdir(upath):
 					os.makedirs(upath)
