@@ -51,7 +51,7 @@ public class %s : ModuleRules {
 	public %s(TargetInfo Target) {
 		PrivateIncludePaths.AddRange(new string[] { "%s/Private" });
 		PublicIncludePaths.AddRange(new string[] { "%s/Public" });
-		PublicDependencyModuleNames.AddRange(new string[] {%s});
+		PublicDependencyModuleNames.AddRange(new string[] {"%s"});
 		var base_path = Path.GetFullPath(
 			Path.Combine(
 				Path.GetDirectoryName(ModuleDirectory), "../../../3rdparty")
@@ -61,10 +61,10 @@ public class %s : ModuleRules {
 			Log.TraceError(base_path);
 		}
 		PublicIncludePaths.Add( base_path );
-		PublicIncludePaths.AddRange( new string[] {%s} );
-		var path = Path.Combine(base_path, "__CPPMODULE__");
+		PublicIncludePaths.AddRange( new string[] {"%s"} );
+		var path = Path.Combine(base_path, "libtpython++.so");
 		PublicAdditionalLibraries.Add(path);
-		PublicAdditionalLibraries.AddRange( new string[] {%s});
+		PublicAdditionalLibraries.AddRange( new string[] {"%s"});
 		PublicDependencyModuleNames.AddRange(
 			new string[] {
 				"CoreUObject", "Engine", "InputCore", "RHI",
@@ -1151,8 +1151,11 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 			if unreal:
 				if file == 'Plugin.pyc++':
 					assert type(cpp) is dict
+					open('tinypy/__user_pythonic__.gen.h','wb').write(cpp['lib'].encode('utf-8'))
+
 					uheader = cpp['iface']
 					cpp = cpp['impl']
+
 
 					upath = os.path.join(unreal_project, 'Plugins/%s/Source/%s/Public/' %(unreal_plugin_name, unreal_plugin_name) )
 					uname = 'I' + unreal_plugin_name + '.h'

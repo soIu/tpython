@@ -154,11 +154,6 @@ def rebuild(stage=None):
 		mods = BlendotTypesFiles
 	opts = ''
 
-	if '--shared' in sys.argv:
-		exe = 'libtpython++.so'
-		exeopts = '-shared -fPIC '
-		opts = '-fPIC '
-		defs += ' -DSHAREDLIB'
 
 	sdl_inc = ''
 	embed_bytecode = False
@@ -185,11 +180,20 @@ def rebuild(stage=None):
 		elif arg.endswith('.unreal'):
 			unreal_plugin = arg
 			#mode = 'unreal'
+			defs += ' -DUSE_USER_CUSTOM_CPP'
 		elif os.path.isdir(arg):
 			unreal_project = arg
 		elif arg.startswith('--unreal-'):
 			if arg.startswith('--unreal-version='):
 				unreal_ver = arg
+
+
+	if '--shared' in sys.argv or unreal_plugin:
+		exe = 'libtpython++.so'
+		exeopts = '-shared -fPIC '
+		opts = '-fPIC '
+		defs += ' -DSHAREDLIB'
+
 
 	gen_interpreter(stage=stage)
 
@@ -305,7 +309,7 @@ def rebuild(stage=None):
 		])
 		subprocess.check_call(cmd)
 
-	elif mode == 'includeos':
+	if mode == 'includeos':
 		if not embed_bytecode:
 			raise RuntimeError('includeos builds require that you embed your bytecode')
 
