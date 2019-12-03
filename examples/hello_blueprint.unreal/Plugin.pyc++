@@ -1,0 +1,27 @@
+def add( int a, int b ) ->int:
+	return a + b
+
+@export
+def foo( int a, int b ) ->int:
+	return add(a,b)
+
+unreal.blueprint( "my_blueprint" ):
+	a = 'hello'
+	b = 'world'
+	c = 'foo bar'
+	d = 'never printed'
+	u = TArray( [1,2,3], type=int)
+	w = TArray( [], type=int)
+	for x in u:
+		print(a)
+		print(x)
+		w.Add( x*2 )
+
+
+unreal.plugin:
+	def StartupModule():
+		print("hello world myplugin")
+		print( foo(1,2) )
+	def ShutdownModule():
+		print("exit myplugin")
+

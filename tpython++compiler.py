@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import os, sys, subprocess, random, json
 from xml.sax.saxutils import escape
+import unrealgen, ast
 
 UNREAL_VER = '4.2.0'   ## first tested with 4.2.0, current version is 4.23.1
 
@@ -229,6 +230,9 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	in_unreal_plugin = False
 	unreal_plugin_cpp = []
 	unreal_plugin_iface = []
+	unreal_blueprints = {}
+	in_blueprint = False
+	unreal_blueprint = []
 	extern_funcs = []
 
 	if 'functions' in info:
@@ -249,6 +253,11 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			else:
 				break
 
+		if in_blueprint:
+			unreal_blueprint.append(ln)
+			if not ln.strip():
+				in_blueprint = False
+			continue
 
 		## curved upwards arrow is a reference
 		if u'⤴' in ln:
@@ -405,6 +414,10 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		#	if ln == '#endif':
 		#		autobrace = 0
 		#	continue
+		elif s.startswith('unreal.blueprint') and s.endswith(':'):
+			in_blueprint = True
+			blueprint_name = s.split('(')[-1].split(')')[0].strip()
+			unreal_blueprint = unreal_blueprints[blueprint_name] = []
 
 		elif s == 'unreal.plugin:':
 			assert unreal_plugin_name
@@ -997,7 +1010,23 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			'lib': '\n'.join(unreal_plugin_lib),
 			'iface' : '\n'.join(unreal_plugin_iface),
 			'impl' : '\n'.join(unreal_plugin_cpp),
+			'blueprints' : None
 		}
+		if unreal_blueprints:
+			bp_out = []
+			for bp_name in unreal_blueprints:
+				bp_src = unreal_blueprints[bp_name]
+				if bp_name.startswith( ('"', "'") ):
+					bp_name = bp_name[1:-1]
+				bp_out.append('with unreal.%s:' %bp_name)
+				bp_out.extend(bp_src)
+			bp_out = '\n'.join(bp_out)
+			ugen = unrealgen.UnrealGen(bp_out)
+			ugen.visit(ast.parse(bp_out))
+			ugen_script = ugen.get_gen_script()
+			#raise RuntimeError(ugen_script)
+			cpp['blueprints'] = ugen_script
+
 	else:
 		cpp = '\n'.join(out)
 
@@ -1152,6 +1181,13 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 				if file == 'Plugin.pyc++':
 					assert type(cpp) is dict
 					open('tinypy/__user_pythonic__.gen.h','wb').write(cpp['lib'].encode('utf-8'))
+
+					if cpp['blueprints']:
+						upath = os.path.join(unreal_project, 'Content/Scripts/' )
+						uname = 'gen_' + unreal_plugin_name + '.py'
+						if not os.path.isdir(upath):
+							os.makedirs(upath)
+						open(os.path.join(upath, uname ),'wb').write(cpp['blueprints'].encode('utf-8'))
 
 					uheader = cpp['iface']
 					cpp = cpp['impl']
