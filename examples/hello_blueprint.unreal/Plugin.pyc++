@@ -10,10 +10,14 @@ unreal.blueprint( "my_blueprint" ):
 	b = 'world'
 	c = 'foo bar'
 	d = 'never printed'
+	print(a)
+	if 1<=1:
+		print(a)
+	if a=='world':
+		print(a)
 	u = TArray( [1,2,3], type=int)
 	w = TArray( [], type=int)
 	for x in u:
-		print(a)
 		print(x)
 		w.Add( x*2 )
 

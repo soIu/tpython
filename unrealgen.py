@@ -44,12 +44,78 @@ _makefloat = _sys.MakeLiteralFloat
 def is_print(node):
 	#if isinstance(node, ast.Print):  ## python2
 	#	return True
-	if isinstance(node, ast.Call) and node.func=='print':
+	if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id=='print':
 		return True
 
 	return False
 
-class UnrealGen(ast.NodeVisitor):
+class CLikeLanguage:
+	def visit_Str(self, node):
+		return '"%s"' % node.s
+	def visit_Name(self, node):
+		return node.id
+
+	def visit_Not(self, node):
+		return '!'
+
+	def visit_USub(self, node):
+		return '-'
+		
+	def visit_And(self, node):
+		return ' && '
+
+	def visit_Or(self, node):
+		return ' || '
+
+
+	def visit_Eq(self, node):
+		return '=='
+
+	def visit_NotEq(self, node):
+		return '!='
+
+	def visit_Num(self, node):
+		return str(node.n)
+
+	def visit_Mult(self, node):
+		return '*'
+
+	def visit_Add(self, node):
+		return '+'
+
+	def visit_Sub(self, node):
+		return '-'
+
+	def visit_Div(self, node):
+		return '/'
+
+	def visit_Mod(self, node):
+		return '%'
+
+	def visit_Lt(self, node):
+		return '<'
+
+	def visit_Gt(self, node):
+		return '>'
+
+	def visit_GtE(self, node):
+		return '>='
+
+	def visit_LtE(self, node):
+		return '<='
+
+	def visit_LShift(self, node):
+		return '<<'
+	def visit_RShift(self, node):
+		return '>>'
+	def visit_BitXor(self, node):
+		return '^'
+	def visit_BitOr(self, node):
+		return '|'
+	def visit_BitAnd(self, node):
+		return '&'
+
+class UnrealGen(ast.NodeVisitor, CLikeLanguage):
 
 	def __init__(self, source_code):
 		self._line = None
@@ -79,7 +145,13 @@ class UnrealGen(ast.NodeVisitor):
 		visitor = getattr(self, method, self.generic_visit)
 		res = visitor(node)
 		self._stack.pop()
+		if res is None:
+			if isinstance(node, (ast.Load, ast.Module)):
+				return res
+			print(dir(node))
+			raise RuntimeError('TODO Node Type: %s' %self.format_error(node))
 		return res
+
 
 	def format_error(self, node):
 		lines = []
@@ -103,6 +175,42 @@ class UnrealGen(ast.NodeVisitor):
 				msg += '%s%s line:%s col:%s\n' % (' '*(l+1)*2, n.__class__.__name__, n.lineno-1, n.col_offset)
 		return msg
 
+
+	def visit_Compare(self, node):
+		comp = ['(']
+		left = self.visit(node.left)
+		if isinstance(node.left, ast.BinOp):
+			comp.extend( ['(', self.visit(node.left), ')'] )
+		else:
+			comp.append( self.visit(node.left) )
+
+		for i in range( len(node.ops) ):
+			op = node.ops[i]
+			rator = self.visit(node.comparators[i])
+
+			if isinstance(op, ast.In) or isinstance(op, ast.NotIn):
+				if comp[-1]==left:
+					comp.pop()
+				else:
+					comp.append(' && ')
+
+				comp.append('(std::find(%s->begin(), %s->end(), %s) != %s->end())' %(rator, rator, left, rator))
+				##slower than std::find ##
+				#comp.append('(std::count(%s->begin(), %s->end(), %s) >= 1)' %(rator, rator, left))
+
+			else:
+				comp.append( self.visit(op) )
+
+				if isinstance(node.comparators[i], ast.BinOp):
+					comp.append('(')
+					comp.append( self.visit(node.comparators[i]) )
+					comp.append(')')
+				else:
+					comp.append( self.visit(node.comparators[i]) )
+
+		comp.append( ')' )
+		print(comp)
+		return ' '.join( comp )
 
 	def visit_With(self, node):
 		#print(node.items)
@@ -162,10 +270,11 @@ class UnrealGen(ast.NodeVisitor):
 					#forname = 
 					#forcode = UnPyRuntime_ForEachArray %(forname, arrname, arrtype, itername, forbody)
 					#raise RuntimeError( '\n'.join(graph) )
-				elif isinstance(b, ast.Call):
+				elif isinstance(b, ast.Call) and not (isinstance(b.func, ast.Name) and b.func.id == 'print'):
 					#cname, fname = self.visit(b.func).split('.__doublecolon__.')
-					print(dir(b.func))
 					cname = fname = b.func.id
+					print(b.func)
+					print(fname)
 					graph.append('from unreal_engine.classes import %s as T' %cname)
 					graph.append('call_%s = _g.graph_add_node_call_function(T.%s, _x, _y)' %(fname, fname))
 					#graph.append('call_%s.node_find_pin("ReturnValue").make_link_to(set_%s.node_find_pin("%s"))' %(vname, vname, vname))
@@ -203,13 +312,14 @@ class UnrealGen(ast.NodeVisitor):
 					continue
 
 				elif isinstance(b, ast.If):
-					graph.append('print("new if")')
+					graph.append('print("	new if")')
 					graph.append('_x, _y = _g.graph_get_good_place_for_new_node()')
 					graph.append('_ifnode = _g.graph_add_node(_ifelse, _x, _y)')
 					graph.append('_mainnode.node_find_pin("Then_%s").make_link_to(_ifnode.node_find_pin("execute"))' %then)
 					graph.append('_iftest = _g.graph_add_node(_exp, _x-300, _y)')
 					#graph.append('_iftest.set_name("%s")' %self.visit(b.test))
-					graph.append("_iftest.Expression = '''%s'''" %self.visit(b.test))
+					expr = self.visit(b.test)
+					graph.append("_iftest.Expression = '''%s'''" %expr)
 					graph.append('_iftest.node_reconstruct()')
 					graph.append('_iftest.node_find_pin("ReturnValue").make_link_to(_ifnode.node_find_pin("Condition"))')
 
@@ -246,15 +356,16 @@ class UnrealGen(ast.NodeVisitor):
 
 
 				elif is_print(b):
-					graph.append('print("new print")')
+					graph.append('print("	new print")')
 					graph.append('_x, _y = _g.graph_get_good_place_for_new_node()')
 					graph.append('_printnode = _g.graph_add_node_call_function(_print, _x, _y)')
 					graph.append('_mainnode.node_find_pin("Then_%s").make_link_to(_printnode.node_find_pin("execute"))' %then)
-					for item in b.values:
-						if isinstance(item, ast.Name):
-							vname = item.id
+					for arg in b.args:
+						print(arg)
+						if isinstance(arg, ast.Name):
+							vname = arg.id
 							graph.append('get_%s = _g.graph_add_node_variable_get("%s", None, _x-100, _y)' %(vname,vname))
-							graph.append('_printnode.node_find_pin("InString").make_link_to(get_%s.node_find_pin("%s"))' %(item.id, item.id))
+							graph.append('_printnode.node_find_pin("InString").make_link_to(get_%s.node_find_pin("%s"))' %(vname, vname))
 
 				then += 1
 
@@ -268,6 +379,7 @@ class UnrealGen(ast.NodeVisitor):
 			#	open(os.path.join(sdir, 'make_graph.py'), 'wb').write(script)
 
 			self.graphs.append(script)
+			return script
 
 		else:
 			#raise SyntaxError('invalid use of "with" statement: %s' %self.visit(node.context_expr))
