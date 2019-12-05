@@ -1,5 +1,7 @@
 #!/usr/bin/python
 import os, sys, subprocess, random, json
+## run from any folder fix
+os.chdir( os.path.split(__file__)[0] )
 
 ## Ubuntu Notes:
 ## sudo apt-get install g++-arm-linux-gnueabi gcc-arm-linux-gnueabi binutils-arm-linux-gnueabi
@@ -422,7 +424,23 @@ def main():
 		os.system('rm -rf tinypy/blendot/scene/resources/*.fodg')
 		os.system('rm -rf tinypy/blendot/scene/resources/*.o')
 
-	if '--secure-binary' in sys.argv:
+	trans_files = []
+	for arg in sys.argv:
+		if arg.endswith( ('.pyc++', '.pyh') ):
+			trans_files.append(arg)
+
+	if len(trans_files):
+		for arg in trans_files:
+			cmd = [
+				'./tpython++compiler.py', 
+				arg
+			]
+			if '--debug' in sys.argv:
+				cmd.append('--debug')
+			print(cmd)
+			subprocess.check_call(cmd)
+
+	elif '--secure-binary' in sys.argv:
 		rebuild(stage=1)
 		rebuild(stage=2)
 	else:

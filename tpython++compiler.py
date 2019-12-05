@@ -420,7 +420,11 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			unreal_blueprint = unreal_blueprints[blueprint_name] = []
 
 		elif s == 'unreal.plugin:':
-			assert unreal_plugin_name
+			if not unreal_plugin_name:
+				if '.unreal/' in file_name:
+					unreal_plugin_name = os.path.split(file_name.split('.unreal/')[0])[-1]
+				else:
+					raise RuntimeError(file_name)
 			in_unreal_plugin = True
 			unreal_plugin_lib = list(out)
 			out = []
@@ -1115,12 +1119,18 @@ def walk_path(path, res):
 		elif os.path.isdir(os.path.join(path,file)):
 			walk_path( os.path.join(path,file), res)
 
-def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=None, obfuscate_map=None, unreal=False, unreal_project=None ):
-	print(path)
+def pythonicpp_translate( path, file=None, secure=False, secure_binary=False, mangle_map=None, obfuscate_map=None, unreal=False, unreal_project=None ):
+	if file:
+		print('	translate file: ', file)
+	else:
+		print('	translate path: ', path)
 	new_obfuscate = {}
 	info = {'classes':{}, 'functions':{}, 'obfuscations':new_obfuscate}
 	files = []
-	walk_path(path, files)
+	if file:
+		files.append([path,file])
+	else:
+		walk_path(path, files)
 	unreal_plugin_name=None
 	if unreal:
 		unreal_plugin_name = path.split('/')[-1].split('.')[0]
@@ -1175,18 +1185,32 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 	for path, file in files:
 		if file.endswith( '.pyc++' ):
 			fodg = []
-			cpp = pythonicpp( open(os.path.join(path,file),'rb').read().decode('utf-8'), header="/*generated from: %s*/" %file, info=info, binary_scramble=secure_binary, mangle_map=mangle_map, fodg=fodg, unreal_plugin_name=unreal_plugin_name )
+			cpp = pythonicpp(
+				open(os.path.join(path,file),'rb').read().decode('utf-8'), 
+				header="/*generated from: %s*/" %file, 
+				info=info, 
+				binary_scramble=secure_binary, 
+				mangle_map=mangle_map, 
+				fodg=fodg, 
+				unreal_plugin_name=unreal_plugin_name,
+				file_name=os.path.join(path,file)
+			)
 
-			if unreal:
+			if unreal or type(cpp) is dict:
 				if file == 'Plugin.pyc++':
 					assert type(cpp) is dict
-					open('tinypy/__user_pythonic__.gen.h','wb').write(cpp['lib'].encode('utf-8'))
+					if not unreal_plugin_name:
+						unreal_plugin_name = os.path.split(path.split('.')[0])[-1]
+					else:
+						print('	saving: ', 'tinypy/__user_pythonic__.gen.h')
+						open('tinypy/__user_pythonic__.gen.h','wb').write(cpp['lib'].encode('utf-8'))
 
 					if cpp['blueprints']:
 						upath = os.path.join(unreal_project, 'Content/Scripts/' )
 						uname = 'gen_' + unreal_plugin_name + '.py'
 						if not os.path.isdir(upath):
 							os.makedirs(upath)
+						print('	saving: ', os.path.join(upath, uname ))
 						open(os.path.join(upath, uname ),'wb').write(cpp['blueprints'].encode('utf-8'))
 
 					uheader = cpp['iface']
@@ -1197,6 +1221,7 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 					uname = 'I' + unreal_plugin_name + '.h'
 					if not os.path.isdir(upath):
 						os.makedirs(upath)
+					print('	saving: ', os.path.join(upath, uname ))
 					open(os.path.join(upath, uname ),'wb').write(uheader.encode('utf-8'))
 
 					upath = os.path.join(unreal_project, 'Plugins/%s/Source/%s/Private/' %(unreal_plugin_name, unreal_plugin_name) )
@@ -1209,9 +1234,12 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 
 				if not os.path.isdir(upath):
 					os.makedirs(upath)
+
+				print('	saving: ', os.path.join(upath, uname ))
 				open(os.path.join(upath, uname ),'wb').write(cpp.encode('utf-8'))
 
 			else:
+				print('	saving: ', os.path.join(path,file.replace('.pyc++', '.gen.cpp')))
 				open(os.path.join(path, file.replace('.pyc++', '.gen.cpp') ),'wb').write(cpp.encode('utf-8'))
 
 			if fodg:
@@ -1239,6 +1267,7 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 				open(os.path.join(upath, uname ),'wb').write(cpp.encode('utf-8'))
 
 			else:
+				print('	saving: ', os.path.join(path,file.replace('.pyh', '.gen.h')))
 				open(os.path.join(path, file.replace('.pyh', '.gen.h') ),'wb').write(cpp.encode('utf-8'))
 
 
@@ -1271,6 +1300,7 @@ def pythonicpp_translate( path, secure=False, secure_binary=False, mangle_map=No
 	return info
 
 def main():
+	print('pyc++ compilier and tpythonpp bytecode translator')
 	global UNREAL_VER
 	input_file = None
 	exargs = []
@@ -1279,10 +1309,12 @@ def main():
 	obfuscate_map = {}
 	unreal_mode = False
 	unreal_plugin = None
-	unreal_project = None
+	unreal_project = os.path.expanduser('~/Documents/Unreal Projects/TPythonPluginTest')
 
 	for arg in sys.argv[1:]:
 		if arg.endswith('.py'):
+			input_file = arg
+		elif arg.endswith( ('.pyc++', '.pyh') ):
 			input_file = arg
 		elif arg.startswith('--'):
 			if arg == '--unreal':
@@ -1306,9 +1338,38 @@ def main():
 			obfuscate_map = json.loads(open(arg,'rb').read())
 
 	if input_file:
+		cpp = None
+		scripts = []
 		path, name = os.path.split(input_file)
+		if os.path.isfile(input_file):
+			## rebuild.py called from the tpythonpp source folder
+			scripts, cpp = metapy2tinypypp( open(input_file, 'rb').read().decode('utf-8') )
+		else:
+			thisdir = os.path.split(os.path.abspath(__file__))[0]
+			## fixes relative paths
+			if thisdir.endswith('tpythonpp') and input_file.startswith('tpythonpp/'):
+				input_file = input_file[ len('tpythonpp/') : ]
+			input_file = os.path.join(thisdir, input_file)
+			assert os.path.isfile(input_file)
+			if input_file.endswith('.py'):
+				scripts, cpp = metapy2tinypypp( open(input_file, 'rb').read().decode('utf-8') )
+			else:
+				path, name = os.path.split(input_file)
+				if input_file.endswith('.pyh'):
+					print('translate phy file: ', input_file)
+				else:
+					print('translate pyc++ file: ', input_file)
 
-		scripts, cpp = metapy2tinypypp( open(input_file, 'rb').read().decode('utf-8') )
+				info = pythonicpp_translate(
+					path, 
+					file=name,
+					secure='--secure' in sys.argv, 
+					secure_binary='--secure-binary' in sys.argv, 
+					mangle_map=mangle_map,
+					obfuscate_map=obfuscate_map,
+					unreal=unreal_mode,
+					unreal_project = unreal_project
+				)
 
 		if cpp:
 			open('./tinypy/__user_pythonic__.pyh', 'wb').write(cpp.encode('utf-8'))
