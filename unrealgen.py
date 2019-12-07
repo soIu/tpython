@@ -366,6 +366,8 @@ class UnrealGen(ast.NodeVisitor, CLikeLanguage):
 							vname = arg.id
 							graph.append('get_%s = _g.graph_add_node_variable_get("%s", None, _x-100, _y)' %(vname,vname))
 							graph.append('_printnode.node_find_pin("InString").make_link_to(get_%s.node_find_pin("%s"))' %(vname, vname))
+						else:
+							raise SyntaxError('can only print variables, not type: %s' %str(arg))
 
 				then += 1
 

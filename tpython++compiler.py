@@ -1119,7 +1119,7 @@ def walk_path(path, res):
 		elif os.path.isdir(os.path.join(path,file)):
 			walk_path( os.path.join(path,file), res)
 
-def pythonicpp_translate( path, file=None, secure=False, secure_binary=False, mangle_map=None, obfuscate_map=None, unreal=False, unreal_project=None ):
+def pythonicpp_translate( path, file=None, secure=False, secure_binary=False, mangle_map=None, obfuscate_map=None, unreal=False, unreal_project=None, vis=None ):
 	if file:
 		print('	translate file: ', file)
 	else:
@@ -1244,7 +1244,13 @@ def pythonicpp_translate( path, file=None, secure=False, secure_binary=False, ma
 
 			if fodg:
 				fodg = '\n'.join(fodg)
-				open(os.path.join(path, file.replace('.pyc++', '.pyc++.fodg') ),'wb').write(fodg.encode('utf-8'))
+				fodg_path = os.path.join(path, file.replace('.pyc++', '.pyc++.fodg') )
+				open(fodg_path,'wb').write(fodg.encode('utf-8'))
+				if vis:
+					subprocess.check_call(['soffice', '--headless', '--convert-to', 'png:draw_png_Export', fodg_path], cwd='/tmp')
+					png_path = os.path.join('/tmp', file.replace('.pyc++', '.pyc++.png') )
+					subprocess.check_call(['convert', png_path, '-crop', '800x200x0x0', '+repage', vis])
+					subprocess.check_call(['mv', '-v', vis.replace('.png', '-0.png'), vis])
 
 		elif file.endswith( '.pyh' ):
 			cpp = pythonicpp( 
@@ -1310,6 +1316,7 @@ def main():
 	unreal_mode = False
 	unreal_plugin = None
 	unreal_project = os.path.expanduser('~/Documents/Unreal Projects/TPythonPluginTest')
+	vis_output = None
 
 	for arg in sys.argv[1:]:
 		if arg.endswith('.py'):
@@ -1321,6 +1328,10 @@ def main():
 				unreal_mode = True
 				if arg.startswith('--unreal-version='):
 					UNREAL_VER = arg.split('=')[-1]
+			elif arg.startswith('--vis'):
+				vis_output = arg.split('=')[-1]
+				if vis_output.startswith('"'):
+					vis_output = vis_output[1:-1]
 			else:
 				exargs.append(arg)
 		elif os.path.isdir(arg):
@@ -1368,7 +1379,8 @@ def main():
 					mangle_map=mangle_map,
 					obfuscate_map=obfuscate_map,
 					unreal=unreal_mode,
-					unreal_project = unreal_project
+					unreal_project = unreal_project,
+					vis=vis_output
 				)
 
 		if cpp:

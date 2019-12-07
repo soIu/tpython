@@ -425,9 +425,12 @@ def main():
 		os.system('rm -rf tinypy/blendot/scene/resources/*.o')
 
 	trans_files = []
+	vis = None
 	for arg in sys.argv:
 		if arg.endswith( ('.pyc++', '.pyh') ):
 			trans_files.append(arg)
+		elif arg.startswith('--vis'):
+			vis = arg
 
 	if len(trans_files):
 		for arg in trans_files:
@@ -437,6 +440,8 @@ def main():
 			]
 			if '--debug' in sys.argv:
 				cmd.append('--debug')
+			if vis:
+				cmd.append(vis)
 			print(cmd)
 			subprocess.check_call(cmd)
 
