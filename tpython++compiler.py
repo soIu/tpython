@@ -118,7 +118,7 @@ def auto_semicolon(ln):
 					ln += ';'
 	return ln
 
-def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=False, binary_scramble=False, mangle_map=None, fodg=None, unreal_plugin_name=None ):
+def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=False, binary_scramble=False, mangle_map=None, fodg=None, unreal_plugin_name=None, vis_cursor=None ):
 	if not type(source) is list:
 		source = source.splitlines()
 	if type(fodg) is list:
@@ -226,6 +226,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	fodgx = -16
 	fodgy = 0
 	fid = 0
+	in_vis = True
 
 	in_unreal_plugin = False
 	unreal_plugin_cpp = []
@@ -246,6 +247,13 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		color = 'LIGHTBLUE'
 		if '(' in ln and ')' in ln:
 			draw_type= 'round-rectangle'
+		if vis_cursor:
+			if line_num + 40 > vis_cursor[0]:
+				in_vis = False
+			elif line_num < vis_cursor[0]:
+				in_vis = False
+			else:
+				in_vis = True
 		indent = 0
 		for c in ln:
 			if c == '\t':
@@ -398,7 +406,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 		if not s:
 			in_class = False
-			if in_func and fodg:
+			if in_func and fodg and in_vis:
 				#fodg.append('<draw:enhanced-geometry svg:viewBox="0 0 21600 21600" draw:type="rectangle" draw:enhanced-path="M 0 0 L 21600 0 21600 21600 0 21600 0 0 Z N"/>')
 				#fodg.append('</draw:custom-shape>')
 				fodgx += 10
@@ -689,7 +697,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					args.append( arg )
 
 
-			if fodg:
+			if fodg and in_vis:
 				fid += 1
 				fodgy = 0
 				fodg.append(
@@ -902,7 +910,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		previ = indent
 
 
-		if fodg and in_func and oline.strip() and draw_type != 'cube':
+		if fodg and in_func and oline.strip() and draw_type != 'cube' and in_vis:
 			b = oline.replace('->', u' 🠊 ').replace('<=', u'≤').replace('>=', u'≥').replace('==', u'≡').replace('!=', u'≢')
 			b = b.replace('(', u'❪').replace(')', u'❫').replace('{', u'❴').replace('}', u'❵')
 			s = b.strip()
@@ -1119,7 +1127,7 @@ def walk_path(path, res):
 		elif os.path.isdir(os.path.join(path,file)):
 			walk_path( os.path.join(path,file), res)
 
-def pythonicpp_translate( path, file=None, secure=False, secure_binary=False, mangle_map=None, obfuscate_map=None, unreal=False, unreal_project=None, vis=None ):
+def pythonicpp_translate( path, file=None, secure=False, secure_binary=False, mangle_map=None, obfuscate_map=None, unreal=False, unreal_project=None, vis=None, vis_cursor=None ):
 	if file:
 		print('	translate file: ', file)
 	else:
@@ -1193,7 +1201,8 @@ def pythonicpp_translate( path, file=None, secure=False, secure_binary=False, ma
 				mangle_map=mangle_map, 
 				fodg=fodg, 
 				unreal_plugin_name=unreal_plugin_name,
-				file_name=os.path.join(path,file)
+				file_name=os.path.join(path,file),
+				vis_cursor=vis_cursor
 			)
 
 			if unreal or type(cpp) is dict:
@@ -1317,9 +1326,10 @@ def main():
 	unreal_plugin = None
 	unreal_project = os.path.expanduser('~/Documents/Unreal Projects/TPythonPluginTest')
 	vis_output = None
+	vis_cursor = None
 
 	for arg in sys.argv[1:]:
-		if arg.endswith('.py'):
+		if arg.endswith( ('.py', '.tinypy') ):
 			input_file = arg
 		elif arg.endswith( ('.pyc++', '.pyh') ):
 			input_file = arg
@@ -1328,6 +1338,12 @@ def main():
 				unreal_mode = True
 				if arg.startswith('--unreal-version='):
 					UNREAL_VER = arg.split('=')[-1]
+			elif arg.startswith('--vis-cursor'):  ## line-number : character offset
+				vis_cursor = arg.split('=')[-1]
+				cx,cy = vis_cursor.split('/')
+				cx = int(cx.strip())
+				cy = int(cy.strip())
+				vis_cursor = (cx,cy)
 			elif arg.startswith('--vis'):
 				vis_output = arg.split('=')[-1]
 				if vis_output.startswith('"'):
@@ -1352,36 +1368,33 @@ def main():
 		cpp = None
 		scripts = []
 		path, name = os.path.split(input_file)
-		if os.path.isfile(input_file):
-			## rebuild.py called from the tpythonpp source folder
+		thisdir = os.path.split(os.path.abspath(__file__))[0]
+		## fixes relative paths
+		if thisdir.endswith('tpythonpp') and input_file.startswith('tpythonpp/'):
+			input_file = input_file[ len('tpythonpp/') : ]
+		input_file = os.path.join(thisdir, input_file)
+		assert os.path.isfile(input_file)
+		if input_file.endswith( ('.py', '.tinypy') ):
 			scripts, cpp = metapy2tinypypp( open(input_file, 'rb').read().decode('utf-8') )
 		else:
-			thisdir = os.path.split(os.path.abspath(__file__))[0]
-			## fixes relative paths
-			if thisdir.endswith('tpythonpp') and input_file.startswith('tpythonpp/'):
-				input_file = input_file[ len('tpythonpp/') : ]
-			input_file = os.path.join(thisdir, input_file)
-			assert os.path.isfile(input_file)
-			if input_file.endswith('.py'):
-				scripts, cpp = metapy2tinypypp( open(input_file, 'rb').read().decode('utf-8') )
+			path, name = os.path.split(input_file)
+			if input_file.endswith('.pyh'):
+				print('translate phy file: ', input_file)
 			else:
-				path, name = os.path.split(input_file)
-				if input_file.endswith('.pyh'):
-					print('translate phy file: ', input_file)
-				else:
-					print('translate pyc++ file: ', input_file)
+				print('translate pyc++ file: ', input_file)
 
-				info = pythonicpp_translate(
-					path, 
-					file=name,
-					secure='--secure' in sys.argv, 
-					secure_binary='--secure-binary' in sys.argv, 
-					mangle_map=mangle_map,
-					obfuscate_map=obfuscate_map,
-					unreal=unreal_mode,
-					unreal_project = unreal_project,
-					vis=vis_output
-				)
+			info = pythonicpp_translate(
+				path, 
+				file=name,
+				secure='--secure' in sys.argv, 
+				secure_binary='--secure-binary' in sys.argv, 
+				mangle_map=mangle_map,
+				obfuscate_map=obfuscate_map,
+				unreal=unreal_mode,
+				unreal_project = unreal_project,
+				vis=vis_output,
+				vis_cursor=vis_cursor
+			)
 
 		if cpp:
 			open('./tinypy/__user_pythonic__.pyh', 'wb').write(cpp.encode('utf-8'))

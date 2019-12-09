@@ -163,7 +163,7 @@ def rebuild(stage=None):
 	unreal_ver = None
 	unreal_project = os.path.expanduser('~/Documents/Unreal Projects/TPythonPluginTest')
 	for arg in sys.argv[1:]:
-		if arg.endswith('.py'):
+		if arg.endswith( ('.py', '.tinypy') ):
 			embed_bytecode = True
 			defs += ' -DUSE_EMBEDDED_BYTECODE'
 			cmd = [
@@ -425,12 +425,12 @@ def main():
 		os.system('rm -rf tinypy/blendot/scene/resources/*.o')
 
 	trans_files = []
-	vis = None
+	vis_args = []
 	for arg in sys.argv:
 		if arg.endswith( ('.pyc++', '.pyh') ):
 			trans_files.append(arg)
 		elif arg.startswith('--vis'):
-			vis = arg
+			vis_args.append(arg)
 
 	if len(trans_files):
 		for arg in trans_files:
@@ -440,8 +440,8 @@ def main():
 			]
 			if '--debug' in sys.argv:
 				cmd.append('--debug')
-			if vis:
-				cmd.append(vis)
+			if vis_args:
+				cmd.extend(vis_args)
 			print(cmd)
 			subprocess.check_call(cmd)
 
