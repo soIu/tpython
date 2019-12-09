@@ -57,5 +57,8 @@ class FConfigSection;
 // Text
 class FText;
 class FTextFilterString;
+
+#ifndef MINIUNREAL
 enum class ETextFilterTextComparisonMode : uint8;
 enum class ETextFilterComparisonOperation : uint8;
+#endif

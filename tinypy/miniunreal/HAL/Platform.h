@@ -2,6 +2,15 @@
 
 #pragma once
 
+#ifdef MINIUNREAL
+	#include <stdint.h>
+	#define PLATFORM_DESKTOP 1
+	#define PLATFORM_64BITS 1
+	typedef char ANSICHAR;
+	typedef char WIDECHAR;
+#endif
+
+
 // define all other platforms to be zero
 //@port Define the platform here to be zero when compiling for other platforms
 #if !defined(PLATFORM_WINDOWS)
@@ -138,9 +147,9 @@
 //---------------------------------------------------------
 // Include main platform setup header (XXX/XXXPlatform.h)
 //---------------------------------------------------------
-
+#ifndef MINIUNREAL
 #include COMPILED_PLATFORM_HEADER(Platform.h)
-
+#endif
 //------------------------------------------------------------------
 // Finalize define setup
 //------------------------------------------------------------------
@@ -790,7 +799,7 @@ template<typename,typename> struct TAreTypesEqual;
 //------------------------------------------------------------------
 // Transfer the platform types to global types
 //------------------------------------------------------------------
-
+#ifndef MINIUNREAL
 //~ Unsigned base types.
 /// An 8-bit unsigned integer.
 typedef FPlatformTypes::uint8		uint8;
@@ -917,10 +926,12 @@ namespace TypeTests
 	static_assert(sizeof(SIZE_T) == sizeof(void *), "SIZE_T type size test failed.");
 	static_assert(SIZE_T(-1) > SIZE_T(0), "SIZE_T type sign test failed.");
 }
+#endif
 
 // Platform specific compiler setup.
+#ifndef MINIUNREAL
 #include COMPILED_PLATFORM_HEADER(PlatformCompilerSetup.h)
-
+#endif
 
 // If we don't have a platform-specific define for the TEXT macro, define it now.
 #if !defined(TEXT) && !UE_BUILD_DOCS
@@ -932,12 +943,13 @@ namespace TypeTests
 		#define TEXT(x) TEXT_PASTE(x)
 #endif
 
+
 // this function is used to suppress static analysis warnings
-#if PLATFORM_HTML5
-FORCEINLINE bool IsHTML5Platform() { return true; }
-#else
-FORCEINLINE bool IsHTML5Platform() { return false; }
+#ifndef MINIUNREAL
+	#if PLATFORM_HTML5
+	FORCEINLINE bool IsHTML5Platform() { return true; }
+	#else
+	FORCEINLINE bool IsHTML5Platform() { return false; }
+	#endif
 #endif
-
-
 
