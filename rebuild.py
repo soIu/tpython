@@ -58,7 +58,7 @@ TPLIB_FILES=tp.gen.cpp compiler.cpp runtime.gen.cpp
 
 
 %.o : %.cpp
-	<CC> $(CFLAGS) <DEFINES> -std=c++11 <OPTIONS> <SDL_INCLUDE> -I .  -I ./tinypy/blendot -c -o $@ $<
+	<CC> $(CFLAGS) <DEFINES> -std=c++11 <OPTIONS> <SDL_INCLUDE> -I .  -I ./tinypy/blendot -I ./tinypy/miniunreal -c -o $@ $<
 
 all: <EXE>
 
@@ -159,6 +159,7 @@ def rebuild(stage=None):
 
 	sdl_inc = ''
 	embed_bytecode = False
+	miniunreal = False
 	unreal_plugin = None
 	unreal_ver = None
 	unreal_project = os.path.expanduser('~/Documents/Unreal Projects/TPythonPluginTest')
@@ -188,6 +189,9 @@ def rebuild(stage=None):
 		elif arg.startswith('--unreal-'):
 			if arg.startswith('--unreal-version='):
 				unreal_ver = arg
+		elif arg == '--unreal':
+			miniunreal = True
+			defs += ' -DMINIUNREAL'
 
 
 	if '--shared' in sys.argv or unreal_plugin:

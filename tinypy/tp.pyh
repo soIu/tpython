@@ -25,6 +25,10 @@ import "blendot/scene/3d/mesh_instance.h"
 import "servers/visual/visual_server_raster.h"
 #endif
 
+#ifdef MINIUNREAL
+import "miniunreal/CoreFwd.h"
+#endif
+
 import <cstddef>
 
 #ifdef INCLUDEOS
