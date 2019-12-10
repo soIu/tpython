@@ -3,9 +3,7 @@
 #pragma once
 
 #include "CoreTypes.h"
-#ifndef MINIUNREAL
-	#include "Containers/ContainersFwd.h"
-#endif
+#include "Containers/ContainersFwd.h"
 #include "UObject/UObjectHierarchyFwd.h"
 
 // Basic types

@@ -27,6 +27,8 @@ import "servers/visual/visual_server_raster.h"
 
 #ifdef MINIUNREAL
 import "miniunreal/CoreFwd.h"
+import "miniunreal/EngineFwd.h"
+import "miniunreal/UObject/Object.h"
 #endif
 
 import <cstddef>
