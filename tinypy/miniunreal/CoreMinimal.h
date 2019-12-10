@@ -20,15 +20,6 @@
 	Commonly used headers
 ----------------------------------------------------------------------------*/
 #ifdef MINIUNREAL
-	#define FORCEINLINE_STATS 
-	#define uint32 uint32_t
-	#define int32 int32_t
-	#define SIZE_T size_t
-	#define COREUOBJECT_API 
-	#define TStatId uint
-	#define DECLARE_FUNCTION(foo)
-	#define UE_DEPRECATED(foo,bar)
-	#define DECLARE_LOG_CATEGORY_EXTERN(a,b,c)
 #else
 #include "Misc/VarArgs.h"
 #include "Logging/LogVerbosity.h"

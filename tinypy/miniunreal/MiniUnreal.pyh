@@ -1,0 +1,31 @@
+#pragma once
+
+#ifdef MINIUNREAL
+import "GenericPlatform/GenericPlatform.h"
+import <wchar.h>
+define(TCHAR=wchar_t)
+##define WIDECHAR wchar_t
+##define ANSICHAR char
+define(FORCEINLINE_STATS=)
+define(uint64=uint64_t)
+define(int64=int64_t)
+define(uint32=uint32_t)
+define(int32=int32_t)
+define(SIZE_T=size_t)
+define(int8=int8_t)
+define(uint8=uint8_t)
+define(int16=int16_t)
+define(uint16=uint16_t)
+define(COREUOBJECT_API=) 
+define(TStatId=uint32)
+#define DECLARE_FUNCTION(foo)
+#define UE_DEPRECATED(foo,bar)
+#define DECLARE_LOG_CATEGORY_EXTERN(a,b,c)
+define(AGGRESSIVE_MEMORY_SAVING=0)
+define(CORE_API=)
+define(PTRINT=uint64)
+define(CA_NO_RETURN=)
+define(FORCEINLINE_DEBUGGABLE=inline)
+#endif
+
+
