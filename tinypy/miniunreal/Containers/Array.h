@@ -1202,7 +1202,9 @@ public:
 	 */
 	void CountBytes(FArchive& Ar) const
 	{
+#ifndef MINIUNREAL
 		Ar.CountBytes(ArrayNum*sizeof(ElementType), ArrayMax*sizeof(ElementType));
+#endif
 	}
 
 	/**

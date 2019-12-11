@@ -10,15 +10,19 @@
 #include "Containers/Map.h"
 #include "Containers/EnumAsByte.h"
 
-#ifndef MINIUNREAL
-	#include "Templates/SharedPointer.h"
-	#include "Internationalization/TextKey.h"
-	#include "Internationalization/LocKeyFuncs.h"
+#include "Templates/SharedPointer.h"
+#include "Internationalization/TextKey.h"
+#include "Internationalization/LocKeyFuncs.h"
+
+#ifdef MINIUNREAL
+	#define OUT
+#else
 	#include "Internationalization/CulturePointer.h"
 	#include "Internationalization/TextLocalizationManager.h"
-	#include "Internationalization/StringTableCoreFwd.h"
-	#include "Internationalization/ITextData.h"
 #endif
+
+#include "Internationalization/StringTableCoreFwd.h"
+#include "Internationalization/ITextData.h"
 
 #include "Misc/Optional.h"
 #include "Templates/UniquePtr.h"
@@ -187,8 +191,9 @@ struct CORE_API FNumberFormattingOptions
 	int32 MaximumFractionalDigits;
 	FNumberFormattingOptions& SetMaximumFractionalDigits( int32 InValue ){ MaximumFractionalDigits = InValue; return *this; }
 
+#ifndef MINIUNREAL
 	friend void operator<<(FStructuredArchive::FSlot Slot, FNumberFormattingOptions& Value);
-
+#endif
 	/** Get the hash code to use for the given formatting options */
 	friend uint32 GetTypeHash( const FNumberFormattingOptions& Key );
 
@@ -209,8 +214,9 @@ struct CORE_API FNumberParsingOptions
 	bool UseGrouping;
 	FNumberParsingOptions& SetUseGrouping( bool InValue ){ UseGrouping = InValue; return *this; }
 
+#ifndef MINIUNREAL
 	friend void operator<<(FStructuredArchive::FSlot Slot, FNumberParsingOptions& Value);
-
+#endif
 	/** Get the hash code to use for the given parsing options */
 	friend uint32 GetTypeHash( const FNumberParsingOptions& Key );
 
@@ -300,6 +306,7 @@ public:
 	/**
 	 * Get the format pattern definition being used.
 	 */
+#ifndef MINIUNREAL
 	FTextFormatPatternDefinitionConstRef GetPatternDefinition() const;
 
 	/**
@@ -307,7 +314,7 @@ public:
 	 * @return true if the pattern is valid, or false if not (false may also fill in OutValidationErrors).
 	 */
 	bool ValidatePattern(const FCulturePtr& InCulture, TArray<FString>& OutValidationErrors) const;
-
+#endif
 	/**
 	 * Append the names of any arguments to the given array.
 	 */
@@ -318,8 +325,9 @@ private:
 	 * Construct an instance from an FString.
 	 * The string will be immediately compiled.
 	 */
+#ifndef MINIUNREAL
 	FTextFormat(FString&& InString, FTextFormatPatternDefinitionConstRef InCustomPatternDef);
-
+#endif
 	/** Cached compiled expression data */
 	TSharedRef<FTextFormatData, ESPMode::ThreadSafe> TextFormatData;
 };
@@ -354,6 +362,8 @@ public:
 	/**
 	 * Generate an FText that represents the passed number in the current culture
 	 */
+#ifndef MINIUNREAL
+
 	static FText AsNumber(float Val,	const FNumberFormattingOptions* const Options = NULL, const FCulturePtr& TargetCulture = NULL);
 	static FText AsNumber(double Val,	const FNumberFormattingOptions* const Options = NULL, const FCulturePtr& TargetCulture = NULL);
 	static FText AsNumber(int8 Val,		const FNumberFormattingOptions* const Options = NULL, const FCulturePtr& TargetCulture = NULL);
@@ -427,6 +437,10 @@ public:
 	 * @return The found text, or a dummy FText if not found.
 	 */
 	static FText FromStringTable(const FName InTableId, const FString& InKey, const EStringTableLoadingPolicy InLoadingPolicy = EStringTableLoadingPolicy::FindOrLoad);
+
+//endof MINIUNREAL
+#endif
+
 
 	/**
 	 * Generate an FText representing the pass name
@@ -523,9 +537,10 @@ public:
 
 	static void GetFormatPatternParameters(const FTextFormat& Fmt, TArray<FString>& ParameterNames);
 
+#ifndef MINIUNREAL
 	static FText Format(FTextFormat Fmt, const FFormatNamedArguments& InArguments);
 	static FText Format(FTextFormat Fmt, FFormatNamedArguments&& InArguments);
-
+#endif
 	static FText Format(FTextFormat Fmt, const FFormatOrderedArguments& InArguments);
 	static FText Format(FTextFormat Fmt, FFormatOrderedArguments&& InArguments);
 
@@ -598,6 +613,7 @@ public:
 	 *
 	 * @param TextGenerator the text generator object that will generate the text
 	 */
+#ifndef MINIUNREAL
 	static FText FromTextGenerator( const TSharedRef<ITextGenerator>& TextGenerator );
 
 	DECLARE_DELEGATE_RetVal_OneParam( TSharedRef<ITextGenerator>, FCreateTextGeneratorDelegate, FStructuredArchive::FRecord );
@@ -663,6 +679,7 @@ public:
 	{
 		UnregisterTextGenerator( T::TypeID );
 	}
+#endif
 
 	bool IsTransient() const;
 	bool IsCultureInvariant() const;
@@ -692,10 +709,10 @@ private:
 	FText( FString&& InSourceString, FTextDisplayStringRef InDisplayString );
 
 	FText( FString&& InSourceString, const FTextKey& InNamespace, const FTextKey& InKey, uint32 InFlags=0 );
-
+#ifndef MINIUNREAL
 	static void SerializeText(FArchive& Ar, FText& Value);
 	static void SerializeText(FStructuredArchive::FSlot Slot, FText& Value);
-
+#endif
 	/** Returns the source string of the FText */
 	const FString& GetSourceString() const;
 
@@ -719,9 +736,11 @@ private:
 	template<typename T1, typename T2>
 	static FText AsPercentTemplate(T1 Val, const FNumberFormattingOptions* const Options, const FCulturePtr& TargetCulture);
 
+#ifndef MINIUNREAL
 private:
 	template < typename T >
 	static TSharedRef<ITextGenerator> CreateTextGenerator(FStructuredArchive::FRecord Record);
+#endif
 
 private:
 	/** The internal shared data for this FText */
@@ -813,9 +832,9 @@ public:
 	{
 		UIntValue = (uint64)Value;
 	}
-
+#ifndef MINIUNREAL
 	friend void operator<<(FStructuredArchive::FSlot Slot, FFormatArgumentValue& Value);
-
+#endif
 	FString ToFormattedString(const bool bInRebuildText, const bool bInRebuildAsSource) const;
 	void ToFormattedString(const bool bInRebuildText, const bool bInRebuildAsSource, FString& OutResult) const;
 
@@ -876,12 +895,13 @@ private:
 	TOptional<FText> TextValue;
 };
 
+#ifndef MINIUNREAL
 template < typename T >
 inline TSharedRef<ITextGenerator> FText::CreateTextGenerator(FStructuredArchive::FRecord Record)
 {
 	return MakeShared<T>();
 }
-
+#endif
 /**
  * Used to pass argument/value pairs into FText::Format via UKismetTextLibrary::Format.
  * @note The primary consumer of this type is Blueprints (via a UHT mirror node). It is *not* expected that this be used in general C++ as FFormatArgumentValue is a much better type.
@@ -897,9 +917,9 @@ struct CORE_API FFormatArgumentData
 	void ResetValue();
 
 	FFormatArgumentValue ToArgumentValue() const;
-
+#ifndef MINIUNREAL
 	friend void operator<<(FStructuredArchive::FSlot Slot, FFormatArgumentData& Value);
-
+#endif
 	FString ArgumentName;
 
 	// This is a non-unioned version of FFormatArgumentValue that only accepts the types needed by Blueprints
@@ -913,7 +933,7 @@ struct CORE_API FFormatArgumentData
 
 namespace TextFormatUtil
 {
-
+#ifndef MINIUNREAL
 	template < typename TName, typename TValue >
 	void FormatNamed( OUT FFormatNamedArguments& Result, TName&& Name, TValue&& Value )
 	{
@@ -939,85 +959,86 @@ namespace TextFormatUtil
 		FormatOrdered( Result, Forward< TValue >( Value ) );
 		FormatOrdered( Result, Forward< TArguments >( Args )... );
 	}
-
+#endif
 } // namespace TextFormatUtil
 
-template < typename... TArguments >
-FText FText::FormatNamed( FTextFormat Fmt, TArguments&&... Args )
-{
-	static_assert( sizeof...( TArguments ) % 2 == 0, "FormatNamed requires an even number of Name <-> Value pairs" );
-
-	FFormatNamedArguments FormatArguments;
-	FormatArguments.Reserve( sizeof...( TArguments ) / 2 );
-	TextFormatUtil::FormatNamed( FormatArguments, Forward< TArguments >( Args )... );
-	return FormatNamedImpl( MoveTemp( Fmt ), MoveTemp( FormatArguments ) );
-}
-
-template < typename... TArguments >
-FText FText::FormatOrdered( FTextFormat Fmt, TArguments&&... Args )
-{
-	FFormatOrderedArguments FormatArguments;
-	FormatArguments.Reserve( sizeof...( TArguments ) );
-	TextFormatUtil::FormatOrdered( FormatArguments, Forward< TArguments >( Args )... );
-	return FormatOrderedImpl( MoveTemp( Fmt ), MoveTemp( FormatArguments ) );
-}
-
-/** Used to gather information about a historic text format operation */
-class CORE_API FHistoricTextFormatData
-{
-public:
-	FHistoricTextFormatData()
+#ifndef MINIUNREAL
+	template < typename... TArguments >
+	FText FText::FormatNamed( FTextFormat Fmt, TArguments&&... Args )
 	{
+		static_assert( sizeof...( TArguments ) % 2 == 0, "FormatNamed requires an even number of Name <-> Value pairs" );
+
+		FFormatNamedArguments FormatArguments;
+		FormatArguments.Reserve( sizeof...( TArguments ) / 2 );
+		TextFormatUtil::FormatNamed( FormatArguments, Forward< TArguments >( Args )... );
+		return FormatNamedImpl( MoveTemp( Fmt ), MoveTemp( FormatArguments ) );
+	}
+	template < typename... TArguments >
+	FText FText::FormatOrdered( FTextFormat Fmt, TArguments&&... Args )
+	{
+		FFormatOrderedArguments FormatArguments;
+		FormatArguments.Reserve( sizeof...( TArguments ) );
+		TextFormatUtil::FormatOrdered( FormatArguments, Forward< TArguments >( Args )... );
+		return FormatOrderedImpl( MoveTemp( Fmt ), MoveTemp( FormatArguments ) );
 	}
 
-	FHistoricTextFormatData(FText InFormattedText, FTextFormat&& InSourceFmt, FFormatNamedArguments&& InArguments)
-		: FormattedText(MoveTemp(InFormattedText))
-		, SourceFmt(MoveTemp(InSourceFmt))
-		, Arguments(MoveTemp(InArguments))
+	/** Used to gather information about a historic text format operation */
+	class CORE_API FHistoricTextFormatData
 	{
-	}
+	public:
+		FHistoricTextFormatData()
+		{
+		}
 
-	/** The final formatted text this data is for */
-	FText FormattedText;
+		FHistoricTextFormatData(FText InFormattedText, FTextFormat&& InSourceFmt, FFormatNamedArguments&& InArguments)
+			: FormattedText(MoveTemp(InFormattedText))
+			, SourceFmt(MoveTemp(InSourceFmt))
+			, Arguments(MoveTemp(InArguments))
+		{
+		}
 
-	/** The pattern used to format the text */
-	FTextFormat SourceFmt;
+		/** The final formatted text this data is for */
+		FText FormattedText;
 
-	/** Arguments to replace in the pattern string */
-	FFormatNamedArguments Arguments;
-};
+		/** The pattern used to format the text */
+		FTextFormat SourceFmt;
 
-/** Used to gather information about a historic numeric format operation */
-class CORE_API FHistoricTextNumericData
-{
-public:
-	enum class EType : uint8
-	{
-		AsNumber,
-		AsPercent,
+		/** Arguments to replace in the pattern string */
+		FFormatNamedArguments Arguments;
 	};
 
-	FHistoricTextNumericData()
-		: FormatType(EType::AsNumber)
+	/** Used to gather information about a historic numeric format operation */
+	class CORE_API FHistoricTextNumericData
 	{
-	}
+	public:
+		enum class EType : uint8
+		{
+			AsNumber,
+			AsPercent,
+		};
 
-	FHistoricTextNumericData(const EType InFormatType, const FFormatArgumentValue& InSourceValue, const TOptional<FNumberFormattingOptions>& InFormatOptions)
-		: FormatType(InFormatType)
-		, SourceValue(InSourceValue)
-		, FormatOptions(InFormatOptions)
-	{
-	}
+		FHistoricTextNumericData()
+			: FormatType(EType::AsNumber)
+		{
+		}
 
-	/** Type of numeric format that was performed */
-	EType FormatType;
+		FHistoricTextNumericData(const EType InFormatType, const FFormatArgumentValue& InSourceValue, const TOptional<FNumberFormattingOptions>& InFormatOptions)
+			: FormatType(InFormatType)
+			, SourceValue(InSourceValue)
+			, FormatOptions(InFormatOptions)
+		{
+		}
 
-	/** The source number to format */
-	FFormatArgumentValue SourceValue;
+		/** Type of numeric format that was performed */
+		EType FormatType;
 
-	/** Custom formatting options used when formatting this number (if any) */
-	TOptional<FNumberFormattingOptions> FormatOptions;
-};
+		/** The source number to format */
+		FFormatArgumentValue SourceValue;
+
+		/** Custom formatting options used when formatting this number (if any) */
+		TOptional<FNumberFormattingOptions> FormatOptions;
+	};
+#endif
 
 /** A snapshot of an FText at a point in time that can be used to detect changes in the FText, including live-culture changes */
 class CORE_API FTextSnapshot
@@ -1066,7 +1087,9 @@ public:
 	static TOptional<FString> GetKey(const FText& Text);
 	static const FString* GetSourceString(const FText& Text);
 	static const FString& GetDisplayString(const FText& Text);
+#ifndef MINIUNREAL
 	static const FTextDisplayStringRef GetSharedDisplayString(const FText& Text);
+#endif
 	static bool GetTableIdAndKey(const FText& Text, FName& OutTableId, FString& OutKey);
 	static uint32 GetFlags(const FText& Text);
 	static void GetHistoricFormatData(const FText& Text, TArray<FHistoricTextFormatData>& OutHistoricFormatData);

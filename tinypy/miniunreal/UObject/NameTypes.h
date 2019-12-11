@@ -8,7 +8,11 @@
 #include "Templates/UnrealTypeTraits.h"
 #include "Templates/UnrealTemplate.h"
 #include "Containers/UnrealString.h"
-#include "HAL/CriticalSection.h"
+
+#ifndef MINIUNREAL
+	#include "HAL/CriticalSection.h"
+#endif
+
 #include "Containers/StringConv.h"
 #include "UObject/UnrealNames.h"
 #include "Templates/Atomic.h"

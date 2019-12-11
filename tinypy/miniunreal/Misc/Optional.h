@@ -54,7 +54,9 @@ public:
 	{
 		if (InValue.bIsSet)
 		{
+#ifndef MINIUNREAL
 			new(&Value) OptionalType(*(const OptionalType*)&InValue.Value);
+#endif
 			bIsSet = true;
 		}
 	}
@@ -155,6 +157,8 @@ public:
 		return !(lhs == rhs);
 	}
 
+#ifndef MINIUNREAL
+
 	friend FArchive& operator<<(FArchive& Ar, TOptional& Optional)
 	{
 		bool bOptionalIsSet = Optional.bIsSet;
@@ -183,6 +187,7 @@ public:
 		}
 		return Ar;
 	}
+#endif
 
 	/** @return true when the value is meaningful; false if calling GetValue() is undefined. */
 	bool IsSet() const { return bIsSet; }
