@@ -17,11 +17,13 @@
 
 #ifndef MINIUNREAL
 	#include "Serialization/Archive.h"
-	#include "Algo/Heapify.h"
-	#include "Algo/HeapSort.h"
-	#include "Algo/IsHeap.h"
-	#include "Algo/Impl/BinaryHeap.h"
 #endif
+
+#include "Algo/Heapify.h"
+#include "Algo/HeapSort.h"
+#include "Algo/IsHeap.h"
+#include "Algo/Impl/BinaryHeap.h"
+
 
 #include "Templates/IdentityFunctor.h"
 #include "Templates/Less.h"

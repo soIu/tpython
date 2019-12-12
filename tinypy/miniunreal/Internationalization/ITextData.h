@@ -3,7 +3,9 @@
 #pragma once
 
 #include "CoreTypes.h"
-#include "Internationalization/TextLocalizationManager.h"
+#ifndef MINIUNREAL
+	#include "Internationalization/TextLocalizationManager.h"
+#endif
 
 class FTextHistory;
 

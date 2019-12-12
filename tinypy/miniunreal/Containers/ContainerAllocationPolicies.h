@@ -5,15 +5,10 @@
 #include "CoreTypes.h"
 #include "Misc/AssertionMacros.h"
 #include "HAL/UnrealMemory.h"
-
-#ifdef MINIUNREAL
-	#include "HAL/PlatformMath.h"
-#else
-	#include "Templates/TypeCompatibleBytes.h"
-	#include "HAL/PlatformMath.h"
-	#include "Templates/MemoryOps.h"
-	#include "Math/NumericLimits.h"
-#endif
+#include "Templates/TypeCompatibleBytes.h"
+#include "HAL/PlatformMath.h"
+#include "Templates/MemoryOps.h"
+#include "Math/NumericLimits.h"
 
 class FDefaultBitArrayAllocator;
 

@@ -26,6 +26,7 @@ define(CORE_API=)
 define(PTRINT=uint64)
 define(CA_NO_RETURN=)
 define(FORCEINLINE_DEBUGGABLE=inline)
+define(TYPE_OF_NULLPTR=nullptr_t)
 #endif
 
 

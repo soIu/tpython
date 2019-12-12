@@ -705,8 +705,9 @@ private:
 	explicit FText( FString&& InSourceString );
 
 	FText( FName InTableId, FString InKey, const EStringTableLoadingPolicy InLoadingPolicy );
-
+#ifndef MINIUNREAL
 	FText( FString&& InSourceString, FTextDisplayStringRef InDisplayString );
+#endif
 
 	FText( FString&& InSourceString, const FTextKey& InNamespace, const FTextKey& InKey, uint32 InFlags=0 );
 #ifndef MINIUNREAL
@@ -728,6 +729,7 @@ private:
 	static FText FormatNamedImpl(FTextFormat&& Fmt, FFormatNamedArguments&& InArguments);
 	static FText FormatOrderedImpl(FTextFormat&& Fmt, FFormatOrderedArguments&& InArguments);
 
+#ifndef MINIUNREAL
 private:
 	template<typename T1, typename T2>
 	static FText AsNumberTemplate(T1 Val, const FNumberFormattingOptions* const Options, const FCulturePtr& TargetCulture);
@@ -736,7 +738,6 @@ private:
 	template<typename T1, typename T2>
 	static FText AsPercentTemplate(T1 Val, const FNumberFormattingOptions* const Options, const FCulturePtr& TargetCulture);
 
-#ifndef MINIUNREAL
 private:
 	template < typename T >
 	static TSharedRef<ITextGenerator> CreateTextGenerator(FStructuredArchive::FRecord Record);

@@ -4,12 +4,9 @@
 
 #include "CoreTypes.h"
 #include "Templates/UnrealTemplate.h"
-
-#ifndef MINIUNREAL
-	#include "Templates/PointerIsConvertibleFromTo.h"
-	#include "Templates/IsArray.h"
-	#include "Templates/RemoveExtent.h"
-#endif
+#include "Templates/PointerIsConvertibleFromTo.h"
+#include "Templates/IsArray.h"
+#include "Templates/RemoveExtent.h"
 
 // Single-ownership smart pointer in the vein of std::unique_ptr.
 // Use this when you need an object's lifetime to be strictly bound to the lifetime of a single smart pointer.
