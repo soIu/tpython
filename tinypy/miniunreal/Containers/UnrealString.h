@@ -20,6 +20,8 @@
 	#include "Math/UnrealMathUtility.h"
 	#include "Templates/Invoke.h"
 	#include "Templates/AndOrNot.h"
+	#include "Templates/IsArrayOrRefOfType.h"
+	#include "Templates/TypeHash.h"
 
 #else
 

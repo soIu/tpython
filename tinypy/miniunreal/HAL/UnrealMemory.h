@@ -2,6 +2,10 @@
 
 #pragma once
 
+#ifdef MINIUNREAL
+	#include <cstdlib>
+#endif
+
 #include "CoreTypes.h"
 #include "Templates/IsPointer.h"
 #include "HAL/PlatformMemory.h"
@@ -87,17 +91,23 @@ struct CORE_API FMemory
 
 	static FORCEINLINE void* Memmove( void* Dest, const void* Src, SIZE_T Count )
 	{
+#ifndef MINIUNREAL
 		return FPlatformMemory::Memmove( Dest, Src, Count );
+#endif
 	}
 
 	static FORCEINLINE int32 Memcmp( const void* Buf1, const void* Buf2, SIZE_T Count )
 	{
+#ifndef MINIUNREAL
 		return FPlatformMemory::Memcmp( Buf1, Buf2, Count );
+#endif
 	}
 
 	static FORCEINLINE void* Memset(void* Dest, uint8 Char, SIZE_T Count)
 	{
+#ifndef MINIUNREAL
 		return FPlatformMemory::Memset( Dest, Char, Count );
+#endif
 	}
 
 	template< class T > 
@@ -109,7 +119,9 @@ struct CORE_API FMemory
 
 	static FORCEINLINE void* Memzero(void* Dest, SIZE_T Count)
 	{
+#ifndef MINIUNREAL
 		return FPlatformMemory::Memzero( Dest, Count );
+#endif
 	}
 
 	template< class T > 
@@ -121,7 +133,9 @@ struct CORE_API FMemory
 
 	static FORCEINLINE void* Memcpy(void* Dest, const void* Src, SIZE_T Count)
 	{
+#ifndef MINIUNREAL
 		return FPlatformMemory::Memcpy(Dest,Src,Count);
+#endif
 	}
 
 	template< class T > 
@@ -133,17 +147,23 @@ struct CORE_API FMemory
 
 	static FORCEINLINE void* BigBlockMemcpy(void* Dest, const void* Src, SIZE_T Count)
 	{
+#ifndef MINIUNREAL
 		return FPlatformMemory::BigBlockMemcpy(Dest,Src,Count);
+#endif
 	}
 
 	static FORCEINLINE void* StreamingMemcpy(void* Dest, const void* Src, SIZE_T Count)
 	{
+#ifndef MINIUNREAL
 		return FPlatformMemory::StreamingMemcpy(Dest,Src,Count);
+#endif
 	}
 
 	static FORCEINLINE void Memswap( void* Ptr1, void* Ptr2, SIZE_T Size )
 	{
+#ifndef MINIUNREAL
 		FPlatformMemory::Memswap(Ptr1,Ptr2,Size);
+#endif
 	}
 
 	//

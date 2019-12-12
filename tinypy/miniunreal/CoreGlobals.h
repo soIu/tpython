@@ -6,6 +6,7 @@
 #include "UObject/NameTypes.h"
 #ifdef MINIUNREAL
 	#include "Templates/Atomic.h"
+	#define TSAN_ATOMIC(x) x
 #else
 	#include "Logging/LogMacros.h"
 	#include "HAL/PlatformTLS.h"
@@ -380,7 +381,9 @@ extern CORE_API bool GShouldSuspendRenderingThread;
 extern CORE_API FName GCurrentTraceName;
 
 /** How to print the time in log output. */
-extern CORE_API ELogTimes::Type GPrintLogTimes;
+#ifndef MINIUNREAL
+	extern CORE_API ELogTimes::Type GPrintLogTimes;
+#endif
 
 /** How to print the category in log output. */
 extern CORE_API bool GPrintLogCategory;
@@ -429,12 +432,13 @@ CORE_API void EnsureRetrievingVTablePtrDuringCtor(const TCHAR* CtorSignature);
 /** @return True if called from the game thread. */
 FORCEINLINE bool IsInGameThread()
 {
+	#ifndef MINIUNREAL
 	if(GIsGameThreadIdInitialized)
 	{
 		const uint32 CurrentThreadId = FPlatformTLS::GetCurrentThreadId();
 		return CurrentThreadId == GGameThreadId;
 	}
-
+	#endif
 	return true;
 }
 

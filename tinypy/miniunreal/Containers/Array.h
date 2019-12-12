@@ -6,11 +6,7 @@
 #include "Misc/AssertionMacros.h"
 #include "HAL/UnrealMemory.h"
 #include "Templates/AreTypesEqual.h"
-
-#ifndef MINIUNREAL
-	#include "Templates/IsSigned.h"
-#endif
-
+#include "Templates/IsSigned.h"
 #include "Templates/UnrealTypeTraits.h"
 #include "Templates/UnrealTemplate.h"
 #include "Containers/ContainerAllocationPolicies.h"

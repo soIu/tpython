@@ -31,8 +31,10 @@ enum
 CORE_API extern class FMalloc* GMalloc;
 CORE_API extern class FMalloc** GFixedMallocLocationPtr;
 
-/** Global FMallocProfiler variable to allow multiple malloc profilers to communicate. */
-MALLOC_PROFILER( CORE_API extern class FMallocProfiler* GMallocProfiler; )
+#ifndef MINIUNREAL
+	/** Global FMallocProfiler variable to allow multiple malloc profilers to communicate. */
+	MALLOC_PROFILER( CORE_API extern class FMallocProfiler* GMallocProfiler; )
+#endif
 
 /** Holds generic memory stats, internally implemented as a map. */
 struct FGenericMemoryStats;
@@ -165,7 +167,9 @@ public:
 	/** Dumps current allocator stats to the log. */
 	virtual void DumpAllocatorStats( class FOutputDevice& Ar )
 	{
-		Ar.Logf( TEXT("Allocator Stats for %s: (not implemented)" ), GetDescriptiveName() );
+		#ifndef MINIUNREAL
+			Ar.Logf( TEXT("Allocator Stats for %s: (not implemented)" ), GetDescriptiveName() );
+		#endif
 	}
 
 	/**

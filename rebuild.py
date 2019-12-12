@@ -148,7 +148,7 @@ def rebuild(stage=None):
 	CC = 'c++'
 	libs = '-lm -ldl -lpthread'
 
-	if '--no-blendot' in sys.argv or '--includeos' in sys.argv:
+	if '--no-blendot' in sys.argv or '--includeos' in sys.argv or '--unreal' in sys.argv:
 		defs = ''
 		mods = ''
 	else:

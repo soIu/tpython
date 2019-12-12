@@ -16,10 +16,12 @@
 #include "Templates/IsArithmetic.h"
 #include "Templates/IsEnum.h"
 #include "Templates/RemoveCV.h"
-
 #include "Templates/IsPODType.h"
 #include "Templates/IsTriviallyCopyConstructible.h"
 
+#ifdef MINIUNREAL
+	#define UCS2CHAR char16_t
+#endif
 
 /*-----------------------------------------------------------------------------
  * Macros to abstract the presence of certain compiler intrinsic type traits 

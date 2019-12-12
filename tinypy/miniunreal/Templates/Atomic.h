@@ -67,8 +67,10 @@ namespace UE4Atomic_Private
 	template <typename T>
 	FORCEINLINE T Load(const volatile T* Element)
 	{
+		#ifndef MINIUNREAL
 		auto Result = FPlatformAtomics::AtomicRead((volatile TUnderlyingIntegerType_T<T>*)Element);
 		return *(const T*)&Result;
+		#endif
 	}
 
 	template <typename T>
@@ -84,15 +86,21 @@ namespace UE4Atomic_Private
 	template <typename T>
 	FORCEINLINE void Store(const volatile T* Element, T Value)
 	{
+		#ifndef MINIUNREAL
 		FPlatformAtomics::InterlockedExchange((volatile TUnderlyingIntegerType_T<T>*)Element, *(const TUnderlyingIntegerType_T<T>*)&Value);
+		#endif
 	}
 
 	template <typename T>
 	FORCEINLINE T Exchange(volatile T* Element, T Value)
 	{
+		#ifndef MINIUNREAL
 		auto Result = FPlatformAtomics::InterlockedExchange((volatile TUnderlyingIntegerType_T<T>*)Element, *(const TUnderlyingIntegerType_T<T>*)&Value);
 		return *(const T*)&Result;
+		#endif
 	}
+
+#ifndef MINIUNREAL
 
 	template <typename T>
 	FORCEINLINE T IncrementExchange(volatile T* Element)
@@ -177,6 +185,7 @@ namespace UE4Atomic_Private
 		auto Result = FPlatformAtomics::InterlockedXor((volatile TUnderlyingIntegerType_T<T>*)Element, (TUnderlyingIntegerType_T<T>)XorValue);
 		return *(const T*)&Result;
 	}
+#endif
 
 	template <typename T, bool bIsVoidPointer, bool bIsIntegral, bool bCanUsePlatformAtomics>
 	struct TAtomicBaseType
@@ -207,6 +216,18 @@ namespace UE4Atomic_Private
 	using TAtomicBaseType_T = typename TAtomicBaseType<T, bIsVoidPointer, bIsIntegral, bCanUsePlatformAtomics>::Type;
 }
 
+#ifdef MINIUNREAL
+	template <typename T>
+	class TAtomic {
+		//static_assert(TIsTrivial<T>::Value, "TAtomic is only usable with trivial types");
+		public:
+			using ElementType = T;
+			/**
+			 * Default initializes the element type.  NOTE: This will leave the value uninitialized if it has no constructor.
+			 */
+			FORCEINLINE TAtomic() = default;
+	};
+#else
 // Basic storage and implementation - only allows getting and setting via platform atomics.
 template <typename T>
 struct alignas((UE4Atomic_Private::TIsSupportedSize<sizeof(T)>::Value) ? alignof(UE4Atomic_Private::TUnderlyingIntegerType_T<T>) : alignof(T)) TAtomicBase_Basic
@@ -590,3 +611,5 @@ private:
 	TAtomic& operator=(const TAtomic&) = delete;
 };
 
+// endof MINIUNREAL
+#endif

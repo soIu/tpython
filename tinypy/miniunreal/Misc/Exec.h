@@ -20,6 +20,10 @@ public:
 	*
 	* @return	true if command was handled, false otherwise
 	*/
+#ifdef MINIUNREAL
+	virtual bool Exec( class UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar );
+#else
 	virtual bool Exec( class UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar ) PURE_VIRTUAL(FExec::Exec,return false;)
+#endif
 };
 

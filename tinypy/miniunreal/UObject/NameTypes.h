@@ -40,8 +40,9 @@ enum {NAME_SIZE	= 1024};
 struct FNameEntryId
 {
 	FNameEntryId() : Value(0) {}
+#ifndef MINIUNREAL
 	FNameEntryId(ENoInit) {}
-
+#endif
 	/** Slow alphabetical order that is stable / deterministic over process runs */
 	CORE_API int32 CompareLexical(FNameEntryId Rhs) const;
 	bool LexicalLess(FNameEntryId Rhs) const { return CompareLexical(Rhs) < 0; }
@@ -709,13 +710,14 @@ public:
 	/**
 	 * Scary no init constructor, used for something obscure in UObjectBase
 	 */
-	explicit FName(ENoInit)
-		: ComparisonIndex(NoInit)
-#if WITH_CASE_PRESERVING_NAME
-		, DisplayIndex(NoInit)
+#ifndef MINIUNREAL
+		explicit FName(ENoInit)
+			: ComparisonIndex(NoInit)
+	#if WITH_CASE_PRESERVING_NAME
+			, DisplayIndex(NoInit)
+	#endif
+		{}
 #endif
-	{}
-
 	/**
 	 * Create an FName. If FindType is FNAME_Find, and the string part of the name 
 	 * doesn't already exist, then the name will be NAME_None
