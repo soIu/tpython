@@ -7,7 +7,8 @@
 	#define PLATFORM_DESKTOP 1
 	#define PLATFORM_64BITS 1
 	typedef char ANSICHAR;
-	typedef char WIDECHAR;
+	typedef wchar_t WIDECHAR;
+	#define PLATFORM_TCHAR_IS_CHAR16 1
 #endif
 
 

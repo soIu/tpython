@@ -35,13 +35,14 @@ public:
 	 * Get the string pointer that was retrieved from the text localization manager.
 	 * Text that was generated at runtime by default will not have one of these, and you must call Persist() to generate one.
 	 */
+#ifndef MINIUNREAL
 	virtual FTextDisplayStringPtr GetLocalizedString() const = 0;
 
 	/** 
 	 * Get a mutable reference to the localized string associated with this text (used when loading/saving text).
 	 */
 	virtual FTextDisplayStringPtr& GetMutableLocalizedString() = 0;
-
+#endif
 	/**
 	 * Get the history associated with this text.
 	 */

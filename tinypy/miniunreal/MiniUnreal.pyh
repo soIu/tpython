@@ -3,9 +3,11 @@
 #ifdef MINIUNREAL
 import "GenericPlatform/GenericPlatform.h"
 import <wchar.h>
-define(TCHAR=wchar_t)
+define(TCHAR=char16_t)
+##define(TCHAR=wchar_t)
 ##define WIDECHAR wchar_t
 ##define ANSICHAR char
+define(UTF16CHAR=char16_t)
 define(FORCEINLINE_STATS=)
 define(uint64=uint64_t)
 define(int64=int64_t)
@@ -24,9 +26,11 @@ define(TStatId=uint32)
 define(AGGRESSIVE_MEMORY_SAVING=0)
 define(CORE_API=)
 define(PTRINT=uint64)
+define(UPTRINT=uint64)
 define(CA_NO_RETURN=)
 define(FORCEINLINE_DEBUGGABLE=inline)
 define(TYPE_OF_NULLPTR=nullptr_t)
+define(PLATFORM_64BITS=1)
 #endif
 
 

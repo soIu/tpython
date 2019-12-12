@@ -13,7 +13,11 @@
 
 /** Default behavior. */
 #define	FORCE_THREADSAFE_SHAREDPTRS PLATFORM_WEAKLY_CONSISTENT_MEMORY
-#define THREAD_SANITISE_UNSAFEPTR 0
+#ifdef MINIUNREAL
+	#define THREAD_SANITISE_UNSAFEPTR 1
+#else
+	#define THREAD_SANITISE_UNSAFEPTR 0
+#endif
 
 #if THREAD_SANITISE_UNSAFEPTR
 	#define TSAN_SAFE_UNSAFEPTR
@@ -231,13 +235,21 @@ namespace SharedPointerInternals
 		static FORCEINLINE const int32 GetSharedReferenceCount(const FReferenceControllerBase* ReferenceController)
 		{
 			// This reference count may be accessed by multiple threads
-			return FPlatformAtomics::AtomicRead( (int32 volatile*)&ReferenceController->SharedReferenceCount );
+			#ifdef MINIUNREAL
+				ReferenceController->SharedReferenceCount;
+			#else
+				return FPlatformAtomics::AtomicRead( (int32 volatile*)&ReferenceController->SharedReferenceCount );
+			#endif
 		}
 
 		/** Adds a shared reference to this counter */
 		static FORCEINLINE void AddSharedReference(FReferenceControllerBase* ReferenceController)
 		{
+			#ifdef MINIUNREAL
+			++ReferenceController->SharedReferenceCount;
+			#else
 			FPlatformAtomics::InterlockedIncrement( &ReferenceController->SharedReferenceCount );
+			#endif
 		}
 
 		/**
@@ -251,7 +263,11 @@ namespace SharedPointerInternals
 			{
 				// Peek at the current shared reference count.  Remember, this value may be updated by
 				// multiple threads.
-				const int32 OriginalCount = FPlatformAtomics::AtomicRead( (int32 volatile*)&ReferenceController->SharedReferenceCount );
+				#ifdef MINIUNREAL
+					const int32 OriginalCount = ReferenceController->SharedReferenceCount;
+				#else
+					const int32 OriginalCount = FPlatformAtomics::AtomicRead( (int32 volatile*)&ReferenceController->SharedReferenceCount );
+				#endif
 				if( OriginalCount == 0 )
 				{
 					// Never add a shared reference if the pointer has already expired
@@ -259,8 +275,11 @@ namespace SharedPointerInternals
 				}
 
 				// Attempt to increment the reference count.
-				const int32 ActualOriginalCount = FPlatformAtomics::InterlockedCompareExchange( &ReferenceController->SharedReferenceCount, OriginalCount + 1, OriginalCount );
-
+				#ifdef MINIUNREAL
+					const int32 ActualOriginalCount = OriginalCount;
+				#else
+					const int32 ActualOriginalCount = FPlatformAtomics::InterlockedCompareExchange( &ReferenceController->SharedReferenceCount, OriginalCount + 1, OriginalCount );
+				#endif
 				// We need to make sure that we never revive a counter that has already expired, so if the
 				// actual value what we expected (because it was touched by another thread), then we'll try
 				// again.  Note that only in very unusual cases will this actually have to loop.
@@ -276,7 +295,11 @@ namespace SharedPointerInternals
 		{
 			checkSlow( ReferenceController->SharedReferenceCount > 0 );
 
+			#ifdef MINIUNREAL
+			if( ReferenceController->SharedReferenceCount == 0 )
+			#else
 			if( FPlatformAtomics::InterlockedDecrement( &ReferenceController->SharedReferenceCount ) == 0 )
+			#endif
 			{
 				// Last shared reference was released!  Destroy the referenced object.
 				ReferenceController->DestroyObject();
@@ -291,15 +314,22 @@ namespace SharedPointerInternals
 		/** Adds a weak reference to this counter */
 		static FORCEINLINE void AddWeakReference(FReferenceControllerBase* ReferenceController)
 		{
+			#ifdef MINIUNREAL
+			++ReferenceController->WeakReferenceCount;
+			#else
 			FPlatformAtomics::InterlockedIncrement( &ReferenceController->WeakReferenceCount );
+			#endif
 		}
 
 		/** Releases a weak reference to this counter */
 		static void ReleaseWeakReference(FReferenceControllerBase* ReferenceController)
 		{
 			checkSlow( ReferenceController->WeakReferenceCount > 0 );
-
+			#ifdef MINIUNREAL
+			if( ReferenceController->WeakReferenceCount == 0 )
+			#else
 			if( FPlatformAtomics::InterlockedDecrement( &ReferenceController->WeakReferenceCount ) == 0 )
+			#endif
 			{
 				// No more references to this reference count.  Destroy it!
 				delete ReferenceController;

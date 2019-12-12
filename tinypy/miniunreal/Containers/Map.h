@@ -9,7 +9,9 @@
 	#include "Containers/UnrealString.h"
 	#include "Misc/AssertionMacros.h"
 	#include "Templates/Function.h"
+	#include "Templates/Models.h"
 	#include "Templates/Sorting.h"
+	#include "Templates/Tuple.h"
 	#include "Templates/UnrealTemplate.h"
 	#include "Templates/UnrealTypeTraits.h"
 #else

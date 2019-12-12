@@ -30,13 +30,14 @@ public:
 		new(&Value) OptionalType(MoveTempIfPossible(InValue));
 		bIsSet = true;
 	}
+#ifndef MINIUNREAL
 	template <typename... ArgTypes>
 	explicit TOptional(EInPlace, ArgTypes&&... Args)
 	{
 		new(&Value) OptionalType(Forward<ArgTypes>(Args)...);
 		bIsSet = true;
 	}
-
+#endif
 	/** Construct an OptionalType with no value; i.e. unset */
 	TOptional()
 		: bIsSet(false)
