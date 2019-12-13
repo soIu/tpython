@@ -7,14 +7,19 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#ifndef MINIUNREAL
+#ifdef MINIUNREAL
+	#define EObjectFlags int
+	enum EObjectMark {};
+	#define EInternalObjectFlags struct
+#else
 	#include "Stats/Stats.h"
 	#include "UObject/ObjectMacros.h"
 	#include "UObject/UObjectGlobals.h"
 	#include "HAL/LowLevelMemTracker.h"
-#endif
 
 DECLARE_DWORD_COUNTER_STAT_EXTERN(TEXT("STAT_UObjectsStatGroupTester"), STAT_UObjectsStatGroupTester, STATGROUP_UObjects, COREUOBJECT_API);
+
+#endif
 
 /** 
  * Low level implementation of UObject, should not be used directly in game code 
@@ -374,6 +379,8 @@ COREUOBJECT_API void UObjectCompiledInDeferStruct(class UScriptStruct *(*InRegis
 
 struct FCompiledInDeferStruct
 {
+#ifndef MINIUNREAL
+
 	FCompiledInDeferStruct(class UScriptStruct *(*InRegister)(), const TCHAR* PackageName, const TCHAR* Name, bool bDynamic, const TCHAR* DynamicPackageName, const TCHAR* DynamicPathName)
 	{
 		if (bDynamic)
@@ -382,6 +389,7 @@ struct FCompiledInDeferStruct
 		}
 		UObjectCompiledInDeferStruct(InRegister, PackageName, Name, bDynamic, DynamicPathName);
 	}
+#endif
 };
 
 /**
@@ -396,6 +404,8 @@ COREUOBJECT_API void UObjectCompiledInDeferEnum(class UEnum *(*InRegister)(), co
 
 struct FCompiledInDeferEnum
 {
+#ifndef MINIUNREAL
+
 	FCompiledInDeferEnum(class UEnum *(*InRegister)(), const TCHAR* PackageName, const TCHAR* Name, bool bDynamic, const TCHAR* DynamicPackageName, const TCHAR* DynamicPathName)
 	{
 		if (bDynamic)
@@ -404,6 +414,7 @@ struct FCompiledInDeferEnum
 		}
 		UObjectCompiledInDeferEnum(InRegister, PackageName, Name, bDynamic, DynamicPathName);
 	}
+#endif
 };
 
 /**

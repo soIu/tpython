@@ -9,6 +9,10 @@
 #include "CoreMinimal.h"
 #ifdef MINIUNREAL
 	#include "UObject/UObjectBase.h"
+	enum EInternalObjectFlags {};
+	#define RF_AllFlags 1
+	#define RF_ArchetypeObject 2
+	#define RF_ClassDefaultObject 3
 #else
 	#include "Stats/Stats.h"
 	#include "UObject/ObjectMacros.h"
@@ -99,6 +103,8 @@ public:
 	 *
 	 * @param	Marks	Logical OR of OBJECTMARK_'s to apply 
 	 */
+#ifndef MINIUNREAL
+
 	FORCEINLINE void Mark(EObjectMark Marks) const
 	{
 		MarkObject(this,Marks);
@@ -279,7 +285,7 @@ public:
 	{
 		return GUObjectArray.IndexToObject(InternalIndex)->ThisThreadAtomicallyClearedFlag(FlagsToClear);
 	}
-
+#endif
 
 	/*-------------------
 			Names

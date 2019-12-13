@@ -151,7 +151,7 @@ def rebuild(stage=None):
 
 	libs = '-lm -ldl -lpthread'
 
-	if '--no-blendot' in sys.argv or '--includeos' in sys.argv or '--unreal' in sys.argv:
+	if '--no-blendot' in sys.argv or '--includeos' in sys.argv or '--miniunreal' in sys.argv or '--unreal' in sys.argv:
 		defs = ''
 		mods = ''
 	else:

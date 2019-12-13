@@ -129,6 +129,8 @@ FORCEINLINE  typename TEnableIf<TIsEnum<EnumType>::Value, uint32>::Type GetTypeH
 	return GetTypeHash((__underlying_type(EnumType))E);
 }
 
+#ifndef MINIUNREAL
+
 namespace UE4TypeHash_Private
 {
 	template <uint32 ArgToCombine, uint32 ArgCount>
@@ -162,3 +164,5 @@ FORCEINLINE uint32 GetTypeHash(const TTuple<>& Tuple)
 {
 	return 0;
 }
+
+#endif

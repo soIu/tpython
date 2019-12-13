@@ -18,8 +18,9 @@
 	class FReferencerInformationList;
 	class FReferenceCollector;
 	class EDuplicateMode;
+	class FVTableHelper;
 	enum ERenameFlags {REN_None};
-	enum EObjectFlags {};
+	#define EObjectFlags int
 	#define CPF_Config 0
 	#define GConfig NULL
 #else
@@ -70,7 +71,9 @@ class COREUOBJECT_API UObject : public UObjectBaseUtility
 	typedef UObject WithinClass;
 	static UObject* __VTableCtorCaller(FVTableHelper& Helper)
 	{
+#ifndef MINIUNREAL
 		return new (EC_InternalUseOnlyConstructor, (UObject*)GetTransientPackage(), NAME_None, RF_NeedLoad | RF_ClassDefaultObject | RF_TagGarbageTemp) UObject(Helper);
+#endif
 	}
 	static const TCHAR* StaticConfigName() 
 	{
@@ -87,7 +90,11 @@ class COREUOBJECT_API UObject : public UObjectBaseUtility
 	UObject(const FObjectInitializer& ObjectInitializer);
 
 	/** DO NOT USE. This constructor is for internal usage only for statically-created objects. */
+#ifndef MINIUNREAL
+
 	UObject(EStaticConstructor, EObjectFlags InFlags);
+
+#endif
 
 	/** DO NOT USE. This constructor is for internal usage only for hot-reload purposes. */
 	UObject(FVTableHelper& Helper);
@@ -306,9 +313,10 @@ public:
 	 * Handles reading, writing, and reference collecting using FArchive.
 	 * This implementation handles all UProperty serialization, but can be overridden for native variables.
 	 */
+#ifndef MINIUNREAL
 	virtual void Serialize(FArchive& Ar);
 	virtual void Serialize(FStructuredArchive::FRecord Record);
-
+#endif
 	/** After a critical error, perform any mission-critical cleanup, such as restoring the video mode orreleasing hardware resources. */
 	virtual void ShutdownAfterError() {}
 
@@ -411,11 +419,13 @@ public:
 	 * Note: NOT called on components on actor duplication (alt-drag or copy-paste).  Use PostEditImport as well to cover that case.
 	 */
 	virtual void PostDuplicate(bool bDuplicateForPIE) {}
+#ifndef MINIUNREAL
+
 	virtual void PostDuplicate(EDuplicateMode::Type DuplicateMode) 
 	{
 		PostDuplicate(DuplicateMode == EDuplicateMode::PIE);
 	}
-
+#endif
 	/**
 	 * Called during saving to determine the load flags to save with the object.
 	 * If false, this object will be discarded on clients
@@ -603,13 +613,15 @@ public:
 	 * @param	Mode					Indicates which resource size should be returned.
 	 * @return The cumulative size of this object in memory
 	 */
+#ifndef MINIUNREAL
+
 	SIZE_T GetResourceSizeBytes(EResourceSizeMode::Type Mode)
 	{
 		FResourceSizeEx ResSize = FResourceSizeEx(Mode);
 		GetResourceSizeEx(ResSize);
 		return ResSize.GetTotalMemoryBytes();
 	}
-
+#endif
 	/** 
 	 * Returns the name of the exporter factory used to export this object
 	 * Used when multiple factories have the same extension
@@ -865,6 +877,7 @@ public:
 	 *
 	 * @param	Ar				the archive to use for serialization
 	 */
+#ifndef MINIUNREAL
 	void SerializeScriptProperties( FArchive& Ar ) const;
 
 	/**
@@ -874,7 +887,7 @@ public:
 	 * @param	Slot				the archive slot to serialize to
 	 */
 	void SerializeScriptProperties( FStructuredArchive::FSlot Slot ) const;
-
+#endif
 	/**
 	 * Wrapper function for InitProperties() which handles safely tearing down this object before re-initializing it
 	 * from the specified source object.
@@ -1094,6 +1107,8 @@ public:
 	 * @param	PropagationFlags	indicates how this call to LoadConfig should be propagated; expects a bitmask of UE4::ELoadConfigPropagationFlags values.
 	 * @param	PropertyToLoad		if specified, only the ini value for the specified property will be imported.
 	 */
+#ifndef MINIUNREAL
+
 	void LoadConfig( UClass* ConfigClass=NULL, const TCHAR* Filename=NULL, uint32 PropagationFlags=UE4::LCPF_None, class UProperty* PropertyToLoad=NULL );
 
 	/**
@@ -1106,6 +1121,8 @@ public:
 	 * @param	PropertyToLoad		if specified, only the ini value for the specified property will be imported
 	 */
 	void ReloadConfig( UClass* ConfigClass=NULL, const TCHAR* Filename=NULL, uint32 PropagationFlags=UE4::LCPF_None, class UProperty* PropertyToLoad=NULL );
+
+#endif
 
 	/** Import an object from a file. */
 	void ParseParms( const TCHAR* Parms );
@@ -1470,7 +1487,10 @@ private:
 */
 FORCEINLINE bool IsValid(const UObject *Test)
 {
+#ifndef MINIUNREAL
+
 	return Test && !Test->IsPendingKill();
+#endif
 }
 
 

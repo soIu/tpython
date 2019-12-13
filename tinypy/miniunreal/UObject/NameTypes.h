@@ -433,8 +433,11 @@ public:
 	 *
 	 * @return String representation of the name
 	 */
+#ifdef MINIUNREAL
+	FString ToString() const { printf("TODO FString::ToString()\n");}
+#else
 	FString ToString() const;
-
+#endif
 	/**
 	 * Converts an FName to a readable format, in place
 	 * 
@@ -728,7 +731,9 @@ public:
 	FName(const WIDECHAR* Name, EFindName FindType=FNAME_Add);
 	FName(const ANSICHAR* Name, EFindName FindType=FNAME_Add);
 #ifdef MINIUNREAL
-	FName(const char16_t* Name, EFindName FindType=FNAME_Add);
+	FName(const char16_t* Name, EFindName FindType=FNAME_Add) {
+		printf("TODO FName\n");
+	}
 
 #endif
 	/** Create FName from non-null string with known length  */

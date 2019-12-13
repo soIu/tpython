@@ -21,7 +21,9 @@ struct FFrame;
 #define TOTAL_OVERHEAD_SCRIPT_STATS (STATS && 0)
 #define PER_FUNCTION_SCRIPT_STATS ((STATS || ENABLE_STATNAMEDEVENTS) && 1)
 
+#ifndef MINIUNREAL
 DECLARE_STATS_GROUP(TEXT("Scripting"), STATGROUP_Script, STATCAT_Advanced);
+#endif
 
 #if TOTAL_OVERHEAD_SCRIPT_STATS
 DECLARE_FLOAT_COUNTER_STAT_EXTERN(TEXT("Blueprint - (All) VM Time (ms)"),     STAT_ScriptVmTime_Total,     STATGROUP_Script, COREUOBJECT_API);
@@ -149,8 +151,11 @@ FORCEINLINE FArchive& operator<<(FArchive& Ar, EFunctionFlags& Flags)
 	Ar << (uint32&)Flags;
 	return Ar;
 }
+#ifndef MINIUNREAL
 
 ENUM_CLASS_FLAGS(EFunctionFlags)
+
+#endif
 
 // Combinations of flags.
 #define FUNC_FuncInherit       ((EFunctionFlags)(FUNC_Exec | FUNC_Event | FUNC_BlueprintCallable | FUNC_BlueprintEvent | FUNC_BlueprintAuthorityOnly | FUNC_BlueprintCosmetic | FUNC_Const))
@@ -437,6 +442,8 @@ protected:
 class COREUOBJECT_API FBlueprintCoreDelegates
 {
 public:
+#ifndef MINIUNREAL
+
 	// Callback for debugging events such as a breakpoint (Object that triggered event, active stack frame, Info)
 	DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnScriptDebuggingEvent, const UObject*, const struct FFrame&, const FBlueprintExceptionInfo&);
 	// Callback for when script execution terminates.
@@ -455,7 +462,7 @@ public:
 	static FOnScriptInstrumentEvent OnScriptProfilingEvent;
 	// Called when a script profiler is enabled/disabled
 	static FOnToggleScriptProfiler OnToggleScriptProfiler;
-
+#endif
 public:
 	static void ThrowScriptException(const UObject* ActiveObject, const struct FFrame& StackFrame, const FBlueprintExceptionInfo& Info);
 	static void InstrumentScriptEvent(const FScriptInstrumentationSignal& Info);

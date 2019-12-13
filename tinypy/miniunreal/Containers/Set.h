@@ -232,9 +232,9 @@ class TSet
 	friend struct TContainerTraits<TSet>;
 	friend class  FScriptSet;
 
+#ifndef MINIUNREAL
 
 	typedef typename KeyFuncs::KeyInitType     KeyInitType;
-#ifndef MINIUNREAL
 	typedef typename KeyFuncs::ElementInitType ElementInitType;
 #endif
 
@@ -1813,9 +1813,13 @@ private:
 		static_assert(sizeof(DeclVal<ScriptType>().HashSize) == sizeof(DeclVal<RealType>().HashSize), "FScriptSet's HashSize member size does not match TSet's");
 
 		// Check member offsets
+
+#ifndef MINIUNREAL
+
 		static_assert(STRUCT_OFFSET(ScriptType, Elements) == STRUCT_OFFSET(RealType, Elements), "FScriptSet's Elements member offset does not match TSet's");
 		static_assert(STRUCT_OFFSET(ScriptType, Hash)     == STRUCT_OFFSET(RealType, Hash),     "FScriptSet's Hash member offset does not match TSet's");
 		static_assert(STRUCT_OFFSET(ScriptType, HashSize) == STRUCT_OFFSET(RealType, HashSize), "FScriptSet's FirstFreeIndex member offset does not match TSet's");
+#endif
 	}
 
 public:

@@ -31,7 +31,7 @@ import "miniunreal/CoreFwd.h"
 import "miniunreal/EngineFwd.h"
 import "miniunreal/Misc/Char.h"
 import "Internationalization/Text.h"
-##import "miniunreal/UObject/Object.h"
+import "miniunreal/UObject/Object.h"
 #endif
 
 import <cstddef>
