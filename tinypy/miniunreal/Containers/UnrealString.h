@@ -2302,7 +2302,11 @@ FORCEINLINE const TCHAR* ToCStr(const FString& Str)
 //
 // String output device.
 //
+#ifdef MINIUNREAL
+class FStringOutputDevice : public FString
+#else
 class FStringOutputDevice : public FString, public FOutputDevice
+#endif
 {
 public:
 	FStringOutputDevice( const TCHAR* OutputDeviceName=TEXT("") ):
@@ -2321,7 +2325,7 @@ public:
 			*this += LINE_TERMINATOR;
 		}
 	}
-#endif
+
 	FStringOutputDevice(FStringOutputDevice&&) = default;
 	FStringOutputDevice(const FStringOutputDevice&) = default;
 	FStringOutputDevice& operator=(FStringOutputDevice&&) = default;
@@ -2332,6 +2336,7 @@ public:
 	{
 		return FString::operator+=(Other);
 	}
+#endif
 };
 
 //

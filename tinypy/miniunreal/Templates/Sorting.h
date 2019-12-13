@@ -247,6 +247,8 @@ public:
 	template <class T, class PREDICATE_CLASS>
 	static void Merge(T* First, const int32 Mid, const int32 Num, const PREDICATE_CLASS& Predicate)
 	{
+#ifndef MINIUNREAL
+
 		int32 AStart = 0;
 		int32 BStart = Mid;
 
@@ -265,6 +267,7 @@ public:
 			BStart += NewBOffset;
 			AStart += NewBOffset + 1;
 		}
+#endif
 	}
 };
 
@@ -288,6 +291,8 @@ public:
 	template<class T, class PREDICATE_CLASS>
 	static void Sort(T* First, const int32 Num, const PREDICATE_CLASS& Predicate)
 	{
+#ifndef MINIUNREAL
+
 		int32 SubgroupStart = 0;
 
 		if (MinMergeSubgroupSize > 1)
@@ -341,6 +346,8 @@ public:
 
 			SubgroupSize <<= 1;
 		}
+#endif
+
 	}
 };
 

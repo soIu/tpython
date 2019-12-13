@@ -27,6 +27,7 @@ namespace AlgoImpl
 	template <typename T, typename ProjectionType, typename PredicateType> 
 	void IntroSortInternal(T* First, SIZE_T Num, ProjectionType Projection, PredicateType Predicate)
 	{
+#ifndef MINIUNREAL
 		struct FStack
 		{
 			T* Min;
@@ -125,6 +126,7 @@ namespace AlgoImpl
 				}
 			}
 		}
+#endif
 	}
 }
 

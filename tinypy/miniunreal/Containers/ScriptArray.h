@@ -121,10 +121,13 @@ public:
 	,	ArrayMax( 0 )
 	{
 	}
+#ifndef MINIUNREAL
+
 	void CountBytes( FArchive& Ar, int32 NumBytesPerElement  )
 	{
 		Ar.CountBytes( ArrayNum*NumBytesPerElement, ArrayMax*NumBytesPerElement );
 	}
+#endif
 	/**
 	 * Returns the amount of slack in this array in elements.
 	 */

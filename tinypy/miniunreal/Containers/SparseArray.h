@@ -1111,11 +1111,12 @@ class FScriptSparseArray
 public:
 	static FScriptSparseArrayLayout GetScriptLayout(int32 ElementSize, int32 ElementAlignment)
 	{
+#ifndef MINIUNREAL
 		FScriptSparseArrayLayout Result;
 		Result.Alignment     = FMath::Max(ElementAlignment, (int32)alignof(FFreeListLink));
 		Result.Size          = FMath::Max(ElementSize,      (int32)sizeof (FFreeListLink));
-
 		return Result;
+#endif
 	}
 
 	FScriptSparseArray()

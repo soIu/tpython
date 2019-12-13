@@ -1565,6 +1565,8 @@ public:
 private:
 	void RemoveAtSwapImpl(SizeType Index, SizeType Count = 1, bool bAllowShrinking = true)
 	{
+#ifndef MINIUNREAL
+
 		if (Count)
 		{
 			CheckInvariants();
@@ -1591,6 +1593,7 @@ private:
 				ResizeShrink();
 			}
 		}
+#endif
 	}
 
 public:
@@ -2780,11 +2783,12 @@ public:
 	template <class PREDICATE_CLASS>
 	void HeapRemoveAt(SizeType Index, const PREDICATE_CLASS& Predicate, bool bAllowShrinking = true)
 	{
+#ifndef MINIUNREAL
 		RemoveAtSwap(Index, 1, bAllowShrinking);
-
 		TDereferenceWrapper< ElementType, PREDICATE_CLASS> PredicateWrapper(Predicate);
 		AlgoImpl::HeapSiftDown(GetData(), Index, Num(), FIdentityFunctor(), PredicateWrapper);
 		AlgoImpl::HeapSiftUp(GetData(), 0, FPlatformMath::Min(Index, Num() - 1), FIdentityFunctor(), PredicateWrapper);
+#endif
 	}
 
 	/**

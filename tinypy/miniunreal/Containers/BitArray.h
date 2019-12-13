@@ -1073,11 +1073,11 @@ private:
 	int32 CurrentBitIndex;
 	int32 BaseBitIndex;
 
-#ifndef MINIUNREAL
 
 	/** Find the first set bit starting with the current bit, inclusive. */
 	void FindFirstSetBit()
 	{
+#ifndef MINIUNREAL
 		const uint32* ArrayData      = Array.GetData();
 		const int32   ArrayNum       = Array.Num();
 		const int32   LastDWORDIndex = (ArrayNum - 1) / NumBitsPerDWORD;
@@ -1115,8 +1115,8 @@ private:
 		{
 			CurrentBitIndex = ArrayNum;
 		}
-	}
 #endif
+	}
 };
 
 

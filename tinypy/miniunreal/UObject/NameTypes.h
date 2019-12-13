@@ -727,7 +727,10 @@ public:
 	 */
 	FName(const WIDECHAR* Name, EFindName FindType=FNAME_Add);
 	FName(const ANSICHAR* Name, EFindName FindType=FNAME_Add);
+#ifdef MINIUNREAL
+	FName(const char16_t* Name, EFindName FindType=FNAME_Add);
 
+#endif
 	/** Create FName from non-null string with known length  */
 	FName(int32 Len, const WIDECHAR* Name, EFindName FindType=FNAME_Add);
 	FName(int32 Len, const ANSICHAR* Name, EFindName FindType=FNAME_Add);
