@@ -146,12 +146,13 @@ enum EFunctionFlags : uint32
 	FUNC_AllFlags		= 0xFFFFFFFF,
 };
 
+#ifndef MINIUNREAL
+
 FORCEINLINE FArchive& operator<<(FArchive& Ar, EFunctionFlags& Flags)
 {
 	Ar << (uint32&)Flags;
 	return Ar;
 }
-#ifndef MINIUNREAL
 
 ENUM_CLASS_FLAGS(EFunctionFlags)
 

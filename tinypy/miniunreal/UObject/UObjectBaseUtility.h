@@ -9,7 +9,7 @@
 #include "CoreMinimal.h"
 #ifdef MINIUNREAL
 	#include "UObject/UObjectBase.h"
-	enum EInternalObjectFlags {};
+	#define EInternalObjectFlags int;
 	#define RF_AllFlags 1
 	#define RF_ArchetypeObject 2
 	#define RF_ClassDefaultObject 3

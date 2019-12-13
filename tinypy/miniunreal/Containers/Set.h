@@ -12,6 +12,7 @@
 #include "Math/UnrealMathUtility.h"
 
 #ifdef MINIUNREAL
+	#include <tuple>
 	#include "Templates/Function.h"
 	#include <initializer_list>
 	#include "Templates/TypeHash.h"
@@ -42,9 +43,10 @@ template<typename ElementType,typename InKeyType,bool bInAllowDuplicateKeys = fa
 struct BaseKeyFuncs
 {
 	typedef InKeyType KeyType;
+#ifndef MINIUNREAL
 	typedef typename TCallTraits<InKeyType>::ParamType KeyInitType;
 	typedef typename TCallTraits<ElementType>::ParamType ElementInitType;
-
+#endif
 	enum { bAllowDuplicateKeys = bInAllowDuplicateKeys };
 };
 
@@ -54,9 +56,10 @@ struct BaseKeyFuncs
 template<typename ElementType,bool bInAllowDuplicateKeys /*= false*/>
 struct DefaultKeyFuncs : BaseKeyFuncs<ElementType,ElementType,bInAllowDuplicateKeys>
 {
+#ifndef MINIUNREAL
+
 	typedef typename TCallTraits<ElementType>::ParamType KeyInitType;
 	typedef typename TCallTraits<ElementType>::ParamType ElementInitType;
-
 	/**
 	 * @return The key used to index the given element.
 	 */
@@ -79,6 +82,7 @@ struct DefaultKeyFuncs : BaseKeyFuncs<ElementType,ElementType,bInAllowDuplicateK
 	{
 		return GetTypeHash(Key);
 	}
+#endif
 };
 
 /** This is used to provide type specific behavior for a move which will destroy B. */
@@ -232,8 +236,9 @@ class TSet
 	friend struct TContainerTraits<TSet>;
 	friend class  FScriptSet;
 
-#ifndef MINIUNREAL
-
+#ifdef MINIUNREAL
+	int32 HashSize;
+#else
 	typedef typename KeyFuncs::KeyInitType     KeyInitType;
 	typedef typename KeyFuncs::ElementInitType ElementInitType;
 #endif
@@ -716,6 +721,7 @@ public:
 	 * @param Key - The key to search for.
 	 * @return The id of the set element matching the given key, or the NULL id if none matches.
 	 */
+#ifndef MINIUNREAL
 	FSetElementId FindId(KeyInitType Key) const
 	{
 		if (Elements.Num())
@@ -733,7 +739,7 @@ public:
 		}
 		return FSetElementId();
 	}
-
+#endif
 	/**
 	 * Finds an element with a pre-calculated hash and a key that can be compared to KeyType
 	 * @see	Class documentation section on ByHash() functions
@@ -765,6 +771,8 @@ public:
 	 * @param Key - The key to search for.
 	 * @return A pointer to an element with the given key.  If no element in the set has the given key, this will return NULL.
 	 */
+#ifndef MINIUNREAL
+
 	FORCEINLINE ElementType* Find(KeyInitType Key)
 	{
 		FSetElementId ElementId = FindId(Key);
@@ -787,7 +795,7 @@ public:
 	{
 		return const_cast<TSet*>(this)->Find(Key);
 	}
-
+#endif
 	/**
 	 * Finds an element with a pre-calculated hash and a key that can be compared to KeyType.
 	 * @see	Class documentation section on ByHash() functions
@@ -851,6 +859,8 @@ public:
 	 * @param Key - The key to match elements against.
 	 * @return The number of elements removed.
 	 */
+#ifndef MINIUNREAL
+
 	int32 Remove(KeyInitType Key)
 	{
 		if (Elements.Num())
@@ -860,7 +870,7 @@ public:
 
 		return 0;
 	}
-
+#endif
 	/**
 	 * Removes all elements from the set matching the specified key.
 	 *
@@ -886,11 +896,13 @@ public:
 	 * @param Key - The key to check for.
 	 * @return true if the set contains an element with the given key.
 	 */
+#ifndef MINIUNREAL
+
 	FORCEINLINE bool Contains(KeyInitType Key) const
 	{
 		return FindId(Key).IsValidId();
 	}
-
+#endif
 	/**
 	 * Checks if the element contains an element with the given key.
 	 *
@@ -990,6 +1002,7 @@ public:
 #endif
 	}
 
+#ifndef MINIUNREAL
 	bool VerifyHashElementsKey(KeyInitType Key)
 	{
 		bool bResult=true;
@@ -1010,6 +1023,7 @@ public:
 		}
 		return bResult;
 	}
+#endif
 
 	void DumpHashElements(FOutputDevice& Ar)
 	{
@@ -1170,14 +1184,18 @@ private:
 			return Predicate( A.Value, B.Value );
 		}
 	};
-
+#ifdef MINIUNREAL
+	typedef TSparseArray<SetElementType>     ElementArrayType;
+	typedef std::tuple<FSetElementId> HashType;
+	ElementArrayType Elements;
+#else
 	typedef TSparseArray<SetElementType,typename Allocator::SparseArrayAllocator>     ElementArrayType;
 	typedef typename Allocator::HashAllocator::template ForElementType<FSetElementId> HashType;
 
 	ElementArrayType Elements;
-
 	mutable HashType Hash;
 	mutable int32	 HashSize;
+#endif
 
 	FORCEINLINE FSetElementId& GetTypedHash(int32 HashIndex) const
 	{
@@ -1344,6 +1362,8 @@ private:
 
 	public:
 		/** Initialization constructor. */
+#ifndef MINIUNREAL
+
 		FORCEINLINE TBaseKeyIterator(SetType& InSet,KeyInitType InKey)
 		:	Set(InSet)
 		,	Key(InKey)
@@ -1357,7 +1377,7 @@ private:
 				++(*this);
 			}
 		}
-
+#endif
 		/** Advances the iterator to the next element. */
 		FORCEINLINE TBaseKeyIterator& operator++()
 		{
@@ -1449,20 +1469,24 @@ public:
 	class TConstKeyIterator : public TBaseKeyIterator<true>
 	{
 	public:
+#ifndef MINIUNREAL
+
 		FORCEINLINE TConstKeyIterator(const TSet& InSet,KeyInitType InKey):
 			TBaseKeyIterator<true>(InSet,InKey)
 		{}
+#endif
 	};
 
 	/** Used to iterate over the elements of a TSet. */
 	class TKeyIterator : public TBaseKeyIterator<false>
 	{
 	public:
+#ifndef MINIUNREAL
 		FORCEINLINE TKeyIterator(TSet& InSet,KeyInitType InKey)
 		:	TBaseKeyIterator<false>(InSet,InKey)
 		,	Set(InSet)
 		{}
-
+#endif
 		/** Removes the current element from the set. */
 		FORCEINLINE void RemoveCurrent()
 		{
@@ -1805,8 +1829,10 @@ private:
 
 		// Check that the class footprint is the same
 		static_assert(sizeof (ScriptType) == sizeof (RealType), "FScriptSet's size doesn't match TSet");
-		static_assert(alignof(ScriptType) == alignof(RealType), "FScriptSet's alignment doesn't match TSet");
+#ifndef MINIUNREAL
 
+		static_assert(alignof(ScriptType) == alignof(RealType), "FScriptSet's alignment doesn't match TSet");
+#endif
 		// Check member sizes
 		static_assert(sizeof(DeclVal<ScriptType>().Elements) == sizeof(DeclVal<RealType>().Elements), "FScriptSet's Elements member size does not match TSet's");
 		static_assert(sizeof(DeclVal<ScriptType>().Hash)     == sizeof(DeclVal<RealType>().Hash),     "FScriptSet's Hash member size does not match TSet's");

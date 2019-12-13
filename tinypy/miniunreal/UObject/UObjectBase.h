@@ -39,6 +39,8 @@ class COREUOBJECT_API UObjectBase
 		const TCHAR* Name
 		);
 protected:
+#ifndef MINIUNREAL
+
 	UObjectBase() :
 		 NamePrivate(NoInit)  // screwy, but the name was already set and we don't want to set it again
 #if ENABLE_STATNAMEDEVENTS_UOBJECT
@@ -46,7 +48,7 @@ protected:
 #endif
 	{
 	}
-
+#endif
 	/**
 	 * Constructor used for bootstrapping
 	 * @param	InFlags			RF_Flags to assign
@@ -212,6 +214,8 @@ public:
 	 */
 	FORCENOINLINE void AtomicallySetFlags( EObjectFlags FlagsToAdd )
 	{
+#ifndef MINIUNREAL
+
 		int32 OldFlags = 0;
 		int32 NewFlags = 0;
 		do 
@@ -220,6 +224,7 @@ public:
 			NewFlags = OldFlags | FlagsToAdd;
 		}
 		while( FPlatformAtomics::InterlockedCompareExchange( (int32*)&ObjectFlags, NewFlags, OldFlags) != OldFlags );
+#endif
 	}
 
 	/**
@@ -229,6 +234,8 @@ public:
 	 */
 	FORCENOINLINE void AtomicallyClearFlags( EObjectFlags FlagsToClear )
 	{
+#ifndef MINIUNREAL
+
 		int32 OldFlags = 0;
 		int32 NewFlags = 0;
 		do 
@@ -237,6 +244,7 @@ public:
 			NewFlags = OldFlags & ~FlagsToClear;
 		}
 		while( FPlatformAtomics::InterlockedCompareExchange( (int32*)&ObjectFlags, NewFlags, OldFlags) != OldFlags );
+#endif
 	}
 
 private:
@@ -346,7 +354,10 @@ struct TClassCompiledInDefer : public FFieldCompiledInInfo
 	}
 	virtual UClass* Register() const override
 	{
+#ifndef MINIUNREAL
+
         LLM_SCOPE(ELLMTag::UObject);
+#endif
 		return TClass::StaticClass();
 	}
 	virtual const TCHAR* ClassPackage() const override
@@ -364,10 +375,12 @@ struct FCompiledInDefer
 {
 	FCompiledInDefer(class UClass *(*InRegister)(), class UClass *(*InStaticClass)(), const TCHAR* PackageName, const TCHAR* Name, bool bDynamic, const TCHAR* DynamicPackageName = nullptr, const TCHAR* DynamicPathName = nullptr, void (*InInitSearchableValues)(TMap<FName, FName>&) = nullptr)
 	{
+#ifndef MINIUNREAL
 		if (bDynamic)
 		{
 			GetConvertedDynamicPackageNameToTypeName().Add(FName(DynamicPackageName), FName(Name));
 		}
+#endif
 		UObjectCompiledInDefer(InRegister, InStaticClass, Name, PackageName, bDynamic, DynamicPathName, InInitSearchableValues);
 	}
 };
