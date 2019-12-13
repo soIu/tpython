@@ -184,13 +184,13 @@ public:
 	TSetElement& operator=(const TSetElement&) = default;
 
 	/** Serializer. */
+#ifndef MINIUNREAL
+
 	FORCEINLINE friend FArchive& operator<<(FArchive& Ar,TSetElement& Element)
 	{
 		return Ar << Element.Value;
 	}
-
 	/** Structured archive serializer. */
-#ifndef MINIUNREAL
  	FORCEINLINE friend void operator<<(FStructuredArchive::FSlot Slot, TSetElement& Element)
  	{
  		Slot << Element.Value;
@@ -232,8 +232,11 @@ class TSet
 	friend struct TContainerTraits<TSet>;
 	friend class  FScriptSet;
 
+
 	typedef typename KeyFuncs::KeyInitType     KeyInitType;
+#ifndef MINIUNREAL
 	typedef typename KeyFuncs::ElementInitType ElementInitType;
+#endif
 
 	typedef TSetElement<InElementType> SetElementType;
 
@@ -473,12 +476,14 @@ public:
 	}
 
 	/** Tracks the container's memory use through an archive. */
+#ifndef MINIUNREAL
+
 	FORCEINLINE void CountBytes(FArchive& Ar) const
 	{
 		Elements.CountBytes(Ar);
 		Ar.CountBytes(HashSize * sizeof(int32),HashSize * sizeof(FSetElementId));
 	}
-
+#endif
 	/** @return the number of elements. */
 	FORCEINLINE int32 Num() const
 	{
@@ -924,6 +929,8 @@ public:
 	}
 
 	/** Serializer. */
+#ifndef MINIUNREAL
+
 	friend FArchive& operator<<(FArchive& Ar,TSet& Set)
 	{
 		// Load the set's new elements.
@@ -943,7 +950,6 @@ public:
 	}
 
 	/** Structured archive serializer. */
-#ifndef MINIUNREAL
  	friend void operator<<(FStructuredArchive::FSlot Slot, TSet& Set)
  	{
 		Slot << Set.Elements;
@@ -965,6 +971,8 @@ public:
 	 */
 	void Dump(FOutputDevice& Ar)
 	{
+#ifndef MINIUNREAL
+
 		Ar.Logf( TEXT("TSet: %i elements, %i hash slots"), Elements.Num(), HashSize );
 		for (int32 HashIndex = 0, LocalHashSize = HashSize; HashIndex < LocalHashSize; ++HashIndex)
 		{
@@ -979,6 +987,7 @@ public:
 
 			Ar.Logf(TEXT("   Hash[%i] = %i"),HashIndex,NumElementsInBucket);
 		}
+#endif
 	}
 
 	bool VerifyHashElementsKey(KeyInitType Key)
@@ -1004,6 +1013,8 @@ public:
 
 	void DumpHashElements(FOutputDevice& Ar)
 	{
+#ifndef MINIUNREAL
+
 		for (int32 HashIndex = 0, LocalHashSize = HashSize; HashIndex < LocalHashSize; ++HashIndex)
 		{
 			Ar.Logf(TEXT("   Hash[%i]"),HashIndex);
@@ -1024,6 +1035,7 @@ public:
 				ElementId = Elements[ElementId].HashNextId;
 			}
 		}
+#endif
 	}
 
 	// Legacy comparison operators.  Note that these also test whether the set's elements were added in the same order!

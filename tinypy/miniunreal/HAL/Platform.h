@@ -135,10 +135,12 @@
 #endif // defined(__clang__)
 #endif
 
-#if PLATFORM_WINDOWS
-	#include "Windows/WindowsPlatformCodeAnalysis.h"
-#elif PLATFORM_COMPILER_CLANG
-	#include "Clang/ClangPlatformCodeAnalysis.h"
+#ifndef MINIUNREAL
+	#if PLATFORM_WINDOWS
+		#include "Windows/WindowsPlatformCodeAnalysis.h"
+	#elif PLATFORM_COMPILER_CLANG
+		#include "Clang/ClangPlatformCodeAnalysis.h"
+	#endif
 #endif
 
 #ifndef USING_ADDRESS_SANITISER

@@ -146,6 +146,9 @@ def rebuild(stage=None):
 	exeopts = ''
 
 	CC = 'c++'
+	if '--clang' in sys.argv:
+		CC = 'clang++-6.0'
+
 	libs = '-lm -ldl -lpthread'
 
 	if '--no-blendot' in sys.argv or '--includeos' in sys.argv or '--unreal' in sys.argv:

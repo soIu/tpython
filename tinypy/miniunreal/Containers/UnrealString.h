@@ -127,6 +127,7 @@ public:
 	>
 	FORCEINLINE FString(const CharType* Src)
 	{
+#ifndef MINIUNREAL
 		if (Src && *Src)
 		{
 			int32 SrcLen  = TCString<CharType>::Strlen(Src) + 1;
@@ -135,6 +136,7 @@ public:
 
 			FPlatformString::Convert(Data.GetData(), DestLen, Src, SrcLen);
 		}
+#endif
 	}
 
 	/** 
@@ -149,6 +151,8 @@ public:
 	>
 	FORCEINLINE explicit FString(int32 InCount, const CharType* InSrc)
 	{
+#ifndef MINIUNREAL
+
 		if (InSrc && *InSrc)
 		{
 			int32 DestLen = FPlatformString::ConvertedLength<TCHAR>(InSrc, InCount);
@@ -160,6 +164,7 @@ public:
 				*(Data.GetData() + Data.Num() - 1) = TEXT('\0');
 			}
 		}
+#endif
 	}
 
 #ifdef __OBJC__
@@ -917,7 +922,10 @@ public:
 	 */
 	FORCEINLINE friend bool operator<=(const FString& Lhs, const FString& Rhs)
 	{
+#ifndef MINIUNREAL
+
 		return FPlatformString::Stricmp(*Lhs, *Rhs) <= 0;
+#endif
 	}
 
 	/**
@@ -931,7 +939,9 @@ public:
 	template <typename CharType>
 	FORCEINLINE friend bool operator<=(const FString& Lhs, const CharType* Rhs)
 	{
+#ifndef MINIUNREAL
 		return FPlatformString::Stricmp(*Lhs, Rhs) <= 0;
+#endif
 	}
 
 	/**
@@ -945,7 +955,9 @@ public:
 	template <typename CharType>
 	FORCEINLINE friend bool operator<=(const CharType* Lhs, const FString& Rhs)
 	{
+#ifndef MINIUNREAL
 		return FPlatformString::Stricmp(Lhs, *Rhs) <= 0;
+#endif
 	}
 
 	/**
@@ -958,7 +970,9 @@ public:
 	 */
 	FORCEINLINE friend bool operator<(const FString& Lhs, const FString& Rhs)
 	{
+#ifndef MINIUNREAL
 		return FPlatformString::Stricmp(*Lhs, *Rhs) < 0;
+#endif
 	}
 
 	/**
@@ -972,7 +986,9 @@ public:
 	template <typename CharType>
 	FORCEINLINE friend bool operator<(const FString& Lhs, const CharType* Rhs)
 	{
+#ifndef MINIUNREAL
 		return FPlatformString::Stricmp(*Lhs, Rhs) < 0;
+#endif
 	}
 
 	/**
@@ -986,7 +1002,9 @@ public:
 	template <typename CharType>
 	FORCEINLINE friend bool operator<(const CharType* Lhs, const FString& Rhs)
 	{
+#ifndef MINIUNREAL
 		return FPlatformString::Stricmp(Lhs, *Rhs) < 0;
+#endif
 	}
 
 	/**
@@ -997,6 +1015,8 @@ public:
 	 * @return true if the left string is lexicographically >= the right string, otherwise false
 	 * @note case insensitive
 	 */
+#ifndef MINIUNREAL
+
 	FORCEINLINE friend bool operator>=(const FString& Lhs, const FString& Rhs)
 	{
 		return FPlatformString::Stricmp(*Lhs, *Rhs) >= 0;
@@ -1153,12 +1173,15 @@ public:
 		return FPlatformString::Stricmp(Lhs, *Rhs) != 0;
 	}
 
+#endif
+
 	/** Get the length of the string, excluding terminating character */
 	FORCEINLINE int32 Len() const
 	{
 		return Data.Num() ? Data.Num() - 1 : 0;
 	}
 
+#ifndef MINIUNREAL
 	/** Returns the left most given number of characters */
 	FORCEINLINE FString Left( int32 Count ) const
 	{
@@ -1193,7 +1216,7 @@ public:
 		End      = FMath::Clamp( (uint32)End,   (uint32)Start, (uint32)Len() );
 		return FString( End-Start, **this + Start );
 	}
-
+#endif
 	/**
 	 * Searches the string for a substring, and returns index into this string
 	 * of the first found instance. Can search from beginning or end, and ignore case or not.
@@ -1353,12 +1376,15 @@ public:
 	bool Split(const FString& InS, FString* LeftS, FString* RightS, ESearchCase::Type SearchCase = ESearchCase::IgnoreCase,
 		ESearchDir::Type SearchDir = ESearchDir::FromStart) const
 	{
+		#ifndef MINIUNREAL
+
 		int32 InPos = Find(InS, SearchCase, SearchDir);
 
 		if (InPos < 0)	{ return false; }
 
 		if (LeftS)		{ *LeftS = Left(InPos); }
 		if (RightS)	{ *RightS = Mid(InPos + InS.Len()); }
+		#endif
 
 		return true;
 	}
@@ -1407,6 +1433,7 @@ public:
 	 *
 	 * @returns FString object that was constructed using format and additional parameters.
 	 */
+#ifndef MINIUNREAL
 	template <typename FmtType, typename... Types>
 	static typename TEnableIf<TIsArrayOrRefOfType<FmtType, TCHAR>::Value, FString>::Type Printf(const FmtType& Fmt, Types... Args)
 	{
@@ -1441,6 +1468,7 @@ public:
 		AppendfImpl(*this, Fmt, Args...);
 		return *this;
 	}
+#endif
 
 private:
 	static FString VARARGS PrintfImpl(const TCHAR* Fmt, ...);
@@ -1894,10 +1922,15 @@ public:
 		return Result;
 	}
 
+#ifndef MINIUNREAL
+
 	FORCEINLINE void CountBytes(FArchive& Ar) const
 	{
 		Data.CountBytes(Ar);
 	}
+
+#endif
+
 };
 
 template<>
@@ -2108,12 +2141,14 @@ inline void LexFromString(bool& OutValue, 		const TCHAR* Buffer)	{	OutValue = FC
 inline void LexFromString(FString& OutValue, 	const TCHAR* Buffer)	{	OutValue = Buffer;						}
 
  /** Convert numeric types to a string */
-template<typename T>
-typename TEnableIf<TIsArithmetic<T>::Value, FString>::Type
-LexToString(const T& Value)
-{
-	return FString::Printf( TFormatSpecifier<T>::GetFormatSpecifier(), Value );
-}
+#ifndef MINIUNREAL
+	template<typename T>
+	typename TEnableIf<TIsArithmetic<T>::Value, FString>::Type
+	LexToString(const T& Value)
+	{
+		return FString::Printf( TFormatSpecifier<T>::GetFormatSpecifier(), Value );
+	}
+#endif
 
 template<typename CharType>
 typename TEnableIf<TIsCharType<CharType>::Value, FString>::Type
@@ -2190,6 +2225,8 @@ namespace Lex
 		LexFromString(OutValue, Buffer); 
 	}
 
+#ifndef MINIUNREAL
+
 	template<typename T> 
 	UE_DEPRECATED(4.20, "Lex::ToString has been deprecated. Please use LexToString instead.")
 #if PLATFORM_COMPILER_HAS_DECLTYPE_AUTO
@@ -2218,6 +2255,7 @@ namespace Lex
 	{ 
 		return LexTryParseString(OutValue, Buffer); 
 	}
+#endif
 }
 
 // Deprecated alias for old LexicalConversion namespace.
@@ -2272,6 +2310,9 @@ public:
 	{
 		bAutoEmitLineTerminator = false;
 	}
+#ifdef MINIUNREAL
+	bool bAutoEmitLineTerminator;
+#else
 	virtual void Serialize( const TCHAR* InData, ELogVerbosity::Type Verbosity, const class FName& Category ) override
 	{
 		FString::operator+=((TCHAR*)InData);
@@ -2280,7 +2321,7 @@ public:
 			*this += LINE_TERMINATOR;
 		}
 	}
-
+#endif
 	FStringOutputDevice(FStringOutputDevice&&) = default;
 	FStringOutputDevice(const FStringOutputDevice&) = default;
 	FStringOutputDevice& operator=(FStringOutputDevice&&) = default;
@@ -2306,6 +2347,8 @@ public:
 	:	Super( OutputDeviceName )
 	,	LineCount(0)
 	{}
+
+#ifndef MINIUNREAL
 
 	virtual void Serialize(const TCHAR* InData, ELogVerbosity::Type Verbosity, const class FName& Category) override
 	{
@@ -2350,6 +2393,8 @@ public:
 
 		return *this;
 	}
+
+#endif
 
 	int32 GetLineCount() const
 	{
@@ -2436,9 +2481,13 @@ struct CORE_API FTextRange
 
 	int32 Len() const { return EndIndex - BeginIndex; }
 	bool IsEmpty() const { return (EndIndex - BeginIndex) <= 0; }
+#ifndef MINIUNREAL
 	void Offset(int32 Amount) { BeginIndex += Amount; BeginIndex = FMath::Max(0, BeginIndex);  EndIndex += Amount; EndIndex = FMath::Max(0, EndIndex); }
+#endif
 	bool Contains(int32 Index) const { return Index >= BeginIndex && Index < EndIndex; }
 	bool InclusiveContains(int32 Index) const { return Index >= BeginIndex && Index <= EndIndex; }
+
+#ifndef MINIUNREAL
 
 	FTextRange Intersect(const FTextRange& Other) const
 	{
@@ -2450,6 +2499,7 @@ struct CORE_API FTextRange
 
 		return Intersected;
 	}
+#endif
 
 	/**
 	 * Produce an array of line ranges from the given text, breaking at any new-line characters

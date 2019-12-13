@@ -157,6 +157,8 @@ namespace UE4Tuple_Private
 	template <typename Indices, typename... Types>
 	struct TTupleStorage;
 
+	#ifndef MINIUNREAL
+
 	template <uint32... Indices, typename... Types>
 	struct TTupleStorage<TIntegerSequence<uint32, Indices...>, Types...> : TTupleElement<Types, Indices>...
 	{
@@ -401,7 +403,12 @@ namespace UE4Tuple_Private
 	{
 		enum { Value = sizeof...(Types) };
 	};
+
+#endif
+
 }
+
+#ifndef MINIUNREAL
 
 template <typename... Types>
 struct TTuple : UE4Tuple_Private::TTupleImpl<TMakeIntegerSequence<uint32, sizeof...(Types)>, Types...>
@@ -533,3 +540,4 @@ FORCEINLINE void VisitTupleElements(FuncType&& Func, FirstTupleType&& FirstTuple
 	UE4Tuple_Private::TVisitTupleElements_Impl<TMakeIntegerSequence<uint32, TTupleArity<typename TDecay<FirstTupleType>::Type>::Value>>::Do(Forward<FuncType>(Func), Forward<FirstTupleType>(FirstTuple), Forward<TupleTypes>(Tuples)...);
 }
 
+#endif

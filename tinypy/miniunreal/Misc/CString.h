@@ -10,8 +10,8 @@
 #include "Templates/AndOrNot.h"
 #ifndef MINIUNREAL
 	#include "Templates/IsValidVariadicFunctionArg.h"
-	#include "Templates/IsArrayOrRefOfType.h"
 #endif
+#include "Templates/IsArrayOrRefOfType.h"
 
 #define MAX_SPRINTF 1024
 
@@ -340,6 +340,8 @@ public:
 	* Standard string formatted print. 
 	* @warning: make sure code using FCString::Sprintf allocates enough (>= MAX_SPRINTF) memory for the destination buffer
 	*/
+#ifndef MINIUNREAL
+
 	template <typename FmtType, typename... Types>
 	static int32 Sprintf(CharType* Dest, const FmtType& Fmt, Types... Args)
 	{
@@ -360,6 +362,7 @@ public:
 
 		return SnprintfImpl(Dest, DestSize, Fmt, Args...);
 	}
+#endif
 
 	/**
 	 * Helper function to write formatted output using an argument list
@@ -622,93 +625,123 @@ const typename TCString<T>::CharType* TCString<T>::Stristr(const CharType* Str, 
 template <typename T> FORCEINLINE
 typename TCString<T>::CharType* TCString<T>::Strcpy(CharType* Dest, SIZE_T DestCount, const CharType* Src)
 {
+	#ifndef MINIUNREAL
 	return FPlatformString::Strcpy(Dest, DestCount, Src);
+	#endif
 }
 
 template <typename T> FORCEINLINE
 typename TCString<T>::CharType* TCString<T>::Strncpy( CharType* Dest, const CharType* Src, int32 MaxLen )
 {
 	check(MaxLen > 0);
+	#ifndef MINIUNREAL
 	FPlatformString::Strncpy(Dest, Src, MaxLen);
+	#endif
 	return Dest;
 }
 
 template <typename T> FORCEINLINE
 typename TCString<T>::CharType* TCString<T>::Strcat(CharType* Dest, SIZE_T DestCount, const CharType* Src)
 {
+	#ifndef MINIUNREAL
 	return FPlatformString::Strcat(Dest, DestCount, Src);
+	#endif
 }
 
 template <typename T> FORCEINLINE
 typename TCString<T>::CharType* TCString<T>::Strupr(CharType* Dest, SIZE_T DestCount)
 {
+	#ifndef MINIUNREAL
 	return FPlatformString::Strupr(Dest, DestCount);
+	#endif
 }
 
 template <typename T> FORCEINLINE
 int32 TCString<T>::Strcmp( const CharType* String1, const CharType* String2 )
 {
+	#ifndef MINIUNREAL
 	return FPlatformString::Strcmp(String1, String2);
+	#endif
 }
 
 template <typename T> FORCEINLINE
 int32 TCString<T>::Strncmp( const CharType* String1, const CharType* String2, SIZE_T Count)
 {
+	#ifndef MINIUNREAL
 	return FPlatformString::Strncmp(String1, String2, Count);
+	#endif
 }
 
 template <typename T> FORCEINLINE
 int32 TCString<T>::Stricmp( const CharType* String1, const CharType* String2 )
 {
+	#ifndef MINIUNREAL
 	return FPlatformString::Stricmp(String1, String2);
+	#endif
 }
 
 template <typename T> FORCEINLINE
 int32 TCString<T>::Strnicmp( const CharType* String1, const CharType* String2, SIZE_T Count )
 {
+	#ifndef MINIUNREAL
 	return FPlatformString::Strnicmp(String1, String2, Count);
+	#endif
 }
 
 template <typename T> FORCEINLINE
 int32 TCString<T>::Strlen( const CharType* String ) 
 {
+	#ifndef MINIUNREAL
 	return FPlatformString::Strlen(String);
+	#endif
 }
 
 template <typename T> FORCEINLINE
 const typename TCString<T>::CharType* TCString<T>::Strstr( const CharType* String, const CharType* Find )
 {
+	#ifndef MINIUNREAL
 	return FPlatformString::Strstr(String, Find);
+	#endif
 }
 
 template <typename T> FORCEINLINE
 typename TCString<T>::CharType* TCString<T>::Strstr( CharType* String, const CharType* Find )
 {
+	#ifndef MINIUNREAL
 	return (CharType*)FPlatformString::Strstr(String, Find);
+	#endif
 }
 
 template <typename T> FORCEINLINE
 const typename TCString<T>::CharType* TCString<T>::Strchr( const CharType* String, CharType c ) 
 { 
+	#ifndef MINIUNREAL
 	return FPlatformString::Strchr(String, c);
+	#endif
 }
 
 template <typename T> FORCEINLINE
 typename TCString<T>::CharType* TCString<T>::Strchr( CharType* String, CharType c ) 
 { 
+	#ifndef MINIUNREAL
 	return (CharType*)FPlatformString::Strchr(String, c);
+	#endif
 }
 
 template <typename T> FORCEINLINE
 const typename TCString<T>::CharType* TCString<T>::Strrchr( const CharType* String, CharType c )
 { 
+	#ifndef MINIUNREAL
 	return FPlatformString::Strrchr(String, c);
+	#endif
 }
 
 template <typename T> FORCEINLINE
 typename TCString<T>::CharType* TCString<T>::Strrchr( CharType* String, CharType c )
 { 
+	#ifndef MINIUNREAL
 	return (CharType*)FPlatformString::Strrchr(String, c);
+	#endif
 }
 
 template <typename T> FORCEINLINE
@@ -782,6 +815,8 @@ int32 TCString<T>::Strcspn( const CharType* String, const CharType* Mask )
 	return StringIt - String;
 }
 
+#ifndef MINIUNREAL
+
 template <typename T> FORCEINLINE 
 int32 TCString<T>::Atoi( const CharType* String ) 
 {
@@ -836,7 +871,7 @@ int32 TCString<T>::GetVarArgs( CharType* Dest, SIZE_T DestSize, const CharType*&
 {
 	return FPlatformString::GetVarArgs(Dest, DestSize, Fmt, ArgPtr);
 }
-
+#endif
 
 /*-----------------------------------------------------------------------------
 	TCString<WIDECHAR> specializations
@@ -870,12 +905,13 @@ inline int32 TCString<WIDECHAR>::SnprintfImpl(CharType* Dest, int32 DestSize, co
 	GET_VARARGS_RESULT_WIDE( Dest, DestSize, DestSize-1, Fmt, Fmt, Result );
 	return Result;
 }
-
-template <> 
-FORCEINLINE bool TCString<TCHAR>::ToBool(const WIDECHAR* Str)
-{
-	return FToBoolHelper::FromCStringWide(Str);
-}
+#ifndef MINIUNREAL
+	template <> 
+	FORCEINLINE bool TCString<TCHAR>::ToBool(const WIDECHAR* Str)
+	{
+		return FToBoolHelper::FromCStringWide(Str);
+	}
+#endif
 
 /*-----------------------------------------------------------------------------
 	TCString<ANSICHAR> specializations

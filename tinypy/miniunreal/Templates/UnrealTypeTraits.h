@@ -358,7 +358,10 @@ template<typename T>
 struct TTypeTraitsBase
 {
 	typedef typename TCallTraits<T>::ParamType ConstInitType;
+#ifndef MINIUNREAL
+
 	typedef typename TCallTraits<T>::ConstPointerType ConstPointerType;
+#endif
 
 	// There's no good way of detecting this so we'll just assume it to be true for certain known types and expect
 	// users to customize it for their custom types.

@@ -13,15 +13,18 @@
 #include "Templates/Invoke.h"
 #include "Templates/IsConstructible.h"
 
-#ifndef MINIUNREAL
-	#include "Templates/IsInvocable.h"
-	#include "Templates/IsMemberPointer.h"
-#endif
+#include "Templates/IsInvocable.h"
+#include "Templates/IsMemberPointer.h"
 
 #include "Templates/IsPointer.h"
 #include "Templates/UnrealTemplate.h"
 #include "Math/UnrealMathUtility.h"
 #include <new>
+
+#ifdef MINIUNREAL
+	#define TYPE_OF_NULLPTR std::nullptr_t
+	#define CA_ASSUME(x)
+#endif
 
 
 // Disable visualization hack for shipping or test builds.
@@ -1087,12 +1090,13 @@ public:
 /**
  * Nullptr equality operator.
  */
+#ifndef MINIUNREAL
 template <typename FuncType>
 FORCEINLINE bool operator==(TYPE_OF_NULLPTR, const TFunction<FuncType>& Func)
 {
 	return !Func;
 }
-
+#endif
 /**
  * Nullptr equality operator.
  */
@@ -1105,11 +1109,14 @@ FORCEINLINE bool operator==(const TFunction<FuncType>& Func, TYPE_OF_NULLPTR)
 /**
  * Nullptr inequality operator.
  */
+#ifndef MINIUNREAL
+
 template <typename FuncType>
 FORCEINLINE bool operator!=(TYPE_OF_NULLPTR, const TFunction<FuncType>& Func)
 {
 	return (bool)Func;
 }
+#endif
 
 /**
  * Nullptr inequality operator.

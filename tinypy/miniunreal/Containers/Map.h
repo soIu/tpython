@@ -89,6 +89,7 @@ public:
 template<typename KeyType, typename ValueType, bool bInAllowDuplicateKeys>
 struct TDefaultMapKeyFuncs : BaseKeyFuncs<TPair<KeyType,ValueType>,KeyType,bInAllowDuplicateKeys>
 {
+#ifndef MINIUNREAL
 	typedef typename TTypeTraits<KeyType>::ConstPointerType KeyInitType;
 	typedef const TPairInitializer<typename TTypeTraits<KeyType>::ConstInitType, typename TTypeTraits<ValueType>::ConstInitType>& ElementInitType;
 
@@ -104,12 +105,16 @@ struct TDefaultMapKeyFuncs : BaseKeyFuncs<TPair<KeyType,ValueType>,KeyType,bInAl
 	{
 		return GetTypeHash(Key);
 	}
+#endif
 };
 
 template<typename KeyType, typename ValueType, bool bInAllowDuplicateKeys>
 struct TDefaultMapHashableKeyFuncs : TDefaultMapKeyFuncs<KeyType, ValueType, bInAllowDuplicateKeys>
 {
+#ifndef MINIUNREAL
+
 	static_assert(TModels<CGetTypeHashable, KeyType>::Value, "TMap must have a hashable KeyType unless a custom key func is provided.");
+#endif
 };
 
 /** 
@@ -133,9 +138,13 @@ class TMapBase
 	friend struct TContainerTraits<TMapBase>;
 
 public:
+#ifndef MINIUNREAL
+
 	typedef typename TTypeTraits<KeyType  >::ConstPointerType KeyConstPointerType;
 	typedef typename TTypeTraits<KeyType  >::ConstInitType    KeyInitType;
 	typedef typename TTypeTraits<ValueType>::ConstInitType    ValueInitType;
+#endif
+
 	typedef TPair<KeyType, ValueType> ElementType;
 
 protected:
@@ -402,11 +411,14 @@ public:
 	 * @param InKey The key to remove associated values for.
 	 * @return The number of values that were associated with the key.
 	 */
+#ifndef MINIUNREAL
+
 	FORCEINLINE int32 Remove(KeyConstPointerType InKey)
 	{
 		const int32 NumRemovedPairs = Pairs.Remove(InKey);
 		return NumRemovedPairs;
 	}
+#endif
 
 	/** See Remove() and class documentation section on ByHash() functions */
 	template<typename ComparableKey>
@@ -426,6 +438,8 @@ public:
 	 *     or nullptr if the value isn't contained in this map. The pointer
 	 *     is only valid until the next change to any key in the map.
 	 */
+#ifndef MINIUNREAL
+
 	const KeyType* FindKey(ValueInitType Value) const
 	{
 		for(typename ElementSetType::TConstIterator PairIt(Pairs);PairIt;++PairIt)
@@ -458,7 +472,7 @@ public:
 	{
 		return const_cast<TMapBase*>(this)->Find(Key);
 	}
-
+#endif
 	/** See Find() and class documentation section on ByHash() functions */
 	template<typename ComparableKey>
 	FORCEINLINE ValueType* FindByHash(uint32 KeyHash, const ComparableKey& Key)
@@ -481,6 +495,8 @@ private:
 	{
 		return KeyFuncs::GetKeyHash(Key);
 	}
+
+#ifndef MINIUNREAL
 
 	/**
 	 * Find the value associated with a specified key, or if none exists, 
@@ -518,6 +534,7 @@ private:
 
 		return AddByHash(KeyHash, Forward<InitKeyType>(Key), Forward<InitValueType>(Value));
 	}
+#endif
 
 public:
 
@@ -560,6 +577,8 @@ public:
 	 * @param Key The key to search for.
 	 * @return The value associated with the specified key, or triggers an assertion if the key does not exist.
 	 */
+#ifndef MINIUNREAL
+
 	FORCEINLINE const ValueType& FindChecked(KeyConstPointerType Key) const
 	{
 		const auto* Pair = Pairs.Find(Key);
@@ -606,6 +625,7 @@ public:
 	{
 		return Pairs.Contains(Key);
 	}
+#endif
 
 	/** See Contains() and class documentation section on ByHash() functions */
 	template<typename ComparableKey>
@@ -641,6 +661,7 @@ public:
 			new(OutArray) ValueType(PairIt->Value);
 		}
 	}
+#ifndef MINIUNREAL
 
 	/** Serializer. */
 	FORCEINLINE friend FArchive& operator<<(FArchive& Ar,TMapBase& Map)
@@ -649,8 +670,6 @@ public:
 	}
 
 	/** Structured archive serializer. */
-
-#ifndef MINIUNREAL
 
 	FORCEINLINE friend void operator<<(FStructuredArchive::FSlot Slot, TMapBase& InMap)
 	{
@@ -852,23 +871,27 @@ public:
 	using TRangedForIterator      = TBaseIterator<false, true>;
 	using TRangedForConstIterator = TBaseIterator<true, true>;
 
+
 	/** Iterates over values associated with a specified key in a const map. */
 	class TConstKeyIterator : public TBaseKeyIterator<true>
 	{
 	public:
+#ifndef MINIUNREAL
 		FORCEINLINE TConstKeyIterator(const TMapBase& InMap,KeyInitType InKey)
 		:	TBaseKeyIterator<true>(typename ElementSetType::TConstKeyIterator(InMap.Pairs,InKey))
 		{}
+#endif
 	};
 
 	/** Iterates over values associated with a specified key in a map. */
 	class TKeyIterator : public TBaseKeyIterator<false>
 	{
 	public:
+#ifndef MINIUNREAL
 		FORCEINLINE TKeyIterator(TMapBase& InMap,KeyInitType InKey)
 		:	TBaseKeyIterator<false>(typename ElementSetType::TKeyIterator(InMap.Pairs,InKey))
 		{}
-
+#endif
 		/** Removes the current key-value pair from the map. */
 		FORCEINLINE void RemoveCurrent()
 		{
@@ -887,19 +910,19 @@ public:
 	{
 		return TConstIterator(*this);
 	}
+#ifndef MINIUNREAL
 
 	/** Creates an iterator over the values associated with a specified key in a map */
 	FORCEINLINE TKeyIterator CreateKeyIterator(KeyInitType InKey)
 	{
 		return TKeyIterator(*this, InKey);
 	}
-
 	/** Creates a const iterator over the values associated with a specified key in a map */
 	FORCEINLINE TConstKeyIterator CreateConstKeyIterator(KeyInitType InKey) const
 	{
 		return TConstKeyIterator(*this, InKey);
 	}
-
+#endif
 public:
 	/**
 	 * DO NOT USE DIRECTLY
@@ -1047,18 +1070,24 @@ class TMap : public TSortableMapBase<KeyType, ValueType, SetAllocator, KeyFuncs>
 	friend struct TContainerTraits<TMap>;
 	friend class  FScriptMap;
 
+#ifndef MINIUNREAL
+
 	static_assert(!KeyFuncs::bAllowDuplicateKeys, "TMap cannot be instantiated with a KeyFuncs which allows duplicate keys");
+#endif
 
 public:
+#ifndef MINIUNREAL
 	typedef TSortableMapBase<KeyType, ValueType, SetAllocator, KeyFuncs> Super;
 	typedef typename Super::KeyInitType KeyInitType;
 	typedef typename Super::KeyConstPointerType KeyConstPointerType;
-
+#endif
 	TMap() = default;
 	TMap(TMap&&) = default;
 	TMap(const TMap&) = default;
 	TMap& operator=(TMap&&) = default;
 	TMap& operator=(const TMap&) = default;
+
+#ifndef MINIUNREAL
 
 	/** Constructor for moving elements from a TMap with a different SetAllocator */
 	template<typename OtherSetAllocator>
@@ -1073,7 +1102,7 @@ public:
 		: Super(Other)
 	{
 	}
-
+#endif
 	/** Constructor which gets its elements from a native initializer list */
 	TMap(std::initializer_list<TPairInitializer<const KeyType&, const ValueType&>> InitList)
 	{
@@ -1088,16 +1117,21 @@ public:
 	template<typename OtherSetAllocator>
 	TMap& operator=(TMap<KeyType, ValueType, OtherSetAllocator, KeyFuncs>&& Other)
 	{
+#ifndef MINIUNREAL
+
 		(Super&)*this = MoveTemp(Other);
 		return *this;
+#endif
 	}
 
 	/** Assignment operator for copying elements from a TMap with a different SetAllocator */
 	template<typename OtherSetAllocator>
 	TMap& operator=(const TMap<KeyType, ValueType, OtherSetAllocator, KeyFuncs>& Other)
 	{
+#ifndef MINIUNREAL
 		(Super&)*this = Other;
 		return *this;
+#endif
 	}
 
 	/** Assignment operator which gets its elements from a native initializer list */
@@ -1119,6 +1153,8 @@ public:
 	 * @param OutRemovedValue If found, the value that was removed (not modified if the key was not found)
 	 * @return whether or not the key was found
 	 */
+#ifndef MINIUNREAL
+
 	FORCEINLINE bool RemoveAndCopyValue(KeyInitType Key,ValueType& OutRemovedValue)
 	{
 		const FSetElementId PairId = Super::Pairs.FindId(Key);
@@ -1183,6 +1219,8 @@ public:
 
 	FORCEINLINE       ValueType& operator[](KeyConstPointerType Key)       { return this->FindChecked(Key); }
 	FORCEINLINE const ValueType& operator[](KeyConstPointerType Key) const { return this->FindChecked(Key); }
+#endif
+
 };
 
 
@@ -1695,14 +1733,14 @@ private:
 		typedef TMap<int32, int8> RealType;
 
 		// Check that the class footprint is the same
+#ifndef MINIUNREAL
 		static_assert(sizeof (ScriptType) == sizeof (RealType), "FScriptMap's size doesn't match TMap");
 		static_assert(alignof(ScriptType) == alignof(RealType), "FScriptMap's alignment doesn't match TMap");
-
 		// Check member sizes
 		static_assert(sizeof(DeclVal<ScriptType>().Pairs) == sizeof(DeclVal<RealType>().Pairs), "FScriptMap's Pairs member size does not match TMap's");
-
 		// Check member offsets
 		static_assert(STRUCT_OFFSET(ScriptType, Pairs) == STRUCT_OFFSET(RealType, Pairs), "FScriptMap's Pairs member offset does not match TMap's");
+#endif
 	}
 
 public:

@@ -21,10 +21,12 @@ struct FBitSet
 	/** Clears the next set bit in the mask and returns its index. */
 	static FORCEINLINE uint32 GetAndClearNextBit(uint32& Mask)
 	{
+#ifndef MINIUNREAL
 		const uint32 LowestBitMask = (Mask) & (-(int32)Mask);
 		const uint32 BitIndex = FMath::FloorLog2(LowestBitMask);
 		Mask ^= LowestBitMask;
 		return BitIndex;
+#endif
 	}
 };
 
@@ -91,6 +93,8 @@ public:
 			Data &= ~Mask;
 		}
 	}
+#ifndef MINIUNREAL
+
 	FORCEINLINE void AtomicSet(const bool NewValue)
 	{
 		if(NewValue)
@@ -124,6 +128,7 @@ public:
 			}
 		}
 	}
+#endif
 	FORCEINLINE FBitReference& operator=(const FBitReference& Copy)
 	{
 		// As this is emulating a reference, assignment should not rebind,
@@ -239,6 +244,8 @@ public:
 	 */
 	FORCEINLINE TBitArray& operator=(const TBitArray& Copy)
 	{
+#ifndef MINIUNREAL
+
 		// check for self assignment since we don't use swap() mechanic
 		if( this == &Copy )
 		{
@@ -253,10 +260,13 @@ public:
 			FMemory::Memcpy(GetData(),Copy.GetData(),NumDWORDs * sizeof(uint32));
 		}
 		return *this;
+#endif
 	}
 
 	FORCEINLINE bool operator==(const TBitArray<Allocator>& Other) const
 	{
+
+#ifndef MINIUNREAL
 		if (Num() != Other.Num())
 		{
 			return false;
@@ -264,7 +274,10 @@ public:
 
 		int NumBytes = FMath::DivideAndRoundUp(NumBits, NumBitsPerDWORD) * sizeof(uint32);
 		return FMemory::Memcmp(GetData(), Other.GetData(), NumBytes) == 0;
+#endif
 	}
+
+#ifndef MINIUNREAL
 
 	FORCEINLINE bool operator<(const TBitArray<Allocator>& Other) const
 	{
@@ -288,6 +301,7 @@ public:
 		}
 		return false;
 	}
+#endif
 
 	FORCEINLINE bool operator!=(const TBitArray<Allocator>& Other)
 	{
@@ -384,6 +398,8 @@ public:
 	 */
 	void Empty(int32 ExpectedNumBits = 0)
 	{
+#ifndef MINIUNREAL
+
 		NumBits = 0;
 
 		ExpectedNumBits = FMath::DivideAndRoundUp(ExpectedNumBits, NumBitsPerDWORD) * NumBitsPerDWORD;
@@ -393,6 +409,7 @@ public:
 			MaxBits = ExpectedNumBits;
 			Realloc(0);
 		}
+#endif
 	}
 
 	/**
@@ -402,6 +419,8 @@ public:
 	 */
 	void Reserve(int32 Number)
 	{
+#ifndef MINIUNREAL
+
 		if (Number > MaxBits)
 		{
 			const uint32 MaxDWORDs = AllocatorInstance.CalculateSlackGrow(
@@ -412,6 +431,7 @@ public:
 			MaxBits = MaxDWORDs * NumBitsPerDWORD;
 			Realloc(NumBits);
 		}
+#endif
 	}
 
 	/**
@@ -419,10 +439,13 @@ public:
 	 */
 	void Reset()
 	{
+#ifndef MINIUNREAL
+
 		// We need this because iterators often use whole DWORDs when masking, which includes off-the-end elements
 		FMemory::Memset(GetData(), 0, FMath::DivideAndRoundUp(NumBits, NumBitsPerDWORD) * sizeof(uint32));
-
+#endif
 		NumBits = 0;
+
 	}
 
 	/**
@@ -433,11 +456,15 @@ public:
 	void Init(bool Value,int32 InNumBits)
 	{
 		Empty(InNumBits);
+#ifndef MINIUNREAL
+
 		if(InNumBits)
 		{
 			NumBits = InNumBits;
 			FMemory::Memset(GetData(),Value ? 0xff : 0, FMath::DivideAndRoundUp(NumBits, NumBitsPerDWORD) * sizeof(uint32));
 		}
+
+#endif
 	}
 
 	/**
@@ -571,7 +598,9 @@ public:
 	 */
 	uint32 GetAllocatedSize( void ) const
 	{
+#ifndef MINIUNREAL
 		return FMath::DivideAndRoundUp(MaxBits, NumBitsPerDWORD) * sizeof(uint32);
+#endif
 	}
 
 	/** Tracks the container's memory use through an archive. */
@@ -592,6 +621,8 @@ public:
 	 */
 	int32 Find(bool bValue) const
 	{
+#ifndef MINIUNREAL
+
 		// Iterate over the array until we see a word with a matching bit
 		const uint32 Test = bValue ? 0u : (uint32)-1;
 
@@ -615,7 +646,7 @@ public:
 				return LowestBitIndex;
 			}
 		}
-
+#endif
 		return INDEX_NONE;
 	}
 
@@ -625,6 +656,8 @@ public:
 	*/
 	int32 FindLast(bool bValue) const 
 	{
+#ifndef MINIUNREAL
+
 		const int32 LocalNumBits = NumBits;
 
 		// Get the correct mask for the last word
@@ -657,6 +690,7 @@ public:
 
 		int32 Result = BitIndex + (DwordIndex << NumBitsPerDWORDLogTwo);
 		return Result;
+#endif
 	}
 
 	FORCEINLINE bool Contains(bool bValue) const
@@ -670,6 +704,8 @@ public:
 	 */
 	int32 FindAndSetFirstZeroBit(int32 ConservativeStartIndex = 0)
 	{
+#ifndef MINIUNREAL
+
 		// Iterate over the array until we see a word with a zero bit.
 		uint32* RESTRICT DwordArray = GetData();
 		const int32 LocalNumBits = NumBits;
@@ -693,7 +729,7 @@ public:
 				return LowestBitIndex;
 			}
 		}
-
+#endif
 		return INDEX_NONE;
 	}
 
@@ -703,6 +739,8 @@ public:
 	 */
 	int32 FindAndSetLastZeroBit()
 	{
+
+#ifndef MINIUNREAL
 		const int32 LocalNumBits = NumBits;
 
 		// Get the correct mask for the last word
@@ -735,6 +773,7 @@ public:
 
 		int32 Result = BitIndex + (DwordIndex << NumBitsPerDWORDLogTwo);
 		return Result;
+#endif
 	}
 
 	// Accessors.
@@ -760,6 +799,9 @@ public:
 			1 << (Index & (NumBitsPerDWORD - 1))
 			);
 	}
+
+#ifndef MINIUNREAL
+
 	FORCEINLINE FBitReference AccessCorrespondingBit(const FRelativeBitReference& RelativeReference)
 	{
 		checkSlow(RelativeReference.Mask);
@@ -780,7 +822,7 @@ public:
 			RelativeReference.Mask
 			);
 	}
-
+#endif
 	/** BitArray iterator. */
 	class FIterator : public FRelativeBitReference
 	{
@@ -922,6 +964,8 @@ private:
 
 	FORCENOINLINE void Realloc(int32 PreviousNumBits)
 	{
+
+#ifndef MINIUNREAL
 		const int32 PreviousNumDWORDs = FMath::DivideAndRoundUp(PreviousNumBits, NumBitsPerDWORD);
 		const int32 MaxDWORDs = FMath::DivideAndRoundUp(MaxBits, NumBitsPerDWORD);
 
@@ -932,12 +976,15 @@ private:
 			// Reset the newly allocated slack DWORDs.
 			FMemory::Memzero((uint32*)AllocatorInstance.GetAllocation() + PreviousNumDWORDs,(MaxDWORDs - PreviousNumDWORDs) * sizeof(uint32));
 		}
+#endif
 	}
 };
 
 template<typename Allocator>
 FORCEINLINE uint32 GetTypeHash(const TBitArray<Allocator>& BitArray)
 {
+#ifndef MINIUNREAL
+
 	uint32 NumWords = FMath::DivideAndRoundUp(BitArray.Num(), NumBitsPerDWORD);
 	uint32 Hash = NumWords;
 	const uint32* Data = BitArray.GetData();
@@ -946,6 +993,7 @@ FORCEINLINE uint32 GetTypeHash(const TBitArray<Allocator>& BitArray)
 		Hash ^= Data[i];
 	}
 	return Hash;
+#endif
 }
 
 template<typename Allocator>
@@ -1025,6 +1073,8 @@ private:
 	int32 CurrentBitIndex;
 	int32 BaseBitIndex;
 
+#ifndef MINIUNREAL
+
 	/** Find the first set bit starting with the current bit, inclusive. */
 	void FindFirstSetBit()
 	{
@@ -1066,6 +1116,7 @@ private:
 			CurrentBitIndex = ArrayNum;
 		}
 	}
+#endif
 };
 
 
@@ -1134,9 +1185,12 @@ private:
 	int32 CurrentBitIndex;
 	int32 BaseBitIndex;
 
+
 	/** Find the first bit that is set in both arrays, starting with the current bit, inclusive. */
 	void FindFirstSetBit()
 	{
+#ifndef MINIUNREAL
+
 		static const uint32 EmptyArrayData = 0;
 		const uint32* ArrayDataA = IfAThenAElseB(ArrayA.GetData(),&EmptyArrayData);
 		const uint32* ArrayDataB = IfAThenAElseB(ArrayB.GetData(),&EmptyArrayData);
@@ -1173,6 +1227,7 @@ private:
 
 		// If the Nth bit was the lowest set bit of BitMask, then this gives us N
 		CurrentBitIndex = BaseBitIndex + NumBitsPerDWORD - 1 - FMath::CountLeadingZeros(this->Mask);
+	#endif
 	}
 };
 
@@ -1222,6 +1277,7 @@ public:
 	void Empty(int32 Slack = 0)
 	{
 		NumBits = 0;
+#ifndef MINIUNREAL
 
 		Slack = FMath::DivideAndRoundUp(Slack, NumBitsPerDWORD) * NumBitsPerDWORD;
 		// If the expected number of bits doesn't match the allocated number of bits, reallocate.
@@ -1230,6 +1286,7 @@ public:
 			MaxBits = Slack;
 			Realloc(0);
 		}
+#endif
 	}
 
 	int32 Add(const bool Value)
@@ -1284,6 +1341,8 @@ private:
 
 	FORCENOINLINE void Realloc(int32 PreviousNumBits)
 	{
+#ifndef MINIUNREAL
+
 		const uint32 MaxDWORDs = AllocatorInstance.CalculateSlackReserve(
 			FMath::DivideAndRoundUp(MaxBits, NumBitsPerDWORD),
 			sizeof(uint32)
@@ -1298,9 +1357,12 @@ private:
 			// Reset the newly allocated slack DWORDs.
 			FMemory::Memzero((uint32*)AllocatorInstance.GetAllocation() + PreviousNumDWORDs, (MaxDWORDs - PreviousNumDWORDs) * sizeof(uint32));
 		}
+#endif
 	}
 	FORCENOINLINE void ReallocGrow(int32 PreviousNumBits)
 	{
+#ifndef MINIUNREAL
+
 		// Allocate memory for the new bits.
 		const uint32 MaxDWORDs = AllocatorInstance.CalculateSlackGrow(
 			FMath::DivideAndRoundUp(NumBits, NumBitsPerDWORD),
@@ -1315,6 +1377,7 @@ private:
 			// Reset the newly allocated slack DWORDs.
 			FMemory::Memzero((uint32*)AllocatorInstance.GetAllocation() + PreviousNumDWORDs, (MaxDWORDs - PreviousNumDWORDs) * sizeof(uint32));
 		}
+#endif
 	}
 
 public:

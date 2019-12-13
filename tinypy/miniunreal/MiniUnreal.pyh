@@ -30,7 +30,7 @@ define(PTRINT=uint64)
 define(UPTRINT=uint64)
 define(CA_NO_RETURN=)
 define(FORCEINLINE_DEBUGGABLE=inline)
-define(TYPE_OF_NULLPTR=nullptr_t)
+define(TYPE_OF_NULLPTR=std::nullptr_t)
 define(PLATFORM_64BITS=1)
 #endif
 

@@ -102,6 +102,8 @@ struct FLinearColor;
  * Structure for all math helper functions, inherits from platform math to pick up platform-specific implementations
  * Check GenericPlatformMath.h for additional math functions
  */
+#ifndef MINIUNREAL
+
 struct FMath : public FPlatformMath
 {
 	// Random Number Functions
@@ -1651,3 +1653,4 @@ struct FMath : public FPlatformMath
 	}
 };
 
+#endif
