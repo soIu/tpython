@@ -39,8 +39,9 @@ class COREUOBJECT_API UObjectBase
 		const TCHAR* Name
 		);
 protected:
-#ifndef MINIUNREAL
-
+#ifdef MINIUNREAL
+	UObjectBase(){}
+#else
 	UObjectBase() :
 		 NamePrivate(NoInit)  // screwy, but the name was already set and we don't want to set it again
 #if ENABLE_STATNAMEDEVENTS_UOBJECT

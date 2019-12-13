@@ -164,6 +164,8 @@ template <typename InElementType>
 class TSetElement
 {
 public:
+#ifndef MINIUNREAL
+
 	typedef InElementType ElementType;
 
 	/** The element's value. */
@@ -188,7 +190,6 @@ public:
 	TSetElement& operator=(const TSetElement&) = default;
 
 	/** Serializer. */
-#ifndef MINIUNREAL
 
 	FORCEINLINE friend FArchive& operator<<(FArchive& Ar,TSetElement& Element)
 	{
@@ -199,7 +200,6 @@ public:
  	{
  		Slot << Element.Value;
  	}
-#endif
 	// Comparison operators
 	FORCEINLINE bool operator==(const TSetElement& Other) const
 	{
@@ -209,6 +209,7 @@ public:
 	{
 		return Value != Other.Value;
 	}
+#endif
 };
 
 /**
@@ -281,6 +282,8 @@ public:
 	/** Assignment operator. */
 	TSet& operator=(const TSet& Copy)
 	{
+#ifndef MINIUNREAL
+
 		if (this != &Copy)
 		{
 			int32 CopyHashSize = Copy.HashSize;
@@ -292,6 +295,7 @@ public:
 
 			Elements = Copy.Elements;
 		}
+#endif
 		return *this;
 	}
 
@@ -404,6 +408,8 @@ public:
 	/** Efficiently empties out the set but preserves all allocations and capacities */
     void Reset()
     {
+#ifndef MINIUNREAL
+
 		if (Num() == 0)
 		{
 			return;
@@ -414,6 +420,7 @@ public:
 
 		// Clear the references to the elements that have now been removed.
 		FSetElementId::ResetRange(Hash.GetAllocation(), HashSize);
+#endif
     }
 
 	/** Shrinks the set's element storage to avoid slack. */
@@ -1199,7 +1206,10 @@ private:
 
 	FORCEINLINE FSetElementId& GetTypedHash(int32 HashIndex) const
 	{
+#ifndef MINIUNREAL
+
 		return ((FSetElementId*)Hash.GetAllocation())[HashIndex & (HashSize - 1)];
+#endif
 	}
 
 	/**
@@ -1271,6 +1281,8 @@ private:
 	/** Resizes the hash. */
 	void Rehash() const
 	{
+#ifndef MINIUNREAL
+
 		// Free the old hash.
 		Hash.ResizeAllocation(0,0,sizeof(FSetElementId));
 
@@ -1291,6 +1303,7 @@ private:
 				HashElement(FSetElementId(ElementIt.GetIndex()),*ElementIt);
 			}
 		}
+#endif
 	}
 
 	/** The base type of whole set iterators. */
@@ -1808,7 +1821,10 @@ private:
 
 	FORCEINLINE FSetElementId& GetTypedHash(int32 HashIndex) const
 	{
+#ifndef MINIUNREAL
+
 		return ((FSetElementId*)Hash.GetAllocation())[HashIndex & (HashSize - 1)];
+#endif
 	}
 
 	static FSetElementId& GetHashNextIdRef(const void* Element, const FScriptSetLayout& Layout)
@@ -1828,20 +1844,14 @@ private:
 		typedef TSet<int32> RealType;
 
 		// Check that the class footprint is the same
-		static_assert(sizeof (ScriptType) == sizeof (RealType), "FScriptSet's size doesn't match TSet");
 #ifndef MINIUNREAL
-
+		static_assert(sizeof (ScriptType) == sizeof (RealType), "FScriptSet's size doesn't match TSet");
 		static_assert(alignof(ScriptType) == alignof(RealType), "FScriptSet's alignment doesn't match TSet");
-#endif
 		// Check member sizes
 		static_assert(sizeof(DeclVal<ScriptType>().Elements) == sizeof(DeclVal<RealType>().Elements), "FScriptSet's Elements member size does not match TSet's");
 		static_assert(sizeof(DeclVal<ScriptType>().Hash)     == sizeof(DeclVal<RealType>().Hash),     "FScriptSet's Hash member size does not match TSet's");
 		static_assert(sizeof(DeclVal<ScriptType>().HashSize) == sizeof(DeclVal<RealType>().HashSize), "FScriptSet's HashSize member size does not match TSet's");
-
 		// Check member offsets
-
-#ifndef MINIUNREAL
-
 		static_assert(STRUCT_OFFSET(ScriptType, Elements) == STRUCT_OFFSET(RealType, Elements), "FScriptSet's Elements member offset does not match TSet's");
 		static_assert(STRUCT_OFFSET(ScriptType, Hash)     == STRUCT_OFFSET(RealType, Hash),     "FScriptSet's Hash member offset does not match TSet's");
 		static_assert(STRUCT_OFFSET(ScriptType, HashSize) == STRUCT_OFFSET(RealType, HashSize), "FScriptSet's FirstFreeIndex member offset does not match TSet's");
