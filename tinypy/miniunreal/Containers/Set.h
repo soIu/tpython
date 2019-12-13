@@ -14,9 +14,11 @@
 #ifdef MINIUNREAL
 	#include "Templates/Function.h"
 	#include <initializer_list>
+	#include "Templates/TypeHash.h"
 	#include "Containers/SparseArray.h"
 	#include "Templates/AreTypesEqual.h"
 	#include "Templates/Decay.h"
+	#define INDEX_NONE 0
 
 #else
 	#include "Misc/StructBuilder.h"
@@ -188,11 +190,12 @@ public:
 	}
 
 	/** Structured archive serializer. */
+#ifndef MINIUNREAL
  	FORCEINLINE friend void operator<<(FStructuredArchive::FSlot Slot, TSetElement& Element)
  	{
  		Slot << Element.Value;
  	}
-
+#endif
 	// Comparison operators
 	FORCEINLINE bool operator==(const TSetElement& Other) const
 	{
@@ -940,6 +943,7 @@ public:
 	}
 
 	/** Structured archive serializer. */
+#ifndef MINIUNREAL
  	friend void operator<<(FStructuredArchive::FSlot Slot, TSet& Set)
  	{
 		Slot << Set.Elements;
@@ -954,7 +958,7 @@ public:
 			Set.ConditionalRehash(Set.Elements.Num());
 		}
  	}
-
+#endif
 	/**
 	 * Describes the set's contents through an output device.
 	 * @param Ar - The output device to describe the set's contents through.
@@ -1504,6 +1508,7 @@ struct FScriptSetLayout
 class FScriptSet
 {
 public:
+#ifndef MINIUNREAL
 	static FScriptSetLayout GetScriptLayout(int32 ElementSize, int32 ElementAlignment)
 	{
 		FScriptSetLayout Result;
@@ -1520,7 +1525,7 @@ public:
 
 		return Result;
 	}
-
+#endif
 	FScriptSet()
 		: HashSize(0)
 	{

@@ -4,9 +4,7 @@
 
 #include "CoreTypes.h"
 #include "Templates/IsPODType.h"
-#ifndef MINIUNREAL
-	#include "Templates/IsEnumClass.h"
-#endif
+#include "Templates/IsEnumClass.h"
 
 template <bool> struct TEnumAsByte_EnumClass;
 template <> struct UE_DEPRECATED(4.15, "TEnumAsByte is not intended for use with enum classes - please derive your enum class from uint8 instead.") TEnumAsByte_EnumClass<true> {};

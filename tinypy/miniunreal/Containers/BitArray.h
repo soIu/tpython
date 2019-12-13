@@ -45,8 +45,12 @@ class FScriptBitArray;
 /**
  * Serializer (predefined for no friend injection in gcc 411)
  */
+#ifndef MINIUNREAL
+
 template<typename Allocator>
 FArchive& operator<<(FArchive& Ar, TBitArray<Allocator>& BitArray);
+
+#endif
 
 /** Used to read/write a bit in the array as a bool. */
 class FBitReference
@@ -312,6 +316,8 @@ public:
 	/**
 	 * Serializer
 	 */
+#ifndef MINIUNREAL
+
 	friend FArchive& operator<<(FArchive& Ar, TBitArray& BitArray)
 	{
 		// serialize number of bits
@@ -334,6 +340,7 @@ public:
 
 		return Ar;
 	}
+#endif
 
 	/**
 	 * Adds a bit to the array with the given value.
@@ -568,6 +575,8 @@ public:
 	}
 
 	/** Tracks the container's memory use through an archive. */
+#ifndef MINIUNREAL
+
 	void CountBytes(FArchive& Ar) const
 	{
 		Ar.CountBytes(
@@ -575,6 +584,7 @@ public:
 			FMath::DivideAndRoundUp(MaxBits, NumBitsPerDWORD) * sizeof(uint32)
 		);
 	}
+#endif
 
 	/**
 	 * Finds the first true/false bit in the array, and returns the bit index.

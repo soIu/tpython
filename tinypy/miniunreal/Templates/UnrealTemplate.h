@@ -6,26 +6,16 @@
 #include "Templates/IsPointer.h"
 #include "HAL/UnrealMemory.h"
 
-#ifdef MINIUNREAL
-	#include "Templates/AndOrNot.h"
-	#include "Templates/AreTypesEqual.h"
-	#include "Templates/IsArithmetic.h"
-	#include "Templates/UnrealTypeTraits.h"
-	#include "Templates/RemoveReference.h"
-	#include "Templates/Identity.h"
-	#include "Traits/IsContiguousContainer.h"
-
-#else
-	#include "Templates/EnableIf.h"
-	#include "Templates/AndOrNot.h"
-	#include "Templates/AreTypesEqual.h"
-	#include "Templates/IsArithmetic.h"
-	#include "Templates/UnrealTypeTraits.h"
-	#include "Templates/RemoveReference.h"
-	#include "Templates/TypeCompatibleBytes.h"
-	#include "Templates/Identity.h"
-	#include "Traits/IsContiguousContainer.h"
-#endif
+//#ifdef MINIUNREAL
+#include "Templates/EnableIf.h"
+#include "Templates/AndOrNot.h"
+#include "Templates/AreTypesEqual.h"
+#include "Templates/IsArithmetic.h"
+#include "Templates/UnrealTypeTraits.h"
+#include "Templates/RemoveReference.h"
+#include "Templates/TypeCompatibleBytes.h"
+#include "Templates/Identity.h"
+#include "Traits/IsContiguousContainer.h"
 
 /*-----------------------------------------------------------------------------
 	Standard templates.

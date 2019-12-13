@@ -15,9 +15,9 @@
 #include "Math/UnrealMathUtility.h"
 #include "Containers/ScriptArray.h"
 #include "Containers/BitArray.h"
+#include "Templates/IsTriviallyDestructible.h"
 
 #ifndef MINIUNREAL
-	#include "Templates/IsTriviallyDestructible.h"
 	#include "Serialization/StructuredArchive.h"
 #endif
 
@@ -544,11 +544,13 @@ public:
 	}
 
 	/** Tracks the container's memory use through an archive. */
+#ifndef MINIUNREAL
 	void CountBytes(FArchive& Ar) const
 	{
 		Data.CountBytes(Ar);
 		AllocationFlags.CountBytes(Ar);
 	}
+#endif
 
 	bool IsCompact() const
 	{
@@ -556,6 +558,8 @@ public:
 	}
 
 	/** Serializer. */
+#ifndef MINIUNREAL
+
 	friend FArchive& operator<<(FArchive& Ar,TSparseArray& Array)
 	{
 		Array.CountBytes(Ar);
@@ -607,6 +611,7 @@ public:
 			}
 		}
 	}
+#endif
 
 	/**
 	 * Equality comparison operator.

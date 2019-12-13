@@ -3,6 +3,7 @@
 #ifdef MINIUNREAL
 import "GenericPlatform/GenericPlatform.h"
 import <wchar.h>
+import <cstdint>
 define(TCHAR=char16_t)
 ##define(TCHAR=wchar_t)
 ##define WIDECHAR wchar_t

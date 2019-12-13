@@ -5,6 +5,11 @@
 
 #pragma once
 
+#ifdef MINIUNREAL
+	#define PLATFORM_TCHAR_IS_CHAR16 1
+	#define PLATFORM_WCHAR_IS_4_BYTES 1
+#endif
+
 #include "CoreTypes.h"
 #include "Misc/AssertionMacros.h"
 #include "Containers/ContainerAllocationPolicies.h"
@@ -24,13 +29,17 @@ public:
 
 	FORCEINLINE static void Convert(To* Dest, int32 DestLen, const From* Source, int32 SourceLen)
 	{
+		#ifndef MINIUNREAL
 		To* Result = FPlatformString::Convert(Dest, DestLen, Source, SourceLen, (To)UNICODE_BOGUS_CHAR_CODEPOINT);
 		check(Result);
+		#endif
 	}
 
 	static int32 ConvertedLength(const From* Source, int32 SourceLen)
 	{
+		#ifndef MINIUNREAL
 		return FPlatformString::ConvertedLength<To>(Source, SourceLen);
+		#endif
 	}
 };
 
@@ -1148,8 +1157,10 @@ private:
  */
 
 // These should be replaced with StringCasts when FPlatformString starts to know about UTF-8.
-typedef TStringConversion<FTCHARToUTF8_Convert> FTCHARToUTF8;
-typedef TStringConversion<FUTF8ToTCHAR_Convert> FUTF8ToTCHAR;
+#ifndef MINIUNREAL
+	typedef TStringConversion<FTCHARToUTF8_Convert> FTCHARToUTF8;
+	typedef TStringConversion<FUTF8ToTCHAR_Convert> FUTF8ToTCHAR;
+#endif
 
 // Usage of these should be replaced with StringCasts.
 #define TCHAR_TO_ANSI(str) (ANSICHAR*)StringCast<ANSICHAR>(static_cast<const TCHAR*>(str)).Get()
@@ -1201,6 +1212,8 @@ typedef TStringPointer<wchar_t, TCHAR> FWCharToTCHAR;
  *
  * @param Str The null-terminated source string to convert.
  */
+#ifndef MINIUNREAL
+
 template <typename To, typename From>
 FORCEINLINE typename TEnableIf<FPlatformString::TAreEncodingsCompatible<To, From>::Value, TStringPointer<To>>::Type StringCast(const From* Str)
 {
@@ -1301,6 +1314,7 @@ private:
 	int32   SrcLen;
 };
 
+
 // This seemingly-pointless class is intended to be API-compatible with TStringPassthru
 // and is returned by StringPassthru when no string conversion is necessary.
 template <typename T>
@@ -1388,3 +1402,5 @@ FORCEINLINE TArray<ToType> StringToArray(const FromType* Str)
 	return ToArray(Str, TCString<FromType>::Strlen(Str) + 1);
 }
 
+// endof not miniunreal
+#endif

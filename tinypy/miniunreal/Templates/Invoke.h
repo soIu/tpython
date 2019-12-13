@@ -3,9 +3,7 @@
 #pragma once
 
 #include "CoreTypes.h"
-#ifndef MINIUNREAL
-	#include "Templates/PointerIsConvertibleFromTo.h"
-#endif
+#include "Templates/PointerIsConvertibleFromTo.h"
 #include "Templates/UnrealTemplate.h"
 #include "Templates/Decay.h"
 

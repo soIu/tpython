@@ -931,11 +931,12 @@ public:
 	/** Computes the number of hash buckets to use for a given number of elements. */
 	static FORCEINLINE uint32 GetNumberOfHashBuckets(uint32 NumHashedElements)
 	{
+#ifndef MINIUNREAL
 		if(NumHashedElements >= MinNumberOfHashedElements)
 		{
 			return FPlatformMath::RoundUpToPowerOfTwo(NumHashedElements / AverageNumberOfElementsPerHashBucket + BaseNumberOfHashBuckets);
 		}
-
+#endif
 		return 1;
 	}
 
@@ -961,8 +962,11 @@ private:
 public:
 
 	/** Computes the number of hash buckets to use for a given number of elements. */
+#ifndef MINIUNREAL
+
 	static FORCEINLINE uint32 GetNumberOfHashBuckets(uint32 NumHashedElements)
 	{
+
 		const uint32 NumDesiredHashBuckets = FPlatformMath::RoundUpToPowerOfTwo(NumHashedElements / AverageNumberOfElementsPerHashBucket);
 		if (NumDesiredHashBuckets < NumInlineHashBuckets)
 		{
@@ -976,6 +980,7 @@ public:
 
 		return NumDesiredHashBuckets;
 	}
+#endif
 
 	typedef TInlineSparseArrayAllocator<NumInlineElements,typename SecondaryAllocator::SparseArrayAllocator> SparseArrayAllocator;
 	typedef TInlineAllocator<NumInlineHashBuckets,typename SecondaryAllocator::HashAllocator>                HashAllocator;
@@ -998,6 +1003,8 @@ private:
 public:
 
 	/** Computes the number of hash buckets to use for a given number of elements. */
+#ifndef MINIUNREAL
+
 	static FORCEINLINE uint32 GetNumberOfHashBuckets(uint32 NumHashedElements)
 	{
 		const uint32 NumDesiredHashBuckets = FPlatformMath::RoundUpToPowerOfTwo(NumHashedElements / AverageNumberOfElementsPerHashBucket);
@@ -1013,6 +1020,7 @@ public:
 
 		return NumDesiredHashBuckets;
 	}
+#endif
 
 	typedef TFixedSparseArrayAllocator<NumInlineElements> SparseArrayAllocator;
 	typedef TFixedAllocator<NumInlineHashBuckets>         HashAllocator;

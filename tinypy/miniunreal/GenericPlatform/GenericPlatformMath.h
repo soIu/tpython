@@ -10,6 +10,9 @@
 #include "CoreTypes.h"
 #include "Containers/ContainersFwd.h"
 #include "HAL/PlatformCrt.h"
+#ifdef MINIUNREAL
+	#define INDEX_NONE 0
+#endif
 
 /**
  * Generic implementation for most platforms

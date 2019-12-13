@@ -14,6 +14,7 @@
 	#include "Templates/Tuple.h"
 	#include "Templates/UnrealTemplate.h"
 	#include "Templates/UnrealTypeTraits.h"
+	#define INDEX_NONE 0
 #else
 	#include "Algo/Reverse.h"
 	#include "Concepts/GetTypeHashable.h"
@@ -648,6 +649,9 @@ public:
 	}
 
 	/** Structured archive serializer. */
+
+#ifndef MINIUNREAL
+
 	FORCEINLINE friend void operator<<(FStructuredArchive::FSlot Slot, TMapBase& InMap)
 	{
 		/*
@@ -695,6 +699,9 @@ public:
 	{
 		Pairs.Dump(Ar);
 	}
+
+
+#endif
 
 protected:
 	typedef TSet<ElementType, KeyFuncs, SetAllocator> ElementSetType;
@@ -1257,6 +1264,7 @@ public:
 	 * @param OutValues Upon return, contains the values associated with the key.
 	 * @param bMaintainOrder true if the Values array should be in the same order as the map's pairs.
 	 */
+#ifndef MINIUNREAL
 	template<typename Allocator> void MultiFind(KeyInitType Key,TArray<ValueType, Allocator>& OutValues,bool bMaintainOrder = false) const
 	{
 		for(typename Super::ElementSetType::TConstKeyIterator It(Super::Pairs,Key);It;++It)
@@ -1302,7 +1310,7 @@ public:
 			Algo::Reverse(OutValues);
 		}
 	}
-
+#endif
 	/**
 	 * Add a key-value association to the map.  The association doesn't replace any of the key's existing associations.
 	 * However, if both the key and value match an existing association in the map, no new association is made and the existing association's
@@ -1504,6 +1512,7 @@ struct FScriptMapLayout
 class FScriptMap
 {
 public:
+#ifndef MINIUNREAL
 	static FScriptMapLayout GetScriptLayout(int32 KeySize, int32 KeyAlignment, int32 ValueSize, int32 ValueAlignment)
 	{
 		FScriptMapLayout Result;
@@ -1518,6 +1527,7 @@ public:
 
 		return Result;
 	}
+#endif
 
 	FScriptMap()
 	{

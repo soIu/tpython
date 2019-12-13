@@ -1074,6 +1074,8 @@ public:
 	 * @param A Array to serialize.
 	 * @returns Passing the given archive.
 	 */
+#ifndef MINIUNREAL
+
 	friend FArchive& operator<<(FArchive& Ar, TArray& A)
 	{
 		A.CountBytes(Ar);
@@ -1127,7 +1129,6 @@ public:
 
 		return Ar;
 	}
-
 	/**
 	 * Bulk serialize array as a single memory blob when loading. Uses regular serialization code for saving
 	 * and doesn't serialize at all otherwise (e.g. transient, garbage collection, ...).
@@ -1200,10 +1201,10 @@ public:
 	 */
 	void CountBytes(FArchive& Ar) const
 	{
-#ifndef MINIUNREAL
 		Ar.CountBytes(ArrayNum*sizeof(ElementType), ArrayMax*sizeof(ElementType));
-#endif
 	}
+
+#endif
 
 	/**
 	 * Adds a given number of uninitialized elements into the array.
