@@ -151,8 +151,11 @@ def rebuild(stage=None):
 
 	libs = '-lm -ldl -lpthread'
 
-	if '--no-blendot' in sys.argv or '--includeos' in sys.argv or '--miniunreal' in sys.argv or '--unreal' in sys.argv:
+	if '--no-blendot' in sys.argv or '--includeos' in sys.argv:
 		defs = ''
+		mods = ''
+	elif '--miniunreal' in sys.argv or '--unreal' in sys.argv:
+		defs = '-DUNREAL_TYPES'
 		mods = ''
 	else:
 		defs = '-DBLENDOT_TYPES'
@@ -192,7 +195,7 @@ def rebuild(stage=None):
 		elif arg.startswith('--unreal-'):
 			if arg.startswith('--unreal-version='):
 				unreal_ver = arg
-		elif arg == '--unreal':
+		elif arg in ('--unreal', '--miniunreal'):
 			miniunreal = True
 			defs += ' -DMINIUNREAL'
 

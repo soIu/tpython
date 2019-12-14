@@ -2847,7 +2847,9 @@ struct TIsZeroConstructType<TArray<InElementType, Allocator>>
 template <typename InElementType, typename Allocator>
 struct TContainerTraits<TArray<InElementType, Allocator> > : public TContainerTraitsBase<TArray<InElementType, Allocator> >
 {
+#ifndef MINIUNREAL
 	static_assert(TAllocatorTraits<Allocator>::SupportsMove, "TArray no longer supports move-unaware allocators");
+#endif
 	enum { MoveWillEmptyContainer = TAllocatorTraits<Allocator>::SupportsMove };
 };
 

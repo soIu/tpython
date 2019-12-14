@@ -75,6 +75,7 @@ class COREUOBJECT_API UObject : public UObjectBaseUtility
 		return new (EC_InternalUseOnlyConstructor, (UObject*)GetTransientPackage(), NAME_None, RF_NeedLoad | RF_ClassDefaultObject | RF_TagGarbageTemp) UObject(Helper);
 #endif
 	}
+
 	static const TCHAR* StaticConfigName() 
 	{
 		return TEXT("Engine");
@@ -83,9 +84,11 @@ class COREUOBJECT_API UObject : public UObjectBaseUtility
 	{
 	}
 
+#ifdef MINIUNREAL
+	public:
 	/** Default constructor */
 	UObject();
-
+#endif
 	/** Deprecated constructor, ObjectInitializer is no longer needed but is supported for older classes. */
 	UObject(const FObjectInitializer& ObjectInitializer);
 

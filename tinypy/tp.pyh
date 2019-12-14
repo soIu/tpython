@@ -115,6 +115,8 @@ enum TPTypeID {
   TP_MESH    = 15,
   TP_MESHI   = 16,
 
+  TP_UOBJECT   = 20,
+
   TP_GC_TRACKED = 32,
   TP_FUNC = 33,
   TP_DATA = 34,
@@ -212,6 +214,9 @@ typedef class tp_obj {
   struct { TPTypeInfo type; struct Spatial *ptr; } spatial;
   struct { TPTypeInfo type; struct ArrayMesh *ptr; } mesh;
   struct { TPTypeInfo type; struct MeshInstance *ptr; } meshi;
+#endif
+#ifdef UNREAL_TYPES
+  struct { TPTypeInfo type; struct UObject *ptr; } uob;
 #endif
  };
 //tp_obj(double num) {
@@ -639,6 +644,15 @@ def tp_mesh() -> tp_obj:
 
 #endif
 
+#ifdef UNREAL_TYPES
+@static
+def tp_uobject() -> tp_obj:
+	tp_obj val = {TP_UOBJECT};
+	val.uob.ptr = new UObject()
+	return val
+
+#endif
+
 /* Function: tp_string_from_const (was tp_string_n)
  * Creates a new string object from a partial C string.
  * 
@@ -842,6 +856,12 @@ def tp_as_string(TP, tp_obj self) ->std::string:
 			ss << "	surfaces:	" << self.mesh.ptr->get_surface_count() << std::endl
 			ss << ")"
 			break
+		#endif
+		#ifdef UNREAL_TYPES
+		case TP_UOBJECT:
+			ss << "UObject(" << std::endl
+			ss << "	addr:		" << self.uob.ptr << std::endl
+			ss << ")"
 		#endif
 		default:
 			ss << "<unknown type>"
