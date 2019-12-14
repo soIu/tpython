@@ -83,7 +83,11 @@ private:
 	CORE_API static FNameEntryId FromValidEName(EName Ename);
 };
 
-CORE_API uint32 GetTypeHash(FNameEntryId Id);
+#ifdef MINIUNREAL
+	inline static uint32 GetTypeHash(FNameEntryId Id) {};
+#else
+	CORE_API uint32 GetTypeHash(FNameEntryId Id);
+#endif
 CORE_API bool operator==(FNameEntryId Id, EName Ename);
 inline bool operator==(EName Ename, FNameEntryId Id) { return Id == Ename; }
 inline bool operator!=(EName Ename, FNameEntryId Id) { return !(Id == Ename); }
@@ -872,46 +876,56 @@ private:
 	}
 
 	static bool IsWithinBounds(FNameEntryId Id);
+
 };
 
 template<> struct TIsZeroConstructType<class FName> { enum { Value = true }; };
 Expose_TNameOf(FName)
 
+#ifdef MINIUNREAL
+	inline static uint32 GetTypeHash(FName Name) {printf("TODO GetTypeHash(FName)\n");};
+	inline static FString LexToString(const FName& Name) {};
+	inline static void LexFromString(FName& Name, const TCHAR* Str) {};
+	inline static FMinimalName NameToMinimalName(const FName& InName) {};
+	inline static FName MinimalNameToName(const FMinimalName& InName) {};
+	inline static FScriptName NameToScriptName(const FName& InName) {};
+	inline static FName ScriptNameToName(const FScriptName& InName) {};
 
-FORCEINLINE uint32 GetTypeHash(FName Name)
-{
-	return GetTypeHash(Name.GetComparisonIndex()) + Name.GetNumber();
-}
+#else
+	FORCEINLINE uint32 GetTypeHash(FName Name)
+	{
+		return GetTypeHash(Name.GetComparisonIndex()) + Name.GetNumber();
+	}
+	FORCEINLINE FString LexToString(const FName& Name)
+	{
+		return Name.ToString();
+	}
 
-FORCEINLINE FString LexToString(const FName& Name)
-{
-	return Name.ToString();
-}
+	FORCEINLINE void LexFromString(FName& Name, const TCHAR* Str)
+	{
+		Name = FName(Str);
+	}
 
-FORCEINLINE void LexFromString(FName& Name, const TCHAR* Str)
-{
-	Name = FName(Str);
-}
+	FORCEINLINE FMinimalName NameToMinimalName(const FName& InName)
+	{
+		return FMinimalName(InName.GetComparisonIndex(), InName.GetNumber());
+	}
 
-FORCEINLINE FMinimalName NameToMinimalName(const FName& InName)
-{
-	return FMinimalName(InName.GetComparisonIndex(), InName.GetNumber());
-}
+	FORCEINLINE FName MinimalNameToName(const FMinimalName& InName)
+	{
+		return FName(InName.Index, InName.Index, InName.Number);
+	}
 
-FORCEINLINE FName MinimalNameToName(const FMinimalName& InName)
-{
-	return FName(InName.Index, InName.Index, InName.Number);
-}
+	FORCEINLINE FScriptName NameToScriptName(const FName& InName)
+	{
+		return FScriptName(InName.GetComparisonIndex(), InName.GetDisplayIndex(), InName.GetNumber());
+	}
 
-FORCEINLINE FScriptName NameToScriptName(const FName& InName)
-{
-	return FScriptName(InName.GetComparisonIndex(), InName.GetDisplayIndex(), InName.GetNumber());
-}
-
-FORCEINLINE FName ScriptNameToName(const FScriptName& InName)
-{
-	return FName(InName.ComparisonIndex, InName.DisplayIndex, InName.Number);
-}
+	FORCEINLINE FName ScriptNameToName(const FScriptName& InName)
+	{
+		return FName(InName.ComparisonIndex, InName.DisplayIndex, InName.Number);
+	}
+#endif
 
 
 /**

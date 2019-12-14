@@ -84,9 +84,12 @@ class COREUOBJECT_API UObject : public UObjectBaseUtility
 	{
 	}
 
+	/** Default constructor */
 #ifdef MINIUNREAL
 	public:
-	/** Default constructor */
+	UObject();
+	private:
+#else
 	UObject();
 #endif
 	/** Deprecated constructor, ObjectInitializer is no longer needed but is supported for older classes. */
@@ -1488,12 +1491,11 @@ private:
 * @param	Test			The object to test
 * @return	Return true if the object is usable: non-null and not pending kill
 */
-FORCEINLINE bool IsValid(const UObject *Test)
-{
-#ifndef MINIUNREAL
-
-	return Test && !Test->IsPendingKill();
+#ifdef MINIUNREAL
+	inline static bool IsValid(const UObject *Test) {}
+#else
+	FORCEINLINE bool IsValid(const UObject *Test) {
+		return Test && !Test->IsPendingKill();
+	}
 #endif
-}
-
 

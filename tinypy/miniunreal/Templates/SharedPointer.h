@@ -220,7 +220,9 @@ public:
 
 		// If the object happens to be derived from TSharedFromThis, the following method
 		// will prime the object with a weak pointer to itself.
+		#ifndef MINIUNREAL
 		SharedPointerInternals::EnableSharedFromThis( this, InRawPtrProxy.Object, InRawPtrProxy.Object );
+		#endif
 	}
 
 	/**
@@ -408,7 +410,9 @@ private:
 
 		// If the object happens to be derived from TSharedFromThis, the following method
 		// will prime the object with a weak pointer to itself.
+		#ifndef MINIUNREAL
 		SharedPointerInternals::EnableSharedFromThis(this, InObject, InObject);
+		#endif
 	}
 
 	/**
@@ -574,7 +578,9 @@ public:
 	{
 		// If the object happens to be derived from TSharedFromThis, the following method
 		// will prime the object with a weak pointer to itself.
+		#ifndef MINIUNREAL
 		SharedPointerInternals::EnableSharedFromThis( this, InObject, InObject );
+		#endif
 	}
 
 	/**
@@ -595,7 +601,9 @@ public:
 	{
 		// If the object happens to be derived from TSharedFromThis, the following method
 		// will prime the object with a weak pointer to itself.
+		#ifndef MINIUNREAL
 		SharedPointerInternals::EnableSharedFromThis( this, InObject, InObject );
+		#endif
 	}
 
 	/**
@@ -614,7 +622,9 @@ public:
 	{
 		// If the object happens to be derived from TSharedFromThis, the following method
 		// will prime the object with a weak pointer to itself.
+		#ifndef MINIUNREAL
 		SharedPointerInternals::EnableSharedFromThis( this, InRawPtrProxy.Object, InRawPtrProxy.Object );
+		#endif
 	}
 
 	/**

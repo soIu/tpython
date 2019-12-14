@@ -292,7 +292,11 @@ namespace Internal
 {
 	/** Internal state indicating whether uobject system is initialized. Do not use that directly. Use
 		UObjectInitialized() instead. */
-	COREUOBJECT_API extern bool GObjInitialized;
+	#ifdef MINIUNREAL
+		static bool GObjInitialized;
+	#else
+		COREUOBJECT_API extern bool GObjInitialized;
+	#endif
 }
 
 /**
@@ -301,8 +305,11 @@ namespace Internal
  *
  * @return true if the UObject subsystem is initialized.
  */
-FORCEINLINE bool UObjectInitialized() { return Internal::GObjInitialized; }
-
+#ifdef MINIUNREAL
+	inline static bool UObjectInitialized() { return Internal::GObjInitialized; }
+#else
+	FORCEINLINE bool UObjectInitialized() { return Internal::GObjInitialized; }
+#endif
 /**
  * Force a pending registrant to register now instead of in the natural order
  */

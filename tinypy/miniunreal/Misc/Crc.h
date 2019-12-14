@@ -100,11 +100,15 @@ struct CORE_API FCrc
 	}
 
 	/** Case insensitive string hash function. */
+#ifndef MINIUNREAL
 	template <typename CharType> static inline uint32 Strihash_DEPRECATED( const CharType* Data );
 
 	/** generates CRC hash of the memory area */
 	static uint32 MemCrc_DEPRECATED( const void* Data, int32 Length, uint32 CRC=0 );
+#endif
 };
+
+#ifndef MINIUNREAL
 
 template <>
 inline uint32 FCrc::Strihash_DEPRECATED(const ANSICHAR* Data)
@@ -139,3 +143,4 @@ inline uint32 FCrc::Strihash_DEPRECATED(const WIDECHAR* Data)
 	}
 	return Hash;
 }
+#endif

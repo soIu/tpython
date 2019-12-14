@@ -705,6 +705,7 @@ namespace SharedPointerInternals
 		FReferenceControllerBase* ReferenceController;
 	};
 
+#ifndef MINIUNREAL
 
 	/** Templated helper function (const) that creates a shared pointer from an object instance */
 	template< class SharedPtrType, class ObjectType, class OtherType, ESPMode Mode >
@@ -752,5 +753,7 @@ namespace SharedPointerInternals
 
 	/** Templated helper catch-all function, accomplice to the above helper functions */
 	FORCEINLINE void EnableSharedFromThis( ... ) { }
+
+#endif
 }
 

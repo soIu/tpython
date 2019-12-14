@@ -110,7 +110,9 @@ inline uint32 GetTypeHash( double Value )
 
 inline uint32 GetTypeHash( const TCHAR* S )
 {
+#ifndef MINIUNREAL
 	return FCrc::Strihash_DEPRECATED(S);
+#endif
 }
 
 inline uint32 GetTypeHash( const void* A )

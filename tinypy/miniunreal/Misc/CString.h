@@ -876,6 +876,7 @@ int32 TCString<T>::GetVarArgs( CharType* Dest, SIZE_T DestSize, const CharType*&
 /*-----------------------------------------------------------------------------
 	TCString<WIDECHAR> specializations
 -----------------------------------------------------------------------------*/
+#ifndef MINIUNREAL
 template <> FORCEINLINE
 bool TCString<WIDECHAR>::IsPureAnsi(const WIDECHAR* Str)
 {
@@ -888,7 +889,7 @@ bool TCString<WIDECHAR>::IsPureAnsi(const WIDECHAR* Str)
 	}
 	return true;
 }
-
+#endif
 
 template <>
 inline int32 TCString<WIDECHAR>::SprintfImpl(CharType* Dest, const CharType* Fmt, ...)
@@ -905,6 +906,7 @@ inline int32 TCString<WIDECHAR>::SnprintfImpl(CharType* Dest, int32 DestSize, co
 	GET_VARARGS_RESULT_WIDE( Dest, DestSize, DestSize-1, Fmt, Fmt, Result );
 	return Result;
 }
+
 #ifndef MINIUNREAL
 	template <> 
 	FORCEINLINE bool TCString<TCHAR>::ToBool(const WIDECHAR* Str)
@@ -916,10 +918,12 @@ inline int32 TCString<WIDECHAR>::SnprintfImpl(CharType* Dest, int32 DestSize, co
 /*-----------------------------------------------------------------------------
 	TCString<ANSICHAR> specializations
 -----------------------------------------------------------------------------*/
-template <> FORCEINLINE bool TCString<ANSICHAR>::IsPureAnsi(const CharType* Str)
-{
-	return true;
-}
+#ifndef MINIUNREAL
+	template <> FORCEINLINE bool TCString<ANSICHAR>::IsPureAnsi(const CharType* Str)
+	{
+		return true;
+	}
+#endif
 
 template <>
 inline int32 TCString<ANSICHAR>::SprintfImpl(CharType* Dest, const CharType* Fmt, ...)
@@ -937,9 +941,10 @@ inline int32 TCString<ANSICHAR>::SnprintfImpl(CharType* Dest, int32 DestSize, co
 	return Result;
 }
 
+#ifndef MINIUNREAL
 template <> 
-FORCEINLINE bool TCString<ANSICHAR>::ToBool(const ANSICHAR* Str)
-{
-	return FToBoolHelper::FromCStringAnsi(Str);
-}
-
+	FORCEINLINE bool TCString<ANSICHAR>::ToBool(const ANSICHAR* Str)
+	{
+		return FToBoolHelper::FromCStringAnsi(Str);
+	}
+#endif

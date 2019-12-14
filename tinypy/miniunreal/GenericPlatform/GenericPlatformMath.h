@@ -646,10 +646,11 @@ private:
 };
 
 /** Float specialization */
-template<>
-FORCEINLINE float FGenericPlatformMath::Abs( const float A )
-{
-	return fabsf( A );
-}
-
+#ifndef MINIUNREAL
+	template<>
+	FORCEINLINE float FGenericPlatformMath::Abs( const float A )
+	{
+		return fabsf( A );
+	}
+#endif
 

@@ -1964,11 +1964,14 @@ inline SIZE_T GetNum(const FString& String)
 }
 
 /** Case insensitive string hash function. */
-FORCEINLINE uint32 GetTypeHash(const FString& S)
-{
-	return FCrc::Strihash_DEPRECATED(*S);
-}
-
+#ifdef MINIUNREAL
+	inline static uint32 GetTypeHash(const FString& S){};
+#else
+	FORCEINLINE uint32 GetTypeHash(const FString& S)
+	{
+		return FCrc::Strihash_DEPRECATED(*S);
+	}
+#endif
 /** 
  * Convert an array of bytes to a TCHAR
  * @param In byte array values to convert
@@ -2161,16 +2164,20 @@ inline FString LexToString(bool Value)
 {
 	return Value ? TEXT("true") : TEXT("false");
 }
+#ifdef MINIUNREAL
+	inline static FString LexToString(FString&& Str){};
+	inline static FString LexToString(const FString& Str){};
+#else
+	FORCEINLINE FString LexToString(FString&& Str)
+	{
+		return MoveTemp(Str);
+	}
 
-FORCEINLINE FString LexToString(FString&& Str)
-{
-	return MoveTemp(Str);
-}
-
-FORCEINLINE FString LexToString(const FString& Str)
-{
-	return Str;
-}
+	FORCEINLINE FString LexToString(const FString& Str)
+	{
+		return Str;
+	}
+#endif
 
 /** Helper template to convert to sanitized strings */
 template<typename T>
@@ -2286,15 +2293,25 @@ struct TTypeFromString
  *     Logf(TEXT("Value: %s"), ToCStr(LexToString(Val)));
  * }
  */
-FORCEINLINE const TCHAR* ToCStr(const TCHAR* Ptr)
-{
-	return Ptr;
-}
-FORCEINLINE const TCHAR* ToCStr(const FString& Str)
-{
-	return *Str;
-}
-
+#ifdef MINIUNREAL
+	inline static const TCHAR* ToCStr(const TCHAR* Ptr)
+	{
+		return Ptr;
+	}
+	inline static const TCHAR* ToCStr(const FString& Str)
+	{
+		return *Str;
+	}
+#else
+	FORCEINLINE const TCHAR* ToCStr(const TCHAR* Ptr)
+	{
+		return Ptr;
+	}
+	FORCEINLINE const TCHAR* ToCStr(const FString& Str)
+	{
+		return *Str;
+	}
+#endif
 /*----------------------------------------------------------------------------
 	Special archivers.
 ----------------------------------------------------------------------------*/

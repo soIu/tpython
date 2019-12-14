@@ -13,6 +13,12 @@
 	#define RF_AllFlags 1
 	#define RF_ArchetypeObject 2
 	#define RF_ClassDefaultObject 3
+
+	inline static FString GetPathNameSafe(const UObjectBaseUtility *Object) {};
+	inline static FString GetFullNameSafe(const UObjectBaseUtility *Object) {};
+	inline static FString GetNameSafe(const UObjectBaseUtility *Object) {};
+	inline static bool IsPossiblyAllocatedUObjectPointer(UObject* Ptr) {};
+
 #else
 	#include "Stats/Stats.h"
 	#include "UObject/ObjectMacros.h"
@@ -300,8 +306,11 @@ public:
 	 *
 	 * @note	safe to call on NULL object pointers!
 	 */
+#ifdef MINIUNREAL
+	inline FString GetFullName( const UObject* StopOuter=NULL ) const { return "TODO"; };
+	inline FString GetPathName( const UObject* StopOuter=NULL ) const { return "TODO"; };
+#else
 	FString GetFullName( const UObject* StopOuter=NULL ) const;
-
 	/**
 	 * Returns the fully qualified pathname for this object, in the format:
 	 * 'Outermost[.Outer].Name'
@@ -312,6 +321,7 @@ public:
 	 * @note	safe to call on NULL object pointers!
 	 */
 	FString GetPathName( const UObject* StopOuter=NULL ) const;
+#endif
 
 public:
 	/**
@@ -598,6 +608,8 @@ public:
 	}
 };
 
+#ifndef MINIUNREAL
+
 /** Returns false if this pointer cannot be a valid pointer to a UObject */
 FORCEINLINE bool IsPossiblyAllocatedUObjectPointer(UObject* Ptr)
 {
@@ -626,6 +638,7 @@ FORCEINLINE bool IsPossiblyAllocatedUObjectPointer(UObject* Ptr)
  * @param Object object to retrieve the name for; NULL gives "None"
  * @return Name of the object.
 */
+
 FORCEINLINE FString GetNameSafe(const UObjectBaseUtility *Object)
 {
 	if( Object == NULL )
@@ -671,6 +684,7 @@ FORCEINLINE FString GetFullNameSafe(const UObjectBaseUtility *Object)
 		return Object->GetFullName();
 	}
 }
+#endif
 
 /**
  *	Returns the native (C++) parent class of the supplied class

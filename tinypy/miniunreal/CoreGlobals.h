@@ -174,35 +174,41 @@ extern CORE_API bool GFirstFrameIntraFrameDebugging;
 /**
 * Check to see if this executable is running a commandlet (custom command-line processing code in an editor-like environment)
 */
-FORCEINLINE bool IsRunningCommandlet()
-{
-#if WITH_ENGINE
-	return PRIVATE_GIsRunningCommandlet;
+#ifdef MINIUNREAL
+	inline static bool IsRunningCommandlet(){};
+	inline static bool IsAllowCommandletRendering(){};
+	inline static bool IsAllowCommandletAudio(){};
 #else
-	return false;
-#endif
-}
+	FORCEINLINE bool IsRunningCommandlet()
+	{
+	#if WITH_ENGINE
+		return PRIVATE_GIsRunningCommandlet;
+	#else
+		return false;
+	#endif
+	}
 
-/**
- * Check to see if we should initialise RHI and set up scene for rendering even when running a commandlet.
- */
-FORCEINLINE bool IsAllowCommandletRendering()
-{
-#if WITH_ENGINE
-	return PRIVATE_GAllowCommandletRendering;
-#else
-	return false;
-#endif
-}
+	/**
+	 * Check to see if we should initialise RHI and set up scene for rendering even when running a commandlet.
+	 */
+	FORCEINLINE bool IsAllowCommandletRendering()
+	{
+	#if WITH_ENGINE
+		return PRIVATE_GAllowCommandletRendering;
+	#else
+		return false;
+	#endif
+	}
 
-FORCEINLINE bool IsAllowCommandletAudio()
-{
-#if WITH_ENGINE
-	return PRIVATE_GAllowCommandletAudio;
-#else
-	return false;
+	FORCEINLINE bool IsAllowCommandletAudio()
+	{
+	#if WITH_ENGINE
+		return PRIVATE_GAllowCommandletAudio;
+	#else
+		return false;
+	#endif
+	}
 #endif
-}
 
 extern CORE_API bool GEdSelectionLock;
 extern CORE_API bool GIsClient;
@@ -430,17 +436,21 @@ extern CORE_API bool GEnableVREditorHacks;
 CORE_API void EnsureRetrievingVTablePtrDuringCtor(const TCHAR* CtorSignature);
 
 /** @return True if called from the game thread. */
-FORCEINLINE bool IsInGameThread()
-{
-	#ifndef MINIUNREAL
-	if(GIsGameThreadIdInitialized)
+#ifdef MINIUNREAL
+	inline static bool IsInGameThread() {};
+#else
+	FORCEINLINE bool IsInGameThread()
 	{
-		const uint32 CurrentThreadId = FPlatformTLS::GetCurrentThreadId();
-		return CurrentThreadId == GGameThreadId;
+		#ifndef MINIUNREAL
+		if(GIsGameThreadIdInitialized)
+		{
+			const uint32 CurrentThreadId = FPlatformTLS::GetCurrentThreadId();
+			return CurrentThreadId == GGameThreadId;
+		}
+		#endif
+		return true;
 	}
-	#endif
-	return true;
-}
+#endif
 
 /** @return True if called from the audio thread, and not merely a thread calling audio functions. */
 extern CORE_API bool IsInAudioThread();

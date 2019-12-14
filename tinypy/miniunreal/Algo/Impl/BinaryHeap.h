@@ -8,6 +8,20 @@
 
 namespace AlgoImpl
 {
+#ifdef MINIUNREAL
+	inline static int32 HeapGetLeftChildIndex(int32 Index)
+	{
+		return Index * 2 + 1;
+	}
+	inline static bool HeapIsLeaf(int32 Index, int32 Count)
+	{
+		return HeapGetLeftChildIndex(Index) >= Count;
+	}
+	inline static int32 HeapGetParentIndex(int32 Index)
+	{
+		return (Index - 1) / 2;
+	}
+#else
 	/**
 	 * Gets the index of the left child of node at Index.
 	 *
@@ -40,7 +54,7 @@ namespace AlgoImpl
 	{
 		return (Index - 1) / 2;
 	}
-
+#endif
 	/**
 	 * Fixes a possible violation of order property between node at Index and a child.
 	 *

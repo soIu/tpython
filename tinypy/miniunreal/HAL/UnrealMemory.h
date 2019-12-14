@@ -19,12 +19,14 @@
 #define MALLOC_GT_HOOKS 0
 #endif
 
-#if MALLOC_GT_HOOKS
-CORE_API void DoGamethreadHook(int32 Index);
-#else
-FORCEINLINE void DoGamethreadHook(int32 Index)
-{ 
-}
+#ifndef MINIUNREAL
+	#if MALLOC_GT_HOOKS
+	CORE_API void DoGamethreadHook(int32 Index);
+	#else
+	FORCEINLINE void DoGamethreadHook(int32 Index)
+	{ 
+	}
+	#endif
 #endif
 
 #define TIME_MALLOC (0 && PLATFORM_PS4)
@@ -184,8 +186,13 @@ struct CORE_API FMemory
 	//
 
 	static void* Malloc(SIZE_T Count, uint32 Alignment = DEFAULT_ALIGNMENT);
-	static void* Realloc(void* Original, SIZE_T Count, uint32 Alignment = DEFAULT_ALIGNMENT);
-	static void Free(void* Original);
+	#ifdef MINIUNREAL
+		static void* Realloc(void* Original, SIZE_T Count, uint32 Alignment = DEFAULT_ALIGNMENT) {};
+		static void Free(void* Original) {};
+	#else
+		static void* Realloc(void* Original, SIZE_T Count, uint32 Alignment = DEFAULT_ALIGNMENT);
+		static void Free(void* Original);
+	#endif
 	static SIZE_T GetAllocSize(void* Original);
 	/**
 	* For some allocators this will return the actual size that should be requested to eliminate
@@ -193,7 +200,11 @@ struct CORE_API FMemory
 	* and shrink containers to optimal sizes.
 	* This call is always fast and threadsafe with no locking.
 	*/
-	static SIZE_T QuantizeSize(SIZE_T Count, uint32 Alignment = DEFAULT_ALIGNMENT);
+	#ifdef MINIUNREAL
+		static SIZE_T QuantizeSize(SIZE_T Count, uint32 Alignment = DEFAULT_ALIGNMENT) {};
+	#else
+		static SIZE_T QuantizeSize(SIZE_T Count, uint32 Alignment = DEFAULT_ALIGNMENT);
+	#endif
 
 	/**
 	* Releases as much memory as possible. Must be called from the main thread.
