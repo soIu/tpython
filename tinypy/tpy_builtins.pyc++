@@ -441,6 +441,11 @@ def tpy_mesh(TP) ->tp_obj:
 
 #endif
 
+#ifdef UNREAL_TYPES
+def tpy_uobject(TP) ->tp_obj:
+	return tp_uobject()
+#endif
+
 ## https://stackoverflow.com/questions/1591361/understanding-typedefs-for-function-pointers-in-c
 typedef tp_obj (*tp_func_pointer)(tp_vm*);
 
@@ -497,6 +502,9 @@ def tp_module_builtins_init(TP):
 	{"RID", tpy_rid},
 	{"spatial", tpy_spatial},
 	{"mesh", tpy_mesh},
+	#endif
+	#ifdef UNREAL_TYPES
+	{"UObject", tpy_uobject},
 	#endif
 	#ifdef TP_SANDBOX
 	{"sandbox",tpy_sandbox_},

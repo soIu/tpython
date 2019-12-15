@@ -648,7 +648,8 @@ def tp_mesh() -> tp_obj:
 @static
 def tp_uobject() -> tp_obj:
 	tp_obj val = {TP_UOBJECT};
-	val.uob.ptr = new UObject()
+	##val.uob.ptr = new UObject()
+	val.uob.ptr = (UObject*)malloc( sizeof(UObject) )
 	return val
 
 #endif
@@ -861,7 +862,9 @@ def tp_as_string(TP, tp_obj self) ->std::string:
 		case TP_UOBJECT:
 			ss << "UObject(" << std::endl
 			ss << "	addr:		" << self.uob.ptr << std::endl
+			ss << "	sizeof:		" << sizeof(*self.uob.ptr) << std::endl
 			ss << ")"
+			break
 		#endif
 		default:
 			ss << "<unknown type>"

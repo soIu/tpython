@@ -87,7 +87,7 @@ class COREUOBJECT_API UObject : public UObjectBaseUtility
 	/** Default constructor */
 #ifdef MINIUNREAL
 	public:
-	UObject();
+	UObject() {};
 	private:
 #else
 	UObject();
