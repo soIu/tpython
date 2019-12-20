@@ -856,7 +856,14 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		elif s.startswith('if not ') and s.endswith(':'):
 			autobrace += 1
 			w = '\t' * indent
-			w += 'if(!(' + s[len('if not '):-1] + ')) {'
+			#if '||' in s:
+			#	raise SyntaxError('TODO `if not` with ||: %s' %s)
+			if '&&' in s or '||' in s:
+				#if s.count('&&') > 1:
+				#	raise SyntaxError('TODO `if not` with multiple &&: %s' %s)
+				w += 'if(!' + s[len('if not '):-1] + ') {'
+			else:
+				w += 'if(!(' + s[len('if not '):-1] + ')) {'
 			out.append(w)
 			draw_type = 'down-arrow-callout'
 
@@ -871,7 +878,14 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		elif s.startswith('elif not ') and s.endswith(':'):
 			autobrace += 1
 			w = '\t' * indent
-			w += 'else if(!(' + s[len('elif not '):-1] + ')) {'
+			if '||' in s:
+				raise SyntaxError('TODO `elif not` with ||: %s' %s)
+			if '&&' in s or '||' in s:
+				#if s.count('&&') > 1:
+				#	raise SyntaxError('TODO `elif not` with multiple &&: %s' %s)
+				w += 'else if(!' + s[len('if not '):-1] + ') {'
+			else:
+				w += 'else if(!(' + s[len('elif not '):-1] + ')) {'
 			out.append(w)
 			draw_type = 'down-arrow-callout'
 			color = 'BLUE'
