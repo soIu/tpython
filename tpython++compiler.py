@@ -506,6 +506,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			out.append( 'UCLASS' )
 		elif s.startswith('@UFUNCTION'):
 			out.append( s[1:] )
+		elif s == '@export.C' or s == '@extern.C':
+			out.append( 'extern "C"' )
 		elif s == '@export' or s == '@extern':
 			out.append( 'extern ' )
 		elif s.startswith('@'):

@@ -195,3 +195,20 @@ def tp_module_corelib_init(TP):
 	  module_init(tp)
 	#endif
 
+## TPYTHON CAPI ##
+@export.C
+def tpython_run(char *bytecode, int bc_len):
+	#ifdef DEBUG
+	  std::cout << "tpython_run..." << std::endl;
+	#endif
+	tp_vm *tp = tp_init(0, NULL)
+	#ifdef DEBUG
+	  std::cout << "tp_init OK..." << std::endl;
+	#endif
+	try:
+		tp_import_from_buffer(tp, "__main__", (unsigned char*)bytecode,  bc_len);
+	catch (const char * str):
+		std::cout << "Runtime Exception: " << str << std::endl;
+	tp_deinit(tp)
+
+

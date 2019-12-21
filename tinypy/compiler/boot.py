@@ -58,8 +58,10 @@ if not "tinypy" in sys.version:
 
 	def save(fname,v):
 		f = open(fname,'wb')
-		f.write(v.encode('latin1'))
+		#f.write(v.encode('latin1')) ## Python2
+		f.write(v)
 		f.close()
+
 else:
 	from __builtins__ import *
 	from os import load, read, save

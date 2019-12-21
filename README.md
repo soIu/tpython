@@ -195,6 +195,30 @@ The above example generate two `.bytecode` files, one for each thread, and you n
 ./tpython++ myscript_thread0.bytecode myscript_thread1.bytecode
 ```
 
+# Compile as Shared Library
+
+To compile the tpython as a shared library run:
+
+Linux (makes libtpython++.so)
+```bash
+./rebuild.py --clean --shared
+```
+
+Windows (makes libtpython++.dll)
+```bash
+./rebuild.py --clean --shared --windows
+```
+
+The function `tpython_run` is exported with `C` linkage so it can be called from other exes
+Python and ctypes example:
+```python
+import ctypes
+tpylib = ctypes.cdll.LoadLibrary('./libtpython++.so')
+data = open('my.bytecode').read()
+func = tpylib.tpython_run
+func( data, len(data) )
+```
+
 # Benchmarks and Articles
 
 https://medium.com/@judge_raptor/the-smallest-fastest-python-ever-827a36390fbf
