@@ -3,6 +3,10 @@
 #ifndef TP_H
 #define TP_H
 
+#ifdef __EMSCRIPTEN_major__
+  import <emscripten.h>
+#endif
+
 #ifdef USE_EMBEDDED_BYTECODE
   import "__user_bytecode__.gen.h"
 #endif
@@ -226,6 +230,8 @@ typedef class tp_obj {
 //this->number.val = num;
 //}
  bool operator==(const char* s) const;
+ operator float() const;
+ operator const char*() const;
  operator char() const;
  operator uint8_t() const;
  tp_obj operator[] (int index);

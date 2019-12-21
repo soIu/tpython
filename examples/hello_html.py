@@ -1,16 +1,16 @@
 with c++:
-	import <emscripten.h>
 	@javascript
-	def call_alert():
-		window.alert('hello js world')
+	def call_alert(float n, const char* a, const char *b):
+		window.alert( a + b + n)
 	@module( mycppmodule )
-	def foo(a, b):
+	def foo(n, a, b):
+		print(n)
 		print(a)
 		print(b)
-		call_alert()
+		call_alert(n, a, b)
 		return None
 
 
 import mycppmodule
-mycppmodule.foo('hello', 'world')
+mycppmodule.foo(99, 'hello', 'world')
 

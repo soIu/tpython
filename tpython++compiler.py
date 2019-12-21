@@ -649,6 +649,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			except ValueError:
 				raise SyntaxError(s)
 			arg_types = []
+			func_post = []
 			for i, arg in enumerate(rawargs.split(',')):
 				arg = arg.strip()
 				if not arg:
@@ -681,7 +682,27 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 							tpargs.append(('\t'*(indent+1))+'auto %s = TP_OBJ();' %arg)
 
 				else:
-					if ' ' not in arg and arg != 'TP' and arg != 'void' and arg != '...' and arg != 'VARIANT_ARG_DECLARE':
+					if em_js:
+						if ' ' not in arg:
+							raise SyntaxError('@javascript functions must define a type for each argument')
+						atype = arg[ : arg.rindex(' ') ].strip()
+						aname = arg.split()[-1]
+						pointers = aname.count('*')
+						if aname.endswith(']'):
+							raise SyntaxError('@javascript function arguments can not be of an array type')
+						if pointers:
+							atype += '*' * pointers
+							aname = aname.replace('*', '')
+						else:
+							arg_types.append(atype)
+
+						if atype == 'const char*':
+							arg = '%s __%s__' %(atype, aname)
+							func_post.append('var %s = UTF8ToString(__%s__);' %(aname, aname) )
+						elif atype not in ('void*', 'int', 'float'):
+							raise SyntaxError('@javascript function invalid argument type: %s' %arg)
+
+					elif ' ' not in arg and arg != 'TP' and arg != 'void' and arg != '...' and arg != 'VARIANT_ARG_DECLARE':
 						arg = 'auto ' + arg
 						arg_types.append('auto')
 					elif arg == 'TP':
@@ -784,6 +805,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 						extern_funcs.append(sig)
 
 			out.append(func)
+			if func_post:
+				out.extend(func_post)
 
 			if prevs.startswith('@module'):
 				if is_scram:

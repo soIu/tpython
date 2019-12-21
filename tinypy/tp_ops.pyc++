@@ -805,6 +805,14 @@ def tp_obj::operator==(const char* s) ->bool:
 	return std::string(tp_string_getptr(*this))==std::string(s);
 
 @const
+def tp_obj::operator float():
+	return this->number.val
+
+@const
+def tp_obj::operator const char*():
+	return tp_string_getptr(*this)
+
+@const
 def tp_obj::operator char():
 	return *tp_string_getptr(*this)
 
