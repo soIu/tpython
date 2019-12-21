@@ -228,7 +228,10 @@ def rebuild(stage=None):
 		mode = 'wasm'
 		CC = os.path.expanduser('~/emsdk/fastcomp/emscripten/em++')
 		libs = ''
-		opts += ' -O3 -fno-rtti -s FILESYSTEM=0 -s DISABLE_EXCEPTION_CATCHING=0'
+		#opts += ' -O3 -fno-rtti -s FILESYSTEM=0 -s DISABLE_EXCEPTION_CATCHING=0'
+		## note: blendot types require rtti (run time type info)
+		opts += ' -Os -s FILESYSTEM=0 -s DISABLE_EXCEPTION_CATCHING=0'
+
 		if '--closure' in sys.argv:
 			opts += ' --closure 1'
 

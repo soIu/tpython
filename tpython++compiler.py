@@ -235,6 +235,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	in_blueprint = False
 	unreal_blueprint = []
 	extern_funcs = []
+	em_js = False
 
 	if 'functions' in info:
 		functions = info['functions']
@@ -364,6 +365,10 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				out.append(b)
 				if indent == 0 and in_unreal_plugin:
 					out[-1] += ';'
+				if indent == 1 and in_func and em_js:
+					out[-1] += ');'
+					em_js = False
+
 			############################################
 			if in_class and indent <= class_indent:
 				in_class = False
@@ -403,7 +408,6 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				in_enum = False
 
 
-
 		if not s:
 			in_class = False
 			if in_func and fodg and in_vis:
@@ -412,6 +416,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				fodgx += 10
 
 			in_func = False
+			em_js = False
 
 		if s.startswith('##'):
 			ln = ln.replace('##', '//')
@@ -498,6 +503,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			pass
 		elif s == '@static':
 			pass
+		elif s in ('@javascript', '@js'):
+			em_js = True
 		elif s.startswith('@template('):
 			out.append( 'template<%s>' % s[len('@template(') : -1] )
 		elif s.startswith('@virtual'):
@@ -761,6 +768,11 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					func += '%s(%s) %s;' %(func_name, rawargs, exopts)
 				else:
 					func += '%s %s(%s) %s;' %(returns, func_name, rawargs, exopts)
+			elif em_js:
+				if in_class:
+					raise SyntaxError('@javascript functions can not defined inside a class')
+				func += 'EM_JS(%s, %s, (%s), {' %(returns, func_name, ','.join(args))
+
 			else:
 				if in_class and func_name == class_name:
 					func += '%s(%s) %s{' %(func_name, ','.join(args), exopts)
