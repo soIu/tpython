@@ -365,7 +365,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				out.append(b)
 				if indent == 0 and in_unreal_plugin:
 					out[-1] += ';'
-				if indent == 1 and in_func and em_js:
+				if indent <= 1 and in_func and em_js:
 					out[-1] += ');'
 					em_js = False
 
@@ -1118,13 +1118,20 @@ def metapy2tinypypp( source ):
 	thread = None
 	cpy = None
 	cpp = []
+	js = []
 	in_cpp = False
+	in_js = False
 	for ln in source.splitlines():
 		if u'┃' in ln:
 			assert ln.count(u'┃')==1
 			a,b = ln.split(u'┃')
 			shared.append(a)
 			right_side.append(b)
+		elif ln.startswith('with javascript:'):
+			if js:
+				raise SyntaxError('with javascript: can only be used once')
+			js.append('eval_js("""')
+			in_js = True
 		elif ln.startswith('with c++:'):
 			cpp = []
 			in_cpp = True
@@ -1133,6 +1140,12 @@ def metapy2tinypypp( source ):
 		elif ln.startswith('with thread:'):
 			thread = []
 			thread_local.append(thread)
+		elif in_js:
+			if not ln.strip():
+				in_js = False
+				js.append('""")')
+			else:
+				js.append(ln)
 		elif in_cpp:
 			if not ln.strip():
 				in_cpp = False
@@ -1164,6 +1177,8 @@ def metapy2tinypypp( source ):
 			script += '\n'.join(thread_code)
 			scripts.append(script)
 	else:
+		if js:
+			shared = js + shared
 		script = '\n'.join(shared)
 		scripts.append(script)
 

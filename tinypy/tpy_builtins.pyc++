@@ -446,6 +446,25 @@ def tpy_uobject(TP) ->tp_obj:
 	return tp_uobject()
 #endif
 
+
+#ifdef __EMSCRIPTEN_major__
+
+@javascript
+def __eval_js(const char* code):
+	eval(code)
+
+def tpy_eval_js(TP) ->tp_obj:
+	tp_obj code = TP_OBJ()
+	__eval_js(code)
+	return None
+
+#else
+
+def tpy_eval_js(TP) ->tp_obj:
+	throw "eval_js can only be used when compiled using the option --wasm or --html"
+
+#endif
+
 ## https://stackoverflow.com/questions/1591361/understanding-typedefs-for-function-pointers-in-c
 typedef tp_obj (*tp_func_pointer)(tp_vm*);
 
@@ -488,6 +507,7 @@ def tp_module_builtins_init(TP):
 	{"getmeta",tpy_getmeta},
 	{"module", tpy_module},
 	{"repr", tpy_repr},
+	{"eval_js", tpy_eval_js},
 	#ifdef BLENDOT_TYPES
 	{"vec2", tpy_vec2},
 	{"vec3", tpy_vec3},
