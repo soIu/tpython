@@ -1137,19 +1137,26 @@ def Object::get_signals_connected_to_this(List<Connection> ⮞p_connections):
 		p_connections->push_back(E->get())
 
 def Object::connect(const StringName ⤴p_signal, Object ⮞p_to_object, const StringName ⤴p_to_method, const Vector<Variant> ⤴p_binds, uint32_t p_flags) ->Error:
+	##std::cout << "p_signal addr: " << p_signal << std::endl
+	##std::cout << "p_signal value: " << String(p_signal).utf8() << std::endl
 	ERR_FAIL_NULL_V(p_to_object, ERR_INVALID_PARAMETER)
 	Signal *s = signal_map.getptr(p_signal)
 	if not s:
 		bool signal_is_valid = ClassDB::has_signal(get_class_name(), p_signal)
+		##std::cout << "signal_is_valid1 = " << signal_is_valid << std::endl;
 		#ifdef BLENDOT
 		//check in script
 		if not signal_is_valid && !script.is_null():
+			##std::cout << "signal_is_valid is false and script is not null" << std::endl;
 			if Ref<Script>(script)->has_script_signal(p_signal):
+				##std::cout << "script has signal" << std::endl
 				signal_is_valid = true
 			#ifdef TOOLS_ENABLED
 			else:
+				##std::cout << "editor fallback checking if script is valid" << std::endl;
 				//allow connecting signals anyway if script is invalid, see issue #17070
 				if not Ref<Script>(script)->is_valid():
+					std::cout << "	script is valid" << std::endl;
 					signal_is_valid = true
 			#endif
 		#endif

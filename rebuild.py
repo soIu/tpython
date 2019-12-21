@@ -201,7 +201,10 @@ def rebuild(stage=None):
 
 
 	if '--shared' in sys.argv or unreal_plugin:
-		exe = 'libtpython++.so'
+		if '--windows' in sys.argv or '--mingw' in sys.argv:
+			exe = 'libtpython++.dll'
+		else:
+			exe = 'libtpython++.so'
 		exeopts = '-shared -fPIC '
 		opts = '-fPIC '
 		defs += ' -DSHAREDLIB'
@@ -251,7 +254,8 @@ def rebuild(stage=None):
 		CC = 'x86_64-w64-mingw32-g++-posix'
 		defs = ''
 		libs = '-lpthread'
-		exe += '.exe'
+		if '--shared' not in sys.argv:
+			exe += '.exe'
 		mode = 'windows'
 	elif '--android' in sys.argv:
 		print('ensure that you have installed android sdk28 and build-tools28')

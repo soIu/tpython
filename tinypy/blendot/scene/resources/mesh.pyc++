@@ -956,7 +956,7 @@ def ArrayMesh::reload_from_file():
 	_change_notify()
 
 
-uint __array_meshes__ = 0;
+int __array_meshes__ = 0;
 
 def ArrayMesh::ArrayMesh():
 	#ifdef BLENDOT

@@ -2372,11 +2372,9 @@ VisualServer::VisualServer() {
 	std::cout << this << std::endl;
 	if (this) {
 		std::cout << "WARN VisualServer already created" << std::endl;
-		return;
-	} else {
-		//ERR_FAIL_COND(singleton);
-		singleton = this;		
 	}
+	ERR_FAIL_COND(singleton);
+	singleton = this;
 
 #ifdef BLENDOT
 	GLOBAL_DEF_RST("rendering/vram_compression/import_bptc", false);

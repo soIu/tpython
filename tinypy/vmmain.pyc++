@@ -136,12 +136,14 @@ def main(int argc,  char *argv[]) -> int:
 	  signal(SIGSEGV, crash_handler); // memory segfault
 	  signal(SIGABRT, crash_handler); // some old places in tinypy code had used `abort()`
 	  signal(SIGINT, crash_handler);  // allow CTRL+C to halt the program
+	  #ifndef __MINGW64__
+	    #ifdef DEBUG
+	      std::cout << "set crash_handlers OK" << std::endl;
+	      std::cout << "__init_libself__..." << std::endl;
+	    #endif
+	    __init_libself__()
+	  #endif
 	#endif
-	#ifdef DEBUG
-	  std::cout << "set crash_handlers OK" << std::endl;
-	  std::cout << "__init_libself__..." << std::endl;
-	#endif
-	__init_libself__()
 	#ifdef USE_PYTHON
 	  Py_SetStandardStreamEncoding("utf-8", "surrogateescape");
 	  Py_Initialize();

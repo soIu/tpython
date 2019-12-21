@@ -47,8 +47,10 @@ import <cstddef>
     import <hw/vga_gfx.hpp>
   #endif
 #else
-  import <dlfcn.h>
-  static void* __libself__ = NULL
+  #ifndef __MINGW64__
+    import <dlfcn.h>
+    static void* __libself__ = NULL
+  #endif
 #endif
 
 import <functional>
@@ -901,13 +903,14 @@ def print(void* v):
 	std::cout << v << std::endl;
 
 #ifndef INCLUDEOS
+#ifndef __MINGW64__
 @static
 def __init_libself__():
 	__libself__=dlopen(NULL, 1)
 	#ifdef DEBUG
 	print(__libself__)
 	#endif
-
+#endif
 #endif
 
 import "tp_ops.gen.h"
