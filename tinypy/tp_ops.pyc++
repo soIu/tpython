@@ -617,6 +617,23 @@ def tp_cmp(TP, tp_obj a, tp_obj b) ->int:
 	//tp_raise(0,tp_string_atom(tp, "(tp_cmp) TypeError: ?"));
 	throw "TypeError in tp_ops.cpp:tp_cmp invalid object type to compare for equality"
 
+@static
+def __split_string__(std::string text, std::string delims) -> std::vector<std::string>:
+	auto tokens = std::vector<std::string>()
+	auto len = delims.size()
+	std::size_t start = text.find(delims), end = 0
+	if start == std::string::npos:
+		tokens.push_back(text)
+		return tokens
+	if start != std::string::npos:
+		tokens.push_back(text.substr(0, start))
+	while (end = text.find(delims, start+len)) != std::string::npos:
+		tokens.push_back(text.substr(start+len, (end-len) - start))
+		start = text.find(delims, end)
+	if start != std::string::npos:
+		tokens.push_back(text.substr(start+len))
+	return tokens
+
 
 def tp_mod(TP, tp_obj a, tp_obj b) -> tp_obj:
 	switch a.type.type_id:
@@ -625,7 +642,23 @@ def tp_mod(TP, tp_obj a, tp_obj b) -> tp_obj:
 				return tp_number(((long)a.number.val) % ((long)b.number.val))
 			break
 		case TP_STRING:
-			return tp_ez_call(tp, "__builtins__", "format", tp_params_v2(tp, a, b))
+			//return tp_ez_call(tp, "__builtins__", "format", tp_params_v2(tp, a, b)) // DEPRECATED
+			auto parts = __split_string__(a, std::string("%s"))
+			int i = 0
+			std::string out = std::string("")
+			for (auto & part : parts):
+				out += part
+				if i+1 == parts.size():
+					break
+				if b.type.type_id == TP_LIST:
+					if i >= b.list.val->len:
+						throw "string format error - replacement marks `%s` is greater than items from list"
+					out += tp_as_string(tp, b.list.val->items[i], false)
+				else:
+					out += tp_as_string(tp, b, false)
+				i ++
+			return tp_string_from_stdstring(tp, out )
+			break
 	//tp_raise(tp_None, tp_string_atom(tp, "(tp_mod) TypeError: ?"));
 	throw "TypeError in tp_ops.cpp:tp_mod invalid object type to use modulus operator with"
 
@@ -807,6 +840,11 @@ def tp_obj::operator==(const char* s) ->bool:
 @const
 def tp_obj::operator float():
 	return this->number.val
+
+@const
+def tp_obj::operator std::string():
+	return std::string( tp_string_getptr(*this) )
+
 
 @const
 def tp_obj::operator const char*():
