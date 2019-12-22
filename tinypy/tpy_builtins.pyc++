@@ -458,10 +458,27 @@ def tpy_eval_js(TP) ->tp_obj:
 	__eval_js(code)
 	return None
 
+def tpy_eval_js_returns(TP) ->tp_obj:
+	tp_obj code = TP_OBJ()
+	tp_obj rtype = TP_OBJ()
+	if rtype == "void":
+		__eval_js(code)
+		return None
+	elif rtype == "int":
+		return tp_number(emscripten_run_script_int(code))
+	elif rtype == "float":
+		return tp_number(emscripten_run_script_int(code))
+	elif rtype == "string":
+		return tp_string_from_stdstring(tp, std::string(emscripten_run_script_string(code)) )
+
+
 #else
 
 def tpy_eval_js(TP) ->tp_obj:
 	throw "eval_js can only be used when compiled using the option --wasm or --html"
+
+def tpy_eval_js_returns(TP) ->tp_obj:
+	throw "javascript can only be used when compiled using the option --wasm or --html"
 
 #endif
 
@@ -508,6 +525,7 @@ def tp_module_builtins_init(TP):
 	{"module", tpy_module},
 	{"repr", tpy_repr},
 	{"eval_js", tpy_eval_js},
+	{"javascript", tpy_eval_js_returns},
 	#ifdef BLENDOT_TYPES
 	{"vec2", tpy_vec2},
 	{"vec3", tpy_vec3},
