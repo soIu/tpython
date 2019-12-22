@@ -1393,6 +1393,7 @@ def main():
 	unreal_project = os.path.expanduser('~/Documents/Unreal Projects/TPythonPluginTest')
 	vis_output = None
 	vis_cursor = None
+	mode = 'linux'
 
 	for arg in sys.argv[1:]:
 		if arg.endswith( ('.py', '.tinypy') ):
@@ -1402,8 +1403,10 @@ def main():
 		elif arg.startswith('--'):
 			if arg == '--unreal':
 				unreal_mode = True
-				if arg.startswith('--unreal-version='):
-					UNREAL_VER = arg.split('=')[-1]
+			elif arg.startswith('--unreal-version='):
+				UNREAL_VER = arg.split('=')[-1]
+			elif arg == '--windows':
+				mode = 'windows'
 			elif arg.startswith('--vis-cursor'):  ## line-number : character offset
 				vis_cursor = arg.split('=')[-1]
 				cx,cy = vis_cursor.split('/')
@@ -1429,6 +1432,11 @@ def main():
 			mangle_map = json.loads(arg)
 		elif arg.endswith('.json'):
 			obfuscate_map = json.loads(open(arg,'rb').read())
+
+	if unreal_mode and mode=='windows':
+		global UNREAL_BUILD_TEMPLATE
+		assert '"libtpython++.so"' in UNREAL_BUILD_TEMPLATE
+		UNREAL_BUILD_TEMPLATE = UNREAL_BUILD_TEMPLATE.replace('"libtpython++.so"', '"libtpython++.dll"')
 
 	if input_file:
 		cpp = None

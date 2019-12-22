@@ -64,6 +64,7 @@ import <string>
 import <iostream>
 import <sstream>
 import <cstring>
+import <vector>
 
 import <setjmp.h>
 import <sys/stat.h>

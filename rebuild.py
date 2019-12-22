@@ -151,7 +151,7 @@ def rebuild(stage=None):
 
 	libs = '-lm -ldl -lpthread'
 
-	if '--no-blendot' in sys.argv or '--includeos' in sys.argv:
+	if '--no-blendot' in sys.argv or '--includeos' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv:
 		defs = ''
 		mods = ''
 	elif '--miniunreal' in sys.argv or '--unreal' in sys.argv:
@@ -186,9 +186,12 @@ def rebuild(stage=None):
 			if os.path.isfile('./tinypy/__user_pythonic__.pyh'):
 				defs += ' -DUSE_USER_CUSTOM_CPP'
 			break
-		elif arg.endswith('.unreal'):
+		elif arg.endswith( ('.unreal', '.unreal/') ):
 			unreal_plugin = arg
 			#mode = 'unreal'
+			if '-DBLENDOT_TYPES' in defs:
+				defs = defs.replace('-DBLENDOT_TYPES', '')
+				mods = ''
 			defs += ' -DUSE_USER_CUSTOM_CPP'
 		elif os.path.isdir(arg):
 			unreal_project = arg
@@ -257,9 +260,12 @@ def rebuild(stage=None):
 		CC = 'x86_64-w64-mingw32-g++-posix'
 		defs = ''
 		libs = '-lpthread'
-		if '--shared' not in sys.argv:
+		if '--shared' not in sys.argv and not unreal_plugin:
 			exe += '.exe'
 		mode = 'windows'
+		opts += ' -Os -finline-small-functions'
+		exeopts += ' -Os'
+
 	elif '--android' in sys.argv:
 		print('ensure that you have installed android sdk28 and build-tools28')
 		print('sudo ./sdkmanager  "platforms;android-28" "build-tools;28.0.0"')
@@ -315,11 +321,15 @@ def rebuild(stage=None):
 	if unreal_plugin:
 		if not os.path.isdir(unreal_project):
 			os.makedirs( unreal_project )
+		if not os.path.isdir( os.path.join(unreal_project, 'Plugins/3rdparty') ):
+			os.makedirs( os.path.join(unreal_project, 'Plugins/3rdparty') )
 		cmd = [
 			'./tpython++compiler.py', 
 			'--beta', 
 			'--unreal'
 		]
+		if mode=='windows':
+			cmd.append('--windows')
 		if unreal_ver:
 			cmd.append(unreal_ver)
 		cmd.extend([
@@ -412,6 +422,11 @@ def rebuild(stage=None):
 		open('Makefile', 'wb').write(makefile)
 		subprocess.check_call(['make', 'clean'])
 		subprocess.check_call(['make'])
+		if unreal_plugin:
+			if mode=='windows':
+				subprocess.check_call(['cp', '-v', './libtpython++.dll', os.path.join(unreal_project, 'Plugins/3rdparty')])
+			else:
+				subprocess.check_call(['cp', '-v', './libtpython++.so', os.path.join(unreal_project, 'Plugins/3rdparty')])
 
 	#####################
 	if mode == 'windows':
@@ -421,6 +436,8 @@ def rebuild(stage=None):
 					os.system('cp -v /usr/x86_64-w64-mingw32/lib/%s ./%s' %(dll, dll))
 				else:
 					os.system('cp -v /usr/lib/gcc/x86_64-w64-mingw32/5.3-posix/%s ./%s' %(dll, dll))
+			if unreal_plugin:
+				subprocess.check_call(['cp', '-v', dll, os.path.join(unreal_project, 'Plugins/3rdparty')])
 
 
 def main():
