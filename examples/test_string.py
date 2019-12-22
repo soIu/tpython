@@ -8,6 +8,17 @@ line2
 line3'''
 print( m.splitlines() )
 
+if not s.startswith('x'):
+	raise RuntimeError('string.startswith test failed')
+else:
+	print('startswith test OK')
+
+if not s.endswith('z'):
+	raise RuntimeError('string.endswith test failed')
+else:
+	print('endswith test OK')
+
+
 a = 'a%sb%sc'
 b = 'foo-bar'
 

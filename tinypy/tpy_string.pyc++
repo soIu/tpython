@@ -1,3 +1,22 @@
+def tpy_str_startswith(TP) ->tp_obj:
+	std::string self = TP_OBJ()
+	std::string val = TP_OBJ()
+	if self.substr(0, val.size()) == val:
+		return tp_number(1)
+	else:
+		return tp_number(0)
+
+def tpy_str_endswith(TP) ->tp_obj:
+	std::string self = TP_OBJ()
+	std::string val = TP_OBJ()
+	if val.size() > self.size():
+		return tp_number(0)
+	elif self.substr(self.size() - val.size(), self.size()) == val:
+		return tp_number(1)
+	else:
+		return tp_number(0)
+
+
 def tpy_str_reverse(TP) ->tp_obj:
 	tp_obj self = TP_OBJ()
 	std::string s = std::string(tp_string_getptr(self), tp_string_len(self) )
