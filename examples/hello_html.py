@@ -1,4 +1,7 @@
 with javascript:
+	myfunc = function (x,y) { return x * y }
+	def myfunc2(x,y) ->float:
+		return x * y
 	var a = 'hello '
 	var b = 'web browser'
 	window.alert(a+b)
@@ -21,7 +24,9 @@ def test():
 	for i in range(10):
 		w = javascript("1.1 + %s" %i, returns='float')
 		print(w)
-		w = javascript("%s * %s" %(i+1, i+2), returns='float')
+		w = javascript("myfunc(%s,%s)" %(i+1, i+2), returns='float')
+		print(w)
+		w = myfunc2(i+50, i+50)
 		print(w)
 
 test()

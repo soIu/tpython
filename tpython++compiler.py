@@ -118,7 +118,7 @@ def auto_semicolon(ln):
 					ln += ';'
 	return ln
 
-def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=False, binary_scramble=False, mangle_map=None, fodg=None, unreal_plugin_name=None, vis_cursor=None ):
+def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=False, binary_scramble=False, mangle_map=None, fodg=None, unreal_plugin_name=None, vis_cursor=None, mode='c++' ):
 	if not type(source) is list:
 		source = source.splitlines()
 	if type(fodg) is list:
@@ -682,7 +682,9 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 							tpargs.append(('\t'*(indent+1))+'auto %s = TP_OBJ();' %arg)
 
 				else:
-					if em_js:
+					if mode=='js':
+						pass
+					elif em_js:
 						if ' ' not in arg:
 							raise SyntaxError('@javascript functions must define a type for each argument')
 						atype = arg[ : arg.rindex(' ') ].strip()
@@ -789,6 +791,12 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					func += '%s(%s) %s;' %(func_name, rawargs, exopts)
 				else:
 					func += '%s %s(%s) %s;' %(returns, func_name, rawargs, exopts)
+			elif mode=='js':
+				func += '%s=function(%s){' %(func_name, ','.join(args))
+				if 'js_funcs' in info:
+					if returns in ('int', 'float', 'string', 'void'):
+						info['js_funcs'][func_name] = {'returns':returns, 'args':args}
+
 			elif em_js:
 				if in_class:
 					raise SyntaxError('@javascript functions can not defined inside a class')
@@ -1130,7 +1138,6 @@ def metapy2tinypypp( source ):
 		elif ln.startswith('with javascript:'):
 			if js:
 				raise SyntaxError('with javascript: can only be used once')
-			js.append('eval_js("""')
 			in_js = True
 		elif ln.startswith('with c++:'):
 			cpp = []
@@ -1143,7 +1150,6 @@ def metapy2tinypypp( source ):
 		elif in_js:
 			if not ln.strip():
 				in_js = False
-				js.append('""")')
 			else:
 				js.append(ln)
 		elif in_cpp:
@@ -1178,7 +1184,24 @@ def metapy2tinypypp( source ):
 			scripts.append(script)
 	else:
 		if js:
-			shared = js + shared
+			info = {'js_funcs':{}}
+			js = pythonicpp(js, info=info, mode='js')
+			new_shared = []
+			for ln in shared:
+				for jsfunc in info['js_funcs']:
+					jsig = info['js_funcs'][jsfunc]
+					if jsfunc+'(' in ln:
+						prevchar = ln[ ln.index(jsfunc)-1 ]
+						if prevchar in '\t +=-*/[]();,?':
+							rargs = ['%s'] * len(jsig['args'])
+							rargs = ','.join(rargs)
+							ln = ln.replace(jsfunc+'(', 'javascript("'+jsfunc+'('+rargs+')" % (') + ', returns="%s")'%jsig['returns']
+						else:
+							raise SyntaxError('unable to auto-wrap javascript function')
+						break
+				new_shared.append(ln)
+			shared = new_shared
+			shared = ['eval_js("""', js, '""")'] + shared
 		script = '\n'.join(shared)
 		scripts.append(script)
 
@@ -1476,6 +1499,7 @@ def main():
 		if len(scripts) == 1:
 			source = scripts[0]
 			tempf = '/tmp/%s_main.py'%name
+			print(source)
 			open(tempf, 'wb').write(source.encode('utf-8'))
 			subprocess.check_call(['./tpc']+exargs+['-o', './%s.bytecode'%name, tempf])
 		else:

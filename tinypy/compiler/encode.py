@@ -972,7 +972,7 @@ def encode(fname,s,t):
 	D.begin(True)
 	do(t)
 	D.end()
-	if '--inspect-bytecode' in sys.argv or '--beta' in sys.argv:
+	if '--inspect-bytecode' in sys.argv:
 		print(D.out)
 		for chunk in D.out:
 			print(chunk)

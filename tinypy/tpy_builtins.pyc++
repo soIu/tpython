@@ -453,9 +453,11 @@ def tpy_uobject(TP) ->tp_obj:
 def __eval_js(const char* code):
 	eval(code)
 
+##import <emscripten/threading.h>
 def tpy_eval_js(TP) ->tp_obj:
 	tp_obj code = TP_OBJ()
 	__eval_js(code)
+	##emscripten_sync_run_in_main_runtime_thread(code)
 	return None
 
 def tpy_eval_js_returns(TP) ->tp_obj:
