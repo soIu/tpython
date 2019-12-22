@@ -932,6 +932,23 @@ def __init_libself__():
 #endif
 #endif
 
+@static
+def __split_string__(std::string text, std::string delims) -> std::vector<std::string>:
+	auto tokens = std::vector<std::string>()
+	auto len = delims.size()
+	std::size_t start = text.find(delims), end = 0
+	if start == std::string::npos:
+		tokens.push_back(text)
+		return tokens
+	if start != std::string::npos:
+		tokens.push_back(text.substr(0, start))
+	while (end = text.find(delims, start+len)) != std::string::npos:
+		tokens.push_back(text.substr(start+len, (end-len) - start))
+		start = text.find(delims, end)
+	if start != std::string::npos:
+		tokens.push_back(text.substr(start+len))
+	return tokens
+
 import "tp_ops.gen.h"
 
 #endif

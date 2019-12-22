@@ -1,3 +1,13 @@
+print( ['X', 'Y', 'Z'] )
+
+s = 'x y z'
+print( s.split(' ') )
+
+m = '''line1
+line2
+line3'''
+print( m.splitlines() )
+
 a = 'a%sb%sc'
 b = 'foo-bar'
 
