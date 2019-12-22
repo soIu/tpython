@@ -25,6 +25,10 @@ b = 'foo-bar'
 print(a * 5)
 print( a %("FOO", "BAR") )
 
+abc = ','.join(['A', 'B', 'C'])
+print( abc )
+print( abc.replace(',', '_') )
+
 ## in regular python the following would fail, but in tpython it is allowed ##
 print( a % b )
 print( a %([1,2], {'mykey':'myvalue'}) )

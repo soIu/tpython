@@ -24,7 +24,6 @@ def tpy_str_reverse(TP) ->tp_obj:
 	return tp_string_from_stdstring(tp, s)
 
 
-## FIXME: use StringBuilder.
 def tpy_str_join(TP) ->tp_obj:
 	tp_obj delim = TP_OBJ()
 	tp_obj val = TP_OBJ()
@@ -110,34 +109,12 @@ def tpy_str_strip(TP) ->tp_obj:
 
 
 def tpy_str_replace(TP) ->tp_obj:
-	tp_obj s = TP_OBJ()
-	tp_obj k = TP_OBJ()
-	tp_obj v = TP_OBJ()
-	tp_obj p = tp_string_view(tp, s, 0, tp_string_len(s))
-	int i,n = 0
-	int c
-	int l
-	tp_obj rr
-	char *r
-	char *d
-	tp_obj z
-	while (i = tp_str_index(p,k)) != -1:
-		n += 1
-		p.string.info->s += i + tp_string_len(k)
-		p.string.info->len -= i + tp_string_len(k)
-	l = tp_string_len(s) + n * (tp_string_len(v)-tp_string_len(k))
-	rr = tp_string_t(tp, l)
-	r = tp_string_getptr(rr)
-	d = r
-	z = p = s
-	while (i = tp_str_index(p,k)) != -1:
-		p.string.info->s += i
-		p.string.info->len -= i
-		memcpy(d,tp_string_getptr(z), c=(tp_string_getptr(p) - tp_string_getptr(z))); d += c
-		p.string.info->s += tp_string_len(k)
-		p.string.info->len -= tp_string_len(k)
-		memcpy(d,tp_string_getptr(v), tp_string_len(v)); d += tp_string_len(v)
-		z = p
-	memcpy(d, tp_string_getptr(z), (tp_string_getptr(s) + tp_string_len(s)) - tp_string_getptr(z))
-	return rr
+	std::string str = TP_OBJ()
+	std::string tag = TP_OBJ()
+	std::string target = TP_OBJ()
+	size_t pos = 0;
+	while (pos = str.find(tag, pos)) != std::string::npos:
+		str.replace(pos, tag.length(), target)
+		pos += target.length()
+	return tp_string_from_stdstring(tp, str )
 
