@@ -452,11 +452,17 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 		elif s.startswith('import '):
 			inc = s.split()[-1]
-			if inc.startswith("<"):
-				assert inc.endswith(">")
-			elif not inc.startswith('"'):
-				inc = '"' + inc + '"'
-			out.append('#include ' + inc)
+			if mode=='js':
+				if inc == 'THREE':
+					threepath = os.path.expanduser('~/three')
+					if not os.path.isdir(threepath):
+						raise RuntimeError('could not find the three.js source folder in your home directory')
+			else:
+				if inc.startswith("<"):
+					assert inc.endswith(">")
+				elif not inc.startswith('"'):
+					inc = '"' + inc + '"'
+				out.append('#include ' + inc)
 		elif s.startswith('define('):
 			assert s.endswith(')')
 			defname = s[len('define(') : s.index('=') ]
@@ -1186,26 +1192,51 @@ def metapy2tinypypp( source ):
 		if js:
 			info = {'js_funcs':{}}
 			js = pythonicpp(js, info=info, mode='js')
-			new_shared = []
-			for ln in shared:
-				for jsfunc in info['js_funcs']:
-					jsig = info['js_funcs'][jsfunc]
-					if jsfunc+'(' in ln:
-						prevchar = ln[ ln.index(jsfunc)-1 ]
-						if prevchar in '\t +=-*/[]();,?':
-							rargs = ['%s'] * len(jsig['args'])
-							rargs = ','.join(rargs)
-							ln = ln.replace(jsfunc+'(', 'javascript("'+jsfunc+'('+rargs+')" % (') + ', returns="%s")'%jsig['returns']
-						else:
-							raise SyntaxError('unable to auto-wrap javascript function')
-						break
-				new_shared.append(ln)
-			shared = new_shared
-			shared = ['eval_js("""', js, '""")'] + shared
+			if info['js_funcs']:
+				new_shared = []
+				for ln in shared:
+					for jsfunc in info['js_funcs']:
+						jsig = info['js_funcs'][jsfunc]
+						if jsfunc+'(' in ln:
+							prevchar = ln[ ln.index(jsfunc)-1 ]
+							if prevchar in '\t +=-*/[]();,?':
+								rargs = ['%s'] * len(jsig['args'])
+								rargs = ','.join(rargs)
+								ln = ln.replace(jsfunc+'(', 'javascript("'+jsfunc+'('+rargs+')" % (') + ', returns="%s")'%jsig['returns']
+							else:
+								raise SyntaxError('unable to auto-wrap javascript function')
+							break
+					new_shared.append(ln)
+				shared = new_shared
+				shared = ['eval_js("""', js, '""")'] + shared
+				if cpp:
+					new_cpp = []
+					for ln in cpp:
+						for jsfunc in info['js_funcs']:
+							jsig = info['js_funcs'][jsfunc]
+							if jsfunc+'(' in ln:
+								prevchar = ln[ ln.index(jsfunc)-1 ]
+								if prevchar in '\t +=-*/[]();,?':
+									rargs = ['$%s' % i for i in range(len(jsig['args']))]
+									rargs = ','.join(rargs)
+									if jsig['returns'] == 'void':
+										ln = ln.replace(jsfunc+'(', 'EM_ASM({'+jsfunc+'('+rargs+')}, ')
+									elif jsig['returns'] == 'int':
+										ln = ln.replace(jsfunc+'(', 'EM_ASM_INT({return '+jsfunc+'('+rargs+')}, ')
+									elif jsig['returns'] in ('float', 'double'):
+										ln = ln.replace(jsfunc+'(', 'EM_ASM_DOUBLE({return '+jsfunc+'('+rargs+')}, ')
+									else:
+										raise SyntaxError('unable to auto-wrap javascript function - unsupported return type: %s' %jsig['returns'])
+
+								else:
+									raise SyntaxError('unable to auto-wrap javascript function')
+								break
+						new_cpp.append(ln)
+					cpp = new_cpp
+
 		script = '\n'.join(shared)
 		scripts.append(script)
 
-	#cpp = pythonicpp( cpp, swap_self_to_this=True )
 	cpp = '\n'.join(cpp)
 	return scripts, cpp
 
