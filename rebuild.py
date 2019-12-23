@@ -428,6 +428,13 @@ def rebuild(stage=None):
 			else:
 				subprocess.check_call(['cp', '-v', './libtpython++.so', os.path.join(unreal_project, 'Plugins/3rdparty')])
 
+	if mode == 'wasm':
+		if os.path.isfile('/tmp/tpython_preload_libs.js'):
+			a = open('/tmp/tpython_preload_libs.js').read()
+			b = open('./tpython++.js').read()
+			c = a + '\n' + b
+			open('./tpython++.js', 'wb').write(c.encode('utf-8'))
+
 	#####################
 	if mode == 'windows':
 		for dll in ['libstdc++-6.dll','libgcc_s_seh-1.dll', 'libwinpthread-1.dll']:
@@ -441,6 +448,9 @@ def rebuild(stage=None):
 
 
 def main():
+	if os.path.isfile('/tmp/tpython_preload_libs.js'):
+		os.system('rm -rf /tmp/tpython_preload_libs.js')
+
 	if '--clean' in sys.argv:
 		os.system('rm -rf tinypy/*.fodg')
 		os.system('rm -rf tinypy/blendot/*.fodg')

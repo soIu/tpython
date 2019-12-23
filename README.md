@@ -219,6 +219,55 @@ func = tpylib.tpython_run
 func( data, len(data) )
 ```
 
+# WASM and Javascript Support
+
+The interpreter can be compiled with an embedded script like this:
+```bash
+./rebuild.py --html myscript.py
+```
+This requires you have installed Emscripten, afterward you should have: tpython++.html (100K), tpython++.js (260K), and tpython++.wasm (560K).  You can directly open tpython++.html in a browser for testing, it will load the js and wasm files.
+
+Mixing both WASM and Javascript can be complex, to make it simpler TPython custom syntax that generates the required Emscripten API calls.
+
+```python
+with javascript:
+	console.log('hello world')
+
+foo = javascript("1+1", returns='int')
+
+```
+Using `with javascript:` syntax allows you to insert multiple lines of javascript to be run as soon as the TPython interpreter runs.
+To run a single line of Javascript directly, use the function `javascript(..., returns='TYPE')`, where type should be of: void, int, float, or double.
+
+Inside a `with javascript:` block, you can also define Javascript functions that look like Python functions,
+these functions are then callable from Python as regular functions (note only one per-line, no nesting allowed)
+
+```python
+with javascript:
+	def myfunc(x,y) ->int:
+		return x+y
+
+n = myfunc(1,1)
+
+```
+Above is an example of how to capture values from Javascript into the TPython interpreter.
+To get values from Javascript in Pythonic++ code that is fully compiled to WASM, use the `@javascript` decorator.
+
+```python
+with c++:
+	@javascript
+	def call_alert(float n, const char* a, const char *b):
+		window.alert( a + b + n)
+	@module( mycppmodule )
+	def foo(n, a, b):
+		call_alert(n, a, b)
+		return None
+
+
+import mycppmodule
+mycppmodule.foo(99, 'hello', 'world')
+```
+
 # Benchmarks and Articles
 
 https://medium.com/@judge_raptor/the-smallest-fastest-python-ever-827a36390fbf

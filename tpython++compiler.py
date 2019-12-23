@@ -454,9 +454,11 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			inc = s.split()[-1]
 			if mode=='js':
 				if inc == 'THREE':
-					threepath = os.path.expanduser('~/three')
+					threepath = os.path.expanduser('~/three.js')
 					if not os.path.isdir(threepath):
 						raise RuntimeError('could not find the three.js source folder in your home directory')
+					dat = open(os.path.join(threepath, 'build/three.min.js')).read()
+					info['js_header'].append(dat)
 			else:
 				if inc.startswith("<"):
 					assert inc.endswith(">")
@@ -800,7 +802,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			elif mode=='js':
 				func += '%s=function(%s){' %(func_name, ','.join(args))
 				if 'js_funcs' in info:
-					if returns in ('int', 'float', 'string', 'void'):
+					if returns in ('int', 'float', 'double', 'string', 'void'):
 						info['js_funcs'][func_name] = {'returns':returns, 'args':args}
 
 			elif em_js:
@@ -1190,8 +1192,9 @@ def metapy2tinypypp( source ):
 			scripts.append(script)
 	else:
 		if js:
-			info = {'js_funcs':{}}
+			info = {'js_funcs':{}, 'js_header':[]}
 			js = pythonicpp(js, info=info, mode='js')
+
 			if info['js_funcs']:
 				new_shared = []
 				for ln in shared:
@@ -1209,6 +1212,7 @@ def metapy2tinypypp( source ):
 					new_shared.append(ln)
 				shared = new_shared
 				shared = ['eval_js("""', js, '""")'] + shared
+
 				if cpp:
 					new_cpp = []
 					for ln in cpp:
@@ -1233,6 +1237,13 @@ def metapy2tinypypp( source ):
 								break
 						new_cpp.append(ln)
 					cpp = new_cpp
+			else:
+				shared = ['eval_js("""', js, '""")'] + shared
+
+			if info['js_header']:
+				##shared = ['eval_js("""'] + info['js_header'] + ['""")'] + shared  ## makes bytecode too big
+				dat = '\n'.join(info['js_header'])
+				open('/tmp/tpython_preload_libs.js', 'wb').write(dat.encode('utf-8'))
 
 		script = '\n'.join(shared)
 		scripts.append(script)
