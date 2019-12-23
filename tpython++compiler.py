@@ -4,6 +4,17 @@ import os, sys, subprocess, random, json
 from xml.sax.saxutils import escape
 import unrealgen, ast
 
+THREEJS_MISSING = '''
+
+ERROR: because you used `import THREE` in your script the three.js source code is required.
+Could not find the three.js source folder in your home directory,
+try running the commands below, and then rebuild.
+
+	cd
+	git clone https://github.com/mrdoob/three.js.git
+
+'''
+
 UNREAL_VER = '4.2.0'   ## first tested with 4.2.0, current version is 4.23.1
 
 UIFACE_TEMPLATE = '''
@@ -456,7 +467,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				if inc == 'THREE':
 					threepath = os.path.expanduser('~/three.js')
 					if not os.path.isdir(threepath):
-						raise RuntimeError('could not find the three.js source folder in your home directory')
+						raise RuntimeError(THREEJS_MISSING)
 					dat = open(os.path.join(threepath, 'build/three.min.js')).read()
 					info['js_header'].append(dat)
 			else:
@@ -1203,9 +1214,12 @@ def metapy2tinypypp( source ):
 						if jsfunc+'(' in ln:
 							prevchar = ln[ ln.index(jsfunc)-1 ]
 							if prevchar in '\t +=-*/[]();,?':
-								rargs = ['%s'] * len(jsig['args'])
-								rargs = ','.join(rargs)
-								ln = ln.replace(jsfunc+'(', 'javascript("'+jsfunc+'('+rargs+')" % (') + ', returns="%s")'%jsig['returns']
+								if len(jsig['args']):
+									rargs = ['%s'] * len(jsig['args'])
+									rargs = ','.join(rargs)
+									ln = ln.replace(jsfunc+'(', 'javascript("'+jsfunc+'('+rargs+')" % (') + ', returns="%s")'%jsig['returns']
+								else:
+									ln = ln.replace(jsfunc+'()', 'javascript("'+jsfunc+'()"') + ', returns="%s")'%jsig['returns']
 							else:
 								raise SyntaxError('unable to auto-wrap javascript function')
 							break
