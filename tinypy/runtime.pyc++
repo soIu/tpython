@@ -1,5 +1,8 @@
 import "tp.gen.h"
 import <random>
+import <fstream>
+import <sstream>
+
 
 #ifdef USE_PYTHON
   extern "C" int PyRun_SimpleString(const char* script);
@@ -197,7 +200,7 @@ def tp_module_corelib_init(TP):
 
 ## TPYTHON CAPI ##
 @export.C
-def tpython_run(char *bytecode, int bc_len):
+def tpython_run(const char *bytecode, int bc_len):
 	#ifdef DEBUG
 	  std::cout << "tpython_run..." << std::endl;
 	#endif
@@ -210,5 +213,15 @@ def tpython_run(char *bytecode, int bc_len):
 	catch (const char * str):
 		std::cout << "Runtime Exception: " << str << std::endl;
 	tp_deinit(tp)
+
+@export.C
+def tpython_run_file(const char *filename):
+	std::fstream* f
+	std::ostringstream c
+	f = new std::fstream(filename, std::fstream::in | std::fstream::binary)
+	c << f->rdbuf()
+	f->close()
+	std::string dat = c.str()
+	tpython_run(dat.c_str(), dat.size())
 
 
