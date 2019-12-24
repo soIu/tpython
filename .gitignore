@@ -1,3 +1,5 @@
+*.gz
+*.bc
 *.fodg
 __user_pythonic__.pyh
 *.gen.cpp

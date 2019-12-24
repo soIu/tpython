@@ -6,6 +6,27 @@ os.chdir( os.path.split(__file__)[0] )
 ## Ubuntu Notes:
 ## sudo apt-get install g++-arm-linux-gnueabi gcc-arm-linux-gnueabi binutils-arm-linux-gnueabi
 
+PAKO_MISSING = '''
+
+WARN: Could not find the pako source folder in your home directory,
+try running the commands below, and then rebuild.
+
+	cd
+	git clone https://github.com/nodeca/pako.git
+
+'''
+
+def pakoify(js):
+	assert "'tpython++.wasm'" in js
+	js = js.replace("'tpython++.wasm'", "'tpython++.wasm.gz'")
+	#assert js.count('(xhr.response)')==2
+	#js = js.replace('(xhr.response)')
+	assert js.count('return WebAssembly.instantiate(binary, info);') == 1
+	js = js.replace(
+		'return WebAssembly.instantiate(binary, info);',
+		'return WebAssembly.instantiate(pako.inflate(binary),info);'
+	)
+	return js
 
 def gen_interpreter_codes(randomize=False):
 	## this is default in order of the switch/case main interp loop in tp_vm.cpp,
@@ -429,10 +450,25 @@ def rebuild(stage=None):
 				subprocess.check_call(['cp', '-v', './libtpython++.so', os.path.join(unreal_project, 'Plugins/3rdparty')])
 
 	if mode == 'wasm':
+		pakopath = os.path.expanduser('~/pako/dist/pako_inflate.min.js')
+		pako = ''
+		if os.path.isfile(pakopath):
+			pako = open(pakopath).read()
+			subprocess.check_call(['gzip', '--force', './tpython++.wasm'])
+		else:
+			print(PAKO_MISSING)
+
 		if os.path.isfile('/tmp/tpython_preload_libs.js'):
 			a = open('/tmp/tpython_preload_libs.js').read()
 			b = open('./tpython++.js').read()
-			c = a + '\n' + b
+			if pako:
+				c = pako + '\n' + a + '\n' + pakoify(b)
+			else:
+				c = a + '\n' + b
+			open('./tpython++.js', 'wb').write(c.encode('utf-8'))
+		elif pako:
+			b = open('./tpython++.js').read()
+			c = pako + '\n' + pakoify(b)
 			open('./tpython++.js', 'wb').write(c.encode('utf-8'))
 
 	#####################

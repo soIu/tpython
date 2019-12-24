@@ -1500,7 +1500,7 @@ def main():
 				exargs.append(arg)
 		elif os.path.isdir(arg):
 			if unreal_mode:
-				if arg.endswith('.unreal'):
+				if arg.endswith( ('.unreal', '.unreal/') ):
 					unreal_plugin = arg
 					pythonicpp_paths.append( arg )
 				else:
