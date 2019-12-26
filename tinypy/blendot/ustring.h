@@ -140,6 +140,7 @@ public:
 
 		npos = -1 ///<for "some" compatibility with std::string (npos is a huge value in std::string)
 	};
+	friend std::ostream & operator << (std::ostream &out, const String &self);
 
 	_FORCE_INLINE_ CharType *ptrw() { return _cowdata.ptrw(); }
 	_FORCE_INLINE_ const CharType *ptr() const { return _cowdata.ptr(); }

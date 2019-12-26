@@ -1,9 +1,7 @@
 /*************************************************************************/
-/*  ustring.cpp                                                          */
-/*************************************************************************/
 /*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
+/*                           BLENDOT ENGINE                              */
+/*                      https://blendot.org                              */
 /*************************************************************************/
 /* Copyright (c) 2007-2019 Juan Linietsky, Ariel Manzur.                 */
 /* Copyright (c) 2014-2019 Godot Engine contributors (cf. AUTHORS.md)    */
@@ -4391,3 +4389,7 @@ String String::unquote() const {
 	}
 #endif
 
+std::ostream & operator <<(std::ostream &out,const String &self) {
+	out << self.utf8();
+	return out;
+}

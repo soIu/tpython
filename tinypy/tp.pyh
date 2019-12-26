@@ -790,10 +790,12 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 			break
 		case TP_DICT:
 			ss << "{"
-			for (int i=0; i<self.dict.val->len; i++):
-				tpd_item item = self.dict.val->items[i]
-				ss << tp_as_string(tp, item.key) << ":"
-				ss << tp_as_string(tp, item.val)
+			for (int i=0; i<self.dict.val->alloc; i++):
+				if self.dict.val->items[i].used != 1:
+					continue
+				std::cout << self.dict.val->items[i].key << std::endl;
+				ss << tp_as_string(tp, self.dict.val->items[i].key) << ":"
+				ss << tp_as_string(tp, self.dict.val->items[i].val)
 				ss << ","
 			ss << "}"
 			break
