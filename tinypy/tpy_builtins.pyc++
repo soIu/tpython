@@ -574,5 +574,7 @@ def tp_module_builtins_init(TP):
 	tp_set(tp, __string_meta__, tp_string_atom(tp, "startswith"), tp_function(tp, tpy_str_startswith))
 	tp_set(tp, __string_meta__, tp_string_atom(tp, "endswith"), tp_function(tp, tpy_str_endswith))
 	tp_set(tp, tp->_dict_meta, tp_string_atom(tp, "update"), tp_function(tp, tpy_dict_merge))
+	tp_set(tp, tp->_dict_meta, tp_string_atom(tp, "keys"), tp_function(tp, tpy_dict_keys))
+	tp_set(tp, tp->_dict_meta, tp_string_atom(tp, "values"), tp_function(tp, tpy_dict_values))
 
 

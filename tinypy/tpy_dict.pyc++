@@ -10,4 +10,22 @@ def tpy_dict_merge(TP) -> tp_obj:
 		  v.dict.val->items[n].val);
 	return tp_None
 
+def tpy_dict_keys(TP) -> tp_obj:
+	tp_obj self = TP_OBJ()
+	tp_obj r = tp_list(tp)
+	for (int i=0; i<self.dict.val->alloc; i++):
+		if self.dict.val->items[i].used != 1:
+			continue
+		r.append(self.dict.val->items[i].key)
+	return r
+
+def tpy_dict_values(TP) -> tp_obj:
+	tp_obj self = TP_OBJ()
+	tp_obj r = tp_list(tp)
+	for (int i=0; i<self.dict.val->alloc; i++):
+		if self.dict.val->items[i].used != 1:
+			continue
+		r.append(self.dict.val->items[i].val)
+	return r
+
 
