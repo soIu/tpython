@@ -147,11 +147,11 @@ def main(int argc,  char *argv[]) -> int:
 	#ifdef USE_PYTHON
 	  Py_SetStandardStreamEncoding("utf-8", "surrogateescape");
 	  Py_Initialize();
+	  tpc_compile()
 	#endif
 	#ifdef DEBUG
 	  std::cout << "ready to start VM..." << std::endl;
 	#endif
-	##auto vs = new VisualServerRaster()## this depends on rasterizer.cpp, which depends on a `create` function set somewhere
 	#ifdef USE_EMBEDDED_BYTECODE
 	  run_vm_embedded(argc, argv);
 	#else

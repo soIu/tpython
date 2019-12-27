@@ -242,9 +242,9 @@ def rebuild(stage=None):
 		libs += ' -lpython3.7m'
 		opts += ' -I/usr/local/include/python3.7m'
 		tpyc_gen_h = [
-			'static const char* __tpyc_source__ = R"RAWSTRING(',
+			'static std::string __tpc_source__ = std::string(R"RAWSTRING(',
 			open('tpc').read(),
-			')RAWSTRING"'
+			')RAWSTRING");'
 		]
 		open('./tinypy/tpc.gen.h', 'wb').write('\n'.join(tpyc_gen_h))
 

@@ -100,8 +100,41 @@ def tp_module_os_init(TP):
 
 // CPython integration //
 #ifdef USE_PYTHON
-
+import <Python.h>
 import "tpc.gen.h"
+
+static std::string __tpc_source_test__ = std::string(R"RAWSTRING(def main(x):
+  print(x)
+  return x
+)RAWSTRING");
+
+def tpc_compile() ->std::string:
+	std::cout << __tpc_source_test__ << std::endl;
+	PyObject* co = Py_CompileString(__tpc_source_test__.c_str(), "tpc", Py_file_input)
+	std::cout << "co: " << co << std::endl
+	//PyObject* co = Py_CompileString("def main(a):\n\treturn a+a\n", "tpc", Py_file_input)
+	//PyObject* globals = PyDict_New()
+	//PyObject* locals = PyDict_New()
+	// the code object must be loaded into a module, otherwise it gets garbage collected,
+	// PyEval_EvalCode(co, globals, locals) fetching `main` from locals
+	// will only work for a function with a single statement
+	PyObject* mod = PyImport_ExecCodeModule("__tpc__", co)
+	//PyObject* mod = PyEval_EvalCode(co, globals, locals)
+	//PyObject* mod = PyRun_String("1+1", Py_eval_input, globals, locals)
+	//PyObject* mod = PyRun_String(__tpc_source__.c_str(), Py_file_input, globals, locals)
+	//PyObject* mod = PyRun_String("def main(): pass", Py_file_input, globals, locals)
+	std::cout << "mod: " << mod << std::endl
+	//std::cout << "globals: " << globals << std::endl
+	//std::cout << "locals: " << locals << std::endl
+	//PyObject* func = PyDict_GetItemString(globals, "main")
+	//std::cout << func << std::endl
+	//PyObject* func2 = PyDict_GetItemString(locals, "main")
+	PyObject* func2 = PyObject_GetAttrString( mod, "main" )
+	std::cout << func2 << std::endl
+	//PyObject* f = PyEval_CallObject(func2,  Py_BuildValue("(i)", 123))
+	PyObject* f = PyObject_Call(func2,  Py_BuildValue("(i)", 123), NULL)
+	std::cout << f << std::endl
+	return std::string("TODO")
 
 def tpy_cpython_run(TP) ->tp_obj:
 	char * s = tp_cstr(tp, TP_STR())

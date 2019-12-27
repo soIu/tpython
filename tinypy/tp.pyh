@@ -954,4 +954,8 @@ def __split_string__(std::string text, std::string delims) -> std::vector<std::s
 
 import "tp_ops.gen.h"
 
+#ifdef USE_PYTHON
+def tpc_compile() ->std::string;
+#endif
+
 #endif
