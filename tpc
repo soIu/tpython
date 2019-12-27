@@ -11,6 +11,7 @@ import os, sys, random
 try:
 	## scrambled interp codes ##
 	from tpython_interpreter_codes_gen import *
+	print('using external interp codes imported from tpython_interpreter_codes_gen.py')
 except ImportError:
 	## default interp code order ##
 	print('using default interp codes')
@@ -1544,6 +1545,7 @@ def u_error(ctx,s,i):
 	r += "     "+" "*x+"^" +'\n'
 	raise Exception('error: '+ctx+'\n'+r)
 
+
 ISYMBOLS = u'`-=[];,./~!@$%^&*()+{}:<>?|×÷'
 UNISYMBOLS = {
 	u'×' : '*',
@@ -1558,6 +1560,7 @@ SYMBOLS = [
 	'<=','>=','[',']','{','}','(',')','.',':',',',';','&','|','!', '^'
 	]
 B_BEGIN,B_END = ['[','(','{'],[']',')','}']
+
 
 class TData:
 	def __init__(self):
@@ -1988,5 +1991,15 @@ def main(args=None):
 	else:
 		save(dest, out)
 
+
+def compile_bytecode(data, name):
+	print('compile_bytecode...')
+	bc = py2bc.compile(data, name)
+	print(bc)
+	return bc
+
 if __name__ == '__main__':
 	main()
+
+
+

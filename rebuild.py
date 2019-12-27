@@ -244,6 +244,7 @@ def rebuild(stage=None):
 		tpyc_gen_h = [
 			'static std::string __tpc_source__ = std::string(R"RAWSTRING(',
 			open('tpc').read(),
+			'',  ## ensure EOL, otherwise CPython will fail to compile this string
 			')RAWSTRING");'
 		]
 		open('./tinypy/tpc.gen.h', 'wb').write('\n'.join(tpyc_gen_h))

@@ -12,6 +12,9 @@ import <stdio.h>
 import <signal.h>
 import <stdlib.h>
 import <unistd.h>
+import <iostream>
+import <fstream>
+import <sstream>
 
 
 #ifndef __MINGW64__
@@ -119,6 +122,25 @@ void run_vm(int argc, char *argv[], int script_index){
 	tp_deinit(tp);
 #endif
 
+#ifdef USE_PYTHON
+def compile_and_run_py_file(std::string filename):
+	std::fstream* f
+	std::ostringstream c
+	f = new std::fstream(filename.c_str(), std::fstream::in | std::fstream::binary)
+	c << f->rdbuf()
+	f->close()
+	std::string pyscript = c.str()
+	std::string bc = tpc_compile(pyscript, filename)
+	tp_vm *tp = tp_init(0, NULL)
+	try:
+		tp_import_from_buffer(tp, "__main__", (unsigned char*)bc.c_str(),  bc.size())
+	catch (const char * str):
+		std::cout << "Runtime Exception: " << str << std::endl;
+	tp_deinit(tp)
+
+
+#endif
+
 
 #ifdef INCLUDEOS
 def Service::start():
@@ -147,7 +169,6 @@ def main(int argc,  char *argv[]) -> int:
 	#ifdef USE_PYTHON
 	  Py_SetStandardStreamEncoding("utf-8", "surrogateescape");
 	  Py_Initialize();
-	  tpc_compile()
 	#endif
 	#ifdef DEBUG
 	  std::cout << "ready to start VM..." << std::endl;
@@ -156,9 +177,19 @@ def main(int argc,  char *argv[]) -> int:
 	  run_vm_embedded(argc, argv);
 	#else
 	if argc==1:
-		std::cout << "Error: no byte code file provided" << std::endl;
+		std::cout << "Error: no bytecode or py file provided" << std::endl;
 	elif argc==2:
-		run_vm(argc, argv, 1);
+		std::string f = std::string(argv[1])
+		print( f )
+		if f.size() > 3:
+			if f.substr( f.size()-3, f.size() ) == std::string(".py"):
+				#ifdef USE_PYTHON
+				compile_and_run_py_file(f)
+				#else
+				print('Error: tpython must be built with CPython to compile py files to bytecode')
+				#endif
+				return 0
+		run_vm(argc, argv, 1)
 	elif argc==3:
 		std::thread t1( [=]{run_vm(argc, argv, 1);} );
 		std::thread t2( [=]{run_vm(argc, argv, 2);} );
