@@ -1,5 +1,1992 @@
 #! /usr/bin/env python3
+# -*- coding: utf-8 -*-
 
-from tinypy.compiler.__main__ import main
+## tinpy.compiler is DEPRECATED, everything is moved into this file for easy embedding ##
+#from tinypy.compiler.__main__ import main
+#main()
 
-main()
+import os, sys, random
+
+## from encode.py ##
+try:
+	## scrambled interp codes ##
+	from tpython_interpreter_codes_gen import *
+except ImportError:
+	## default interp code order ##
+	print('using default interp codes')
+	EOF,REGS,NAME,INTEGER,NUMBER,STRING,MOVE,IF,EQ,LE,LT,GGET,GSET,ADD,SUB,MUL,DIV,CMP,MGET,GET,SET,NE,NOT,IFN,ITER,HAS,IGET,DEL,IFACE,DICT,LIST,PARAMS,LEN,JUMP,SETJMP,CALL,DEF,RETURN,RAISE,NONE,MOD,LSH,RSH,POW,BITAND,BITOR,BITNOT,BITXOR,PASS,FILE,DEBUG,LINE = range(52)
+
+class DState:
+	def __init__(self,code,fname):
+		self.const_numbers = []  ## max size is 256
+		self.header = []
+		self.nopos = False
+		self.code = code
+		self.fname = fname
+		self.lines = self.code.split('\n')
+		self.stack,self.out,self._scopei,self.tstack,self._tagi,self.data = [],[('tag','EOF')],0,[],0,{}
+		self.error = False
+
+	def begin(self,gbl=False):
+		if len(self.stack): self.stack.append((self.vars,self.r2n,self.n2r,self._tmpi,self.mreg,self.snum,self._globals,self.lineno,self.globals,self.rglobals,self.cregs,self.tmpc))
+		else: self.stack.append(None)
+		self.vars,self.r2n,self.n2r,self._tmpi,self.mreg,self.snum,self._globals,self.lineno,self.globals,self.rglobals,self.cregs,self.tmpc = [],{},{},0,0,str(self._scopei),gbl,-1,[],[],['regs'],0
+		self._scopei += 1
+		insert(self.cregs)
+
+	def end(self):
+		self.cregs.append(self.mreg)
+		code(EOF)
+		
+		# This next line forces the encoder to
+		# throw an exception if any tmp regs 
+		# were leaked within the frame
+		# assert(self.tmpc == 0) #REG
+		if self.tmpc != 0:
+			print("Warning:\nencode.py contains a register leak\n")
+		
+		if len(self.stack) > 1:
+			self.vars,self.r2n,self.n2r,self._tmpi,self.mreg,self.snum,self._globals,self.lineno,self.globals,self.rglobals,self.cregs,self.tmpc = self.stack.pop()
+		else: self.stack.pop()
+
+	def const_number(self, n):
+		## returns the address of the constant number
+		if len(self.const_numbers) == 256:
+			return -1
+		elif n in self.const_numbers:
+			return self.const_numbers.index(n)
+		else:
+			self.const_numbers.append(n)
+			const_addr = len(self.const_numbers)-1
+			code(NUMBER,a=0,b=2,c=const_addr, head=True)  ## b=2 means do not set a register
+			write(fpack(number(n)), head=True)
+
+			return const_addr
+
+
+def insert(v): D.out.append(v)
+def write(v, head=False):
+	if istype(v,'list'):
+		if head:
+			D.header.append( v )
+		else:
+			insert(v)
+		return
+	for n in range(0,len(v),4):
+		if head:
+			D.header.append(('data',v[n:n+4]))
+		else:
+			insert(('data',v[n:n+4]))
+
+def setpos(v, debug_mode='--debug' in sys.argv):
+	if not debug_mode:
+		return
+	if D.nopos: return
+	line,x = v
+	if line == D.lineno: return
+	text = D.lines[line-1]
+	D.lineno = line
+	val = text + "\0"*(4-len(text)%4)
+	code_16(LINE,int(len(val)/4),line)
+	write(val)
+
+def code(i,a=0,b=0,c=0, head=False):
+	if not istype(i,'number'): raise
+	if not istype(a,'number'): raise
+	if not istype(b,'number'): raise
+	if not istype(c,'number'): raise
+	write(('code',i,a,b,c), head=head)
+
+def code_16(i,a,b):
+	if b < 0: b += 0x8000
+	code(i,a,(b&0xff00)>>8,(b&0xff)>>0)
+
+def get_code16(i,a,b):
+	return ('code',i,a,(b&0xff00)>>8,(b&0xff)>>0)
+
+def _do_string(v,r=None):
+	r = get_tmp(r)
+	val = v + "\0"*(4-len(v)%4)
+	code_16(STRING,r,len(v))
+	write(val)
+	return r
+def do_string(t,r=None):
+	return _do_string(t.val,r)
+
+def _do_number(v,r=None):
+	r = get_tmp(r)
+	const_addr = D.const_number(v)
+	if const_addr != -1:
+		## TODO do not write number twice, this is needed until the rest of the code is refactored
+		code(NUMBER,a=r,b=1,c=const_addr)
+	else:
+		code(NUMBER,a=r,b=0,c=0)
+	write(fpack(number(v)))
+	return r
+
+def _do_integer(v,r=None):
+	r = get_tmp(r)
+	#code(INTEGER,r,0,0)
+	#write(fpack(number(v)))  ## not packed or unpacked properly? TODO FIXME
+	code(INTEGER, a=r, b=int(v), c=0)  ## just small integers for now
+	return r
+
+def do_number(t,r=None):
+	if '--int-type' in sys.argv and '.' not in t.val and int(t.val) >= 0 and int(t.val) <= 255:
+		return _do_integer(t.val,r)
+	else:
+		return _do_number(t.val,r)
+
+def get_tag():
+	k = str(D._tagi)
+	D._tagi += 1
+	return k
+def stack_tag():
+	k = get_tag()
+	D.tstack.append(k)
+	return k
+def pop_tag():
+	D.tstack.pop()
+
+def tag(*t):
+	t = D.snum+':'+':'.join([str(v) for v in t])
+	insert(('tag',t))
+def jump(*t):
+	t = D.snum+':'+':'.join([str(v) for v in t])
+	insert(('jump',t))
+def setjmp(*t):
+	t = D.snum+':'+':'.join([str(v) for v in t])
+	insert(('setjmp',t))
+def fnc(*t):
+	t = D.snum+':'+':'.join([str(v) for v in t])
+	r = get_reg(t)
+	insert(('fnc',r,t))
+	return r
+
+def map_tags():
+	tags = {}
+	out = []
+	n = 0
+	for item in D.header + D.out:
+		if item[0] == 'tag':
+			tags[item[1]] = n
+			continue
+		if item[0] == 'regs':
+			out.append(get_code16(REGS,item[1],0))
+			n += 1
+			continue
+		out.append(item)
+		n += 1
+	for n in range(0,len(out)):
+		item = out[n]
+		if item[0] == 'jump':
+			out[n] = get_code16(JUMP,0,tags[item[1]]-n)
+		elif item[0] == 'setjmp':
+			out[n] = get_code16(SETJMP,0,tags[item[1]]-n)
+		elif item[0] == 'fnc':
+			out[n] = get_code16(DEF,item[1],tags[item[2]]-n)
+	for n in range(0,len(out)):
+		item = out[n]
+		if item[0] == 'data':
+			out[n] = item[1]
+		elif item[0] == 'code':
+			i,a,b,c = item[1:]
+			out[n] = chr(i)+chr(a)+chr(b)+chr(c)
+		else:
+			raise str(('huh?',item))
+		if len(out[n]) != 4:
+			raise ('code '+str(n)+' is wrong length '+str(len(out[n])))
+	D.out = out
+
+def get_tmp(r=None):
+	if r != None: return r
+	return get_tmps(1)[0]
+def get_tmps(t):
+	rs = alloc(t)
+	regs = range(rs,rs+t)
+	for r in regs:
+		set_reg(r,"$"+str(D._tmpi))
+		D._tmpi += 1
+	D.tmpc += t #REG
+	return regs
+def alloc(t):
+	s = ''.join(["01"[r in D.r2n] for r in range(0,min(256,D.mreg+t))])
+	return s.index('0'*t)
+def is_tmp(r):
+	if r is None: return False
+	return (D.r2n[r][0] == '$')
+def un_tmp(r):
+	n = D.r2n[r]
+	free_reg(r)
+	set_reg(r,'*'+n)
+def free_tmp(r):
+	if is_tmp(r): free_reg(r)
+	return r
+def free_tmps(r):
+	for k in r: free_tmp(k)
+def get_reg(n):
+	if n not in D.n2r:
+		set_reg(alloc(1),n)
+	return D.n2r[n]
+#def get_clean_reg(n):
+	#if n in D.n2r: raise
+	#set_reg(D.mreg,n)
+	#return D.n2r[n]
+def set_reg(r,n):
+	D.n2r[n] = r; D.r2n[r] = n
+	D.mreg = max(D.mreg,r+1)
+def free_reg(r):
+	if is_tmp(r): D.tmpc -= 1
+	n = D.r2n[r]; del D.r2n[r]; del D.n2r[n]
+
+def imanage(orig,fnc):
+	if orig.val in ('+=', '-=', '*=', '/=') and '--beta' in sys.argv:
+		print(orig)
+		dest = orig.items[0]
+		expr = orig.items[1]  ## may contain sub expressions
+		assert len(orig.items)==2
+		assert isinstance( dest, Token )
+		if dest.type == 'name' and len(dest.val)==1:
+			if expr.type == 'number' and expr.val.isdigit():
+				b = int(expr.val)
+				if b > 0 and b < 256:
+					if orig.val == '+=':
+						if dest.val in D.globals:
+							code(92, a=ord(dest.val), b=b)
+						else:
+							if b == 1:
+								code(90, a=get_reg(dest.val))
+							else:
+								code(91, a=get_reg(dest.val), b=b)
+						return None
+			if dest.val in D.globals:
+				a = ord(dest.val)
+				if expr.type == 'name' and len(expr.val)==1 and expr.val in D.globals:
+					b = ord(expr.val)
+					if orig.val == '+=':
+						code(101, a=a, b=b)
+					elif orig.val == '-=':
+						code(102, a=a, b=b)
+					elif orig.val == '*=':
+						code(103, a=a, b=b)
+					elif orig.val == '/=':
+						code(104, a=a, b=b)
+					return None
+				elif expr.type == 'symbol':
+					opb, opc = expr.items
+					if opb.type=='name' and len(opb.val)==1 and opb.val in D.globals:
+						if opc.type=='name' and len(opc.val)==1 and opc.val in D.globals:
+							b = ord(opb.val)
+							c = ord(opc.val)
+							if orig.val == '+=':
+								if expr.val == '+':
+									code(105, a=a, b=b, c=c)
+								elif expr.val == '-':
+									code(106, a=a, b=b, c=c)
+								elif expr.val == '*':
+									code(107, a=a, b=b, c=c)
+								elif expr.val == '/':
+									code(108, a=a, b=b, c=c)
+
+								return None
+
+	items = orig.items
+	orig.val = orig.val[:-1]
+	t = Token(orig.pos,'symbol','=',[items[0],orig])
+	return fnc(t)
+
+def unary(i,tb,r=None):
+	r = get_tmp(r)
+	b = do(tb)
+	code(i,r,b)
+	if r != b: free_tmp(b)
+	return r
+def infix(i,tb,tc,r=None):
+	r = get_tmp(r)
+	b,c = do(tb,r),do(tc)
+	code(i,r,b,c)
+	if r != b: free_tmp(b)
+	free_tmp(c)
+	return r
+def logic_infix(op, tb, tc, _r=None):
+	t = get_tag() 
+	r = do(tb, _r)
+	if _r != r: free_tmp(_r) #REG
+	if op == 'and':   code(IF, r)
+	elif op == 'or':  code(IFN, r)
+	jump(t, 'end')
+	_r = r
+	r = do(tc, _r)
+	if _r != r: free_tmp(_r) #REG
+	tag(t, 'end')
+	return r
+
+def _do_none(r=None):
+	r = get_tmp(r)
+	code(NONE,r)
+	return r
+
+def do_symbol(t,r=None):
+	sets = ['=']
+	isets = ['+=','-=','*=','/=', '|=', '&=', '^=']
+	cmps = ['<','>','<=','>=','==','!=']
+	metas = {
+		'+':ADD,'*':MUL,'/':DIV,'**':POW,
+		'-':SUB,
+		'%':MOD,'>>':RSH,'<<':LSH,
+		'&':BITAND,'|':BITOR,'^':BITXOR,
+	}
+	if t.val == 'None': return _do_none(r)
+	if t.val == 'True':
+		return _do_number('1',r)
+	if t.val == 'False':
+		return _do_number('0',r)
+	items = t.items
+
+	if t.val in ['and','or']:
+		return logic_infix(t.val, items[0], items[1], r)
+	if t.val in isets:
+		return imanage(t,do_symbol)
+	if t.val == 'is':
+		return infix(EQ,items[0],items[1],r)
+	if t.val == 'isnot':
+		return infix(CMP,items[0],items[1],r)
+	if t.val == 'not':
+		return unary(NOT, items[0], r)
+	if t.val == 'in':
+		return infix(HAS,items[1],items[0],r)
+	if t.val == 'notin':
+		r = infix(HAS,items[1],items[0],r)
+		zero = _do_number('0')
+		code(EQ,r,r,free_tmp(zero))
+		return r
+	if t.val in sets:
+		if items[0].type == 'name' and items[0].val in D.globals and len(items[0].val)==1:
+			a = items[0]
+			expr = items[1]
+			if expr.type == 'symbol' and expr.val in '+-/*':
+				b = expr.items[0]
+				c = expr.items[1]
+				if b.type == 'name' and c.type == 'name' and len(b.val)==1 and len(c.val)==1:
+					if b.val in D.globals and c.val in D.globals:
+						if expr.val == '+':
+							code(68, a=ord(a.val), b=ord(b.val), c=ord(c.val))
+						elif expr.val == '-':
+							code(69, a=ord(a.val), b=ord(b.val), c=ord(c.val))
+						elif expr.val == '*':
+							code(70, a=ord(a.val), b=ord(b.val), c=ord(c.val))
+						elif expr.val == '/':
+							code(71, a=ord(a.val), b=ord(b.val), c=ord(c.val))
+						return None
+
+		return do_set_ctx(items[0],items[1]);
+
+	elif t.val in cmps:
+		b,c = items[0],items[1]
+		v = t.val
+		if v[0] in ('>','>='):
+			b,c,v = c,b,'<'+v[1:]
+		cd = EQ
+		if v == '<': cd = LT
+		if v == '<=': cd = LE
+		if v == '!=': cd = NE
+		return infix(cd,b,c,r)
+	else:
+		#	if t.val in D.vars:
+		#return do_local(t,r)
+		a = items[0]
+		b = items[1]
+		if a.type == 'name' and a.val in D.globals and len(a.val)==1:
+			if b.type == 'name' and b.val in D.globals and len(b.val)==1:
+				print('r=', r)
+				if r is None:
+					r = 0
+				if t.val == '+':
+					code(64, a=r, b=ord(a.val), c=ord(b.val))
+					return r
+				elif t.val == '-':
+					code(65, a=r, b=ord(a.val), c=ord(b.val))
+					return r
+				elif t.val == '*':
+					code(66, a=r, b=ord(a.val), c=ord(b.val))
+					return r
+				elif t.val == '/':
+					code(67, a=r, b=ord(a.val), c=ord(b.val))
+					return r
+
+		return infix(metas[t.val],items[0],items[1],r)
+
+def do_set_ctx(k,v):
+	if k.type == 'name':
+		if (D._globals and k.val not in D.vars) or (k.val in D.globals):
+			c = do_string(k)
+			b = do(v)
+			code(GSET,c,b)
+			free_tmp(c)
+			free_tmp(b)
+			return
+		a = do_local(k)
+		b = do(v)
+		code(MOVE,a,b)
+		free_tmp(b)
+		return a
+	elif k.type in ('tuple','list'):
+		if v.type in ('tuple','list'):
+			n,tmps = 0,[]
+			for kk in k.items:
+				vv = v.items[n]
+				tmp = get_tmp(); tmps.append(tmp)
+				r = do(vv)
+				code(MOVE,tmp,r)
+				free_tmp(r) #REG
+				n+=1
+			n = 0
+			for kk in k.items:
+				vv = v.items[n]
+				tmp = tmps[n]
+				free_tmp(do_set_ctx(kk,Token(vv.pos,'reg',tmp))) #REG
+				n += 1
+			return
+
+		r = do(v); un_tmp(r)
+		n, tmp = 0, Token(v.pos,'reg',r)
+		for tt in k.items:
+			free_tmp(do_set_ctx(tt,Token(tmp.pos,'get',None,[tmp,Token(tmp.pos,'number',str(n))]))) #REG
+			n += 1
+		free_reg(r)
+		return
+
+	r = do(k.items[0])
+	rr = do(v)
+	tmp = do(k.items[1])
+	code(SET,r,tmp,rr)
+	free_tmp(r) #REG
+	free_tmp(tmp) #REG
+	return rr
+
+def manage_seq(i,a,items,sav=0):
+	l = max(sav,len(items))
+	n,tmps = 0,get_tmps(l)
+	for tt in items:
+		r = tmps[n]
+		b = do(tt,r)
+		if r != b:
+			code(MOVE,r,b)
+			free_tmp(b)
+		n +=1
+	if not len(tmps):
+		code(i,a,0,0)
+		return 0
+	code(i,a,tmps[0],len(items))
+	free_tmps(tmps[sav:])
+	return tmps[0]
+
+def p_filter(items):
+	a,b,c,d = [],[],None,None
+	for t in items:
+		if t.type == 'symbol' and t.val == '=': b.append(t)
+		elif t.type == 'args': c = t
+		elif t.type == 'nargs': d = t
+		else: a.append(t)
+	return a,b,c,d
+
+def do_import(t):
+	if len(t.items) == 1:
+		mod = t.items[0]
+		name = mod
+	else:
+		mod, name = t.items
+
+	mod.type = 'string'
+	v = do_call(Token(t.pos,'call',None,[
+		Token(t.pos,'name','__import__'),
+		mod,
+		Token(t.pos, 'symbol', 'None')]
+		))
+
+	name.type = 'name'
+	do_set_ctx(name,Token(t.pos,'reg',v))
+
+def do_from(t):
+	mod = t.items[0]
+	items = t.items[1]
+	mod.type = 'string'
+
+	if items.type == 'args':
+		# it really shouldn't be args -- need to fix the parser.
+		if items.val == '*':
+			items.type = 'string'
+	elif items.type == 'name':
+		items.type = 'string'
+		items = Token(items.pos, 'tuple', None, [items])
+	elif items.type ==  'tuple':
+		for item in items.items:
+			item.type = 'string'
+	else: 
+		u_error('SyntaxError', D.code, t.pos)
+
+	v = do(Token(t.pos,'call',None,[
+		Token(t.pos,'name','__import__'),
+		mod,
+		items,
+		]))
+
+	un_tmp(v)
+
+	free_tmp(do(Token(t.pos, 'call', None, [
+			Token(t.pos, 'name', '__merge__'),
+			Token(t.pos, 'name', '__dict__'),
+			Token(t.pos, 'reg', v) #REG
+			]
+		)))
+
+	free_reg(v)
+ 
+def do_globals(t):
+	for t in t.items:
+		if t.val not in D.globals:
+			D.globals.append(t.val)
+
+def do_del(tt):
+	for t in tt.items:
+		if t.type=='name':
+			r = do(t)
+			code(DEL, r)
+			free_tmp(r)
+		else:  ## assume dictionary `del foo['bar']`
+			r = do(t.items[0])
+			r2 = do(t.items[1])
+			code(DEL,r,r2)
+			free_tmp(r)
+			free_tmp(r2)
+
+def do_call(t,r=None):
+	assert t.type == 'call'
+	## fast printing optimization
+	if t.items[0].type == 'name' and t.items[0].val == 'print':
+		if len(t.items[1:]) >= 2 and t.items[-1].type == 'symbol' and t.items[-1].val == '=':
+			kwargs = t.items[-1]
+			if kwargs.items[0].type=='name' and kwargs.items[0].val == 'end':
+				if kwargs.items[1].type=='string' and kwargs.items[1].val == '':
+					if t.items[1].type == 'string':
+						if len(t.items[1].val)==1:
+							code(60, a=ord(t.items[1].val))
+							return None
+						## TODO fix unicode bugs, and test compiler with Python3
+						elif len(t.items[1].val)==2 and t.items[1].val == '·':  ## middle dot with bad encoding
+							#code(60, a=ord(u'·'))  ## code 183, is printed as `�`
+							code(60, a=ord('.'))  ## workaround change to a regular dot
+							return None
+
+	r = get_tmp(r)
+	items = t.items
+	fnc = do(items[0])
+	a,b,c,d = p_filter(t.items[1:])
+	e = None
+	if len(b) != 0 or d != None:
+		e = do(Token(t.pos,'dict',None,[])); un_tmp(e);
+		for p in b:
+			p.items[0].type = 'string'
+			t1,t2 = do(p.items[0]),do(p.items[1])
+			code(SET,e,t1,t2)
+			free_tmp(t1); free_tmp(t2) #REG
+		if d: free_tmp(do(
+			Token(t.pos,'call',None,
+				[ Token(t.pos,'name', '__merge__'),
+				  Token(t.pos,'reg',e),
+				  d.items[0]
+				]))) #REG
+	manage_seq(PARAMS,r,a)
+	if c != None:
+		t1,t2 = _do_string('*'),do(c.items[0])
+		code(SET,r,t1,t2)
+		free_tmp(t1); free_tmp(t2) #REG
+	if e != None:
+		t1 = _do_none()
+		code(SET,r,t1,e)
+		free_tmp(t1) #REG
+	code(CALL,r,fnc,r)
+	free_tmp(fnc) #REG
+	return r
+
+def do_name(t,r=None):
+	if t.val in D.vars:
+		return do_local(t,r)
+	if t.val not in D.rglobals:
+		D.rglobals.append(t.val)
+	r = get_tmp(r)
+	c = do_string(t)
+	code(GGET,r,c)
+	free_tmp(c)
+	return r
+
+def do_local(t,r=None):
+	if t.val in D.rglobals:
+		D.error = True
+		u_error('UnboundLocalError',D.code,t.pos)
+	if t.val not in D.vars:
+		D.vars.append(t.val)
+	return get_reg(t.val)
+
+def do_def(tok,kls=None):
+	items = tok.items
+
+	t = get_tag()
+	rf = fnc(t,'end')
+
+	D.begin()
+	setpos(tok.pos)
+	r = do_local(Token(tok.pos,'name','__params'))
+	do_info(items[0].val)
+	a,b,c,d = p_filter(items[1].items)
+	for p in a:
+		v = do_local(p)
+		tmp = _do_none()
+		code(GET,v,r,tmp)
+		free_tmp(tmp) #REG
+	for p in b:
+		v = do_local(p.items[0])
+		do(p.items[1],v)
+		tmp = _do_none()
+		code(IGET,v,r,tmp)
+		free_tmp(tmp) #REG
+	if c != None:
+		v = do_local(c.items[0])
+		tmp = _do_string('*')
+		code(GET,v,r,tmp)
+		free_tmp(tmp) #REG
+	if d != None:
+		e = do_local(d.items[0])
+		code(DICT,e,0,0)
+		tmp = _do_none()
+		code(IGET,e,r,tmp)
+		free_tmp(tmp) #REG
+	free_tmp(do(items[2])) #REG
+	D.end()
+
+	tag(t,'end')
+
+	if kls == None:
+		if D._globals: do_globals(Token(tok.pos,0,0,[items[0]]))
+		r = do_set_ctx(items[0],Token(tok.pos,'reg',rf))
+	else:
+		rn = do_string(items[0])
+		code(SET,kls,rn,rf)
+		free_tmp(rn)
+
+	free_tmp(rf)
+
+def do_class(t):
+	tok = t
+	items = t.items
+	parent = None
+	if items[0].type == 'name':
+		name = items[0].val
+		parent = Token(tok.pos,'name','object')
+	else:
+		name = items[0].items[0].val
+		parent = items[0].items[1]
+
+	kls = do_classdecl()
+	un_tmp(kls)
+	ts = _do_string(name)
+	code(GSET,ts,kls)
+	free_tmp(ts) #REG
+	
+	free_tmp(do(Token(tok.pos,'call',None,[
+		Token(tok.pos,'name','setmeta'),
+		Token(tok.pos,'reg',kls),
+		parent])))
+		
+	for member in items[1].items:
+		if member.type == 'def': do_def(member,kls)
+		elif member.type == 'symbol' and member.val == '=': do_classvar(member,kls)
+		else: continue
+		
+	free_reg(kls) #REG
+
+def do_classdecl():
+	r = get_tmp(None)
+	manage_seq(IFACE, r, [])
+	return r
+
+def do_classvar(t,r):
+	var = do_string(t.items[0])
+	val = do(t.items[1])
+	code(SET,r,var,val)
+	free_reg(var)
+	free_reg(val)
+
+## hartsantler
+#def do_loop_old_hack(t):
+#    LOOP = int(t.val) + 100
+#    code(LOOP)
+#    items = t.items
+#    t = stack_tag()
+#    body = do(items[0])
+#    pop_tag()
+
+def do_loop(t):
+	#s = stack_tag()
+
+	items = t.items
+	#LOOP_NUM = 99
+	#code(LOOP_NUM, int(t.val))  ## this works, just read from VA
+	#LOOP = 100
+	#code(LOOP)
+	LOOP = 100
+	#code(LOOP, int(t.val))  ## this still wont work with large loops, the second arg is register A, and that can only be 8bits
+	#code_16(LOOP, a=0, b=int(t.val))  ## not sure how this works
+	r = do_number(t.num_loops)
+	code(LOOP, r)
+	free_tmp(r)
+	#t = stack_tag()
+	#tag(t,'begin')
+
+	#raise RuntimeError(items)
+	#t = stack_tag()
+	body = do(items[0])
+	#free_tmp(body)
+	#tag(t,'end')
+	#pop_tag()
+
+
+def do_while(t):
+	items = t.items
+	t = stack_tag()
+	tag(t,'begin')
+	tag(t,'continue')
+	cond = items[0]
+	old_style = True
+	if cond.type == 'symbol':
+		if cond.val == '<':
+			if cond.items[0].type == 'name' and cond.items[1].type == 'number' and cond.items[0].val not in D.globals:
+				const_addr = D.const_number(cond.items[1].val)
+				if const_addr != -1:
+					if items[1].type == 'statements':
+						old_style = False
+						a, b = cond.items
+						## look ahead to see if the next operation is to increment a.val by 1
+						do_increment = 0
+						do_slower_method = True
+
+						nextop = items[1].items[0]
+						if nextop.type == 'symbol' and nextop.val == '+=':
+							if nextop.items[0].type == 'name' and nextop.items[1].type == 'number' and nextop.items[1].val.isdigit():
+								incby = int(nextop.items[1].val)
+								if nextop.items[0].val == a.val and incby >= 1 and incby <= 255:
+									items[1].items = items[1].items[1:]  ## remove the next op
+									if incby == 1:
+										## this is optimized more because of `i++`
+										code(80, a=get_reg(a.val), b=const_addr)
+										do_slower_method = False
+									else:
+										do_increment = incby
+
+						if do_slower_method:
+							code(81, a=get_reg(a.val), b=const_addr, c=do_increment)
+
+			elif cond.items[0].type == 'name' and cond.items[1].type == 'name':
+				a,b = cond.items
+				if len(b.val)==1 and b.val in D.globals:
+					if len(a.val)==1 and a.val in D.globals:
+						old_style = False
+						code(82, a=ord(a.val), b=ord(b.val))
+					elif a.val not in D.globals:
+						old_style = False
+						code(83, a=get_reg(a.val), b=ord(b.val))
+
+	if old_style:
+		r = do(items[0])
+		code(IF,r)
+		free_tmp(r) #REG
+
+	jump(t,'end')
+	free_tmp(do(items[1])) #REG
+	jump(t,'begin')
+	tag(t,'break')
+	tag(t,'end')
+	pop_tag()
+
+def do_for(tok):
+	items = tok.items
+
+	reg = get_tmp()
+	itr = do(items[1])
+	i = _do_number('0')
+
+	t = stack_tag(); tag(t,'loop'); tag(t,'continue')
+	code(ITER,reg,itr,i); jump(t,'end')
+	free_tmp(do_set_ctx(items[0], Token(tok.pos, 'reg', reg)))
+	free_tmp(do(items[2])) #REG
+	jump(t,'loop')
+	tag(t,'break'); tag(t,'end'); pop_tag()
+
+	free_tmp(itr) #REG
+	free_tmp(i)
+
+def do_comp(t,r=None):
+	name = 'comp:'+get_tag()
+	r = do_local(Token(t.pos,'name',name))
+	code(LIST,r,0,0)
+	key = Token(t.pos,'get',None,[
+			Token(t.pos,'reg',r),
+			Token(t.pos,'symbol','None')])
+	ap = Token(t.pos,'symbol','=',[key,t.items[0]])
+	do(Token(t.pos,'for',None,[t.items[1],t.items[2],ap]))
+	return r
+
+def do_if(t):
+	items = t.items
+	t = get_tag()
+	n = 0
+	for tt in items:
+		tag(t,n)
+		if tt.type == 'elif':
+			slow_if = True
+			if tt.items[0].type == 'symbol' and tt.items[0].val == '<=':
+				opa, opb = tt.items[0].items
+				if opa.type == 'symbol' and  opa.val == '+':
+					opaa, opab = opa.items
+					if opaa.type=='name' and opab.type=='name':
+						if len(opaa.val)==1 and opaa.val in D.globals:
+							if len(opab.val)==1 and opab.val in D.globals:
+								if opb.type == 'number' and opb.val.isdigit():
+									num = int(opb.val)
+									if num >= 0 and num <= 255:
+										slow_if = False
+										code(128, a=ord(opaa.val), b=ord(opab.val), c=num)
+
+			if slow_if:
+				a = do(tt.items[0])
+				code(IF,a)
+				free_tmp(a);
+
+			jump(t,n+1)
+			free_tmp(do(tt.items[1])) #REG
+		elif tt.type == 'else':
+			free_tmp(do(tt.items[0])) #REG
+		else:
+			raise
+		jump(t,'end')
+		n += 1
+	tag(t,n)
+	tag(t,'end')
+
+def do_try(t):
+	items = t.items
+	t = get_tag()
+	setjmp(t,'except')
+	free_tmp(do(items[0])) #REG
+	code(SETJMP,0)
+	jump(t,'end')
+	tag(t,'except')
+	free_tmp(do(items[1].items[1])) #REG
+	tag(t,'end')
+
+def do_return(t):
+	if t.items: r = do(t.items[0])
+	else: r = _do_none()
+	code(RETURN,r)
+	free_tmp(r)
+	return
+
+def do_assert(t):
+	if t.items: r = do(t.items[0])
+	else: r = _do_none()
+
+	un_tmp(r)
+	v = do_call(Token(t.pos,'call',None,[
+		Token(t.pos,'name','__assert__'),
+		Token(t.pos, 'reg', r) #REG
+		]
+		))
+
+	free_tmp(v)
+	return
+
+def do_raise(t):
+	if t.items: r = do(t.items[0])
+	else: r = _do_none()
+	code(RAISE,r)
+	free_tmp(r)
+	return
+
+def do_statements(t):
+	for tt in t.items: free_tmp(do(tt))
+
+def do_list(t,r=None):
+	r = get_tmp(r)
+	manage_seq(LIST,r,t.items)
+	return r
+
+def do_dict(t,r=None):
+	r = get_tmp(r)
+	manage_seq(DICT,r,t.items)
+	return r
+
+def do_get(t,r=None):
+	items = t.items
+	return infix(GET,items[0],items[1],r)
+
+def do_mget(t,r=None):
+	items = t.items
+	return infix(MGET,items[0],items[1],r)
+
+def do_break(t): jump(D.tstack[-1],'break')
+def do_continue(t): jump(D.tstack[-1],'continue')
+def do_pass(t): code(PASS)
+
+def do_info(name='?'):
+	if D.nopos: return
+	code(FILE,free_tmp(_do_string(D.fname)))
+	code(NAME,free_tmp(_do_string(name)))
+def do_module(t):
+	do_info()
+	free_tmp(do(t.items[0])) #REG
+def do_reg(t,r=None): return t.val
+
+fmap = {
+	'loop': do_loop,  ## hartsantler, sept21
+	'module':do_module,'statements':do_statements,'def':do_def,
+	'return':do_return, 'assert':do_assert, 'while':do_while,'if':do_if,
+	'break':do_break,'pass':do_pass,'continue':do_continue,'for':do_for,
+	'class':do_class,'raise':do_raise,'try':do_try,'import':do_import,
+	'globals':do_globals,'del':do_del,'from':do_from,
+}
+rmap = {
+	'list':do_list, 'tuple':do_list, 'dict':do_dict, 'slice':do_list,
+	'comp':do_comp, 'name':do_name,'symbol':do_symbol,'number':do_number,
+	'string':do_string,'get':do_get, 'mget':do_mget, 'call':do_call, 'reg':do_reg,
+}
+
+def do(t,r=None):
+	if t.pos: setpos(t.pos)
+	#try:
+	if 1:
+		if t.type in rmap:
+			return rmap[t.type](t,r)
+		#if r != None: free_reg(r) #REG
+		return fmap[t.type](t)
+	#except:
+	#    raise
+	#    if D.error: raise
+	#    D.error = True
+	#    tokenize.u_error('encode',D.code,t.pos)
+
+class encode:
+	@classmethod
+	def encode(cls, fname,s,t):
+		t = Token((1,1),'module','module',[t])
+		global D
+		s = tokenize().clean(s)
+		D = DState(s,fname)
+		D.begin(True)
+		do(t)
+		D.end()
+		if '--inspect-bytecode' in sys.argv:
+			print(D.out)
+			for chunk in D.out:
+				print(chunk)
+
+		map_tags()
+		out = []
+		for part in D.out:
+			if type(part) is str:
+				out.append(part.encode('latin1'))
+			else:
+				out.append(part)
+		D = None
+		# Use a function instead of ''.join() so that bytes and
+		# strings during bootstrap
+		if '--inspect-bytecode' in sys.argv:
+			print(out)
+
+		return b''.join(out)
+
+## from parse.py ##
+
+def check(t,*vs):
+	if vs[0] == None: return True
+	if t.type in vs: return True
+	if t.type == 'symbol' and t.val in vs: return True
+	return False
+
+def tweak(k,v):
+	P.stack.append((k,dmap[k]))
+	if v: dmap[k] = omap[k]
+	else: dmap[k] = {'lbp':0,'nud':itself}
+def restore():
+	k,v = P.stack.pop()
+	dmap[k] = v
+
+def cpy(d):
+	r = {}
+	for k in d: r[k] = d[k]
+	return r
+
+class PData:
+	def __init__(self,s,tokens):
+		self.s = s
+		self.tokens = tokens
+		self.pos = 0
+		self.token = None
+		self.stack = []
+		self._terminal = 0
+	def init(self):
+		global omap,dmap
+		omap = cpy(base_dmap)
+		dmap = cpy(base_dmap)
+		self.advance()
+	def advance(self,val=None):
+		if not check(self.token,val):
+			error('expected '+val,self.token)
+		if self.pos < len(self.tokens):
+			t = self.tokens[self.pos]
+			self.pos += 1
+		else:
+			t = Token((0,0),'eof','eof')
+		self.token = parse.do(t)
+		
+		self._terminal += 1
+		if check(self.token,'nl','eof',';','dedent'):
+			self._terminal = 0
+		return t
+		
+	def terminal(self):
+		if self._terminal > 1:
+			error('invalid statement',self.token)
+
+def error(ctx,t):
+	if P is None:
+		print(t)
+		raise RuntimeError('parser context `P` is None')
+	u_error(ctx,P.s,t.pos)
+
+def nud(t):
+	#if 'nud' not in t:
+		#error('no nud',t)
+	return t.nud(t)
+def led(t,left):
+	#if 'led' not in t:
+		#error('no led',t)
+	return t.led(t,left)
+def get_lbp(t):
+	#if 'lbp' not in t:
+		#error('no lbp',t)
+	return t.lbp
+def get_items(t):
+	#if 'items' not in t:
+		#error('no items',t)
+	return t.items
+
+def expression(rbp, left=None):
+	if left is None:
+		t = P.token
+		advance()
+		left = nud(t)
+	while rbp < get_lbp(P.token):
+		t = P.token
+		advance()
+		left = led(t,left)
+	return left
+
+def infix_led(t,left):
+	t.items = [left,expression(t.bp)]
+	return t
+def infix_is(t,left):
+	if check(P.token,'not'):
+		t.val = 'isnot'
+		advance('not')
+	t.items = [left,expression(t.bp)]
+	return t
+def infix_not(t,left):
+	advance('in')
+	t.val = 'notin'
+	t.items = [left,expression(t.bp)]
+	return t
+def infix_tuple(t,left):
+	r = expression(t.bp)
+	if left.val == ',':
+		left.items.append(r)
+		return left
+	t.items = [left,r]
+	t.type = 'tuple'
+	return t
+def lst(t):
+	if t == None: return []
+	if check(t,',','tuple','statements'):
+		return get_items(t)
+	return [t]
+def ilst(typ,t):
+	return Token(t.pos,typ,typ,lst(t))
+
+def call_led(t,left):
+	r = Token(t.pos,'call','$',[left])
+	while not check(P.token,')'):
+		tweak(',',0)
+		r.items.append(expression(0))
+		if P.token.val == ',': advance(',')
+		restore()
+	advance(")")
+	return r
+def get_led(t,left):
+	r = Token(t.pos,'get','.',[left])
+	items =  [left]
+	more = False
+	while not check(P.token,']'):
+		more = False
+		if check(P.token,':'):
+			items.append(Token(P.token.pos,'symbol','None'))
+		else:
+			items.append(expression(0))
+		if check(P.token,':'):
+			advance(':')
+			more = True
+	if more:
+		items.append(Token(P.token.pos,'symbol','None'))
+	if len(items) > 2:
+		items = [left,Token(t.pos,'slice',':',items[1:])]
+	r.items = items
+	advance("]")
+	return r
+def dot_led(t,left):
+	r = expression(t.bp)
+	r.type = 'string'
+	t.items = [left,r]
+	return t
+
+def itself(t):
+	return t
+def paren_nud(t):
+	tweak(',',1)
+	r = expression(0)
+	restore()
+	advance(')')
+	return r
+def list_nud(t):
+	t.type = 'list'
+	t.val = '[]'
+	t.items = []
+	next = P.token
+	tweak(',',0)
+	while not check(P.token,'for',']'):
+		r = expression(0)
+		t.items.append(r)
+		if P.token.val == ',': advance(',')
+	if check(P.token,'for'):
+		restore()
+		t.type = 'comp'
+		advance('for')
+		tweak('in',0)
+		tweak(',', 1)
+		t.items.append(expression(0))
+		advance('in')
+		t.items.append(expression(0))
+		restore()
+	restore()
+	advance(']')
+	return t
+def dict_nud(t):
+	t.type='dict'
+	t.val = '{}'
+	t.items = []
+	tweak(',',0)
+	while not check(P.token,'}'):
+		t.items.append(expression(0))
+		if check(P.token,':',','): advance()
+	restore()
+	advance('}')
+	return t
+
+def advance(t=None):
+	return P.advance(t)
+
+def iblock(items):
+	while check(P.token,'nl',';'): advance()
+	while True:
+		items.append(expression(0))
+		P.terminal()
+		while check(P.token,'nl',';'): advance()
+		if check(P.token,'dedent','eof'): break
+
+def block():
+	items = []
+	tok = P.token
+	
+	if check(P.token,'nl'):
+		while check(P.token,'nl'): advance()
+		advance('indent')
+		iblock(items)
+		advance('dedent')
+	else:
+		items.append(expression(0))
+		while check(P.token,';'):
+			advance(';')
+			items.append(expression(0))
+		P.terminal()
+	while check(P.token,'nl'): advance()
+
+	if len(items) > 1:
+		return Token(tok.pos,'statements',';',items)
+	return items.pop()
+
+def def_nud(t):
+	items = t.items = []
+	items.append(P.token); advance()
+	advance('(')
+	r = Token(t.pos,'symbol','():',[])
+	items.append(r)
+	while not check(P.token,')'):
+		tweak(',',0)
+		r.items.append(expression(0))
+		if check(P.token,','): advance(',')
+		restore()
+	advance(')')
+	advance(':')
+	items.append(block())
+	return t
+
+def loop_nud(t):
+	print(dir(t))
+	t.items = []
+	t.items.append(expression(0))
+	advance(':')
+
+	print('type:', t.type)
+	print('val:', t.val)
+	print('items:', t.items)
+	print('lbp:', t.lbp)
+	print('nud:', t.nud)
+	print('--------------')
+	print(P.token)
+	assert len(t.items)==1
+	#raise RuntimeError(t.items[0].val)
+	t.val = t.items[0].val
+	t.num_loops = t.items[0]
+	t.items = []
+	t.items.append(block())
+	#advance(';')
+
+	return t
+
+def while_nud(t):
+	items = t.items = []
+	items.append(expression(0))
+	advance(':')
+	items.append(block())
+	return t
+
+def class_nud(t):
+	items = t.items = []
+	items.append(expression(0))
+	advance(':')
+	items.append(ilst('methods',block()))
+	return t
+
+def from_nud(t):
+	items = t.items = []
+
+	# relative import
+	s = ''
+	while True:
+		if check(P.token, 'mget'):
+			s = s + '.'
+			advance()
+		elif check(P.token, 'name'):
+			s = s + P.token.val
+			advance()
+		else:
+			break
+
+	expr = Token(t.pos, 'string', s)
+	items.append(expr)
+
+	advance('import')
+	items.append(expression(0))
+	return t
+
+def import_nud(t):
+	items = t.items = []
+	s = ''
+	while True:
+		if check(P.token, 'mget'):
+			s = s + '.'
+			advance()
+		elif check(P.token, 'name'):
+			s = s + P.token.val
+			advance()
+		else:
+			break
+
+	expr = Token(t.pos, 'string', s)
+	items.append(expr)
+	if check(P.token, 'as'):
+		advance('as')
+		items.append(expression(0))
+
+	return t
+
+def for_nud(t):
+	items = t.items = []
+	tweak('in',0)
+	items.append(expression(0))
+	advance('in')
+	items.append(expression(0))
+	restore()
+	advance(':')
+	items.append(block())
+	return t
+
+def if_nud(t):
+	items = t.items = []
+	a = expression(0)
+	advance(':')
+	b = block()
+	items.append(Token(t.pos,'elif','elif',[a,b]))
+	while check(P.token,'elif'):
+		tok = P.token
+		advance('elif')
+		a = expression(0)
+		advance(':')
+		b = block()
+		items.append(Token(tok.pos,'elif','elif',[a,b]))
+	if check(P.token,'else'):
+		tok = P.token
+		advance('else')
+		advance(':')
+		b = block()
+		items.append(Token(tok.pos,'else','else',[b]))
+	return t
+
+
+
+def try_nud(t):
+	items = t.items = []
+	advance(':')
+	b = block()
+	items.append(b)
+	while check(P.token,'except'):
+		tok = P.token
+		advance('except')
+		if not check(P.token,':'): a = expression(0)
+		else: a = Token(tok.pos,'symbol','None')
+		advance(':')
+		b = block()
+		items.append(Token(tok.pos,'except','except',[a,b]))
+	#commenting this out, i don't think this next bit is valid syntax??
+	#if check(P.token,'else'):
+		#tok = P.token
+		#advance('else')
+		#advance(':')
+		#b = block()
+		#items.append(Token(tok.pos,'else','else',[b]))
+	return t
+def prefix_nud(t):
+	#bp = 70
+	#if 'bp' in t: bp = t['bp']
+	bp = t.bp
+	t.items = [expression(bp)]
+	return t
+def prefix_nud0(t):
+	if check(P.token,'nl',';','eof','dedent'): return t
+	return prefix_nud(t)
+def prefix_nuds(t):
+	r = expression(0)
+	return ilst(t.type,r)
+
+def prefix_neg(t):
+	r = expression(50)
+	if r.type == 'number':
+		r.val = str(-float(r.val))
+		return r
+	t.items = [Token(t.pos,'number','0'),r]
+	return t
+def vargs_nud(t):
+	r = prefix_nud(t)
+	t.type = 'args'
+	t.val = '*'
+	return t
+def nargs_nud(t):
+	r = prefix_nud(t)
+	t.type = 'nargs'
+	t.val = '**'
+	return t
+
+
+
+base_dmap = {
+	',':{'lbp':20,'bp':20,'led':infix_tuple},
+	'+':{'lbp':50,'bp':50,'led':infix_led},
+	'-':{'lbp':50,'nud':prefix_neg,
+		'bp':50,'led':infix_led},
+	'not':{'lbp':35,'nud':prefix_nud,'bp':35,
+		'bp':35,'led':infix_not },
+	'%':{'lbp':60,'bp':60,'led':infix_led},
+	'*':{'lbp':60,'nud':vargs_nud,
+		'bp':60,'led':infix_led,},
+	'**': {'lbp':65,'nud':nargs_nud,
+		'bp':65,'led':infix_led,},
+	'/':{'lbp':60,'bp':60,'led':infix_led},
+	'(':{'lbp':70,'nud':paren_nud,
+		'bp':80,'led':call_led,},
+	'[':{'lbp':70,'nud':list_nud,
+		'bp':80,'led':get_led,},
+	'{':{'lbp':0,'nud':dict_nud,},
+	'.':{'lbp':80,'bp':80,'led':dot_led,'type':'mget',},
+	'break':{'lbp':0,'nud':itself,'type':'break'},
+	'pass':{'lbp':0,'nud':itself,'type':'pass'},
+	'continue':{'lbp':0,'nud':itself,'type':'continue'},
+	'eof':{'lbp':0,'type':'eof','val':'eof'},
+	'def':{'lbp':0,'nud':def_nud,'type':'def',},
+	'while':{'lbp':0,'nud':while_nud,'type':'while',},
+	'for':{'lbp':0,'nud':for_nud,'type':'for',},
+	'try':{'lbp':0,'nud':try_nud,'type':'try',},
+	'if':{'lbp':0,'nud':if_nud,'type':'if',},
+	'class':{'lbp':0,'nud':class_nud,'type':'class',},
+	'raise':{'lbp':0,'nud':prefix_nud0,'type':'raise','bp':20,},
+	'return':{'lbp':0,'nud':prefix_nud0,'type':'return','bp':10,},
+	'assert':{'lbp':0,'nud':prefix_nud0,'type':'assert','bp':10,},
+	'import':{'lbp':0,'nud':import_nud,'type':'import','bp':20,},
+	'from':{'lbp':0,'nud':from_nud,'type':'from','bp':20,},
+	'del':{'lbp':0,'nud':prefix_nuds,'type':'del','bp':10,},
+	'global':{'lbp':0,'nud':prefix_nuds,'type':'globals','bp':20,},
+
+	'=':{
+		'lbp':10,'bp':9,'led':infix_led,
+		},
+
+	## hartsantler tests
+	'loop':{'lbp':0,'nud':loop_nud,'type':'loop',},
+
+}
+
+def i_infix(bp,led,*vs):
+	for v in vs: base_dmap[v] = {'lbp':bp,'bp':bp,'led':led}
+i_infix(40,infix_led,'<','>','<=','>=','!=','==')
+i_infix(40,infix_is,'is','in')
+i_infix(10,infix_led,'+=','-=','*=','/=', '&=', '|=', '^=')
+i_infix(32,infix_led,'and','&')
+i_infix(31,infix_led,'^')
+i_infix(30,infix_led,'or','|')
+i_infix(36,infix_led,'<<','>>')
+def i_terms(*vs):
+	for v in vs: base_dmap[v] = {'lbp':0,'nud':itself}
+i_terms('as', ')','}',']',';',':','nl','elif','else','True','False','None','name','string','number','indent','dedent','except')
+base_dmap['nl']['val'] = 'nl'
+
+def gmap(t,v):
+	if v not in dmap:
+		print(dmap.keys())
+		print(t)
+		raise RuntimeError(v)
+		error('unknown "%s"'%v,t)
+	return dmap[v]
+
+
+class parse:
+	@classmethod
+	def parse(cls, s,tokens,wrap=0):
+		global P
+		s = tokenize().clean(s)
+		P=PData(s,tokens)
+		P.init()
+		r = parse.do_module()
+		P = None
+		return r
+	@classmethod
+	def do(cls, t):
+		if t.type == 'symbol': r = gmap(t, t.val)
+		else: r = gmap(t, t.type)
+		merge(t, r)
+		return t
+	@classmethod
+	def do_module(cls):
+		tok = P.token
+		items = []
+		iblock(items)
+		advance('eof')
+		if len(items) > 1:
+			return Token(tok.pos,'statements',';',items)
+		return items.pop()
+
+
+## from tokenize.py ##
+
+class Token:
+	def __init__(self,pos=(0,0),type='symbol',val=None,items=None):
+		self.pos,self.type,self.val,self.items=pos,type,val,items
+
+	def _format(self, full_debug_mode=False):
+		prefix = ''
+		if full_debug_mode and hasattr(self, 'nud') and self.nud:
+			prefix = '<%s>' % self.nud.func_name
+		if self.items is not None:
+			if self.val in '+-/*<>':
+				return prefix + '(' + self.val.join([i._format() for i in self.items]) + ')'
+			elif len(self.val) == 2 and self.val[1]=='=':
+				return prefix + self.val.join([i._format() for i in self.items])
+			else:
+				prefix += str(self.val)
+				return prefix + '[' + ', '.join([i._format() for i in self.items]) + ']'
+		else:
+			return prefix + str(self.type) + ':' + str(self.val)
+	def __repr__(self):
+		return self._format()
+
+def u_error(ctx,s,i):
+	y,x = i
+	line = s.split('\n')[y-1]
+	p = ''
+	if y < 10: p += ' '
+	if y < 100: p += '  '
+	r = p + str(y) + ": " + line + "\n"
+	r += "     "+" "*x+"^" +'\n'
+	raise Exception('error: '+ctx+'\n'+r)
+
+ISYMBOLS = u'`-=[];,./~!@$%^&*()+{}:<>?|×÷'
+UNISYMBOLS = {
+	u'×' : '*',
+	u'÷' : '/',
+}
+SYMBOLS = [
+	'def','class','yield','return','pass','and','or','not','in','as', 'with', 'import',
+	'is','while','break','for','continue','if','else','elif','try',
+	'except','raise','assert','True','False','None','global','del','from',
+	'-','+','*','**','/','%','<<','>>',
+	'-=','+=','*=','/=','=','==','!=','<','>', '|=', '&=', '^=',
+	'<=','>=','[',']','{','}','(',')','.',':',',',';','&','|','!', '^'
+	]
+B_BEGIN,B_END = ['[','(','{'],[']',')','}']
+
+class TData:
+	def __init__(self):
+		self.y,self.yi,self.nl = 1,0,True
+		self.res,self.indent,self.braces = [],[0],0
+	def add(self,t,v): self.res.append(Token(self.f,t,v))
+
+
+class tokenize:
+	def tokenize(self, s):
+		global T
+		s = self.clean(s)
+		T,i,l = TData(),0,len(s)
+		try: return self.do_tokenize(s,i,l)
+		except: u_error('tokenize',s,T.f)
+
+	def clean(self, s):
+		s = s.replace('\r\n','\n')
+		s = s.replace('\r','\n')
+		return s
+
+
+	def do_tokenize(self, s,i,l):
+		global T
+		T.f = (T.y,i-T.yi+1)
+		while i < l:
+			c = s[i]; T.f = (T.y,i-T.yi+1)
+			if T.nl:
+				T.nl = False
+				i = self.do_indent(s,i,l)
+			elif c == '\n':
+				i = self.do_nl(s,i,l)
+			elif c in ISYMBOLS:
+				i = self.do_symbol(s,i,l)
+			#elif c in UNISYMBOLS: i = do_symbol(s,i,l)
+			elif c >= '0' and c <= '9':
+				i = self.do_number(s,i,l)
+			elif (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z') or c == '_':
+				i = self.do_name(s,i,l)
+			elif c=='"' or c=="'":
+				i = self.do_string(s,i,l)
+			elif c=='#':
+				i = self.do_comment(s,i,l)
+			elif c == '\\' and s[i+1] == '\n':
+				i += 2; T.y,T.yi = T.y+1,i
+			elif c == ' ' or c == '\t': i += 1
+			else: u_error('tokenize',s,T.f)
+		self.indent(0)
+		r = T.res; T = None
+		#for t in r:
+			#print (t.pos,t.type,t.val)
+		return r
+
+	def do_nl(self, s,i,l):
+		if not T.braces:
+			T.add('nl',None)
+		i,T.nl = i+1,True
+		T.y,T.yi = T.y+1,i
+		return i
+
+	def do_indent(self, s,i,l):
+		v = 0
+		while i<l:
+			c = s[i]
+			if c != ' ' and c != '\t':
+				break
+			i,v = i+1,v+1
+		if c != '\n' and c != '#' and not T.braces:
+			self.indent(v)
+		return i
+
+	def indent(self, v):
+		if v == T.indent[-1]: pass
+		elif v > T.indent[-1]:
+			T.indent.append(v)
+			T.add('indent',v)
+		elif v < T.indent[-1]:
+			n = T.indent.index(v)
+			while len(T.indent) > n+1:
+				v = T.indent.pop()
+				T.add('dedent',v)
+
+	def do_symbol(self, s,i,l):
+		symbols = []
+		v,f,i = s[i],i,i+1
+		if v in UNISYMBOLS:
+			symbols.append( UNISYMBOLS[v] )
+		elif v in SYMBOLS:
+			symbols.append(v)
+		while i<l:
+			c = s[i]
+			if not c in ISYMBOLS: break
+			v,i = v+c,i+1
+			if v in SYMBOLS: symbols.append(v)
+		v = symbols.pop()
+		n = len(v)
+		i = f+n
+		T.add('symbol',v)
+		if v in B_BEGIN: T.braces += 1
+		if v in B_END: T.braces -= 1
+		return i
+
+	def do_number(self, s,i,l):
+		v,i,c =s[i],i+1,s[i]
+		while i<l:
+			c = s[i]
+			if (c < '0' or c > '9') and (c < 'a' or c > 'f') and c != 'x':
+				break
+			v,i = v+c,i+1
+		if c == '.':
+			v,i = v+c,i+1
+			while i<l:
+				c = s[i]
+				if c < '0' or c > '9':
+					break
+				v,i = v+c,i+1
+		T.add('number',v)
+		return i
+
+	def do_name(self, s,i,l):
+		v,i =s[i],i+1
+		while i<l:
+			c = s[i]
+			if (c < 'a' or c > 'z') and (c < 'A' or c > 'Z') and (c < '0' or c > '9') and c != '_':
+				break
+			v,i = v+c,i+1
+		if v in SYMBOLS:
+			T.add('symbol',v)
+		else:
+			T.add('name',v)
+		return i
+
+	def do_string(self, s,i,l):
+		v,q,i = '',s[i],i+1
+		if (l-i) >= 5 and s[i] == q and s[i+1] == q: # """
+			i += 2
+			while i<l-2:
+				c = s[i]
+				if c == q and s[i+1] == q and s[i+2] == q:
+					i += 3
+					T.add('string',v)
+					break
+				else:
+					v,i = v+c,i+1
+					if c == '\n':
+						T.y,T.yi = T.y+1,i
+		else:
+			while i<l:
+				c = s[i]
+				if c == "\\":
+					i = i+1; c = s[i]
+					if c == "n": c = '\n'
+					if c == "r": c = chr(13)
+					if c == "t": c = "\t"
+					if c == "0": c = "\0"
+					v,i = v+c,i+1
+				elif c == q:
+					i += 1
+					T.add('string',v)
+					break
+				else:
+					v,i = v+c,i+1
+		return i
+
+	def do_comment(self, s,i,l):
+		i += 1
+		while i<l:
+			c = s[i]
+			if c == '\n': break
+			i += 1
+		return i
+
+## from boot.py ##
+ARGV = sys.argv
+
+def join(v):
+	out = ''.encode('latin1')
+	#out = ''
+	for el in v:
+		try:
+			out += el
+		except TypeError: # Python 3
+			out += el.encode('latin1')
+		except UnicodeDecodeError:  ## Python2
+			out += el.encode('utf-8')
+			#raise RuntimeError(el)
+	return out
+	#return u''.join(v)
+
+def merge(a,b):
+	if isinstance(a, dict):
+		for k in b: a[k] = b[k]
+	else:
+		for k in b: setattr(a,k,b[k])
+
+def number(v):
+	if type(v) is str and v[0:2] == '0x':
+		v = int(v[2:],16)
+	return float(v)
+
+def istype(v,t):
+	if t == 'string': return isinstance(v,str)
+	elif t == 'list': return (isinstance(v,list) or isinstance(v,tuple))
+	elif t == 'dict': return isinstance(v,dict)
+	elif t == 'number': return (isinstance(v,float) or isinstance(v,int))
+	raise '?'
+
+def fpack(v):
+	import struct
+	return struct.pack('d', v)
+
+def funpack(v):
+	import struct
+	return struct.unpack('d', v)[0]
+
+def load(fname):
+	f = open(fname,'rb')
+	r = f.read()
+	f.close()
+	return r
+
+def read(fname):
+	f = open(fname,'r')
+	r = f.read()
+	f.close()
+	return r
+
+def save(fname,v):
+	f = open(fname,'wb')
+	if type(v) is str:
+		f.write(v.encode('latin1'))
+	else:
+		f.write(v)
+	f.close()
+
+def do_shorts(opts, optstring, shortopts, args):
+	while optstring != '':
+		opt, optstring = optstring[0], optstring[1:]
+		if short_has_arg(opt, shortopts):
+			if optstring == '':
+				if not args:
+					raise Exception('option -%s requires argument' % opt)
+				optstring, args = args[0], args[1:]
+			optarg, optstring = optstring, ''
+		else:
+			optarg = ''
+		opts.append(('-' + opt, optarg))
+	return opts, args
+
+def short_has_arg(opt, shortopts):
+	for i in range(len(shortopts)):
+		if opt == shortopts[i] != ':':
+			return shortopts.startswith(':', i+1)
+
+	raise Exception('option -%s not recognized' % opt)
+
+def getopt(args, shortopts):
+	opts = []
+	while args and args[0].startswith('-') and args[0] != '-':
+		if args[0].startswith('--'):
+			args = args[1:]
+			continue
+		if args[0] == '--':
+			args = args[1:]
+			break
+		opts, args = do_shorts(opts, args[0][1:], shortopts, args[1:])
+
+	return opts, args
+
+def basename(s, stripdir=True):
+	if stripdir:
+		for j in range(len(s) - 1, -1, -1):
+			if j == -1: break
+			if s[j] == '/': break
+	else:
+		j = -1
+	for i in range(len(s) - 1, 0, -1):
+		if s[i] == '.': break
+	return s[j+1:i]
+
+## from py2bc.py ##
+
+class py2bc:
+	@classmethod
+	def compile(cls, s, fname):
+		if not "tinypy" in sys.version:
+			if not '-co' in sys.argv:
+				s = preprocess_source(s)
+		tokens = tokenize().tokenize(s)
+		t = parse.parse(s,tokens)
+		r = encode.encode(fname,s,t)
+		return r
+
+#def main(src, dest):  ## called from tinypy?
+#	s = read(src)
+#	r = compile(s,src)
+#	save(dest, r)
+
+## hartsantler new hacks
+
+def preprocess_source(src, optimize=True, unsafe=False, inspect=False):
+	if not optimize:
+		return src
+	out = []
+	for ln in src.splitlines():
+		if ln.strip().startswith("for ") and ' in ' in ln and 'range(' in ln:
+			tabs = ln.count('\t')
+			start = end = None
+			loops = ln.split('range(')[-1].split(')')[0]
+			if ',' in loops:
+				start, end = loops.split(',')
+			if unsafe:
+				ln = ('\t'*tabs) + ('loop %s:' %loops)  ## this is fast but not fully working
+				out.append(ln)
+			else:
+				itername = ln.split('for ')[-1].split(' in ')[0]
+				if start is not None and end is not None:
+					## convert to a while loop, which is much faster in tinypy
+					out.append(('\t'*tabs) + itername + ('= %s -1' %start) )
+					ln = ('\t'*tabs) + 'while %s < %s:' %(itername, end)
+					out.append(ln)
+					out.append(('\t'* (tabs+1) ) + itername + '+= 1')
+				else:
+					## convert to a while loop, which is much faster in tinypy
+					out.append(('\t'*tabs) + itername + '= -1')
+					ln = ('\t'*tabs) + 'while %s < %s:' %(itername, loops)
+					out.append(ln)
+					out.append(('\t'* (tabs+1) ) + itername + '+= 1')
+
+		else:
+			out.append(ln)
+
+	if '--inspect-opt' in sys.argv:
+		inspect = True
+
+	if inspect:
+		print(src)
+		print('-'*80)
+
+	src = '\n'.join(out)
+	if inspect:
+		raise RuntimeError(src)
+
+	return src
+
+def main(args=None):
+	if args is None: args = ARGV
+	posargs = []
+	options = {}
+	save_as_header = None
+	do_debug = False
+	for arg in args:
+		if arg.startswith('--gen-header='):
+			save_as_header = arg.split('=')[-1]
+		elif arg == '--debug':
+			do_debug = True
+
+	opts, args = getopt(args[1:], 'cn:o:d')
+	opts = dict(opts)
+	if len(args) == 1:
+		src = args[0]
+		if '-o' in opts:
+			dest = opts['-o']
+		else:
+			if '-c' in opts:
+				dest = basename(args[0], False) + '.c'
+			else:
+				dest = basename(args[0], False) + '.tpc'
+	else:
+		print('Usage tpc [-c] [-n variable] [-o output_file_name] src.py')
+		return 
+
+	#s = read(src)
+	s = open(src, 'rb').read().decode('utf-8')
+	data = py2bc.compile(s, src)
+	if '-d' in opts:
+		out = disasm.disassemble(data)
+	elif '-c' in opts:
+		out = []
+		cols = 16
+		name = opts.get('-n', '_tp_' + basename(src) + '_tpc')
+		out.append("""static unsigned char %s[] = {""" % name)
+		for n in range(0, len(data), cols):
+			out.append(",".join(["0x%02x" % ord(v) for v in data[n:n+cols]]) + ',')
+
+		out.append("""};""")
+		out = '\n'.join(out)
+	elif save_as_header:
+		out = []
+		if do_debug:
+			out.append('/*')
+			out.append(s)
+			out.append('*/')
+		cols = 16
+		name = save_as_header.replace('.', '_')
+
+		xdata = []
+		xmap  = []
+		for c in data:
+			xor = int(random.uniform(1,255))
+			#xdata.append( chr(ord(c)^xor) )  ## Python2
+			xdata.append( chr(c^xor) )
+			xmap.append(xor)
+		data = ''.join(xdata)
+
+		out.append("""static unsigned char __%s__[] = {""" % name)
+		for n in range(0, len(data), cols):
+			out.append(",".join(["0x%02x" % ord(v) for v in data[n:n+cols]]) + ',')
+
+		out.append("""};""")
+
+		out.append('static unsigned char* decrypt_user_bytecode(unsigned char* data){')
+		out.append('	unsigned char* out = new unsigned char[%s];' %len(xmap))
+		for i, xor in enumerate(xmap):
+			out.append('	out[%s] = data[%s]^%s;' %(i,i,xor))
+		out.append('	return out;')
+		out.append('};')
+
+		out = '\n'.join(out)
+		pth,fname = os.path.split( args[-1] )
+		dest = os.path.join(pth, save_as_header)
+		print('saving header to: ' + dest)
+	else:
+		out = data
+
+	if dest == '-':
+		print(out)
+	else:
+		save(dest, out)
+
+if __name__ == '__main__':
+	main()

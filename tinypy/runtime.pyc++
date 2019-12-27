@@ -100,6 +100,9 @@ def tp_module_os_init(TP):
 
 // CPython integration //
 #ifdef USE_PYTHON
+
+import "tpc.gen.h"
+
 def tpy_cpython_run(TP) ->tp_obj:
 	char * s = tp_cstr(tp, TP_STR())
 	int r = PyRun_SimpleString(s);  // returns -1 on failure
