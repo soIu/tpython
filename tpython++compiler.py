@@ -536,6 +536,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			out.append( 'extern "C"' )
 		elif s == '@export' or s == '@extern':
 			out.append( 'extern ' )
+		elif s == '@inline':
+			out.append( 'inline ' )
 		elif s.startswith('@'):
 			raise SyntaxError( 'Unknown decorator syntax: ' + s )
 		elif ' def[' in s and ln.endswith(':'):
