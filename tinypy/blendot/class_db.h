@@ -1,9 +1,7 @@
 /*************************************************************************/
-/*  class_db.h                                                           */
-/*************************************************************************/
 /*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
+/*                           BLENDOT ENGINE                              */
+/*                      https://blendot.org                              */
 /*************************************************************************/
 /* Copyright (c) 2007-2019 Juan Linietsky, Ariel Manzur.                 */
 /* Copyright (c) 2014-2019 Godot Engine contributors (cf. AUTHORS.md)    */
@@ -32,7 +30,7 @@
 #define CLASS_DB_H
 
 #include "method_bind.h"
-#include "object.h"
+#include "blendot_object.gen.h"
 #include "print_string.h"
 
 /**	To bind more then 6 parameters include this:

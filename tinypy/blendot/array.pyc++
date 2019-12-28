@@ -28,7 +28,7 @@
 
 import "array.h"
 import "hashfuncs.h"
-import "object.h"
+import "blendot_object.gen.h"
 import "variant.h"
 import "vector.h"
 

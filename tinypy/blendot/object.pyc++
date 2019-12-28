@@ -26,7 +26,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-import "object.h"
+import "blendot_object.gen.h"
 import "class_db.h"
 import "core_string_names.h"
 import "message_queue.h"

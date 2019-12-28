@@ -1,9 +1,7 @@
 /*************************************************************************/
-/*  physics_server.h                                                     */
-/*************************************************************************/
 /*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
+/*                           BLENDOT ENGINE                              */
+/*                      https://blendot.org                              */
 /*************************************************************************/
 /* Copyright (c) 2007-2019 Juan Linietsky, Ariel Manzur.                 */
 /* Copyright (c) 2014-2019 Godot Engine contributors (cf. AUTHORS.md)    */
@@ -31,7 +29,7 @@
 #ifndef PHYSICS_SERVER_H
 #define PHYSICS_SERVER_H
 
-#include "object.h"
+#include "blendot_object.gen.h"
 #include "resource.h"
 
 class PhysicsDirectSpaceState;

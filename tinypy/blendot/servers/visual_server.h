@@ -1,9 +1,7 @@
 /*************************************************************************/
-/*  visual_server.h                                                      */
-/*************************************************************************/
 /*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
+/*                           BLENDOT ENGINE                              */
+/*                      https://blendot.org                              */
 /*************************************************************************/
 /* Copyright (c) 2007-2019 Juan Linietsky, Ariel Manzur.                 */
 /* Copyright (c) 2014-2019 Godot Engine contributors (cf. AUTHORS.md)    */
@@ -35,7 +33,7 @@
 #include "bsp_tree.h"
 #include "geometry.h"
 #include "transform_2d.h"
-#include "object.h"
+#include "blendot_object.gen.h"
 #include "rid.h"
 #include "variant.h"
 

@@ -1,9 +1,7 @@
 /*************************************************************************/
-/*  method_bind.h                                                        */
-/*************************************************************************/
 /*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
+/*                           BLENDOT ENGINE                              */
+/*                      https://blendot.org                              */
 /*************************************************************************/
 /* Copyright (c) 2007-2019 Juan Linietsky, Ariel Manzur.                 */
 /* Copyright (c) 2014-2019 Godot Engine contributors (cf. AUTHORS.md)    */
@@ -33,7 +31,7 @@
 
 #include "list.h"
 #include "method_ptrcall.h"
-#include "object.h"
+#include "blendot_object.gen.h"
 #include "variant.h"
 
 #include <stdio.h>

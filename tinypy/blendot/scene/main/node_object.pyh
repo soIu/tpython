@@ -32,7 +32,7 @@
 import "class_db.h"
 import "map.h"
 import "node_path.h"
-import "object.h"
+import "blendot_object.gen.h"
 import "scene/main/scene_tree.h"
 
 #ifdef BLENDOT
