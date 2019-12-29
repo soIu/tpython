@@ -364,6 +364,11 @@ def tpy_module(TP) ->tp_obj:
 def tpy_dict(TP) ->tp_obj:
 	return tp_dict_copy(tp, TP_TYPE(TP_DICT))
 
+def tpy_list(TP) ->tp_obj:
+	tp_obj ob = TP_OBJ()
+	return tp_list_copy(tp, ob)
+
+
 #ifdef BLENDOT_TYPES
 
 def tpy_vec2(TP) ->tp_obj:
@@ -519,6 +524,7 @@ def tp_module_builtins_init(TP):
 	{"int",tpy_int},
 	{"bool", tpy_bool},
 	{"dict", tpy_dict},
+	{"list", tpy_list},
 	{"round",tpy_round},
 	{"ord",tpy_ord},
 	{"getraw",tpy_getraw},

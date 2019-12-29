@@ -305,6 +305,8 @@ typedef struct tpd_list {
   tp_obj *items;
   int len;
   int alloc;
+  std::vector<double> vec;
+  char type;
 } tpd_list;
 
 typedef struct tpd_item {
@@ -784,8 +786,13 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 		case TP_FUNC: ss << "function<" << self.func.cfnc << ">"; break;
 		case TP_LIST:
 			ss << "["
-			for (int i=0; i<self.list.val->len; i++):
-				ss << tp_as_string(tp, self.list.val->items[i]) << ","
+			if self.list.val->type >= 1:
+				ss << "std::vector<double> "
+				for (int i=0; i<self.list.val->vec.size(); i++):
+					ss << self.list.val->vec[i] << ","
+			else:
+				for (int i=0; i<self.list.val->len; i++):
+					ss << tp_as_string(tp, self.list.val->items[i]) << ","
 			ss << "]"
 			break
 		case TP_DICT:

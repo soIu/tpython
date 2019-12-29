@@ -14,8 +14,8 @@ def tpd_list_set(TP, tpd_list *self,int k, tp_obj v, const char *error):
 
 
 def tpd_list_new(TP) -> tpd_list* :
+	##return new tpd_list()
 	return (tpd_list*) tp_malloc(tp, sizeof(tpd_list))
-
 
 def tpd_list_free(TP, tpd_list *self):
 	tp_free(tp, self->items)
@@ -23,12 +23,25 @@ def tpd_list_free(TP, tpd_list *self):
 
 
 def tpd_list_get(TP, tpd_list *self, int k, const char *error) ->tp_obj:
+	if self->type >= 0:
+		if k < 0:
+			return tp_number(self->vec[self->vec.size()+k])
+		else:
+			return tp_number(self->vec[k])
 	if k >= self->len:
 		tp_raise(tp_None, tp_printf(tp, "tpd_list_get KeyError : Index %d request, but length is %d", k, self->len))
 	return self->items[k]
 
 
 def tpd_list_insertx(TP, tpd_list *self, int n, tp_obj v):
+	if self->type >= 1:
+		std::cout << "tpd list type: " << (int)self->type << std::endl;
+		std::cout << "vector length: " << self->vec.size() << std::endl;
+		std::cout << "vector[0]: " << self->vec[0] << std::endl;
+		std::cout << "insert index: " << n << std::endl;
+		std::cout << "insert item: " << v << std::endl;
+		throw "ERROR: tpd_list_insertx - invalid type - list type is set to std::vector<double>"
+	self->type = -1
 	if self->len >= self->alloc:
 		tpd_list_realloc(tp, self,self->alloc*2)
 	if n < self->len:
@@ -41,17 +54,38 @@ def tpd_list_appendx(TP, tpd_list *self, tp_obj v):
 	tpd_list_insertx(tp, self, self->len, v)
 
 def tpd_list_insert(TP,tpd_list *self, int n, tp_obj v):
-	tpd_list_insertx(tp,self,n,v)
+	##std::cout << "tpd_list_insert..." << std::endl
+	if self->type >= 1:
+		self->type = -1
+		for (int i=0; i<self->vec.size(); i++):
+			tpd_list_appendx(tp, self, tp_number(self->vec[i]))
+		tpd_list_insertx(tp,self,n,v)
+	else:
+		tpd_list_insertx(tp,self,n,v)
 	if tp:
 		tp_grey(tp, v)
 
 def tpd_list_append(TP,tpd_list *self, tp_obj v):
-	tpd_list_insert(tp,self,self->len,v)
+	if self->type >= 0 && v.type.type_id == TP_NUMBER:
+		##std::cout << "...append..." << std::endl
+		self->vec.push_back( v.number.val )
+		##std::cout << "...append OK..." << std::endl
+		self->type = 1
+	else:
+		if self->type >= 1:
+			self->type = -1
+			for (int i=0; i<self->vec.size(); i++):
+				tpd_list_appendx(tp, self, tp_number(self->vec[i]))
+		tpd_list_insert(tp,self,self->len,v)
 
 
 def tpd_list_extend(TP, tpd_list * self, tpd_list * v):
-	for (int i = 0; i < v->len; i++):
-		tpd_list_append(tp, self, v->items[i])
+	if v->type >= 1:
+		for (int i = 0; i < v->vec.size(); i++):
+			tpd_list_append(tp, self, tp_number(v->vec[i]))
+	else:
+		for (int i = 0; i < v->len; i++):
+			tpd_list_append(tp, self, v->items[i])
 
 def tpd_list_pop(TP,tpd_list *self, int n, const char *error) ->tp_obj:
 	tp_obj r = tpd_list_get(tp,self,n,error)

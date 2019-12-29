@@ -459,8 +459,33 @@ def tp_step(TP) ->int:
 				case TP_IDIV: RA = tp_div(tp,RB,RC); break;
 				case TP_ICMP: RA = tp_number(tp_cmp(tp,RB,RC)); break;
 				case TP_IMGET: RA = tp_mget(tp,RB,RC); GA; break;
-				case TP_IGET: RA = tp_get(tp,RB,RC); GA; break;
-				case TP_ISET: RA = tp_set(tp,RA,RB,RC); break;
+				case TP_IGET:
+					## note: tp_get has a special case for lists where if the index is None,
+					## the first item is removed and returned, this will be DEPRECATED later.
+					if RB.type.type_id == TP_LIST && RB.list.val->type >= 1 && RC.type.type_id==TP_NUMBER:
+						##print("tp_vm	fast vec get")
+						if RC.number.val < 0:
+							RA = tp_number( RB.list.val->vec[ RB.list.val->vec.size() + (int)RC.number.val ] )
+						else:
+							RA = tp_number( RB.list.val->vec[(int)RC.number.val] )
+					else:
+						RA = tp_get(tp,RB,RC)
+					GA
+					break
+				case TP_ISET:
+					if RA.type.type_id == TP_LIST && RA.list.val->type >= 1:
+						## if RB is not a number, then there is a user level bug, lists are only indexed by integers
+						if RB.type.type_id==TP_NUMBER && RC.type.type_id==TP_NUMBER:
+							##print("tp_vm	fast vec set")
+							if RB.number.val < 0:
+								RA.list.val->vec[ RA.list.val->vec.size() + (int)RB.number.val ] = RC.number.val
+							else:
+								RA.list.val->vec[ (int)RB.number.val ] = RC.number.val
+						else:
+							RA = tp_set(tp,RA,RB,RC)
+					else:
+						RA = tp_set(tp,RA,RB,RC)
+					break
 				case TP_INE: RA = tp_number(tp_cmp(tp,RB,RC)!=0); break;
 				case TP_INOT: RA = tp_number(!tp_true(tp,RB)); break;
 				case TP_IIFN: if (!tp_true(tp,RA)) { cur += 1; } break;
