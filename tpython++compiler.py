@@ -1338,6 +1338,10 @@ def pythonicpp_translate( path, file=None, secure=False, secure_binary=False, ma
 
 	## final pass apply scrambling
 	for path, file in files:
+		#if not unreal_plugin_name:
+		if path.endswith( ('.unreal', '.unreal/') ):
+			unreal_plugin_name = os.path.split(path.split('.')[0])[-1]
+
 		if file.endswith( '.pyc++' ):
 			fodg = []
 			cpp = pythonicpp(
@@ -1355,9 +1359,7 @@ def pythonicpp_translate( path, file=None, secure=False, secure_binary=False, ma
 			if unreal or type(cpp) is dict:
 				if file == 'Plugin.pyc++':
 					assert type(cpp) is dict
-					if not unreal_plugin_name:
-						unreal_plugin_name = os.path.split(path.split('.')[0])[-1]
-					else:
+					if 'lib' in cpp and cpp['lib']:
 						print('	saving: ', 'tinypy/__user_pythonic__.gen.h')
 						open('tinypy/__user_pythonic__.gen.h','wb').write(cpp['lib'].encode('utf-8'))
 
@@ -1368,6 +1370,10 @@ def pythonicpp_translate( path, file=None, secure=False, secure_binary=False, ma
 							os.makedirs(upath)
 						print('	saving: ', os.path.join(upath, uname ))
 						open(os.path.join(upath, uname ),'wb').write(cpp['blueprints'].encode('utf-8'))
+						print('the blueprint generator requires https://github.com/20tab/UnrealEnginePython')
+						print('you must install the plugin and enable it for your Unreal project')
+					else:
+						print('Plugin.pyc++ contains no blueprints')
 
 					uheader = cpp['iface']
 					cpp = cpp['impl']
@@ -1416,6 +1422,7 @@ def pythonicpp_translate( path, file=None, secure=False, secure_binary=False, ma
 				swap_self_to_this=file=='__user_pythonic__.pyh'
 			)
 			if unreal:
+				assert unreal_plugin_name
 				if file == 'PrivatePCH.pyh':
 					upath = os.path.join(unreal_project, 'Plugins/%s/Source/%s/Private/' %(unreal_plugin_name, unreal_plugin_name) )
 					uname = unreal_plugin_name + 'PrivatePCH.h'
@@ -1426,6 +1433,9 @@ def pythonicpp_translate( path, file=None, secure=False, secure_binary=False, ma
 
 				if not os.path.isdir(upath):
 					os.makedirs(upath)
+
+				print('	saving: ', os.path.join(upath, uname ))
+
 				open(os.path.join(upath, uname ),'wb').write(cpp.encode('utf-8'))
 
 			else:

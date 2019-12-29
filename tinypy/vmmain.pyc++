@@ -68,7 +68,7 @@ def crash_handler(int sig):
 	#ifdef __MINGW64__
 	//void *array[10];
 	//size_t size;
-	// get void*'s for all entries on the stack
+	// get void* for all entries on the stack
 	//size = backtrace(array, 10);   // not supported in MINGW
 	// print out all the frames to stderr, with unreadable names
 	//backtrace_symbols_fd(array, size, STDERR_FILENO);
@@ -186,7 +186,7 @@ def main(int argc,  char *argv[]) -> int:
 				#ifdef USE_PYTHON
 				compile_and_run_py_file(f)
 				#else
-				print('Error: tpython must be built with CPython to compile py files to bytecode')
+				print("Error: tpython must be built with CPython to compile py files to bytecode")
 				#endif
 				return 0
 		run_vm(argc, argv, 1)
