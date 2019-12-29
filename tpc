@@ -1880,13 +1880,13 @@ def preprocess_source(src, optimize=True, unsafe=False, inspect=False):
 				if start is not None and end is not None:
 					## convert to a while loop, which is much faster in tinypy
 					out.append(('\t'*tabs) + itername + ('= %s -1' %start) )
-					ln = ('\t'*tabs) + 'while %s < %s:' %(itername, end)
+					ln = ('\t'*tabs) + 'while %s+1 < %s:' %(itername, end)
 					out.append(ln)
 					out.append(('\t'* (tabs+1) ) + itername + '+= 1')
 				else:
 					## convert to a while loop, which is much faster in tinypy
 					out.append(('\t'*tabs) + itername + '= -1')
-					ln = ('\t'*tabs) + 'while %s < %s:' %(itername, loops)
+					ln = ('\t'*tabs) + 'while %s+1 < %s:' %(itername, loops)
 					out.append(ln)
 					out.append(('\t'* (tabs+1) ) + itername + '+= 1')
 
@@ -1901,6 +1901,7 @@ def preprocess_source(src, optimize=True, unsafe=False, inspect=False):
 		print('-'*80)
 
 	src = '\n'.join(out)
+	print(src)
 	if inspect:
 		raise RuntimeError(src)
 

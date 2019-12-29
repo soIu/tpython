@@ -578,11 +578,14 @@ def tp_len(TP,tp_obj self) -> tp_obj:
 	elif type == TP_DICT:
 		return tp_number(self.dict.val->len)
 	elif type == TP_LIST:
-		return tp_number(self.list.val->len)
+		if self.list.val->type >= 1:
+			return tp_number(self.list.val->vec.size())
+		else:
+			return tp_number(self.list.val->len)
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_len) TypeError: len() of unsized object"));
 	throw "TypeError in tp_ops.cpp:tp_len invalid object type to use the len function with"
 
-
+## Pythonic++ helper function
 def len(tp_obj self) ->int:
 	int type = self.type.type_id
 	if type == TP_STRING:
@@ -590,7 +593,10 @@ def len(tp_obj self) ->int:
 	elif type == TP_DICT:
 		return (int)(self.dict.val->len)
 	elif type == TP_LIST:
-		return (int)(self.list.val->len)
+		if self.list.val->type >= 1:
+			return self.list.val->vec.size()
+		else:
+			return (int)(self.list.val->len)
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_len) TypeError: len() of unsized object"));
 	throw "TypeError in tp_ops.cpp:len invalid object type to use the len function with"
 
