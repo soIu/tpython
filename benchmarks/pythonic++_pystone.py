@@ -172,9 +172,11 @@ with c++:
 		Array1Glob = std::vector<int>()
 		for i in range(51):
 			Array1Glob.push_back(0)
+		print(Array1Glob)
 		Array2Glob = std::vector<std::vector<int>>()
 		for i in range(51):
 			Array2Glob.push_back( Array1Glob )
+		print(Array2Glob)
 		int ops = Proc0(loops)
 		print(ops)
 		return None
@@ -184,9 +186,7 @@ import mymod
 
 def main():
 	print('enter main...')
-	##LOOPS = 100000
-	LOOPS = 2
+	LOOPS = 100000
 	mymod.pystones( LOOPS )
-	print(ops)
 
 main()

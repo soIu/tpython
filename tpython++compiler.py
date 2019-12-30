@@ -901,7 +901,11 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				if ' range(' in s:
 					iter_to = s.split('range(')[-1].split(')')[0]
 					iter_name = s.split(' in ')[0].split()[-1]
-					w += 'for (int %s; %s<%s; %s++){' %(iter_name, iter_name, iter_to, iter_name)
+					if ',' in iter_to:
+						iter_start, iter_to = iter_to.split(',')
+						w += 'for (int %s=%s; %s<%s; %s++){' %(iter_name, iter_start, iter_name, iter_to, iter_name)
+					else:
+						w += 'for (int %s=0; %s<%s; %s++){' %(iter_name, iter_name, iter_to, iter_name)
 				else:
 					raise RuntimeError("TODO translate python interator style to c++11 for iter loop")
 			else:  ## c++ style
