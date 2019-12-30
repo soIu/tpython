@@ -29,6 +29,7 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
+import <functional>
 import "hash_map.h"
 import "list.h"
 import "map.h"
@@ -256,7 +257,9 @@ class Object:
 		MethodInfo user;
 		VMap<Target, Slot> slot_map;
 		int lock;
-		Signal() { lock = 0; }
+		bool is_lambda;
+		std::function<void(void)> callback;
+		Signal() { lock = 0; is_lambda=false; }
 	HashMap<StringName, Signal> signal_map;
 	List<Connection> connections;
 	#ifdef DEBUG_ENABLED
@@ -447,6 +450,8 @@ class Object:
 	int get_persistent_signal_connection_count() const;
 	void get_signals_connected_to_this(List<Connection> *p_connections) const;
 	Error connect(const StringName &p_signal, Object *p_to_object, const StringName &p_to_method, const Vector<Variant> &p_binds = Vector<Variant>(), uint32_t p_flags = 0);
+	// c++11 lambda support for connect callback, lambda takes no args and returns nothing
+	Error connect_lambda(const StringName &p_signal, std::function<void(void)>);
 	void disconnect(const StringName &p_signal, Object *p_to_object, const StringName &p_to_method);
 	bool is_connected(const StringName &p_signal, Object *p_to_object, const StringName &p_to_method) const;
 	void call_deferred(const StringName &p_method, VARIANT_ARG_LIST);
