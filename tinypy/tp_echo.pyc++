@@ -1,11 +1,14 @@
-/* File: Miscellaneous
- * Various functions to help interface tinypy.
- */
+#ifdef BLENDOT
+import "print_string.h"
+#endif
 
 def tp_echo(TP, tp_obj e):
 	e = tp_str(tp, e)
+	#ifdef BLENDOT
+	print_line(tp_string_getptr(e))
+	#else
 	tp->echo(tp_string_getptr(e), tp_string_len(e))
-
+	#endif
 
 def tp_cstr(TP, tp_obj v) -> char* :
 	char * buffer

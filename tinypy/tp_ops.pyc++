@@ -585,21 +585,6 @@ def tp_len(TP,tp_obj self) -> tp_obj:
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_len) TypeError: len() of unsized object"));
 	throw "TypeError in tp_ops.cpp:tp_len invalid object type to use the len function with"
 
-## Pythonic++ helper function
-def len(tp_obj self) ->int:
-	int type = self.type.type_id
-	if type == TP_STRING:
-		return (int)(tp_string_len(self))
-	elif type == TP_DICT:
-		return (int)(self.dict.val->len)
-	elif type == TP_LIST:
-		if self.list.val->type >= 1:
-			return self.list.val->vec.size()
-		else:
-			return (int)(self.list.val->len)
-	//tp_raise(tp_None,tp_string_atom(tp, "(tp_len) TypeError: len() of unsized object"));
-	throw "TypeError in tp_ops.cpp:len invalid object type to use the len function with"
-
 
 def tp_cmp(TP, tp_obj a, tp_obj b) ->int:
 	if a.type.type_id != b.type.type_id:
@@ -829,6 +814,10 @@ def tp_obj::operator==(const char* s) ->bool:
 	return std::string(tp_string_getptr(*this))==std::string(s);
 
 @const
+def tp_obj::operator int():
+	return (int)this->number.val
+
+@const
 def tp_obj::operator float():
 	return this->number.val
 
@@ -883,4 +872,25 @@ def tp_obj::append(int n):
 def tp_obj::append(tp_obj ob):
 	tpd_list_append(NULL, this->list.val, ob)
 
+
+## Pythonic++ helper functions ##
+def len(tp_obj self) ->int:
+	int type = self.type.type_id
+	if type == TP_STRING:
+		return (int)(tp_string_len(self))
+	elif type == TP_DICT:
+		return (int)(self.dict.val->len)
+	elif type == TP_LIST:
+		if self.list.val->type >= 1:
+			return self.list.val->vec.size()
+		else:
+			return (int)(self.list.val->len)
+	//tp_raise(tp_None,tp_string_atom(tp, "(tp_len) TypeError: len() of unsized object"));
+	throw "TypeError in tp_ops.cpp:len invalid object type to use the len function with"
+
+def chr(int n) ->unsigned char:
+	return (unsigned char)n
+
+def ord(char c) ->int:
+	return (int)((unsigned char)c)
 

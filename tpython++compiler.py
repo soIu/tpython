@@ -846,7 +846,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 				out.extend(tpargs)
 
-			if in_class and func_name==class_name:
+			if in_class and func_name==class_name and tp_obj_subclass:
 				out.append('			this->type.type_id = TP_OBJECT;')
 				out.append('			this->dict.val = tpd_dict_new(tp);')
 				out.append('			this->obj.info->meta = tp_None;')
@@ -897,12 +897,20 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		elif s.startswith( ('for ', 'for(','for (') ) and s.endswith(':'):
 			autobrace += 1
 			w = '\t' * indent
-			loop = s[len('for '):-1]
-			if not loop.startswith('('):
-				loop = '(' + loop
-			if not loop.endswith(')'):
-				loop += ')'
-			w += 'for ' + loop + ' {'
+			if s.startswith('for ') and ' in ' in s:  ## python style
+				if ' range(' in s:
+					iter_to = s.split('range(')[-1].split(')')[0]
+					iter_name = s.split(' in ')[0].split()[-1]
+					w += 'for (int %s; %s<%s; %s++){' %(iter_name, iter_name, iter_to, iter_name)
+				else:
+					raise RuntimeError("TODO translate python interator style to c++11 for iter loop")
+			else:  ## c++ style
+				loop = s[len('for '):-1]
+				if not loop.startswith('('):
+					loop = '(' + loop
+				if not loop.endswith(')'):
+					loop += ')'
+				w += 'for ' + loop + ' {'
 			out.append(w)
 			draw_type = 'flowchart-display'
 			color = "PURPLE"

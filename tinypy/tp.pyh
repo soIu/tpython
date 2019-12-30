@@ -232,6 +232,7 @@ typedef class tp_obj {
 //}
  bool operator==(const char* s) const;
  operator std::string() const;
+ operator int() const;
  operator float() const;
  operator const char*() const;
  operator char() const;
@@ -701,7 +702,6 @@ def tp_data_t(TP, int magic, void *v)->tp_obj;
 def tp_data(TP, int magic, void *v)->tp_obj;
 
 def tp_len(TP,tp_obj self)->tp_obj;
-def len(tp_obj ob)->int;
 
 def tp_list_t(TP)->tp_obj;
 #define tp_list tp_list_t
@@ -912,6 +912,10 @@ def print(const char *s):
 	std::cout << s << std::endl;
 
 @static
+def print(const char *s, int n):
+	std::cout << s << " " << n << std::endl;
+
+@static
 def print(tp_obj ob):
 	std::cout << ob << std::endl;
 
@@ -958,6 +962,12 @@ def __split_string__(std::string text, std::string delims) -> std::vector<std::s
 	if start != std::string::npos:
 		tokens.push_back(text.substr(start+len))
 	return tokens
+
+## Pythonic++ Helper Funcs ##
+def len(tp_obj ob)->int;
+def chr(int n) ->unsigned char;
+def ord(char c) ->int;
+
 
 import "tp_ops.gen.h"
 

@@ -1,6 +1,9 @@
 ## File: String
 ## String handling functions.
- 
+
+#ifdef BLENDOT
+import "print_string.h"
+#endif
 
 ## Create a new empty string of a certain size.
 def tp_string_t(TP, int n) ->tp_obj:
@@ -150,6 +153,10 @@ def tp_printf(TP, char const *fmt,...) ->tp_obj:
 	va_start(arg, fmt)
 	vsnprintf(s, l + 1, fmt, arg)
 	va_end(arg)
+	// printing to the Blendot console is done from tp_echo
+	//#ifdef BLENDOT
+	//  print_line(s)
+	//#endif
 	return r
 
 
