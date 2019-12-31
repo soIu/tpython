@@ -1,9 +1,7 @@
 /*************************************************************************/
-/*  error_macros.h                                                       */
-/*************************************************************************/
 /*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
+/*                           BLENDOT ENGINE                              */
+/*                      https://blendot.org                              */
 /*************************************************************************/
 /* Copyright (c) 2007-2019 Juan Linietsky, Ariel Manzur.                 */
 /* Copyright (c) 2014-2019 Godot Engine contributors (cf. AUTHORS.md)    */
@@ -328,10 +326,13 @@ extern bool _err_error_exists;
  * appropriate error condition from error_macros.h
  */
 
+// Blendot notes: throwing an error here instead of just printing an error
+
 #define ERR_FAIL_COND_V(m_cond, m_retval)                                                                                            \
 	{                                                                                                                                \
 		if (unlikely(m_cond)) {                                                                                                      \
 			_err_print_error(FUNCTION_STR, __FILE__, __LINE__, "Condition ' " _STR(m_cond) " ' is true. returned: " _STR(m_retval)); \
+			throw "ERR_FAIL_COND_V macro failure";\
 			return m_retval;                                                                                                         \
 		}                                                                                                                            \
 		_err_error_exists = false;                                                                                                   \
