@@ -1165,7 +1165,7 @@ def Object::get_signals_connected_to_this(List<Connection> ⮞p_connections):
 
 ## c++11 lambda callback support
 def Object::connect_lambda(const StringName &p_signal, std::function<void(void)> callback) ->Error:
-	std::cout << "Object::connect_lambda " << p_signal << std::endl
+	std::cout << "Object::connect_lambda " << String(p_signal) << std::endl
 	Signal *s = signal_map.getptr(p_signal)
 	if not s:
 		bool signal_is_valid = ClassDB::has_signal(get_class_name(), p_signal)

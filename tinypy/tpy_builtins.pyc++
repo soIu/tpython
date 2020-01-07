@@ -1,5 +1,6 @@
-## File: Builtins
 ## Builtin tinypy functions.
+## Python2 builtins - TODO support all, or raise an error that it is not supported
+## 'abs', 'all', 'any', 'apply', 'basestring', 'bin', 'bool', 'buffer', 'bytearray', 'bytes', 'callable', 'chr', 'classmethod', 'cmp', 'coerce', 'compile', 'complex', 'copyright', 'credits', 'delattr', 'dict', 'dir', 'divmod', 'enumerate', 'eval', 'execfile', 'exit', 'file', 'filter', 'float', 'format', 'frozenset', 'getattr', 'globals', 'hasattr', 'hash', 'help', 'hex', 'id', 'input', 'int', 'intern', 'isinstance', 'issubclass', 'iter', 'len', 'license', 'list', 'locals', 'long', 'map', 'max', 'memoryview', 'min', 'next', 'object', 'oct', 'open', 'ord', 'pow', 'print', 'property', 'quit', 'range', 'raw_input', 'reduce', 'reload', 'repr', 'reversed', 'round', 'set', 'setattr', 'slice', 'sorted', 'staticmethod', 'str', 'sum', 'super', 'tuple', 'type', 'unichr', 'unicode', 'vars', 'xrange', 'zip'
 
 def tpy_print(TP) ->tp_obj;
 
@@ -42,6 +43,71 @@ def tpy_len(TP) ->tp_obj:
 	tp_obj e = TP_OBJ()
 	return tp_len(tp,e)
 
+def tpy_getattr(TP)->tp_obj:
+	tp_obj ob = TP_OBJ()
+	tp_obj name = TP_OBJ()
+	if name.type.type_id != TP_STRING:
+		throw "ERROR: getattr - name is not a string"
+	return tp_get(tp, ob, name)
+
+def tpy_setattr(TP)->tp_obj:
+	tp_obj ob = TP_OBJ()
+	tp_obj name = TP_OBJ()
+	tp_obj value = TP_OBJ()
+	if name.type.type_id != TP_STRING:
+		throw "ERROR: setattr - name is not a string"
+	return tp_set(tp, ob, name, value)
+
+def tpy_dir(TP) ->tp_obj:
+	tp_obj ob = TP_OBJ()
+	tp_obj r = tp_list(tp)
+	if ob.type.type_id == TP_NUMBER:
+		## in standard python this would return ['bit_length', 'conjugate', 'denominator', 'imag', 'numerator', 'real']
+		## but these are not supported methods for numbers in TPython
+		pass
+	elif ob.type.type_id == TP_OBJECT:
+		##print("tpy_dir: TP_OBJECT", ob.type.type_id)
+		## class vars, like `__class__` in regular python
+		for (int i=0; i < ob.obj.info->meta.dict.val->alloc; i++):
+			if ob.obj.info->meta.dict.val->items[i].used != 1:
+				continue
+			r.append(ob.obj.info->meta.dict.val->items[i].key)
+		## instance level vars
+		for (int i=0; i < ob.dict.val->alloc; i++):
+			if ob.dict.val->items[i].used != 1:
+				continue
+			r.append(ob.dict.val->items[i].key)
+	elif ob.type.type_id == TP_LIST:
+		for (int i=0; i < ob.list.val->meta.dict.val->alloc; i++):
+			if ob.list.val->meta.dict.val->items[i].used != 1:
+				continue
+			r.append(ob.list.val->meta.dict.val->items[i].key)
+	elif ob.type.type_id == TP_DICT:
+		for (int i=0; i < ob.dict.val->meta.dict.val->alloc; i++):
+			if ob.dict.val->meta.dict.val->items[i].used != 1:
+				continue
+			r.append(ob.dict.val->meta.dict.val->items[i].key)
+	else:
+		## this fallback can work because of funny union rules,
+		## for example this works on a string, and probably other types
+		## tested with gcc and clang.
+		print("tpy_dir: type", ob.type.type_id)
+		for (int i=0; i < ob.obj.info->meta.dict.val->alloc; i++):
+			if ob.obj.info->meta.dict.val->items[i].used != 1:
+				continue
+			r.append(ob.obj.info->meta.dict.val->items[i].key)
+	return r
+
+def tpy_hasattr(TP) ->tp_obj:
+	## note this is slow and could be optimized
+	tp_obj names = tpy_dir(tp)
+	tp_obj attrname = TP_OBJ()
+	if attrname.type.type_id != TP_STRING:
+		throw "ERROR: hasattr attr name is not a string"
+	for i in range(len(names)):
+		if names[i] == attrname:
+			return tp_number(1)
+	return tp_number(0)
 
 def tpy_assert(TP) ->tp_obj:
 	int a = TP_NUM()
@@ -509,6 +575,7 @@ def tp_module_builtins_init(TP):
 	{"__import__",tpy_import},
 	{"__merge__", tpy_dict_merge},
 	{"len",tpy_len},
+	{"dir",tpy_dir},
 	{"__assert__", tpy_assert},
 	{"str", tpy_str},
 	{"float",tpy_float}, 
@@ -527,6 +594,9 @@ def tp_module_builtins_init(TP):
 	{"list", tpy_list},
 	{"round",tpy_round},
 	{"ord",tpy_ord},
+	{"hasattr",tpy_hasattr},
+	{"getattr",tpy_getattr},
+	{"setattr",tpy_setattr},
 	{"getraw",tpy_getraw},
 	{"setmeta",tpy_setmeta},
 	{"getmeta",tpy_getmeta},

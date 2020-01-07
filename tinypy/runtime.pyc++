@@ -103,7 +103,7 @@ def tp_module_os_init(TP):
 import <Python.h>
 import "tpc.gen.h"
 
-def tpc_compile(std::string pysrc, std::string name) ->std::string:
+def tpython_compile(std::string pysrc, std::string name) ->std::string:
 	PyObject* co = Py_CompileString(__tpc_source__.c_str(), "tpc", Py_file_input)
 	##std::cout << "co: " << co << std::endl
 	PyObject* mod = PyImport_ExecCodeModule("__tpc__", co)

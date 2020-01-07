@@ -518,15 +518,36 @@ void ClassDB::add_compatibility_class(const StringName &p_class, const StringNam
 }
 
 Object *ClassDB::instance(const StringName &p_class) {
-
+	std::cout << "class_db.cpp ClassDB::instance - " << String(p_class) << std::endl;
 	ClassInfo *ti;
 	{
 		OBJTYPE_RLOCK;
 		ti = classes.getptr(p_class);
 		if (!ti || ti->disabled || !ti->creation_func) {
-			if (compat_classes.has(p_class)) {
-				ti = classes.getptr(compat_classes[p_class]);
+			if (p_class == "Script") {
+				// special case for TPython
+				ti = classes.getptr(StringName("TPYScript"));
+			} else {
+				std::cout << "	ClassDB::instance - trying fallback..." << std::endl;
+				if (compat_classes.has(p_class)) {
+					std::cout << "	ClassDB::instance - using fallback" << compat_classes[p_class] << std::endl;
+					ti = classes.getptr(compat_classes[p_class]);
+				} else {
+					const StringName *k=NULL;
+					while( (k=compat_classes.next(k)) ) {
+						std::cout << "fallback key: " << String( *k );
+						std::cout << "fallback value: " << String( compat_classes[*k] );
+					}
+				}
+				const StringName *k=NULL;
+				while( (k=classes.next(k)) ) {
+					std::cout << "known class type: " << String( *k ) << std::endl;
+				}
+
 			}
+		}
+		if (ti->creation_func == NULL) {
+			std::cout << "	ClassDB::instance - creation_func is NULL" << std::endl;
 		}
 		ERR_FAIL_COND_V(!ti, NULL);
 		ERR_FAIL_COND_V(ti->disabled, NULL);

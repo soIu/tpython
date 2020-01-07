@@ -15,7 +15,7 @@ try running the commands below, and then rebuild.
 
 '''
 
-UNREAL_VER = '4.2.0'   ## first tested with 4.2.0, current version is 4.23.1
+UNREAL_VER = '4.24.1'   ## first tested with 4.2.0, current version is 4.23.1
 
 UIFACE_TEMPLATE = '''
 #pragma('once')
@@ -56,11 +56,11 @@ UPLUGIN_TEMPLATE = '''
 '''
 
 UNREAL_BUILD_TEMPLATE = '''
-using UnrealBuildTool;
+using UnrealBuildTool.Rules;
 using System.IO;
  
 public class %s : ModuleRules {
-	public %s(TargetInfo Target) {
+	public %s(ReadOnlyTargetRules Target) : base(Target) {
 		PrivateIncludePaths.AddRange(new string[] { "%s/Private" });
 		PublicIncludePaths.AddRange(new string[] { "%s/Public" });
 		PublicDependencyModuleNames.AddRange(new string[] {"%s"});
@@ -79,9 +79,10 @@ public class %s : ModuleRules {
 		PublicAdditionalLibraries.AddRange( new string[] {"%s"});
 		PublicDependencyModuleNames.AddRange(
 			new string[] {
-				"CoreUObject", "Engine", "InputCore", "RHI",
-				"RenderCore", "HTTP", "UMG", "Slate", "SlateCore",
-				"ImageWrapper", "PhysX", "HeadMountedDisplay", "AIModule"
+				"Engine", "Core"
+				//"CoreUObject", "Engine", "InputCore", "RHI",
+				//"RenderCore", "HTTP", "UMG", "Slate", "SlateCore",
+				//"ImageWrapper", "PhysX", "HeadMountedDisplay", "AIModule"
 			});
 	}
 }
@@ -510,6 +511,9 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			defname = s.split('(')[-1].split(')')[0]
 			out.append('#undef %s' %defname)
 
+		elif s.strip() == 'pass':
+			out.append('/*pass*/')
+
 		elif s.startswith('@module'):
 			assert s.count('(')==1
 			assert s.count(')')==1
@@ -899,7 +903,9 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			w = '\t' * indent
 			if s.startswith('for ') and ' in ' in s:  ## python style
 				if ' range(' in s:
-					iter_to = s.split('range(')[-1].split(')')[0]
+					assert s.endswith('):')
+					#iter_to = s.split('range(')[-1].split(')')[0]
+					iter_to = s.split('range(')[-1][:-2]
 					iter_name = s.split(' in ')[0].split()[-1]
 					if ',' in iter_to:
 						iter_start, iter_to = iter_to.split(',')

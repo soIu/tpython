@@ -987,7 +987,7 @@ def ord(char c) ->int;
 import "tp_ops.gen.h"
 
 #ifdef USE_PYTHON
-def tpc_compile(std::string src, std::string name) ->std::string;
+def tpython_compile(std::string src, std::string name) ->std::string;
 #endif
 
 #endif
