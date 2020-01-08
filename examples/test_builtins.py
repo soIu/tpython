@@ -68,3 +68,17 @@ d['update'] = 'XXX'
 print(d.update)
 print(d['update'])
 print(d)
+
+print('testing sizeof')
+print( 'sizeof number:',sizeof(1) )
+print( 'sizeof string:',sizeof("a") )
+print( 'sizeof string:',sizeof("foo") )
+print( 'sizeof object:',sizeof(ob) )
+print( 'sizeof list:',sizeof(b) )
+print( 'sizeof dict:',sizeof(d) )
+print( 'sizeof function:', sizeof(func) )
+
+v = vec3(1.1, 2.2, 3.3)
+print( 'sizeof vec3:', sizeof(v) )
+
+

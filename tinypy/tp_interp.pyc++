@@ -61,6 +61,5 @@ def tp_deinit(TP):
 	tp_full(tp)
 	tp_delete(tp,tp->root)
 	tp_gc_deinit(tp)
-	tp->mem_used -= sizeof(tp_vm)
 	free(tp)
 

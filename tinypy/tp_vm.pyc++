@@ -11,12 +11,6 @@ def tp_default_echo(const char* string, int length):
 def tp_create_vm(void) -> tp_vm*:
 	int i
 	tp_vm *tp = (tp_vm*)calloc(sizeof(tp_vm),1)
-	tp->time_limit = TP_NO_LIMIT
-	tp->clocks = clock()
-	tp->time_elapsed = 0.0
-	tp->mem_limit = TP_NO_LIMIT
-	tp->mem_exceeded = 0
-	tp->mem_used = sizeof(tp_vm)
 	tp->cur = 0
 	tp->jmp = 0
 	tp->ex = tp_None
