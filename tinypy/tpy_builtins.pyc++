@@ -9,6 +9,15 @@ def tpy_bind(TP) ->tp_obj:
 	tp_obj self = TP_OBJ()
 	return tp_bind(tp, r, self)
 
+def tpy_any(TP) ->tp_obj:
+	tp_obj lst = TP_OBJ()
+	std::vector<tp_obj> vec = lst.as_vector()
+	for (int i=0; i<vec.size(); i++):
+		tp_obj item = vec[i];
+		if tp_true(tp, item):
+			return tp_number(1)
+	return tp_number(0)
+
 
 def tpy_min(TP) ->tp_obj:
 	tp_obj r = TP_OBJ()
@@ -565,6 +574,7 @@ def tp_module_builtins_init(TP):
 	tp_obj o
 	//struct {const char *s;void *f;} b[] = {
 	struct {const char *s; tp_func_pointer f;} b[] = {
+	{"any", tpy_any},
 	{"compile", tpy_compile},
 	{"print",tpy_print},
 	{"range",tpy_range},

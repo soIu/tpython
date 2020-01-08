@@ -872,6 +872,17 @@ def tp_obj::append(int n):
 def tp_obj::append(tp_obj ob):
 	tpd_list_append(NULL, this->list.val, ob)
 
+def tp_obj::as_vector() -> std::vector<tp_obj>:
+	if this->type.type_id != TP_LIST:
+		throw "as_vector can only be used on a list type"
+	std::vector<tp_obj> r;
+	if this->list.val->type >= 1:
+		for (int i=0; i < this->list.val->vec.size(); i++ ):
+			r.push_back( tp_number(this->list.val->vec[i]) )
+	else:
+		for (int i=0; i < this->list.val->len; i++ ):
+			r.push_back( this->list.val->items[i] )
+	return r
 
 ## Pythonic++ helper functions ##
 def len(tp_obj self) ->int:

@@ -264,6 +264,7 @@ typedef class tp_obj {
  void append(double n);
  void append(int n);
  void append(tp_obj ob);
+ std::vector<tp_obj> as_vector();
 } tp_obj;
 
 

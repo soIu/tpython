@@ -2,7 +2,7 @@ print('testing assert')
 assert True
 assert(True)
 assert( 1==1 )
-
+assert 4!=3
 print('testing number')
 a = 1
 print( dir(a) )
@@ -11,15 +11,21 @@ print('testing list')
 b = [a,2]
 print(len(b))
 print(dir(b))
+assert len(b)==2
+assert any(b)
+assert any([])==False
+assert any([0, False, None])==False
 
 print('testing dict')
 d = {100: 'foo', 'bar':200}
 print( d.keys() )
 print( dir(d) )
+assert len(d)==2
 
 print('testing string')
 s = 'mystring'
 print(dir(s))
+assert len(s)==8
 
 print('testing getattr')
 func = getattr(s, 'startswith')
