@@ -394,7 +394,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				out[-1] += ';	// end of class: ' + class_name
 				class_name = None
 			elif in_struct and indent <= struct_indent:
-				#assert out[-1][-1] == '}'
+				if not out[-1].endswith('}'):
+					out[-1] += '}'
 				if '.' in struct_name:
 					## inline struct def, with variable name at the end
 					struct_name, struct_var_name = struct_name.split('.')
