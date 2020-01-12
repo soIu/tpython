@@ -21,7 +21,10 @@ class DState:
 	def __init__(self,code,fname):
 		self.const_numbers = []  ## max size is 256
 		self.header = []
-		self.nopos = False
+		if '--debug' in sys.argv:
+			self.nopos = False
+		else:
+			self.nopos = True
 		self.code = code
 		self.fname = fname
 		self.lines = self.code.split('\n')
@@ -79,9 +82,7 @@ def write(v, head=False):
 		else:
 			insert(('data',v[n:n+4]))
 
-def setpos(v, debug_mode='--debug' in sys.argv):
-	if not debug_mode:
-		return
+def setpos(v):
 	if D.nopos: return
 	line,x = v
 	if line == D.lineno: return

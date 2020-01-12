@@ -401,6 +401,10 @@ def tp_step(TP) ->int:
 					//RA = tp_string_view(tp, f->code, a, a+UVBC);
 					// string_view is NOT broken, but is slightly slower than tp_string_from_const
 					RA = tp_string_from_const(tp, (*(cur+1)).string.val, UVBC )
+					##if UVBC <= 16:
+					##	pass
+					##else:
+					##	print(RA)
 					//if (UVBC <= 5)  // this should work, bug causes some memory error, string becomes a func?
 					//	RA = tp_string_atom_from_stdstring(tp, std::string((*(cur+1)).string.val, UVBC) );
 					//else
@@ -533,18 +537,14 @@ def tp_step(TP) ->int:
 				case TP_IBITOR:  RA = tp_bitwise_or(tp,RB,RC); break;
 				case TP_IBITNOT:  RA = tp_bitwise_not(tp,RB); break;
 				case TP_IBITXOR:  RA = tp_bitwise_xor(tp,RB,RC); break;
-				#ifdef DEBUG
 				case TP_IPASS: break;
 				case TP_IFILE: f->fname = RA; break;
 				case TP_IDEBUG:
-					tp_echo(tp, tp_string_atom(tp, "DEBUG:"))
-					tp_echo(tp, tp_number(VA))
-					tp_echo(tp, RA)
+					print("BYTECODE DEBUG:")
+					print("VA: ", VA)
+					print("RA: ", RA)
 					break
 				case TP_ILINE:
-					#ifdef TP_SANDBOX
-					  tp_bounds(tp,cur,VA);
-					#endif
 					int a = (*(cur+1)).string.val - tp_string_getptr(f->code)
 					if(tp_string_getptr(f->code)[a] == ';') throw "TP_ILINE if(tp_string_getptr(f->code)[a] == ';')";
 					f->line = tp_string_view(tp, f->code, a, a+VA*4-1)
@@ -556,7 +556,6 @@ def tp_step(TP) ->int:
 					printf("INVALID BYTE CODE: %i \n", e.i);
 					tp_raise(0,tp_string_atom(tp, "tp_step RuntimeError: invalid instruction"));
 					break;
-				#endif
 		#ifdef TP_SANDBOX
 		  tp_time_update(tp)
 		  tp_mem_update(tp)
