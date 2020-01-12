@@ -185,6 +185,7 @@ def rebuild(stage=None):
 
 
 	sdl_inc = ''
+	use_sdl = False
 	embed_bytecode = False
 	miniunreal = False
 	unreal_plugin = None
@@ -192,6 +193,9 @@ def rebuild(stage=None):
 	unreal_project = os.path.expanduser('~/Documents/Unreal Projects/TPythonPluginTest')
 	for arg in sys.argv[1:]:
 		if arg.endswith( ('.py', '.tinypy') ):
+			script = open(arg).read()
+			if 'import sdl' in script:
+				use_sdl = True
 			embed_bytecode = True
 			defs += ' -DUSE_EMBEDDED_BYTECODE'
 			cmd = [
@@ -266,7 +270,7 @@ def rebuild(stage=None):
 		if '--closure' in sys.argv:
 			opts += ' --closure 1'
 
-		if '--sdl' in sys.argv:  ## this is also required just at the linker stage
+		if '--sdl' in sys.argv or use_sdl:  ## this is also required just at the linker stage
 			opts += ' -s USE_SDL=2'
 			if '--sdl-image' in sys.argv:
 				opts += """ -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]'"""
@@ -298,7 +302,7 @@ def rebuild(stage=None):
 		print('ensure that you have installed android sdk28 and build-tools28')
 		print('sudo ./sdkmanager  "platforms;android-28" "build-tools;28.0.0"')
 		mode = 'android'
-		if '--sdl' not in sys.argv:
+		if '--sdl' not in sys.argv or not use_sdl:
 			raise RuntimeError('SDL is required for Android build, enable with `--sdl`')
 		sdlroot = os.path.expanduser('~/SDL2-2.0.9')
 		#sdlroot = os.path.expanduser('~/sdl2-android-example')
@@ -332,7 +336,7 @@ def rebuild(stage=None):
 			opts += ' -rdynamic'
 		exeopts += ' -fPIC -Wl,--export-dynamic'
 
-	if '--sdl' in sys.argv:
+	if '--sdl' in sys.argv or use_sdl:
 		#mods += ' module_sdl.cpp'  # the entire sdl module is actually just in module_sdl.h
 		defs += ' -DUSE_SDL'        # from runtime.cpp, module_sdl.h will be included
 		if mode == 'wasm':
