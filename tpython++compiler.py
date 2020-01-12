@@ -239,7 +239,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	fodgy = 0
 	fid = 0
 	in_vis = True
-
+	macro_indent = []
 	in_unreal_plugin = False
 	unreal_plugin_cpp = []
 	unreal_plugin_iface = []
@@ -345,9 +345,15 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			out.append(ln)
 			continue
 
+		if macro_indent and indent <= macro_indent[-1]:
+			if 'else:' in s:
+				if indent < macro_indent[-1]:  ## TODO support more nested levels
+					out.append(('\t'*macro_indent.pop())+'#endif')
+				out.append(('\t'*indent)+'#else')
+			else:
+				out.append(('\t'*macro_indent.pop())+'#endif')
 
-		#if s:
-		if not len(define):
+		elif not len(define):
 			if in_init_list and indent <= init_list_indent:
 				if not out[-1][-1] == '{':
 					for outln in out:
@@ -370,9 +376,12 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				b += '}  // end of namespace'
 				out.append(b)
 				nsbrace = 0
+			elif macro_indent and indent <= macro_indent[-1]:
+				out.append( ('\t'*macro_indent.pop())+"#endif" )
 			elif indent < previ and autobrace:
 				braces = previ - indent
 				b = '\t' * indent
+				#b += ('}'*braces) + "/*macro_indent=%s*/" %macro_indent  ## just for debugging auto bracing
 				b += '}'*braces
 				out.append(b)
 				if indent == 0 and in_unreal_plugin:
@@ -477,12 +486,16 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					assert inc.endswith(">")
 				elif not inc.startswith('"'):
 					inc = '"' + inc + '"'
-				out.append('#include ' + inc)
+				out.append(('\t'*indent)+'#include ' + inc)
 		elif s.startswith('define('):
 			assert s.endswith(')')
-			defname = s[len('define(') : s.index('=') ]
-			defval  = s[ s.index('=')+1 : -1]
-			out.append('#define %s %s' %(defname, defval))
+			if '=' in s:
+				defname = s[len('define(') : s.index('=') ]
+				defval  = s[ s.index('=')+1 : -1]
+				out.append('#define %s %s' %(defname, defval))
+			else:
+				defname = s[len('define(') : -1]
+				out.append('#define %s' %defname)
 		elif s.startswith('define ') and s.endswith(':'):
 			define_ident = indent
 			defname = s[len('define ') : -1 ]
@@ -941,24 +954,32 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		elif s.startswith('if not ') and s.endswith(':'):
 			autobrace += 1
 			w = '\t' * indent
-			#if '||' in s:
-			#	raise SyntaxError('TODO `if not` with ||: %s' %s)
-			if '&&' in s or '||' in s:
-				#if s.count('&&') > 1:
-				#	raise SyntaxError('TODO `if not` with multiple &&: %s' %s)
-				w += 'if(!' + s[len('if not '):-1] + ') {'
+			if 'defined(' in s:
+				w += '#ifndef ' + s.split('defined(')[-1][:-2]
+				macro_indent.append(indent)
 			else:
-				w += 'if(!(' + s[len('if not '):-1] + ')) {'
+				if '&&' in s or '||' in s:
+					#if s.count('&&') > 1:
+					#	raise SyntaxError('TODO `if not` with multiple &&: %s' %s)
+					w += 'if(!' + s[len('if not '):-1] + ') {'
+				else:
+					w += 'if(!(' + s[len('if not '):-1] + ')) {'
 			out.append(w)
 			draw_type = 'down-arrow-callout'
 
+		elif s.startswith('if ') and 'defined(' in s and not s.endswith(':'):
+			raise SyntaxError('if defined macro missing ending `:` - %s' %s)
 		elif s.startswith('if ') and s.endswith(':'):
-			autobrace += 1
 			w = '\t' * indent
-			w += 'if(' + s[len('if '):-1] + ') {'
+			if 'defined(' in s:
+				w += '#ifdef ' + s.split('defined(')[-1][:-2]
+				macro_indent.append(indent)
+			else:
+				autobrace += 1
+				w += 'if(' + s[len('if '):-1] + ') {'
+				draw_type = 'down-arrow-callout'
+				color = 'BLUE'
 			out.append(w)
-			draw_type = 'down-arrow-callout'
-			color = 'BLUE'
 
 		elif s.startswith('elif not ') and s.endswith(':'):
 			autobrace += 1
@@ -984,12 +1005,16 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			color = 'BLUE'
 
 		elif s == 'else:':
-			autobrace += 1
 			w = '\t' * indent
-			w += 'else {'
-			out.append(w)
-			draw_type = 'down-arrow-callout'
-			color = 'BLUE'
+			if macro_indent and indent <= macro_indent[-1]:
+				#w += '#else'
+				pass
+			else:
+				autobrace += 1
+				w += 'else {'
+				out.append(w)
+				draw_type = 'down-arrow-callout'
+				color = 'BLUE'
 
 		elif s == 'with scope:':
 			autobrace += 1

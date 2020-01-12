@@ -3,59 +3,53 @@
 #ifndef TP_H
 #define TP_H
 
-#ifdef __EMSCRIPTEN_major__
-  import <emscripten.h>
-#endif
+if defined(__EMSCRIPTEN_major__):
+	import <emscripten.h>
 
-#ifdef USE_EMBEDDED_BYTECODE
-  import "__user_bytecode__.gen.h"
-#endif
+if defined(USE_EMBEDDED_BYTECODE):
+	import "__user_bytecode__.gen.h"
 
-#ifdef BLENDOT_TYPES
-import "blendot/vector2.h"
-import "blendot/vector3.h"
-import "blendot/quat.h"
-import "blendot/color.h"
-import "blendot/rect2.h"
-import "blendot/face3.h"
-import "blendot/plane.h"
-import "blendot/basis.h"
-import "blendot/aabb.h"
-import "blendot/transform.h"
-import "blendot/rid.h"
-import "blendot/scene/3d/spatial.h"
-import "blendot/scene/resources/mesh.h"
-import "blendot/scene/3d/mesh_instance.h"
-import "servers/visual/visual_server_raster.h"
-#endif
+if defined(BLENDOT_TYPES):
+	import "blendot/vector2.h"
+	import "blendot/vector3.h"
+	import "blendot/quat.h"
+	import "blendot/color.h"
+	import "blendot/rect2.h"
+	import "blendot/face3.h"
+	import "blendot/plane.h"
+	import "blendot/basis.h"
+	import "blendot/aabb.h"
+	import "blendot/transform.h"
+	import "blendot/rid.h"
+	import "blendot/scene/3d/spatial.h"
+	import "blendot/scene/resources/mesh.h"
+	import "blendot/scene/3d/mesh_instance.h"
+	import "servers/visual/visual_server_raster.h"
 
-#ifdef MINIUNREAL
-import "miniunreal/MiniUnreal.gen.h"
-import "miniunreal/CoreFwd.h"
-import "miniunreal/EngineFwd.h"
-import "miniunreal/Misc/Char.h"
-import "Internationalization/Text.h"
-import "miniunreal/UObject/Object.h"
-#endif
+if defined(MINIUNREAL):
+	import "miniunreal/MiniUnreal.gen.h"
+	import "miniunreal/CoreFwd.h"
+	import "miniunreal/EngineFwd.h"
+	import "miniunreal/Misc/Char.h"
+	import "Internationalization/Text.h"
+	import "miniunreal/UObject/Object.h"
+
 
 import <cstddef>
 
-#ifdef INCLUDEOS
-  import <os>
-  #ifdef INCLUDEOS_VGA
-    import <vga>
-    import <hw/ps2.hpp>
-  #endif
-  #ifdef INCLUDEOS_SVGA
-    import <hw/ps2.hpp>
-    import <hw/vga_gfx.hpp>
-  #endif
-#else
-  #ifndef __MINGW64__
-    import <dlfcn.h>
-    static void* __libself__ = NULL
-  #endif
-#endif
+if defined(INCLUDEOS):
+	import <os>
+	if defined(INCLUDEOS_VGA):
+		import <vga>
+		import <hw/ps2.hpp>
+	if defined(INCLUDEOS_SVGA):
+		import <hw/ps2.hpp>
+		import <hw/vga_gfx.hpp>
+else:
+	if not defined(__MINGW64__):
+		import <dlfcn.h>
+		static void* __libself__ = NULL
+
 
 import <functional>
 import <algorithm>
@@ -68,9 +62,8 @@ import <vector>
 
 import <setjmp.h>
 import <sys/stat.h>
-#ifndef __USE_ISOC99
-  #define __USE_ISOC99
-#endif
+if not defined(__USE_ISOC99):
+	define(__USE_ISOC99)
 
 import <stdio.h>
 import <stdlib.h>
@@ -81,15 +74,16 @@ import <time.h>
 
 ## better performance when the compiler is allowed to making the inline decisions
 ## PGO has no speed up when tp_inline is defined. So here it is defined as nothing.
-#define tp_inline
+##define(tp_inline=inline)
+define(tp_inline)
 
 ## FIXME: increased so that gc doesnt get called while running tp_str()
-#ifdef INCLUDEOS
-  //#define TP_GCMAX 16384
-  #define TP_GCMAX 262144
-#else
-  #define TP_GCMAX 524288
-#endif
+if defined(INCLUDEOS):
+	//#define TP_GCMAX 16384
+	define(TP_GCMAX=262144)
+else:
+	define(TP_GCMAX=524288)
+
 
 define(TP_REGS=16384)
 
@@ -100,7 +94,8 @@ define(TP_REGS=16384)
 //#define TP_REGS 32768  // not required
 
 define(TP_FRAMES=256)
-#define TP_REGS_EXTRA 2
+define(TP_REGS_EXTRA=2)
+
 /* #define TP_REGS_PER_FRAME 256*/
 
 enum TPTypeID:
@@ -125,7 +120,7 @@ enum TPTypeID:
 	TP_GC_TRACKED = 32,
 	TP_FUNC = 33,
 	TP_DATA = 34,
-	// this is not a type, any type >= TP_HAS_META can have a metatype
+	## this is not a type, any type >= TP_HAS_META can have a metatype
 	TP_HAS_META = 99,
 	TP_STRING = 100,
 	TP_LIST = 101,
@@ -134,10 +129,10 @@ enum TPTypeID:
 	TP_INTERFACE = 104,
 
 
-struct TPTypeInfo{
-  enum TPTypeID type_id : 32
-  unsigned int magic: 32
-};
+struct TPTypeInfo:
+	enum TPTypeID type_id : 32
+	unsigned int magic: 32
+
 
 enum TPFuncMagic:
 	TP_FUNC_MASK_C = 1,
@@ -187,83 +182,76 @@ typedef double tp_num;
 
 struct tp_vm;
 
-typedef class tp_obj {
- public:
-  tp_obj(){};
-  tp_obj(TPTypeID t){ type.type_id=t; };
-  union {
-  TPTypeInfo type;
-  struct { TPTypeInfo type; int * gci; } gc;
-  struct { TPTypeInfo type; tp_num val; } number;
-  struct { TPTypeInfo type; int val; } integer;
-  struct { TPTypeInfo type; struct tpd_func *info; void *cfnc;} func;
-  struct { TPTypeInfo type; struct tpd_data *info; void *val; } data;
-  struct { TPTypeInfo type; struct tpd_obj *info; } obj;  // what type of object is this?
-  struct { TPTypeInfo type; struct tpd_list *val; } list;
-  struct { TPTypeInfo type; struct tpd_dict *val; } dict;
-  struct { TPTypeInfo type; struct tpd_dict *val; } object;
-  struct { TPTypeInfo type; struct tpd_dict *val; } interface;
-  struct { TPTypeInfo type; struct tpd_string *info; const char * val;} string;
-#ifdef BLENDOT_TYPES
-  struct { TPTypeInfo type; struct Vector2 vec; } vec2;
-  struct { TPTypeInfo type; struct Vector3 vec; } vec3;
-  struct { TPTypeInfo type; struct Quat q; } quat;
-  struct { TPTypeInfo type; struct Color c; } color;
-  struct { TPTypeInfo type; struct Rect2 r; } rect;
-  struct { TPTypeInfo type; struct Face3 t; } tri;
-  struct { TPTypeInfo type; struct Plane p; } plane;
-  struct { TPTypeInfo type; struct AABB a; } aabb;
-  struct { TPTypeInfo type; struct Basis m; } mat3;
-  struct { TPTypeInfo type; struct Transform t; } trans;
-  struct { TPTypeInfo type; struct RID r; } rid;
-  struct { TPTypeInfo type; struct Spatial *ptr; } spatial;
-  struct { TPTypeInfo type; struct ArrayMesh *ptr; } mesh;
-  struct { TPTypeInfo type; struct MeshInstance *ptr; } meshi;
-#endif
-#ifdef UNREAL_TYPES
-  struct { TPTypeInfo type; struct UObject *ptr; } uob;
-#endif
- };
-//tp_obj(double num) {
-//this->type.type_id = TP_NUMBER;
-//this->number.val = num;
-//}
- bool operator==(const char* s) const;
- operator std::string() const;
- operator int() const;
- operator float() const;
- operator const char*() const;
- operator char() const;
- operator uint8_t() const;
- tp_obj operator[] (int index);
- tp_obj operator+ (const tp_obj & first) const {
-  tp_obj val = {TP_NUMBER};
-  val.number.val = this->number.val + first.number.val;
-  return val;
- }
- tp_obj operator- (const tp_obj & first) const {
-  tp_obj val = {TP_NUMBER};
-  val.number.val = this->number.val - first.number.val;
-  return val;
- }
- tp_obj operator* (const tp_obj & first) const {
-  tp_obj val = {TP_NUMBER};
-  val.number.val = this->number.val * first.number.val;
-  return val;
- }
- tp_obj operator/ (const tp_obj & first) const {
-  tp_obj val = {TP_NUMBER};
-  val.number.val = this->number.val / first.number.val;
-  return val;
- }
- friend std::ostream & operator << (std::ostream &out, const tp_obj &self);
- void append(const char *s);
- void append(std::string s);
- void append(double n);
- void append(int n);
- void append(tp_obj ob);
- std::vector<tp_obj> as_vector();
-} tp_obj;
+class tp_obj:
+	public:
+	tp_obj(){};
+	tp_obj(TPTypeID t){ type.type_id=t; };
+	union {
+	TPTypeInfo type;
+	struct { TPTypeInfo type; int * gci; } gc;
+	struct { TPTypeInfo type; tp_num val; } number;
+	struct { TPTypeInfo type; int val; } integer;
+	struct { TPTypeInfo type; struct tpd_func *info; void *cfnc;} func;
+	struct { TPTypeInfo type; struct tpd_data *info; void *val; } data;
+	struct { TPTypeInfo type; struct tpd_obj *info; } obj;  // what type of object is this?
+	struct { TPTypeInfo type; struct tpd_list *val; } list;
+	struct { TPTypeInfo type; struct tpd_dict *val; } dict;
+	struct { TPTypeInfo type; struct tpd_dict *val; } object;
+	struct { TPTypeInfo type; struct tpd_dict *val; } interface;
+	struct { TPTypeInfo type; struct tpd_string *info; const char * val;} string;
+	if defined(BLENDOT_TYPES):
+		struct { TPTypeInfo type; struct Vector2 vec; } vec2;
+		struct { TPTypeInfo type; struct Vector3 vec; } vec3;
+		struct { TPTypeInfo type; struct Quat q; } quat;
+		struct { TPTypeInfo type; struct Color c; } color;
+		struct { TPTypeInfo type; struct Rect2 r; } rect;
+		struct { TPTypeInfo type; struct Face3 t; } tri;
+		struct { TPTypeInfo type; struct Plane p; } plane;
+		struct { TPTypeInfo type; struct AABB a; } aabb;
+		struct { TPTypeInfo type; struct Basis m; } mat3;
+		struct { TPTypeInfo type; struct Transform t; } trans;
+		struct { TPTypeInfo type; struct RID r; } rid;
+		struct { TPTypeInfo type; struct Spatial *ptr; } spatial;
+		struct { TPTypeInfo type; struct ArrayMesh *ptr; } mesh;
+		struct { TPTypeInfo type; struct MeshInstance *ptr; } meshi;
+	if defined(UNREAL_TYPES):
+		struct { TPTypeInfo type; struct UObject *ptr; } uob;
+	};  // end of union
+	bool operator==(const char* s) const;
+	operator std::string() const;
+	operator int() const;
+	operator float() const;
+	operator const char*() const;
+	operator char() const;
+	operator uint8_t() const;
+	tp_obj operator[] (int index);
+	@const
+	def operator+ (const tp_obj & first) ->tp_obj:
+		tp_obj val = {TP_NUMBER};
+		val.number.val = this->number.val + first.number.val
+		return val
+	@const
+	def operator- (const tp_obj & first) ->tp_obj:
+		tp_obj val = {TP_NUMBER};
+		val.number.val = this->number.val - first.number.val
+		return val
+	@const
+	def operator* (const tp_obj & first) ->tp_obj:
+		tp_obj val = {TP_NUMBER};
+		val.number.val = this->number.val * first.number.val
+		return val
+	@const
+	def operator/ (const tp_obj & first) ->tp_obj:
+		tp_obj val = {TP_NUMBER};
+		val.number.val = this->number.val / first.number.val
+		return val
+	friend std::ostream & operator << (std::ostream &out, const tp_obj &self);
+	void append(const char *s);
+	void append(std::string s);
+	void append(double n);
+	void append(int n);
+	void append(tp_obj ob);
+	std::vector<tp_obj> as_vector();
 
 
 /*
