@@ -141,6 +141,46 @@ def compile_and_run_py_file(std::string filename):
 
 #endif
 
+def test_pyob():
+	std::cout << "sizeof tp_obj = " << sizeof(tp_obj) << std::endl;
+	std::cout << "sizeof pyob = " << sizeof(pyob) << std::endl;
+	pyob parray[2];
+	std::cout << "sizeof pyob array = " << sizeof(parray) << std::endl;
+	auto p = pyob()
+	p.set( 100 )
+	std::cout << "pyob.get() = " << p.get() << std::endl;
+	##p.set( 16777216 )  ## largest whole number a float can hold
+	std::cout << "pyob.get() = " << p.get() << std::endl;
+	##p.set( 16777217 )  ## this overflows a float
+	std::cout << "pyob.get() = " << p.get() << std::endl;
+	volatile int loops = 16777217*64
+	for i in range(loops):
+		p.real += 0.0001
+		volatile pyob xxx = pyob();
+		##volatile pyob xxx = {};
+		xxx.real += 0.0001
+	std::cout << "pyob.get() = " << p.get() << std::endl;
+	std::cout << "pyob.real = " << p.real << std::endl;
+
+def test_tp_obj():
+	std::cout << "sizeof tp_obj = " << sizeof(tp_obj) << std::endl;
+	std::cout << "sizeof pyob = " << sizeof(pyob) << std::endl;
+	pyob parray[2];
+	std::cout << "sizeof pyob array = " << sizeof(parray) << std::endl;
+	auto p = tp_number(0)
+	p.number.val = 100
+	std::cout << "tp_obj.number.val = " << p.number.val << std::endl;
+	##p.number.val = 16777216
+	std::cout << "tp_obj.number.val = " << p.number.val << std::endl;
+	##p.number.val = 16777217
+	std::cout << "tp_obj.number.val = " << p.number.val << std::endl;
+	volatile int loops = 16777217*64
+	for i in range(loops):
+		p.number.val += 0.0001
+		volatile auto xxx = tp_number(0)
+		xxx.number.val += 0.0001
+	std::cout << "tp_obj.number.val = " << p.number.val << std::endl;
+
 
 #ifdef INCLUDEOS
 def Service::start():
@@ -154,6 +194,8 @@ def main(int argc,  char *argv[]) -> int:
 	#ifdef DEBUG
 	  std::cout << "starting tpython interpreter..." << std::endl;
 	#endif
+	std::cout << "sizeof tp_obj = " << sizeof(tp_obj) << std::endl;
+	std::cout << "sizeof tp_obj = " << sizeof(TPTypeInfo) << std::endl;
 	#ifndef __EMSCRIPTEN_major__
 	  signal(SIGSEGV, crash_handler); // memory segfault
 	  signal(SIGABRT, crash_handler); // some old places in tinypy code had used `abort()`
@@ -181,15 +223,20 @@ def main(int argc,  char *argv[]) -> int:
 	elif argc==2:
 		std::string f = std::string(argv[1])
 		print( f )
-		if f.size() > 3:
-			if f.substr( f.size()-3, f.size() ) == std::string(".py"):
-				#ifdef USE_PYTHON
-				compile_and_run_py_file(f)
-				#else
-				print("Error: tpython must be built with CPython to compile py files to bytecode")
-				#endif
-				return 0
-		run_vm(argc, argv, 1)
+		if f=="--bench-tp-obj":
+			test_tp_obj()
+		elif f=="--bench-new-tp-obj":
+			test_pyob()
+		else:
+			if f.size() > 3:
+				if f.substr( f.size()-3, f.size() ) == std::string(".py"):
+					#ifdef USE_PYTHON
+					compile_and_run_py_file(f)
+					#else
+					print("Error: tpython must be built with CPython to compile py files to bytecode")
+					#endif
+					return 0
+			run_vm(argc, argv, 1)
 	elif argc==3:
 		std::thread t1( [=]{run_vm(argc, argv, 1);} );
 		std::thread t2( [=]{run_vm(argc, argv, 2);} );

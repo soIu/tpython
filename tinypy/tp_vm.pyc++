@@ -154,8 +154,9 @@ import "interpreter_codes.gen.h"
 def TP_xSTR(TP, tp_obj obj) ->char *:
 	return tp_cstr(tp, tp_str(tp, obj))
 
-tp_obj __global_objects__[256] = {};
-double __const_numbers__[256] = {};
+static tp_obj __global_objects__[256] = {};
+static double __const_numbers__[256] = {};
+static std::unordered_map<std::string_view, tp_obj> __string_cache__ = {};
 
 def tp_step(TP) ->int:
 	tpd_frame *f = &tp->frames[tp->cur]
@@ -396,8 +397,21 @@ def tp_step(TP) ->int:
 					//int a = (*(cur+1)).string.val - tp_string_getptr(f->code);
 					//RA = tp_string_view(tp, f->code, a, a+UVBC);
 					// string_view is NOT broken, but is slightly slower than tp_string_from_const
+					## hashing a string_view has a 10 percent overhead :(
+					/*
+					if UVBC <= 32:
+						std::string_view s = std::string_view{ (*(cur+1)).string.val, UVBC};
+						##std::cout << "string byte pos: " << (unsigned int)(cur+1) << " = `" << s << "`" << std::endl
+						if __string_cache__.count(s)==1:
+							RA = __string_cache__[s]
+						else:
+							RA = tp_string_from_const(tp, (*(cur+1)).string.val, UVBC )
+							__string_cache__[s]=RA
+							##print("string cache miss")
+							##print(RA)
+					else:
+					*/
 					RA = tp_string_from_const(tp, (*(cur+1)).string.val, UVBC )
-					##if UVBC <= 16:
 					##	pass
 					##else:
 					##	print(RA)

@@ -54,13 +54,15 @@ else:
 import <functional>
 import <algorithm>
 import <map>
+import <unordered_map>
 import <string>
+import <string_view>
 import <iostream>
 import <sstream>
 import <cstring>
 import <vector>
 
-import <setjmp.h>
+##import <setjmp.h>
 import <sys/stat.h>
 if not defined(__USE_ISOC99):
 	define(__USE_ISOC99)
@@ -71,6 +73,7 @@ import <string.h>
 import <stdarg.h>
 import <math.h>
 import <time.h>
+import <float.h>
 
 ## better performance when the compiler is allowed to making the inline decisions
 ## PGO has no speed up when tp_inline is defined. So here it is defined as nothing.
@@ -129,9 +132,13 @@ enum TPTypeID:
 	TP_INTERFACE = 104,
 
 
+##struct TPTypeInfo:
+##	enum TPTypeID type_id : 32
+##	unsigned int magic: 32
+
 struct TPTypeInfo:
-	enum TPTypeID type_id : 32
-	unsigned int magic: 32
+	enum TPTypeID type_id
+	char magic
 
 
 enum TPFuncMagic:
@@ -146,6 +153,24 @@ enum TPStringMagic:
 	TP_STRING_ATOM = 1,
 	TP_STRING_EXTERN = 2,
 	TP_STRING_VIEW = 3
+
+## testing new micro size pyobject ##
+class pyob:
+	## double is faster than float because its unlikey to overflow
+	double real
+	## super slow when the number overflows past 32bits - 16x slower
+	## and not faster double otherwise
+	##float real
+	##unsigned char type:6
+	##unsigned char magic:2
+	##int32_t ptr: 24
+	def operator += (const double& rhs) ->pyob&:
+		this->real += rhs
+		return *this;
+	def set(double n):
+		this->real = n
+	def get() ->double:
+		return real
 
 
 typedef double tp_num;
@@ -183,7 +208,6 @@ typedef double tp_num;
 struct tp_vm;
 
 class tp_obj:
-	public:
 	tp_obj(){};
 	tp_obj(TPTypeID t){ type.type_id=t; };
 	union {
@@ -199,6 +223,7 @@ class tp_obj:
 	struct { TPTypeInfo type; struct tpd_dict *val; } object;
 	struct { TPTypeInfo type; struct tpd_dict *val; } interface;
 	struct { TPTypeInfo type; struct tpd_string *info; const char * val;} string;
+	struct { TPTypeInfo type; char val[16];} str;
 	if defined(BLENDOT_TYPES):
 		struct { TPTypeInfo type; struct Vector2 vec; } vec2;
 		struct { TPTypeInfo type; struct Vector3 vec; } vec3;
@@ -374,7 +399,7 @@ struct tp_vm:
 	tp_obj _regs
 	tp_obj *regs
 	tp_obj root
-	jmp_buf buf
+	##jmp_buf buf
 	int jmp
 	tp_obj ex
 	tp_obj last_result
@@ -745,7 +770,12 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 						ss << self.string.info->s
 			break
 		case TP_INTEGER: ss << self.integer.val; break;
-		case TP_NUMBER: ss << self.number.val; break;
+		case TP_NUMBER:
+			if defined(DEBUG):
+				ss << "number(" << self.number.val << ") "; 
+			else:
+				ss << self.number.val; 
+			break;
 		case TP_NONE: ss << "None"; break;
 		case TP_FUNC: ss << "function<" << self.func.cfnc << ">"; break;
 		case TP_LIST:
@@ -878,6 +908,10 @@ def print(const char *s):
 @static
 def print(const char *s, int n):
 	std::cout << s << " " << n << std::endl;
+
+@static
+def print(const char *s, tp_obj *ob):
+	std::cout << s << " " << *ob << std::endl;
 
 @static
 def print(tp_obj ob):

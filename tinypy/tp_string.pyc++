@@ -16,7 +16,8 @@ def tp_string_t(TP, int n) ->tp_obj:
 	r.obj.info->meta = __string_meta__
 	return tp_track(tp, r)
 
-std::map<std::string, tp_obj> __string_atoms__ = {};
+/* SLOW!!!
+static std::map<std::string, tp_obj> __string_atoms__ = {};
 
 def tp_string_atom(TP, const char * v) ->tp_obj:
 	std::string s = std::string(v)
@@ -52,6 +53,19 @@ def tp_string_atom_from_stdstring(TP, std::string s) ->tp_obj:
 		//static tpd_string info = {0}
 		tp_obj r = tp_string_atom(tp, s.c_str())
 		return r
+
+*/
+
+## FASTER!!
+def tp_string_atom(TP, const char * v) ->tp_obj:
+	static tpd_string info = {0};
+	tp_obj r
+	r.type.type_id = TP_STRING
+	r.type.magic = TP_STRING_ATOM
+	r.string.info = &info
+	r.string.info->meta = __string_meta__
+	r.string.val = v
+	return r
 
 
 ## Return a untracked string object from external memory.

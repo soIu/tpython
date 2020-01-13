@@ -79,7 +79,7 @@ TPLIB_FILES=tp.gen.cpp compiler.cpp runtime.gen.cpp
 
 
 %.o : %.cpp
-	<CC> $(CFLAGS) <DEFINES> -std=c++11 <OPTIONS> <SDL_INCLUDE> -I .  -I ./tinypy/blendot -I ./tinypy/miniunreal -c -o $@ $<
+	<CC> $(CFLAGS) <DEFINES> -std=c++17 <OPTIONS> <SDL_INCLUDE> -I .  -I ./tinypy/blendot -I ./tinypy/miniunreal -c -o $@ $<
 
 all: <EXE>
 
@@ -315,11 +315,16 @@ def rebuild(stage=None):
 		#	raise RuntimeError('unable to git clone from: https://github.com/georgik/sdl2-android-example.git')
 
 	else:  ## linux
-		if '--secure-binary' in sys.argv:
-			opts += ' -O2 -finline-small-functions -march=native'
+		if '--profile' in sys.argv:
+			opts += ' -O0 -g -pg '
+			exeopts += ' -O0 -g -pg '
+
 		else:
-			opts += ' -O3 -funroll-loops -finline-small-functions -march=native -ffast-math -fno-math-errno -funsafe-math-optimizations -fno-signed-zeros -fno-trapping-math -frename-registers'
-		exeopts += opts
+			if '--secure-binary' in sys.argv:
+				opts += ' -O2 -finline-small-functions -march=native'
+			else:
+				opts += ' -O3 -funroll-loops -finline-small-functions -march=native -ffast-math -fno-math-errno -funsafe-math-optimizations -fno-signed-zeros -fno-trapping-math -frename-registers'
+			exeopts += opts
 		if '--gcc5' in sys.argv:
 			CC = '/usr/bin/g++-5'
 			assert os.path.isfile(CC)
@@ -459,6 +464,10 @@ def rebuild(stage=None):
 				subprocess.check_call(['cp', '-v', './libtpython++.dll', os.path.join(unreal_project, 'Plugins/3rdparty')])
 			else:
 				subprocess.check_call(['cp', '-v', './libtpython++.so', os.path.join(unreal_project, 'Plugins/3rdparty')])
+
+		if '--profile' in sys.argv:
+			subprocess.check_call(['./tpython++'])
+			subprocess.check_call(['gprof','-p','-b', 'tpython++', 'gmon.out'])
 
 	if mode == 'wasm':
 		pakopath = os.path.expanduser('~/pako/dist/pako_inflate.min.js')
