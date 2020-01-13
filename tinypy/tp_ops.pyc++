@@ -90,7 +90,10 @@ def tp_iter(TP,tp_obj self, tp_obj k) ->tp_obj:
 static tp_obj _tp_get(TP, tp_obj self, tp_obj k, int mget);
 
 ## lookup using []; never bind functions
-def tp_get(TP, tp_obj self, tp_obj k) ->tp_obj: 
+def tp_get(TP, tp_obj self, tp_obj k) ->tp_obj:
+	if self.type.type_id==TP_LIST and k.type.type_id==TP_NONE and self.list.val->len==0:
+		throw "list[None] hack list len is zero - this should never happen"
+		return tp_number(0)
 	return _tp_get(tp, self, k, 0)
 
 ## lookup using .; always bind functions. FIXME: static and class binding
@@ -722,37 +725,32 @@ def tp_bitwise_not(TP, tp_obj a) ->tp_obj:
 ## positional parameter containing the string "hello".
 
 def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
-	#ifdef DEBUG
-	  print("tp_call:")
-	#endif
+	if defined(DEBUG):
+		print("tp_ops.pyc++ - tp_call params:")
+		print(params)
 	## Im not sure we should have to do this, but just for giggles we will.
 	tp->params = params
 	if self.type.type_id == TP_INTERFACE:
-		#ifdef DEBUG
-		  print("	TP_INTERFACE")
-		#endif
+		if defined(DEBUG):
+			print("	call - TP_INTERFACE")
 		tp_obj meta
 		if tp_vget(tp, self, tp_string_atom(tp, "__new__"), &meta, 1):
-			#ifdef DEBUG
-			  print("	TP_INTERFACE has __new__")
-			#endif
+			if defined(DEBUG):
+				print("	call - TP_INTERFACE has __new__")
 			tpd_list_insert(tp, params.list.val, 0, self)
 			return tp_call(tp, meta, params)
-		#ifdef DEBUG
-		  print("	TP_INTERFACE missing __new__")
-		#endif
+		if defined(DEBUG):
+		  print("	call - TP_INTERFACE missing __new__")
 	elif self.type.magic == TP_OBJECT:
 		## TODO TEST AND FIX, shouldn't above be: `self.type.type_id==TP_OBJECT` ???
-		#ifdef DEBUG
-		  print("	TP_OBJECT __call__")
-		#endif
+		if defined(DEBUG):
+			print("	TP_OBJECT __call__")
 		TP_META_BEGIN(self,"__call__")
 		  return tp_call(tp, meta, params)
 		TP_META_END
 	if self.type.type_id == TP_FUNC:
-		#ifdef DEBUG
-		  print("	TP_FUNC")
-		#endif
+		if defined(DEBUG):
+			print("	call - TP_FUNC")
 		if self.type.magic == TP_FUNC_MASK_CPP:
 			#ifdef DEBUG
 			  print("	TP_FUNC_MASK_CPP")
@@ -780,9 +778,8 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 			tp_grey(tp, r)
 			return r
 		else:
-			#ifdef DEBUG
-			  print("	BYTECODE FUNCTION")
-			#endif
+			if defined(DEBUG):
+				print("	call - BYTECODE FUNCTION")
 			## compiled Python function
 			tp_obj dest = tp_None
 			tp_enter_frame(tp, self.func.info->globals,self.func.info->code, &dest)

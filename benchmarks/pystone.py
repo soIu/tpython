@@ -6,7 +6,6 @@ def main():
 
 
 def pystones(loops):
-	print('enter pystones...')  ## strange bug here, uncomment to crash with signal 11
 	return Proc0(loops)
 
 

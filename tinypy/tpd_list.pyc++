@@ -76,7 +76,11 @@ def tpd_list_append(TP,tpd_list *self, tp_obj v):
 			self->type = -1
 			for (int i=0; i<self->vec.size(); i++):
 				tpd_list_appendx(tp, self, tp_number(self->vec[i]))
+			## self->vec should be cleared now TODO
 		tpd_list_insert(tp,self,self->len,v)
+
+def tpd_param_list_append(TP,tpd_list *self, tp_obj v):
+	tpd_list_insert(tp,self,self->len,v)
 
 
 def tpd_list_extend(TP, tpd_list * self, tpd_list * v):
@@ -88,6 +92,9 @@ def tpd_list_extend(TP, tpd_list * self, tpd_list * v):
 			tpd_list_append(tp, self, v->items[i])
 
 def tpd_list_pop(TP,tpd_list *self, int n, const char *error) ->tp_obj:
+	##print("tpd_list_pop")
+	##print("n=", n)
+	##print("list len=", self->len)
 	tp_obj r = tpd_list_get(tp,self,n,error)
 	if n != self->len-1:
 		memmove(&self->items[n], &self->items[n+1], sizeof(tp_obj)*(self->len-(n+1)))

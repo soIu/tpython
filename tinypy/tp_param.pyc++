@@ -27,8 +27,10 @@ def tp_params(TP) -> tp_obj:
  */
 def tp_params_n(TP,int n, tp_obj argv[]) -> tp_obj:
 	tp_obj r = tp_params(tp)
+	if defined(DEBUG):
+		print("	calling tp_params_n, r.list.val.type = ", r.list.val->type)
 	for (int i=0; i<n; i++):
-		tpd_list_append(tp, r.list.val, argv[i])
+		tpd_param_list_append(tp, r.list.val, argv[i])
 	return r
 
 
@@ -68,12 +70,12 @@ def tp_params_n(TP,int n, tp_obj argv[]) -> tp_obj:
 
 def tp_params_v1(TP, tp_obj a) -> tp_obj:
 	tp_obj r = tp_params(tp)
-	tpd_list_append(tp, r.list.val, a)
+	tpd_param_list_append(tp, r.list.val, a)
 	return r
 
 def tp_params_v2(TP, tp_obj a, tp_obj b) -> tp_obj:
 	tp_obj r = tp_params(tp)
-	tpd_list_append(tp, r.list.val, a)
-	tpd_list_append(tp, r.list.val, b)
+	tpd_param_list_append(tp, r.list.val, a)
+	tpd_param_list_append(tp, r.list.val, b)
 	return r
 

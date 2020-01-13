@@ -5,12 +5,10 @@ def main():
 	run_test()
 
 def run_test():
-	print('enter run_test...')
-	a = fib( 24 )
+	a = fib( 32 )
 	print(a)
 
 def fib(n):
-	print('fib: ', n)  ## crashes with signal 11 without this print!
 	if n == 0:
 		return 0
 	elif n == 1:
