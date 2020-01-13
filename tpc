@@ -19,6 +19,7 @@ except ImportError:
 
 class DState:
 	def __init__(self,code,fname):
+		self.globals256     = [] ## max size is 256
 		self.const_numbers = []  ## max size is 256
 		self.header = []
 		if '--debug' in sys.argv:
@@ -28,13 +29,32 @@ class DState:
 		self.code = code
 		self.fname = fname
 		self.lines = self.code.split('\n')
-		self.stack,self.out,self._scopei,self.tstack,self._tagi,self.data = [],[('tag','EOF')],0,[],0,{}
-		self.error = False
+
+		self.stack   = []
+		self.out     = [('tag','EOF')]
+		self._scopei = 0
+		self.tstack  = []
+		self._tagi   = 0
+		self.data    = {}
+		self.error   = False
 
 	def begin(self,gbl=False):
-		if len(self.stack): self.stack.append((self.vars,self.r2n,self.n2r,self._tmpi,self.mreg,self.snum,self._globals,self.lineno,self.globals,self.rglobals,self.cregs,self.tmpc))
-		else: self.stack.append(None)
-		self.vars,self.r2n,self.n2r,self._tmpi,self.mreg,self.snum,self._globals,self.lineno,self.globals,self.rglobals,self.cregs,self.tmpc = [],{},{},0,0,str(self._scopei),gbl,-1,[],[],['regs'],0
+		if len(self.stack):
+			self.stack.append((self.vars,self.r2n,self.n2r,self._tmpi,self.mreg,self.snum,self._globals,self.lineno,self.globals,self.rglobals,self.cregs,self.tmpc))
+		else:
+			self.stack.append(None)
+		self.vars  = []
+		self.r2n   = {}
+		self.n2r   = {}
+		self._tmpi = 0
+		self.mreg  = 0
+		self.snum  = str(self._scopei)
+		self._globals = gbl
+		self.lineno   = -1
+		self.globals  = []
+		self.rglobals = []
+		self.cregs    = ['regs']
+		self.tmpc     = 0
 		self._scopei += 1
 		insert(self.cregs)
 
@@ -303,13 +323,17 @@ def unary(i,tb,r=None):
 	code(i,r,b)
 	if r != b: free_tmp(b)
 	return r
+
 def infix(i,tb,tc,r=None):
 	r = get_tmp(r)
-	b,c = do(tb,r),do(tc)
+	b = do(tb,r)
+	c = do(tc)
 	code(i,r,b,c)
-	if r != b: free_tmp(b)
+	if r != b:
+		free_tmp(b)
 	free_tmp(c)
 	return r
+
 def logic_infix(op, tb, tc, _r=None):
 	t = get_tag() 
 	r = do(tb, _r)
@@ -420,13 +444,27 @@ def do_symbol(t,r=None):
 
 def do_set_ctx(k,v):
 	if k.type == 'name':
-		if (D._globals and k.val not in D.vars) or (k.val in D.globals):
-			c = do_string(k)
-			b = do(v)
-			code(GSET,c,b)
-			free_tmp(c)
-			free_tmp(b)
+		if (D._globals and k.val not in D.vars) or (k.val in D.globals) or (k.val in D.globals256):
+			if k.val in D.globals256:
+				print("Global256: ", k.val, " index=", D.globals256.index(k.val), ' stack-level=', len(D.stack))
+				b = do(v)
+				code(156, D.globals256.index(k.val), b )
+				free_tmp(b)
+			elif len(D.stack)==1 and len(D.globals256)<256:
+				D.globals256.append(k.val)
+				print("New Global256: ", k.val, " index=", D.globals256.index(k.val), ' stack-level=', len(D.stack))
+				b = do(v)
+				code(156, D.globals256.index(k.val), b )
+				free_tmp(b)
+			else:
+				print("Global: ", k.val, ' stack-level=', len(D.stack))
+				c = do_string(k)
+				b = do(v)
+				code(GSET,c,b)
+				free_tmp(c)
+				free_tmp(b)
 			return
+		print("Local: ", k.val, ' stack-level=', len(D.stack))
 		a = do_local(k)
 		b = do(v)
 		code(MOVE,a,b)
@@ -468,7 +506,8 @@ def do_set_ctx(k,v):
 
 def manage_seq(i,a,items,sav=0):
 	l = max(sav,len(items))
-	n,tmps = 0,get_tmps(l)
+	n = 0
+	tmps = get_tmps(l)
 	for tt in items:
 		r = tmps[n]
 		b = do(tt,r)
@@ -548,6 +587,9 @@ def do_globals(t):
 	for t in t.items:
 		if t.val not in D.globals:
 			D.globals.append(t.val)
+		if len(t.val)>1 and t.val not in D.globals256 and len(D.globals256) < 256:
+			D.globals256.append(t.val)
+
 
 def do_del(tt):
 	for t in tt.items:
@@ -617,9 +659,12 @@ def do_name(t,r=None):
 	if t.val not in D.rglobals:
 		D.rglobals.append(t.val)
 	r = get_tmp(r)
-	c = do_string(t)
-	code(GGET,r,c)
-	free_tmp(c)
+	if t.val in D.globals256:
+		code(157, r, D.globals256.index(t.val) )
+	else:
+		c = do_string(t)
+		code(GGET,r,c)
+		free_tmp(c)
 	return r
 
 def do_local(t,r=None):
@@ -691,9 +736,16 @@ def do_class(t):
 
 	kls = do_classdecl()
 	un_tmp(kls)
-	ts = _do_string(name)
-	code(GSET,ts,kls)
-	free_tmp(ts) #REG
+
+	print("New Class: ", name, " stack-level=", len(D.stack))
+	if len(D.stack)==1 and len(D.globals256) < 256:
+		assert name not in D.globals256
+		D.globals256.append(name)
+		code(156, D.globals256.index(name), kls )
+	else:
+		ts = _do_string(name)
+		code(GSET,ts,kls)
+		free_tmp(ts) #REG
 	
 	free_tmp(do(Token(tok.pos,'call',None,[
 		Token(tok.pos,'name','setmeta'),
@@ -928,6 +980,7 @@ def do_dict(t,r=None):
 	return r
 
 def do_get(t,r=None):
+	## foo.bar or foo[bar]
 	items = t.items
 	return infix(GET,items[0],items[1],r)
 

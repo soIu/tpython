@@ -1,14 +1,4 @@
 
-def main():
-	LOOPS = 100000
-	ops = pystones( LOOPS )
-	print(ops)
-
-
-def pystones(loops):
-	return Proc0(loops)
-
-
 class Record:
 	def __init__(self, PtrComp = None, Discr = 0, EnumComp = 0, IntComp = 0, StringComp = 0):
 		self.PtrComp = PtrComp
@@ -18,13 +8,7 @@ class Record:
 		self.StringComp = StringComp
 
 	def copy(self):
-		return Record(
-					PtrComp=self.PtrComp,
-					Discr=self.Discr, 
-					EnumComp=self.EnumComp,
-					IntComp=self.IntComp, 
-					StringComp=self.StringComp
-				)
+		return Record(self.PtrComp, self.Discr, self.EnumComp, self.IntComp, self.StringComp)
 
 TRUE = 1
 FALSE = 0
@@ -41,6 +25,7 @@ Ident3 = 3
 Ident4 = 4
 Ident5 = 5
 
+Array1Glob = [0]*51
 
 def create_array2glob(n):
 	r = []
@@ -48,10 +33,128 @@ def create_array2glob(n):
 		r.append( list(Array1Glob) )
 	return r
 
-Array1Glob = [0]*51
 Array2Glob = create_array2glob(51)
 
 print(Array2Glob)
+
+
+def Func3(EnumParIn):
+	EnumLoc = EnumParIn
+	if EnumLoc == Ident3: return TRUE
+	return FALSE
+
+def Proc6(EnumParIn):
+	EnumParOut = EnumParIn
+	if not Func3(EnumParIn):
+		EnumParOut = Ident4
+	if EnumParIn == Ident1:
+		EnumParOut = Ident1
+	elif EnumParIn == Ident2:
+		if IntGlob > 100:
+			EnumParOut = Ident1
+		else:
+			EnumParOut = Ident4
+	elif EnumParIn == Ident3:
+		EnumParOut = Ident2
+	elif EnumParIn == Ident4:
+		pass
+	elif EnumParIn == Ident5:
+		EnumParOut = Ident3
+	return EnumParOut
+
+def Proc7(IntParI1, IntParI2):
+	IntLoc = IntParI1 + 2
+	IntParOut = IntParI2 + IntLoc
+	return IntParOut
+
+def Proc2(IntParIO):
+	IntLoc = IntParIO + 10
+	while True:
+		if Char1Glob == 'A':
+			IntLoc = IntLoc - 1
+			IntParIO = IntLoc - IntGlob
+			EnumLoc = Ident1
+		if EnumLoc == Ident1:
+			break
+	return IntParIO
+
+def Proc3(PtrParOut):
+	global IntGlob
+	if PtrGlb is not None:
+		PtrParOut = PtrGlb.PtrComp
+	else:
+		IntGlob = 100
+	PtrGlb.IntComp = Proc7(10, IntGlob)
+	return PtrParOut
+
+def Proc4():
+	global Char2Glob
+	BoolLoc = Char1Glob == 'A'
+	BoolLoc = BoolLoc or BoolGlob
+	Char2Glob = 'B'
+
+def Proc5():
+	global Char1Glob
+	global BoolGlob
+	Char1Glob = 'A'
+	BoolGlob = FALSE
+
+
+def Proc8(Array1Par, Array2Par, IntParI1, IntParI2):
+	global IntGlob
+
+	IntLoc = IntParI1 + 5
+	Array1Par[IntLoc] = IntParI2
+	Array1Par[IntLoc+1] = Array1Par[IntLoc]
+	Array1Par[IntLoc+30] = IntLoc
+	for IntIndex in range(IntLoc, IntLoc+2):
+		Array2Par[IntLoc][IntIndex] = IntLoc
+	Array2Par[IntLoc][IntLoc-1] = Array2Par[IntLoc][IntLoc-1] + 1
+	Array2Par[IntLoc+20][IntLoc] = Array1Par[IntLoc]
+	IntGlob = 5
+
+def Func1(CharPar1, CharPar2):
+	CharLoc1 = CharPar1
+	CharLoc2 = CharLoc1
+	if CharLoc2 != CharPar2:
+		return Ident1
+	else:
+		return Ident2
+
+def Func2(StrParI1, StrParI2):
+	IntLoc = 1
+	while IntLoc <= 1:
+		if Func1(StrParI1[IntLoc], StrParI2[IntLoc+1]) == Ident1:
+			CharLoc = 'A'
+			IntLoc = IntLoc + 1
+	if CharLoc >= 'W' and CharLoc <= 'Z':
+		IntLoc = 7
+	if CharLoc == 'X':
+		return TRUE
+	else:
+		if StrParI1 > StrParI2:
+			IntLoc = IntLoc + 7
+			return TRUE
+		else:
+			return FALSE
+
+def Proc1(PtrParIn):
+	NextRecord = PtrGlb.copy()
+	PtrParIn.PtrComp = NextRecord
+	PtrParIn.IntComp = 5
+	NextRecord.IntComp = PtrParIn.IntComp
+	NextRecord.PtrComp = PtrParIn.PtrComp
+	NextRecord.PtrComp = Proc3(NextRecord.PtrComp)
+	if NextRecord.Discr == Ident1:
+		NextRecord.IntComp = 6
+		NextRecord.EnumComp = Proc6(PtrParIn.EnumComp)
+		NextRecord.PtrComp = PtrGlb.PtrComp
+		NextRecord.IntComp = Proc7(NextRecord.IntComp, 10)
+	else:
+		PtrParIn = NextRecord.copy()
+	NextRecord.PtrComp = None
+	return PtrParIn
+
 
 def Proc0(loops):
 	global IntGlob
@@ -104,124 +207,14 @@ def Proc0(loops):
 		ops += 1
 	return ops
 
-def Proc1(PtrParIn):
-	NextRecord = PtrGlb.copy()
-	PtrParIn.PtrComp = NextRecord
-	PtrParIn.IntComp = 5
-	NextRecord.IntComp = PtrParIn.IntComp
-	NextRecord.PtrComp = PtrParIn.PtrComp
-	NextRecord.PtrComp = Proc3(NextRecord.PtrComp)
-	if NextRecord.Discr == Ident1:
-		NextRecord.IntComp = 6
-		NextRecord.EnumComp = Proc6(PtrParIn.EnumComp)
-		NextRecord.PtrComp = PtrGlb.PtrComp
-		NextRecord.IntComp = Proc7(NextRecord.IntComp, 10)
-	else:
-		PtrParIn = NextRecord.copy()
-	NextRecord.PtrComp = None
-	return PtrParIn
 
-def Proc2(IntParIO):
-	IntLoc = IntParIO + 10
-	while True:
-		if Char1Glob == 'A':
-			IntLoc = IntLoc - 1
-			IntParIO = IntLoc - IntGlob
-			EnumLoc = Ident1
-		if EnumLoc == Ident1:
-			break
-	return IntParIO
+def pystones(loops):
+	return Proc0(loops)
 
-def Proc3(PtrParOut):
-	global IntGlob
 
-	if PtrGlb is not None:
-		PtrParOut = PtrGlb.PtrComp
-	else:
-		IntGlob = 100
-	PtrGlb.IntComp = Proc7(10, IntGlob)
-	return PtrParOut
-
-def Proc4():
-	global Char2Glob
-
-	BoolLoc = Char1Glob == 'A'
-	BoolLoc = BoolLoc or BoolGlob
-	Char2Glob = 'B'
-
-def Proc5():
-	global Char1Glob
-	global BoolGlob
-
-	Char1Glob = 'A'
-	BoolGlob = FALSE
-
-def Proc6(EnumParIn):
-	EnumParOut = EnumParIn
-	if not Func3(EnumParIn):
-		EnumParOut = Ident4
-	if EnumParIn == Ident1:
-		EnumParOut = Ident1
-	elif EnumParIn == Ident2:
-		if IntGlob > 100:
-			EnumParOut = Ident1
-		else:
-			EnumParOut = Ident4
-	elif EnumParIn == Ident3:
-		EnumParOut = Ident2
-	elif EnumParIn == Ident4:
-		pass
-	elif EnumParIn == Ident5:
-		EnumParOut = Ident3
-	return EnumParOut
-
-def Proc7(IntParI1, IntParI2):
-	IntLoc = IntParI1 + 2
-	IntParOut = IntParI2 + IntLoc
-	return IntParOut
-
-def Proc8(Array1Par, Array2Par, IntParI1, IntParI2):
-	global IntGlob
-
-	IntLoc = IntParI1 + 5
-	Array1Par[IntLoc] = IntParI2
-	Array1Par[IntLoc+1] = Array1Par[IntLoc]
-	Array1Par[IntLoc+30] = IntLoc
-	for IntIndex in range(IntLoc, IntLoc+2):
-		Array2Par[IntLoc][IntIndex] = IntLoc
-	Array2Par[IntLoc][IntLoc-1] = Array2Par[IntLoc][IntLoc-1] + 1
-	Array2Par[IntLoc+20][IntLoc] = Array1Par[IntLoc]
-	IntGlob = 5
-
-def Func1(CharPar1, CharPar2):
-	CharLoc1 = CharPar1
-	CharLoc2 = CharLoc1
-	if CharLoc2 != CharPar2:
-		return Ident1
-	else:
-		return Ident2
-
-def Func2(StrParI1, StrParI2):
-	IntLoc = 1
-	while IntLoc <= 1:
-		if Func1(StrParI1[IntLoc], StrParI2[IntLoc+1]) == Ident1:
-			CharLoc = 'A'
-			IntLoc = IntLoc + 1
-	if CharLoc >= 'W' and CharLoc <= 'Z':
-		IntLoc = 7
-	if CharLoc == 'X':
-		return TRUE
-	else:
-		if StrParI1 > StrParI2:
-			IntLoc = IntLoc + 7
-			return TRUE
-		else:
-			return FALSE
-
-def Func3(EnumParIn):
-	EnumLoc = EnumParIn
-	if EnumLoc == Ident3: return TRUE
-	return FALSE
-
+def main():
+	LOOPS = 100000
+	ops = pystones( LOOPS )
+	print(ops)
 
 main()
