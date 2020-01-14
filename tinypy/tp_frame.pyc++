@@ -10,10 +10,11 @@ def tp_frame_nt(TP, tp_obj globals, tp_obj code, tp_obj * ret_dest) -> tpd_frame
 	f.regs[1] = f.code
 	f.regs += TP_REGS_EXTRA
 	f.ret_dest = ret_dest
-	f.lineno = 0
-	f.line = tp_string_atom(tp, "")
-	f.name = tp_string_atom(tp, "?")
-	f.fname = tp_string_atom(tp, "?")
 	f.cregs = 0
+	if defined(DEBUG):
+		f.lineno = 0
+		f.line = tp_string_atom(tp, "")
+		f.name = tp_string_atom(tp, "?")
+		f.fname = tp_string_atom(tp, "?")
 	return f
 

@@ -81,12 +81,13 @@ def _tp_raise(TP, tp_obj e):
 def tp_print_stack(TP):
 	int i
 	tp->echo("\n", -1)
-	for (i=0; i<=tp->cur; i++):
-		if (!tp->frames[i].lineno) { continue; }
-		tp->echo("File \"", -1); tp_echo(tp,tp->frames[i].fname); tp->echo("\", ", -1)
-		tp_echo(tp, tp_printf(tp, "line %d, in ",tp->frames[i].lineno))
-		tp_echo(tp,tp->frames[i].name); tp->echo("\n ", -1)
-		tp_echo(tp,tp->frames[i].line); tp->echo("\n", -1)
+	if defined(DEBUG):
+		for (i=0; i<=tp->cur; i++):
+			if (!tp->frames[i].lineno) { continue; }
+			tp->echo("File \"", -1); tp_echo(tp,tp->frames[i].fname); tp->echo("\", ", -1)
+			tp_echo(tp, tp_printf(tp, "line %d, in ",tp->frames[i].lineno))
+			tp_echo(tp,tp->frames[i].name); tp->echo("\n ", -1)
+			tp_echo(tp,tp->frames[i].line); tp->echo("\n", -1)
 	tp->echo("\nException:\n", -1); tp_echo(tp,tp->ex); tp->echo("\n", -1)
 
 
@@ -354,10 +355,9 @@ def tp_step(TP) ->int:
 				case TP_IEOF: tp->last_result = RA; tp_return(tp,tp_None); SR(0); break;
 				case TP_IREGS: f->cregs = VA; break;
 				case TP_INAME:
-					f->name = RA
-					#ifdef DEBUG
-					  std::cout << "  RA: " << tp_as_string(tp, RA) << std::endl;
-					#endif
+					if defined(DEBUG):
+						f->name = RA
+						std::cout << "set function name =" << tp_as_string(tp, RA) << std::endl;
 					break
 				case TP_IINTEGER:
 					RA = tp_integer( VB );
@@ -565,7 +565,10 @@ def tp_step(TP) ->int:
 				case TP_IBITNOT:  RA = tp_bitwise_not(tp,RB); break;
 				case TP_IBITXOR:  RA = tp_bitwise_xor(tp,RB,RC); break;
 				case TP_IPASS: break;
-				case TP_IFILE: f->fname = RA; break;
+				case TP_IFILE:
+					if defined(DEBUG):
+						f->fname = RA
+					break
 				case TP_IDEBUG:
 					print("BYTECODE DEBUG:")
 					print("VA: ", VA)
@@ -574,10 +577,11 @@ def tp_step(TP) ->int:
 				case TP_ILINE:
 					int a = (*(cur+1)).string.val - tp_string_getptr(f->code)
 					if(tp_string_getptr(f->code)[a] == ';') throw "TP_ILINE if(tp_string_getptr(f->code)[a] == ';')";
-					f->line = tp_string_view(tp, f->code, a, a+VA*4-1)
 					printf("line: %s \n", (*(cur+1)).string.val )
 					cur += VA
-					f->lineno = UVBC
+					if defined(DEBUG):
+						f->line = tp_string_view(tp, f->code, a, a+VA*4-1)
+						f->lineno = UVBC
 					break;
 				default:
 					printf("INVALID BYTE CODE: %i \n", e.i);

@@ -678,6 +678,11 @@ def do_local(t,r=None):
 def do_def(tok,kls=None):
 	items = tok.items
 
+	func_name = items[0].val
+	if len(D.stack)==1 and len(D.globals256)<256 and func_name not in D.globals256:
+		## allows recursive functions ##
+		D.globals256.append(func_name)
+
 	t = get_tag()
 	rf = fnc(t,'end')
 

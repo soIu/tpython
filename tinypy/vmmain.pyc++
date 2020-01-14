@@ -195,7 +195,8 @@ def main(int argc,  char *argv[]) -> int:
 	  std::cout << "starting tpython interpreter..." << std::endl;
 	#endif
 	std::cout << "sizeof tp_obj = " << sizeof(tp_obj) << std::endl;
-	std::cout << "sizeof tp_obj = " << sizeof(TPTypeInfo) << std::endl;
+	std::cout << "sizeof TPTypeInfo = " << sizeof(TPTypeInfo) << std::endl;
+	std::cout << "sizeof tpd_frame = " << sizeof(tpd_frame) << std::endl;
 	#ifndef __EMSCRIPTEN_major__
 	  signal(SIGSEGV, crash_handler); // memory segfault
 	  signal(SIGABRT, crash_handler); // some old places in tinypy code had used `abort()`
