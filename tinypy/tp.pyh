@@ -56,7 +56,7 @@ import <algorithm>
 import <map>
 import <unordered_map>
 import <string>
-import <string_view>
+##import <string_view>  ## missing in older clangs
 import <iostream>
 import <sstream>
 import <cstring>
@@ -126,7 +126,7 @@ enum TPTypeID:
 	TP_STRING = 36,
 	## this is not a type, any type >= TP_HAS_META can have a metatype
 	TP_HAS_META = 99,
-	TP_DICT = 102,
+	TP_DICT = 100,
 	TP_OBJECT = 103,
 	TP_INTERFACE = 104,
 
@@ -137,7 +137,7 @@ enum TPTypeID:
 
 struct TPTypeInfo:
 	enum TPTypeID type_id
-	char magic
+	uint8_t magic
 
 
 enum TPFuncMagic:
@@ -214,7 +214,10 @@ class tp_obj:
 	struct { TPTypeInfo type; int * gci; } gc;
 	struct { TPTypeInfo type; tp_num val; } number;
 	struct { TPTypeInfo type; int val; } integer;
-	struct { TPTypeInfo type; struct tpd_func *info; void *cfnc;} func;
+	##struct { TPTypeInfo type; struct tpd_func *info; void *cfnc;} func;
+	struct { TPTypeInfo type; struct tpd_func *info; } func;
+	## tpd_data is used to store pointers to external C/C++ objects with a custom free function
+	## called by the gc, used by module_sdl.h, tpd_data can be deprecated
 	struct { TPTypeInfo type; struct tpd_data *info; void *val; } data;
 	struct { TPTypeInfo type; struct tpd_obj *info; } obj;  // what type of object is this?
 	struct { TPTypeInfo type; struct tpd_list *val; } list;
@@ -315,26 +318,29 @@ struct tpd_list:
 	tp_obj *items
 
 struct tpd_item:
-	int used
+	int used :4
 	int hash
 	tp_obj key
 	tp_obj val
 
+## note: struct order is important here, meta and items must be right after gci
+## gci can be a char instead of an int, mask seems not required because its just len-1
 struct tpd_dict:
-	int gci
+	uint8_t gci
 	tp_obj meta
 	tpd_item *items
-	int len
-	int alloc
-	int cur
-	int mask
-	int used
+	int len:24
+	int alloc:24
+	int cur:24
+	int mask:24
+	int used:1
 
 struct tpd_func:
 	int gci
 	tp_obj instance
 	tp_obj globals
 	tp_obj code
+	void *cfunc
 	std::function<tp_obj(tp_vm*)> cppfunc
 
 
@@ -769,7 +775,13 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 				ss << self.number.val; 
 			break;
 		case TP_NONE: ss << "None"; break;
-		case TP_FUNC: ss << "function<" << self.func.cfnc << ">"; break;
+		case TP_FUNC:
+			if self.type.magic == TP_FUNC_MASK_CPP:
+				##ss << "function<" << self.func.info->cppfunc << ">"
+				ss << "function<c++>"
+			else:
+				ss << "function<" << self.func.info->cfunc << ">"
+			break
 		case TP_LIST:
 			ss << "["
 			for (int i=0; i<self.list.val->len; i++):

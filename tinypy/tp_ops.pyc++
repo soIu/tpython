@@ -714,25 +714,19 @@ def tp_rsh(TP,tp_obj _a,tp_obj _b) ->tp_obj:
 	throw "TypeError: operand type `bitwise right shift` requires numbers"
 
 
-def tp_sub(TP,tp_obj _a,tp_obj _b) ->tp_obj:
-	if _a.type.type_id == TP_NUMBER && _a.type.type_id == _b.type.type_id:
-		tp_num a = _a.number.val
-		tp_num b = _b.number.val
-		return tp_number( ((long)a) - ((long)b) )
+def tp_sub(TP,tp_obj a, tp_obj b) ->tp_obj:
+	if a.type.type_id == TP_NUMBER && a.type.type_id == b.type.type_id:
+		return tp_number( a.number.val - b.number.val )
 	throw "TypeError: operand type `-` requires numbers"
 
-def tp_div(TP,tp_obj _a,tp_obj _b) ->tp_obj:
-	if _a.type.type_id == TP_NUMBER && _a.type.type_id == _b.type.type_id:
-		tp_num a = _a.number.val
-		tp_num b = _b.number.val
-		return tp_number( ((long)a) / ((long)b) )
+def tp_div(TP,tp_obj a, tp_obj b) ->tp_obj:
+	if a.type.type_id == TP_NUMBER && a.type.type_id == b.type.type_id:
+		return tp_number( a.number.val / b.number.val )
 	throw "TypeError: operand type `/` requires numbers"
 
-def tp_pow(TP,tp_obj _a,tp_obj _b) ->tp_obj:
-	if _a.type.type_id == TP_NUMBER && _a.type.type_id == _b.type.type_id:
-		tp_num a = _a.number.val
-		tp_num b = _b.number.val
-		return tp_number( pow(a,b) )
+def tp_pow(TP,tp_obj a,tp_obj b) ->tp_obj:
+	if a.type.type_id == TP_NUMBER && a.type.type_id == b.type.type_id:
+		return tp_number( pow(a.number.val, b.number.val) )
 	throw "TypeError: operand type `**` requires numbers"
 
 
@@ -806,7 +800,8 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 			if self.type.magic & TP_FUNC_MASK_METHOD:
 				tpd_list_insert(tp, tp->params.list.val, 0, self.func.info->instance)
 			tp_obj (* cfunc)(tp_vm *)
-			cfunc = (tp_obj (*)(tp_vm*))self.func.cfnc
+			##cfunc = (tp_obj (*)(tp_vm*))self.func.cfnc
+			cfunc = (tp_obj (*)(tp_vm*))self.func.info->cfunc
 			tp_obj r = cfunc(tp)
 			tp_grey(tp, r)
 			return r

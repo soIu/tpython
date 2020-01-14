@@ -31,7 +31,7 @@ def tp_create_vm(void) -> tp_vm*:
 	tp_set(tp, tp->root, tp_None, tp->_params)
 	tp->builtins = tp_import(tp, tp_string_atom(tp, "__builtins__"), tp_None, tp_string_atom(tp, "<builtins>"))
 	tp_set(tp, tp->root, tp_None, tp->_dict_meta)
-	//tp_set(tp, tp->root, tp_None, tp->_string_meta);
+	##tp_set(tp, tp->root, tp_None, tp->_string_meta);
 	tp->regs = tp->_regs.list.val->items
 	tp->last_result = tp_None
 	tp_full(tp)
@@ -150,7 +150,7 @@ def TP_xSTR(TP, tp_obj obj) ->char *:
 static tp_obj __globals256__[256] = {};
 static tp_obj __global_objects__[256] = {};
 static double __const_numbers__[256] = {};
-static std::unordered_map<std::string_view, tp_obj> __string_cache__ = {};
+##static std::unordered_map<std::string_view, tp_obj> __string_cache__ = {};
 
 def tp_step(TP) ->int:
 	tpd_frame *f = &tp->frames[tp->cur]
@@ -465,7 +465,9 @@ def tp_step(TP) ->int:
 					break
 				case TP_ISUB: RA = tp_sub(tp,RB,RC); break;
 				case TP_IMUL: RA = tp_mul(tp,RB,RC); break;
-				case TP_IDIV: RA = tp_div(tp,RB,RC); break;
+				case TP_IDIV:
+					RA = tp_div(tp,RB,RC)
+					break
 				case TP_ICMP: RA = tp_number(tp_cmp(tp,RB,RC)); break;
 				case TP_IMGET: RA = tp_mget(tp,RB,RC); GA; break;
 				case TP_IGET:

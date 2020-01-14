@@ -20,7 +20,7 @@ Mario = [				┃
 ]						┃
 
 def main():
-	sdl.initialize(); s = sdl.window( (720, 240) )
+	sdl.initialize(); sdl.window( (720, 240) )
 	i = 0; X = 0; mx = 0; my = 0; jumping = 0
 	direction = 1; crouch = False
 	while True:

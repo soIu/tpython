@@ -10,7 +10,8 @@ def tp_func_nt(TP, int t, void *v, tp_obj c, tp_obj s, tp_obj g) ->tp_obj:
 	info->globals = g
 	r.type.magic = t
 	r.func.info = info
-	r.func.cfnc = v
+	##r.func.cfnc = v
+	info->cfunc = v
 	return r
 
 
@@ -22,7 +23,8 @@ def tp_bind(TP, tp_obj function, tp_obj self) ->tp_obj:
 	return tp_func_t(
 	  tp,
 	  function.type.magic | TP_FUNC_MASK_METHOD,
-	  function.func.cfnc,
+	  ##function.func.cfnc,
+	  function.func.info->cfunc,
 	  function.func.info->code,
 	  self,
 	  function.func.info->globals);

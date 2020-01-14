@@ -117,7 +117,8 @@ def tpy_dir(TP) ->tp_obj:
 		## this fallback can work because of funny union rules,
 		## for example this works on a string, and probably other types
 		## tested with gcc and clang.
-		print("tpy_dir: type", ob.type.type_id)
+		if defined(DEBUG):
+			print("tpy_dir: type", ob.type.type_id)
 		for (int i=0; i < ob.obj.info->meta.dict.val->alloc; i++):
 			if ob.obj.info->meta.dict.val->items[i].used != 1:
 				continue
@@ -266,9 +267,7 @@ def tpy_round(TP) ->tp_obj:
 def tpy_setmeta(TP) ->tp_obj:
 	tp_obj self = TP_OBJ()
 	if self.type.type_id < TP_HAS_META:
-		tp_raise(
-		  tp_None,
-		  tp_string_atom(tp, "tp_check_type TypeError: type does not support meta."))
+		throw "tp_check_type TypeError: type does not support meta."
 	tp_obj meta = TP_TYPE(TP_INTERFACE)
 	self.obj.info->meta = meta
 	return tp_None
@@ -277,9 +276,7 @@ def tpy_setmeta(TP) ->tp_obj:
 def tpy_getmeta(TP) ->tp_obj:
 	tp_obj self = TP_OBJ()
 	if self.type.type_id < TP_HAS_META:
-		tp_raise(
-		  tp_None,
-		  tp_string_atom(tp, "tp_check_type TypeError: type does not support meta."))
+		throw "tp_check_type TypeError: type does not support meta."
 	return self.obj.info->meta
 
 ## Function: tp_object
