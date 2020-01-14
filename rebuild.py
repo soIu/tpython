@@ -316,7 +316,7 @@ def rebuild(stage=None):
 
 	else:  ## linux
 		if '--profile' in sys.argv:
-			opts += ' -O0 -g -pg '
+			opts += ' -O1 -g -pg '
 			exeopts += ' -O0 -g -pg '
 
 		else:
@@ -445,11 +445,12 @@ def rebuild(stage=None):
 		open('Makefile', 'wb').write(makefile_gen_pgo)
 		subprocess.check_call(['make', 'clean'])
 		subprocess.check_call(['make'])
-		subprocess.check_call(['./tpython++'])
+		subprocess.check_call(['time', './tpython++'])
 
 		open('Makefile', 'wb').write(makefile_use_pgo)
 		subprocess.check_call(['make', 'clean'])
 		subprocess.check_call(['make'])
+		subprocess.check_call(['time', './tpython++'])
 
 	else:
 		makefile = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe).replace('<EXEOPTS>', exeopts).replace('<OPTIONS>', opts).replace('<MODULES>', mods).replace('<SDL_INCLUDE>', sdl_inc)

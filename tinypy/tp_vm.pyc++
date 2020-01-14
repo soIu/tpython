@@ -82,12 +82,13 @@ def tp_print_stack(TP):
 	int i
 	tp->echo("\n", -1)
 	if defined(DEBUG):
-		for (i=0; i<=tp->cur; i++):
-			if (!tp->frames[i].lineno) { continue; }
-			tp->echo("File \"", -1); tp_echo(tp,tp->frames[i].fname); tp->echo("\", ", -1)
-			tp_echo(tp, tp_printf(tp, "line %d, in ",tp->frames[i].lineno))
-			tp_echo(tp,tp->frames[i].name); tp->echo("\n ", -1)
-			tp_echo(tp,tp->frames[i].line); tp->echo("\n", -1)
+		for (i=0; i<=tp->cur; i++) {
+		if (!tp->frames[i].lineno) { continue; }
+		tp->echo("File \"", -1); tp_echo(tp,tp->frames[i].fname); tp->echo("\", ", -1)
+		tp_echo(tp, tp_printf(tp, "line %d, in ",tp->frames[i].lineno))
+		tp_echo(tp,tp->frames[i].name); tp->echo("\n ", -1)
+		tp_echo(tp,tp->frames[i].line); tp->echo("\n", -1)
+		}
 	tp->echo("\nException:\n", -1); tp_echo(tp,tp->ex); tp->echo("\n", -1)
 
 
@@ -533,17 +534,29 @@ def tp_step(TP) ->int:
 				case TP_ILEN: RA = tp_len(tp,RB); break;
 				case TP_IJUMP: cur += SVBC; continue; break;
 				case TP_ISETJMP: f->jmp = SVBC?cur+SVBC:0; break;
-				case TP_ICALL:
-					#ifdef TP_SANDBOX
-					  tp_bounds(tp,cur,1);
-					#endif
+				case 200:
+					## fast global function call
 					f->cur = cur + 1
-					RA = tp_call(tp,RB,RC); GA;
-					return 0; break;
+					tp_obj fast_params = tp_list_nt(tp)
+					##fast_params.append(RC)
+					tpd_param_list_append(tp, fast_params.list.val, RC)
+					##RA = tp_call(tp, __globals256__[ VB ], fast_params)
+					tp_obj dest = tp_None
+					tp_enter_frame(tp, __globals256__[ VB ].func.info->globals, __globals256__[ VB ].func.info->code, &dest)
+					tp->frames[tp->cur].regs[0] = fast_params
+					tp_run_frame(tp)
+					RA = dest
+					tpd_list_free(tp, fast_params.list.val)
+					GA
+					return 0
+					break
+				case TP_ICALL:
+					f->cur = cur + 1
+					RA = tp_call(tp,RB,RC)
+					GA
+					return 0
+					break
 				case TP_IDEF:
-					#ifdef TP_SANDBOX
-					  tp_bounds(tp,cur,SVBC);
-					#endif
 					int a = (*(cur+1)).string.val - tp_string_getptr(f->code)
 					if(tp_string_getptr(f->code)[a] == ';') throw "TP_IDEF if(tp_string_getptr(f->code)[a] == ';')";
 					RA = tp_def(

@@ -19,6 +19,7 @@ except ImportError:
 
 class DState:
 	def __init__(self,code,fname):
+		self.classes = []
 		self.globals256     = [] ## max size is 256
 		self.const_numbers = []  ## max size is 256
 		self.header = []
@@ -29,7 +30,6 @@ class DState:
 		self.code = code
 		self.fname = fname
 		self.lines = self.code.split('\n')
-
 		self.stack   = []
 		self.out     = [('tag','EOF')]
 		self._scopei = 0
@@ -231,32 +231,41 @@ def get_tmps(t):
 		D._tmpi += 1
 	D.tmpc += t #REG
 	return regs
+
 def alloc(t):
 	s = ''.join(["01"[r in D.r2n] for r in range(0,min(256,D.mreg+t))])
 	return s.index('0'*t)
+
 def is_tmp(r):
 	if r is None: return False
 	return (D.r2n[r][0] == '$')
+
 def un_tmp(r):
 	n = D.r2n[r]
 	free_reg(r)
 	set_reg(r,'*'+n)
+
 def free_tmp(r):
 	if is_tmp(r): free_reg(r)
 	return r
+
 def free_tmps(r):
 	for k in r: free_tmp(k)
+
 def get_reg(n):
 	if n not in D.n2r:
 		set_reg(alloc(1),n)
 	return D.n2r[n]
+
 #def get_clean_reg(n):
 	#if n in D.n2r: raise
 	#set_reg(D.mreg,n)
 	#return D.n2r[n]
+
 def set_reg(r,n):
 	D.n2r[n] = r; D.r2n[r] = n
 	D.mreg = max(D.mreg,r+1)
+
 def free_reg(r):
 	if is_tmp(r): D.tmpc -= 1
 	n = D.r2n[r]; del D.r2n[r]; del D.n2r[n]
@@ -624,16 +633,31 @@ def do_call(t,r=None):
 
 	r = get_tmp(r)
 	items = t.items
-	fnc = do(items[0])
 	a,b,c,d = p_filter(t.items[1:])
+
+	if t.items[0].type == 'name' and t.items[0].val in D.globals256 and t.items[0].val not in D.classes:
+		## note: b is an empty list, or can have items from a call like: `foo(bar=xxx)`  TODO support fast calls for that style
+		if not b and c is None and d is None:
+			## global fast call ##
+			if len(a)==1:
+				t1 = do(a[0])
+				code(200, r, D.globals256.index(t.items[0].val), t1 )
+				free_tmp(t1)
+				return r
+
+	fnc = do(items[0])
+
+
 	e = None
 	if len(b) != 0 or d != None:
 		e = do(Token(t.pos,'dict',None,[])); un_tmp(e);
 		for p in b:
 			p.items[0].type = 'string'
-			t1,t2 = do(p.items[0]),do(p.items[1])
+			t1 = do(p.items[0])
+			t2 = do(p.items[1])
 			code(SET,e,t1,t2)
-			free_tmp(t1); free_tmp(t2) #REG
+			free_tmp(t1)
+			free_tmp(t2)
 		if d: free_tmp(do(
 			Token(t.pos,'call',None,
 				[ Token(t.pos,'name', '__merge__'),
@@ -642,7 +666,8 @@ def do_call(t,r=None):
 				]))) #REG
 	manage_seq(PARAMS,r,a)
 	if c != None:
-		t1,t2 = _do_string('*'),do(c.items[0])
+		t1 = _do_string('*')
+		t2 = do(c.items[0])
 		code(SET,r,t1,t2)
 		free_tmp(t1); free_tmp(t2) #REG
 	if e != None:
@@ -738,6 +763,9 @@ def do_class(t):
 	else:
 		name = items[0].items[0].val
 		parent = items[0].items[1]
+
+	if name not in D.classes:
+		D.classes.append(name)
 
 	kls = do_classdecl()
 	un_tmp(kls)

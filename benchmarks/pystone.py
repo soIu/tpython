@@ -35,9 +35,6 @@ def create_array2glob(n):
 
 Array2Glob = create_array2glob(51)
 
-print(Array2Glob)
-
-
 def Func3(EnumParIn):
 	EnumLoc = EnumParIn
 	if EnumLoc == Ident3: return TRUE
