@@ -61,9 +61,8 @@ import <iostream>
 import <sstream>
 import <cstring>
 import <vector>
-
-##import <setjmp.h>
 import <sys/stat.h>
+
 if not defined(__USE_ISOC99):
 	define(__USE_ISOC99)
 
@@ -124,9 +123,9 @@ enum TPTypeID:
 	TP_FUNC = 33,
 	TP_DATA = 34,
 	TP_LIST = 35,
+	TP_STRING = 36,
 	## this is not a type, any type >= TP_HAS_META can have a metatype
 	TP_HAS_META = 99,
-	TP_STRING = 100,
 	TP_DICT = 102,
 	TP_OBJECT = 103,
 	TP_INTERFACE = 104,
@@ -304,11 +303,9 @@ struct tpd_obj:
 	tp_obj meta
 
 struct tpd_string:
-	int gci
-	tp_obj meta
-	tp_obj base
-	char *s
+	int gci : 1
 	int len
+	char *s
 
 
 struct tpd_list:
@@ -384,21 +381,17 @@ struct tpd_frame:
  * cur - The index of the currently executing call frame.
  * frames[n].globals - A dictionary of global sybmols in callframe n.
  */
-static tp_obj __string_meta__;
 
 struct tp_vm:
 	tp_obj builtins
 	tp_obj modules
-	tp_obj _list_meta
 	tp_obj _dict_meta
-	//tp_obj _string_meta
 	tpd_frame frames[TP_FRAMES]
 	tp_obj _params
 	tp_obj params
 	tp_obj _regs
 	tp_obj *regs
 	tp_obj root
-	##jmp_buf buf
 	int jmp
 	tp_obj ex
 	tp_obj last_result
@@ -745,9 +738,9 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 				  std::cout << "STRING VIEW" << std::endl;
 				#endif
 				if quote_strings:
-					ss << "\"" << tp_as_string(tp, self.string.info->base) << "\""
+					ss << "\"" << std::string(self.string.info->s, self.string.info->len) << "\""
 				else:
-					ss << tp_as_string(tp, self.string.info->base)
+					ss << std::string(self.string.info->s, self.string.info->len)
 			else:
 				if self.type.magic == TP_STRING_ATOM:
 					//std::cout << "STRING ATOM" << std::endl;

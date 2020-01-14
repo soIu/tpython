@@ -13,57 +13,15 @@ def tp_string_t(TP, int n) ->tp_obj:
 	r.string.info = (tpd_string*)tp_malloc(tp, sizeof(tpd_string))
 	r.string.info->len = n
 	r.string.info->s = (char*)tp_malloc(tp, n)
-	r.obj.info->meta = __string_meta__
 	return tp_track(tp, r)
 
-/* SLOW!!!
-static std::map<std::string, tp_obj> __string_atoms__ = {};
 
-def tp_string_atom(TP, const char * v) ->tp_obj:
-	std::string s = std::string(v)
-	if __string_atoms__.count(s) != 0:
-		#ifdef DEBUG
-		  std::cout << "string atom already in cache: " << v << std::endl;
-		#endif
-		return __string_atoms__[s]
-	else:
-		#ifdef DEBUG
-		  std::cout << "caching new string atom: " << v << std::endl;
-		#endif
-		static tpd_string info = {0};
-		tp_obj r
-		r.type.type_id = TP_STRING
-		r.type.magic = TP_STRING_ATOM
-		r.string.info = &info
-		r.string.info->meta = __string_meta__
-		r.string.val = v
-		__string_atoms__[s] = r
-		return r
-
-def tp_string_atom_from_stdstring(TP, std::string s) ->tp_obj:
-	if __string_atoms__.count(s) != 0:
-		#ifdef DEBUG
-		  std::cout << "string atom already in cache: " << s << std::endl;
-		#endif
-		return __string_atoms__[s]
-	else:
-		#ifdef DEBUG
-		  std::cout << "caching new string atom: " << s << std::endl;
-		#endif
-		//static tpd_string info = {0}
-		tp_obj r = tp_string_atom(tp, s.c_str())
-		return r
-
-*/
-
-## FASTER!!
 def tp_string_atom(TP, const char * v) ->tp_obj:
 	static tpd_string info = {0};
 	tp_obj r
 	r.type.type_id = TP_STRING
 	r.type.magic = TP_STRING_ATOM
 	r.string.info = &info
-	r.string.info->meta = __string_meta__
 	r.string.val = v
 	return r
 
@@ -80,10 +38,9 @@ def tp_string_from_const(TP, const char *s, int n) ->tp_obj:
 	r.type.type_id = TP_STRING
 	r.type.magic = TP_STRING_EXTERN
 	r.string.info = (tpd_string*) tp_malloc(tp, sizeof(tpd_string))
-	r.string.info->base = tp_None
+	##r.string.info->base = tp_None
 	r.string.info->s = (char*) s
 	r.string.info->len = n
-	r.obj.info->meta = __string_meta__
 	return r
 
 
@@ -149,7 +106,7 @@ def tp_string_view(TP, tp_obj s, int a, int b) ->tp_obj:
 	a = _tp_max(0,(a<0?l+a:a))
 	b = _tp_min(l,(b<0?l+b:b))
 	tp_obj r = tp_string_from_const(tp, tp_string_getptr(s) + a, b - a)
-	r.string.info->base = s
+	##r.string.info->base = s  ## this was used by gc_follow
 	r.type.magic = TP_STRING_VIEW
 	return tp_track(tp, r)
 

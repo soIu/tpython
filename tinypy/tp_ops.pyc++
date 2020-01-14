@@ -142,9 +142,39 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			elif skey=="insert":
 				return tp_method(tp, self, tpy_list_insert)
 			else:
-				throw "invalid list member"
+				throw "invalid list method"
 		elif k.type.type_id == TP_NONE:
 			return tpd_list_pop(tp, self.list.val, 0, "tp_get")
+	elif type == TP_STRING:
+		if k.type.type_id == TP_NUMBER:
+			int l = tp_string_len(self)
+			int n = k.number.val
+			n = (n<0?l+n:n)
+			if (n >= 0 && n < l) { return tp_string_t_from_const(tp, tp->chars[(unsigned char) tp_string_getptr(self)[n]], 1); }
+		elif k.type.type_id == TP_STRING:
+			std::string skey = std::string(k)
+			if skey=="join":
+				return tp_method(tp, self, tpy_str_join)
+			elif skey=="split":
+				return tp_method(tp, self, tpy_str_split)
+			elif skey=="splitlines":
+				return tp_method(tp, self, tpy_str_splitlines)
+			elif skey=="index":
+				return tp_method(tp, self, tpy_str_index)
+			elif skey=="find":
+				return tp_method(tp, self, tpy_str_find)
+			elif skey=="strip":
+				return tp_method(tp, self, tpy_str_strip)
+			elif skey=="replace":
+				return tp_method(tp, self, tpy_str_replace)
+			elif skey=="reverse":
+				return tp_method(tp, self, tpy_str_reverse)
+			elif skey=="startswith":
+				return tp_method(tp, self, tpy_str_startswith)
+			elif skey=="endswith":
+				return tp_method(tp, self, tpy_str_endswith)
+			else:
+				throw "invalid string method"
 	#ifdef BLENDOT_TYPES
 	if type == TP_VEC2:
 		if k == "x":
@@ -320,15 +350,6 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 					return r
 			else:
 				return tp_dict_get(tp, self, k)
-		elif type == TP_STRING:
-			if k.type.type_id == TP_NUMBER:
-				int l = tp_string_len(self)
-				int n = k.number.val
-				n = (n<0?l+n:n)
-				if (n >= 0 && n < l) { return tp_string_t_from_const(tp, tp->chars[(unsigned char) tp_string_getptr(self)[n]], 1); }
-			elif k.type.type_id == TP_STRING:
-				if tp_vget(tp, self, k, &r, 1):
-					return r
 		elif type == TP_OBJECT:
 			## not a raw dict, must be object or interface
 			#ifdef DEBUG
@@ -377,8 +398,8 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 		b = _tp_min(l,(b<0?l+b:b))
 		if type == TP_LIST:
 			return tp_list_from_items(tp,b-a,&self.list.val->items[a])
-		elif type == TP_STRING:
-			return tp_string_view(tp,self,a,b)
+		##elif type == TP_STRING:  ## what syntax was this? slice a string with a list? TODO check me
+		##	return tp_string_view(tp,self,a,b)
 	elif k.type.type_id == TP_STRING:
 		## this is not correct, unknowntype.foo should not return unknowntype
 		return tp_copy(tp, self)

@@ -26,8 +26,8 @@ def tp_follow(TP,tp_obj v):
 	  std::cout << "tp_gc.cpp tp_follow" << std::endl;
 	#endif
 	int type = v.type.type_id
-	if type == TP_STRING && v.type.magic == TP_STRING_VIEW:
-		tp_grey(tp, v.string.info->base)
+	##if type == TP_STRING && v.type.magic == TP_STRING_VIEW:
+	##	tp_grey(tp, v.string.info->base)
 	if type == TP_LIST:
 		int n
 		for (n=0; n<v.list.val->len; n++):

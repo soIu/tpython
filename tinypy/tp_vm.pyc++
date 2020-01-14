@@ -18,10 +18,7 @@ def tp_create_vm(void) -> tp_vm*:
 	tp->echo = tp_default_echo
 	for (i=0; i<256; i++) { tp->chars[i][0]=i; }
 	tp_gc_init(tp)
-	tp->_list_meta = tp_interface_t(tp)
 	tp->_dict_meta = tp_interface_t(tp)
-	##tp->_string_meta = tp_interface_t(tp);
-	__string_meta__ = tp_interface_t(tp)
 	## gc initialized, can use tpy_ functions.
 	tp->_regs = tp_list_t(tp);
 	for (i=0; i<TP_REGS; i++) { tp_set(tp, tp->_regs, tp_None, tp_None); }
@@ -33,7 +30,6 @@ def tp_create_vm(void) -> tp_vm*:
 	tp_set(tp, tp->root, tp_None, tp->_regs)
 	tp_set(tp, tp->root, tp_None, tp->_params)
 	tp->builtins = tp_import(tp, tp_string_atom(tp, "__builtins__"), tp_None, tp_string_atom(tp, "<builtins>"))
-	tp_set(tp, tp->root, tp_None, tp->_list_meta)
 	tp_set(tp, tp->root, tp_None, tp->_dict_meta)
 	//tp_set(tp, tp->root, tp_None, tp->_string_meta);
 	tp->regs = tp->_regs.list.val->items
@@ -107,17 +103,12 @@ def tp_handle(TP):
 def tp_step(TP) ->int;
 
 def tp_continue_frame(TP, int cur):
-	##jmp_buf tmp
-	##memcpy(tmp, tp->buf, sizeof(jmp_buf))
 	tp->jmp += 1
-	##if setjmp(tp->buf):
-	##	tp_handle(tp)
 	## keep runing till the frame drops back (aka function returns)
 	while tp->cur >= cur:
 		if tp_step(tp) == -1:
 			break;
 	tp->jmp -= 1
-	##memcpy(tp->buf, tmp, sizeof(jmp_buf))
 
 
 ## run the current frame till it returns

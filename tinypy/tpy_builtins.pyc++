@@ -91,15 +91,23 @@ def tpy_dir(TP) ->tp_obj:
 				continue
 			r.append(ob.dict.val->items[i].key)
 	elif ob.type.type_id == TP_LIST:
-		##for (int i=0; i < ob.list.val->meta.dict.val->alloc; i++):
-		##	if ob.list.val->meta.dict.val->items[i].used != 1:
-		##		continue
-		##	r.append(ob.list.val->meta.dict.val->items[i].key)
 		r.append("append")
 		r.append("pop")
+		r.append("insert")
 		r.append("index")
 		r.append("sort")
 		r.append("extend")
+	elif ob.type.type_id == TP_STRING:
+		r.append("join")
+		r.append("split")
+		r.append("splitlines")
+		r.append("index")
+		r.append("find")
+		r.append("strip")
+		r.append("replace")
+		r.append("reverse")
+		r.append("startswith")
+		r.append("endswith")
 	elif ob.type.type_id == TP_DICT:
 		for (int i=0; i < ob.dict.val->meta.dict.val->alloc; i++):
 			if ob.dict.val->meta.dict.val->items[i].used != 1:
@@ -654,23 +662,6 @@ def tp_module_builtins_init(TP):
 	tp_set(tp, o, tp_string_atom(tp, "__call__"), tp_function(tp, tpy_object_call))
 	tp_set(tp, o, tp_string_atom(tp, "__new__"),  tp_function(tp, tpy_object_new))
 	tp_set(tp, builtins, tp_string_atom(tp, "object"), o)
-	/*
-	tp_set(tp, tp->_list_meta, tp_string_atom(tp, "append"), tp_function(tp, tpy_list_append))
-	tp_set(tp, tp->_list_meta, tp_string_atom(tp, "pop"), tp_function(tp, tpy_list_pop))
-	tp_set(tp, tp->_list_meta, tp_string_atom(tp, "index"), tp_function(tp, tpy_list_index))
-	tp_set(tp, tp->_list_meta, tp_string_atom(tp, "sort"), tp_function(tp, tpy_list_sort))
-	tp_set(tp, tp->_list_meta, tp_string_atom(tp, "extend"), tp_function(tp, tpy_list_extend))
-	*/
-	tp_set(tp, __string_meta__, tp_string_atom(tp, "join"), tp_function(tp, tpy_str_join))
-	tp_set(tp, __string_meta__, tp_string_atom(tp, "split"), tp_function(tp, tpy_str_split))
-	tp_set(tp, __string_meta__, tp_string_atom(tp, "splitlines"), tp_function(tp, tpy_str_splitlines))
-	tp_set(tp, __string_meta__, tp_string_atom(tp, "index"), tp_function(tp, tpy_str_index))
-	tp_set(tp, __string_meta__, tp_string_atom(tp, "find"), tp_function(tp, tpy_str_find))
-	tp_set(tp, __string_meta__, tp_string_atom(tp, "strip"), tp_function(tp, tpy_str_strip))
-	tp_set(tp, __string_meta__, tp_string_atom(tp, "replace"), tp_function(tp, tpy_str_replace))
-	tp_set(tp, __string_meta__, tp_string_atom(tp, "reverse"), tp_function(tp, tpy_str_reverse))
-	tp_set(tp, __string_meta__, tp_string_atom(tp, "startswith"), tp_function(tp, tpy_str_startswith))
-	tp_set(tp, __string_meta__, tp_string_atom(tp, "endswith"), tp_function(tp, tpy_str_endswith))
 	tp_set(tp, tp->_dict_meta, tp_string_atom(tp, "update"), tp_function(tp, tpy_dict_merge))
 	tp_set(tp, tp->_dict_meta, tp_string_atom(tp, "keys"), tp_function(tp, tpy_dict_keys))
 	tp_set(tp, tp->_dict_meta, tp_string_atom(tp, "values"), tp_function(tp, tpy_dict_values))
