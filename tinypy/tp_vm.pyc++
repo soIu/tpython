@@ -480,12 +480,11 @@ def tp_step(TP) ->int:
 				case TP_IGET:
 					## note: tp_get has a special case for lists where if the index is None,
 					## the first item is removed and returned, this will be DEPRECATED later.
-					if RB.type.type_id == TP_LIST && RB.list.val->type >= 1 && RC.type.type_id==TP_NUMBER:
-						##print("tp_vm	fast vec get")
+					if RB.type.type_id == TP_LIST && RC.type.type_id==TP_NUMBER:
 						if RC.number.val < 0:
-							RA = tp_number( RB.list.val->vec[ RB.list.val->vec.size() + (int)RC.number.val ] )
+							RA = RB.list.val->items[ RB.list.val->len + (int)RC.number.val ]
 						else:
-							RA = tp_number( RB.list.val->vec[(int)RC.number.val] )
+							RA = RB.list.val->items[ (int)RC.number.val ]
 					else:
 						##print("IGET")
 						##print(RC)
@@ -493,14 +492,13 @@ def tp_step(TP) ->int:
 					GA
 					break
 				case TP_ISET:
-					if RA.type.type_id == TP_LIST && RA.list.val->type >= 1:
+					if RA.type.type_id == TP_LIST:
 						## if RB is not a number, then there is a user level bug, lists are only indexed by integers
 						if RB.type.type_id==TP_NUMBER && RC.type.type_id==TP_NUMBER:
-							##print("tp_vm	fast vec set")
 							if RB.number.val < 0:
-								RA.list.val->vec[ RA.list.val->vec.size() + (int)RB.number.val ] = RC.number.val
+								RA.list.val->items[ RA.list.val->len + (int)RB.number.val ] = RC
 							else:
-								RA.list.val->vec[ (int)RB.number.val ] = RC.number.val
+								RA.list.val->items[ (int)RB.number.val ] = RC
 						else:
 							RA = tp_set(tp,RA,RB,RC)
 					else:

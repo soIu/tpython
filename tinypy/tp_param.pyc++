@@ -28,7 +28,7 @@ def tp_params(TP) -> tp_obj:
 def tp_params_n(TP,int n, tp_obj argv[]) -> tp_obj:
 	tp_obj r = tp_params(tp)
 	if defined(DEBUG):
-		print("	calling tp_params_n, r.list.val.type = ", r.list.val->type)
+		print("	calling tp_params_n")
 	for (int i=0; i<n; i++):
 		tpd_param_list_append(tp, r.list.val, argv[i])
 	return r

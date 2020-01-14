@@ -123,10 +123,10 @@ enum TPTypeID:
 	TP_GC_TRACKED = 32,
 	TP_FUNC = 33,
 	TP_DATA = 34,
+	TP_LIST = 35,
 	## this is not a type, any type >= TP_HAS_META can have a metatype
 	TP_HAS_META = 99,
 	TP_STRING = 100,
-	TP_LIST = 101,
 	TP_DICT = 102,
 	TP_OBJECT = 103,
 	TP_INTERFACE = 104,
@@ -312,13 +312,10 @@ struct tpd_string:
 
 
 struct tpd_list:
-	int gci
-	tp_obj meta
+	uint16_t gci : 1
+	uint32_t len : 24
+	uint32_t alloc : 24
 	tp_obj *items
-	int len
-	int alloc
-	std::vector<double> vec
-	char type
 
 struct tpd_item:
 	int used
@@ -782,13 +779,8 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 		case TP_FUNC: ss << "function<" << self.func.cfnc << ">"; break;
 		case TP_LIST:
 			ss << "["
-			if self.list.val->type >= 1:
-				ss << "std::vector<double> "
-				for (int i=0; i<self.list.val->vec.size(); i++):
-					ss << self.list.val->vec[i] << ","
-			else:
-				for (int i=0; i<self.list.val->len; i++):
-					ss << tp_as_string(tp, self.list.val->items[i]) << ","
+			for (int i=0; i<self.list.val->len; i++):
+				ss << tp_as_string(tp, self.list.val->items[i]) << ","
 			ss << "]"
 			break
 		case TP_DICT:

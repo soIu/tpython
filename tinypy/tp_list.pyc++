@@ -1,7 +1,7 @@
+
 def tp_list_nt(TP) ->tp_obj:
 	tp_obj r = {TP_LIST};
 	r.list.val = tpd_list_new(tp)
-	r.obj.info->meta = tp->_list_meta
 	return r
 
 
@@ -32,12 +32,8 @@ def tp_list_copy(TP, tp_obj rr) ->tp_obj:
 	##	memcpy(r->items,o->items,sizeof(tp_obj)*o->len)
 	##val.list.val = r
 	##return tp_track(tp, val)
-	if rr.list.val->type >= 1:
-		lst.list.val->type = rr.list.val->type
-		lst.list.val->vec = rr.list.val->vec
-	else:
-		for (int i=0; i<rr.list.val->len; i++):
-			tpd_list_append(tp, lst.list.val, rr.list.val->items[i])
+	for (int i=0; i<rr.list.val->len; i++):
+		tpd_list_append(tp, lst.list.val, rr.list.val->items[i])
 	return tp_track(tp, lst)
 
 

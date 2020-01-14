@@ -91,9 +91,11 @@ static tp_obj _tp_get(TP, tp_obj self, tp_obj k, int mget);
 
 ## lookup using []; never bind functions
 def tp_get(TP, tp_obj self, tp_obj k) ->tp_obj:
-	if self.type.type_id==TP_LIST and k.type.type_id==TP_NONE and self.list.val->len==0:
-		throw "list[None] hack list len is zero - this should never happen"
-		return tp_number(0)
+	if defined(DEBUG):
+		print("tp_get")
+	##if self.type.type_id==TP_LIST and k.type.type_id==TP_NONE and self.list.val->len==0:
+	##	print("	self.list.val->len =", self.list.val->len)
+	##	throw "list[None] hack list len is zero - this should never happen"
 	return _tp_get(tp, self, k, 0)
 
 ## lookup using .; always bind functions. FIXME: static and class binding
@@ -119,6 +121,30 @@ def tp_set_by_char(TP, tp_obj self, char c, tp_obj value):
 def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 	int type = self.type.type_id
 	tp_obj r
+	if type == TP_LIST:
+		if k.type.type_id == TP_NUMBER:
+			int l = tp_len(tp,self).number.val
+			int n = k.number.val
+			n = (n<0?l+n:n)
+			return tpd_list_get(tp, self.list.val, n, "tp_get")
+		elif k.type.type_id == TP_STRING:
+			##if tp_vget(tp, self, k, &r, 1):
+			##	return r
+			std::string skey = std::string(k)
+			if skey=="append":
+				return tp_method(tp, self, tpy_list_append)
+			elif skey=="pop":
+				return tp_method(tp, self, tpy_list_pop)
+			elif skey=="index":
+				return tp_method(tp, self, tpy_list_index)
+			elif skey=="extend":
+				return tp_method(tp, self, tpy_list_extend)
+			elif skey=="insert":
+				return tp_method(tp, self, tpy_list_insert)
+			else:
+				throw "invalid list member"
+		elif k.type.type_id == TP_NONE:
+			return tpd_list_pop(tp, self.list.val, 0, "tp_get")
 	#ifdef BLENDOT_TYPES
 	if type == TP_VEC2:
 		if k == "x":
@@ -294,17 +320,6 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 					return r
 			else:
 				return tp_dict_get(tp, self, k)
-		elif type == TP_LIST:
-			if k.type.type_id == TP_NUMBER:
-				int l = tp_len(tp,self).number.val
-				int n = k.number.val
-				n = (n<0?l+n:n)
-				return tpd_list_get(tp, self.list.val, n, "tp_get")
-			elif k.type.type_id == TP_STRING:
-				if tp_vget(tp, self, k, &r, 1):
-					return r
-			elif k.type.type_id == TP_NONE:
-				return tpd_list_pop(tp, self.list.val, 0, "tp_get")
 		elif type == TP_STRING:
 			if k.type.type_id == TP_NUMBER:
 				int l = tp_string_len(self)
@@ -581,10 +596,7 @@ def tp_len(TP,tp_obj self) -> tp_obj:
 	elif type == TP_DICT:
 		return tp_number(self.dict.val->len)
 	elif type == TP_LIST:
-		if self.list.val->type >= 1:
-			return tp_number(self.list.val->vec.size())
-		else:
-			return tp_number(self.list.val->len)
+		return tp_number(self.list.val->len)
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_len) TypeError: len() of unsized object"));
 	throw "TypeError in tp_ops.cpp:tp_len invalid object type to use the len function with"
 
@@ -873,12 +885,8 @@ def tp_obj::as_vector() -> std::vector<tp_obj>:
 	if this->type.type_id != TP_LIST:
 		throw "as_vector can only be used on a list type"
 	std::vector<tp_obj> r;
-	if this->list.val->type >= 1:
-		for (int i=0; i < this->list.val->vec.size(); i++ ):
-			r.push_back( tp_number(this->list.val->vec[i]) )
-	else:
-		for (int i=0; i < this->list.val->len; i++ ):
-			r.push_back( this->list.val->items[i] )
+	for (int i=0; i < this->list.val->len; i++ ):
+		r.push_back( this->list.val->items[i] )
 	return r
 
 ## Pythonic++ helper functions ##
@@ -889,10 +897,7 @@ def len(tp_obj self) ->int:
 	elif type == TP_DICT:
 		return (int)(self.dict.val->len)
 	elif type == TP_LIST:
-		if self.list.val->type >= 1:
-			return self.list.val->vec.size()
-		else:
-			return (int)(self.list.val->len)
+		return (int)(self.list.val->len)
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_len) TypeError: len() of unsized object"));
 	throw "TypeError in tp_ops.cpp:len invalid object type to use the len function with"
 

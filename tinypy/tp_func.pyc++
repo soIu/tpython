@@ -65,6 +65,7 @@ def tp_function(TP, std::function<tp_obj(tp_vm*)> func) ->tp_obj:
 	info->cppfunc = func
 	r.type.magic = TP_FUNC_MASK_CPP
 	r.func.info = info
+	tp_track(tp, r)
 	return r
 
 
@@ -77,5 +78,6 @@ def tp_method(TP, tp_obj self, std::function<tp_obj(tp_vm*)> func) ->tp_obj:
 	info->cppfunc = func
 	r.type.magic = TP_FUNC_MASK_METHOD_CPP
 	r.func.info = info
+	tp_track(tp, r)
 	return r
 
