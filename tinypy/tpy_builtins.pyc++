@@ -379,6 +379,8 @@ def tpy_import(TP) ->tp_obj:
 	if member.type.type_id == TP_STRING:
 		## from ... import *
 		if 0 == tp_string_cmp(member, tp_string_atom(tp, "*")):
+			throw "TODO support from import *"
+			/*
 			int i
 			for (i = 0; i < mod.dict.val->len; i ++):
 				tpd_item item = mod.dict.val->items[ tpd_dict_next(tp, mod.dict.val) ];
@@ -390,6 +392,7 @@ def tpy_import(TP) ->tp_obj:
 				if (p[0] == '_') continue;
 				tp_dict_set(tp, ret, k, v)
 			return ret
+			*/
 	## from ... import a, b, c
 	if member.type.type_id == TP_LIST:
 		int i

@@ -75,7 +75,10 @@ def tp_iter(TP,tp_obj self, tp_obj k) ->tp_obj:
 	if type == TP_LIST or type == TP_STRING or type==TP_STRING_ATOMIC:
 		return tp_get(tp,self,k)
 	if type == TP_DICT && k.type.type_id == TP_NUMBER:
-		return self.dict.val->items[tpd_dict_next(tp,self.dict.val)].key
+		throw "TODO iter over dict"
+		## the iter counter should be put on tp, instead of the dict itself,
+		## because each thread had its own tp_vm, having the counter on it is ok.
+		##return self.dict.val->items[tpd_dict_next(tp,self.dict.val)].key
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_iter) TypeError: iteration over non-sequence"));
 	throw "TypeError in tp_ops.cpp:tp_iter iteration over a non-sequence";
 

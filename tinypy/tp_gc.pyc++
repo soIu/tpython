@@ -35,9 +35,11 @@ def tp_follow(TP,tp_obj v):
 	if type == TP_DICT:
 		int i
 		for (i=0; i<v.dict.val->len; i++):
-			int n = tpd_dict_next(tp,v.dict.val)
-			tp_grey(tp,v.dict.val->items[n].key)
-			tp_grey(tp,v.dict.val->items[n].val)
+			##int n = tpd_dict_next(tp,v.dict.val)
+			if v.dict.val->items[i].used < 1:
+				continue
+			tp_grey(tp,v.dict.val->items[i].key)
+			tp_grey(tp,v.dict.val->items[i].val)
 	if type >= TP_HAS_META:
 		tp_grey(tp, v.obj.info->meta)
 	if type == TP_FUNC:

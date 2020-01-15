@@ -326,17 +326,14 @@ struct tpd_item:
 	tp_obj key
 	tp_obj val
 
-## note: struct order is important here, meta and items must be right after gci
-## gci can be a char instead of an int, mask seems not required because its just len-1
+## note: struct order is important here, meta and items must be right after gci, why?
 struct tpd_dict:
-	uint8_t gci
+	int16_t gci
 	tp_obj meta
 	tpd_item *items
 	int len
 	int alloc
-	int cur
 	int used
-	int mask
 
 struct tpd_func:
 	int gci
