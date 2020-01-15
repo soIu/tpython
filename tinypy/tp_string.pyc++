@@ -16,13 +16,21 @@ def tp_string_t(TP, int n) ->tp_obj:
 	return tp_track(tp, r)
 
 
+##def tp_string_atom(TP, const char * v) ->tp_obj:
+##	static tpd_string info = {0};
+##	tp_obj r
+##	r.type.type_id = TP_STRING
+##	r.type.magic = TP_STRING_ATOM
+##	r.string.info = &info
+##	r.string.val = v
+##	return r
+
 def tp_string_atom(TP, const char * v) ->tp_obj:
-	static tpd_string info = {0};
 	tp_obj r
-	r.type.type_id = TP_STRING
-	r.type.magic = TP_STRING_ATOM
-	r.string.info = &info
-	r.string.val = v
+	r.type.type_id = TP_STRING_ATOMIC
+	## note magic must be set, malloc/realloc will not always clear all the bytes and set them to zero
+	r.type.magic = TP_STRING_NONE
+	r.atomstr.val = v
 	return r
 
 
@@ -84,17 +92,20 @@ def tp_string_from_stdstring(TP, std::string s) ->tp_obj:
 
 def tp_string_getptr(tp_obj s) -> char* :
 	if s.type.magic == TP_STRING_ATOM:
-		return (char*) s.string.val
-	return s.string.info->s
+		throw "TP_STRING_ATOM is DEPRECATED"
+	if s.type.type_id == TP_STRING_ATOMIC:
+		return (char*) s.atomstr.val
+	else:
+		return s.string.info->s
 
 
 def tp_string_len(tp_obj s)->int:
-	#if DEBUG > 2
-	  std::cout << "tp_string.cpp tp_string_len" << std::endl;
-	#endif
 	if s.type.magic == TP_STRING_ATOM:
-		return strlen(s.string.val)
-	return s.string.info->len
+		throw "TP_STRING_ATOM is DEPRECATED"
+	if s.type.type_id == TP_STRING_ATOMIC:
+		return strlen(s.atomstr.val)
+	else:
+		return s.string.info->len
 
 
 ## Create a new string which is a substring slice (view) of another STRING.

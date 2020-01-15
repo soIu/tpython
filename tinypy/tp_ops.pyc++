@@ -9,6 +9,7 @@ def tp_true(TP,tp_obj v) ->int:
 		case TP_NUMBER: return v.number.val != 0;
 		case TP_NONE: return 0;
 		case TP_STRING: return tp_string_len(v) != 0;
+		case TP_STRING_ATOMIC: return tp_string_len(v) != 0;
 		case TP_LIST: return v.list.val->len != 0;
 		case TP_DICT: return v.dict.val->len != 0;
 	return 1;
@@ -71,7 +72,7 @@ def tp_del(TP, tp_obj self, tp_obj k):
 
 def tp_iter(TP,tp_obj self, tp_obj k) ->tp_obj:
 	int type = self.type.type_id
-	if type == TP_LIST || type == TP_STRING:
+	if type == TP_LIST or type == TP_STRING or type==TP_STRING_ATOMIC:
 		return tp_get(tp,self,k)
 	if type == TP_DICT && k.type.type_id == TP_NUMBER:
 		return self.dict.val->items[tpd_dict_next(tp,self.dict.val)].key
@@ -127,7 +128,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			int n = k.number.val
 			n = (n<0?l+n:n)
 			return tpd_list_get(tp, self.list.val, n, "tp_get")
-		elif k.type.type_id == TP_STRING:
+		elif k.type.type_id == TP_STRING or k.type.type_id==TP_STRING_ATOMIC:
 			##if tp_vget(tp, self, k, &r, 1):
 			##	return r
 			std::string skey = std::string(k)
@@ -145,7 +146,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 				throw "invalid list method"
 		elif k.type.type_id == TP_NONE:
 			return tpd_list_pop(tp, self.list.val, 0, "tp_get")
-	elif type == TP_STRING:
+	elif type == TP_STRING or type==TP_STRING_ATOMIC:
 		if k.type.type_id == TP_NUMBER:
 			int l = tp_string_len(self)
 			int n = k.number.val
@@ -174,6 +175,8 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			elif skey=="endswith":
 				return tp_method(tp, self, tpy_str_endswith)
 			else:
+				print("------------------------")
+				print(k)
 				throw "invalid string method"
 	#ifdef BLENDOT_TYPES
 	if type == TP_VEC2:
@@ -373,6 +376,9 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 		elif type == TP_INTERFACE:
 			if tp_vget(tp, self, k, &r, 0):
 				return r
+			else:
+				print("GET ERROR: on TP_INTERFACE")
+				std::cout << "key=" << k << " hash=" << tp_hash(NULL, k) << std::endl;
 	## deal with list / string keys on any unknown types
 	if k.type.type_id == TP_LIST:
 		int a,b,l
@@ -400,15 +406,12 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			return tp_list_from_items(tp,b-a,&self.list.val->items[a])
 		##elif type == TP_STRING:  ## what syntax was this? slice a string with a list? TODO check me
 		##	return tp_string_view(tp,self,a,b)
-	elif k.type.type_id == TP_STRING:
-		## this is not correct, unknowntype.foo should not return unknowntype
-		return tp_copy(tp, self)
-	print("_tp_get: self =")
-	print(tp_as_string(tp, self))
-	print("_tp_get: key =")
-	print(tp_as_string(tp, k))
-	//tp_raise(tp_None,tp_string_atom(tp, "(tp_get) TypeError: ?"));
-	throw "TypeError in tp_ops.cpp:_tp_get unexpected type"
+	##elif k.type.type_id == TP_STRING:
+	##	## this is not correct, unknowntype.foo should not return unknowntype
+	##	return tp_copy(tp, self)
+	std::cout << "GET ERROR: self =" << self << std::endl;
+	std::cout << "GET ERROR: key =" << k << std::endl;
+	throw "GET ERROR - in tp_ops.cpp - unexpected type or invalid key/index"
 
 ## function: tp_copy
 def tp_copy(TP, tp_obj self) -> tp_obj:
@@ -640,7 +643,7 @@ def tp_cmp(TP, tp_obj a, tp_obj b) ->int:
 		case TP_LIST: return tp_list_cmp(tp, a, b);
 		case TP_DICT: return a.dict.val - b.dict.val;
 		case TP_FUNC: return a.func.info - b.func.info;
-		case TP_DATA: return (char*)a.data.val - (char*)b.data.val;
+		##case TP_DATA: return (char*)a.data.val - (char*)b.data.val;
 	//tp_raise(0,tp_string_atom(tp, "(tp_cmp) TypeError: ?"));
 	throw "TypeError in tp_ops.cpp:tp_cmp invalid object type to compare for equality"
 
@@ -865,7 +868,7 @@ def tp_obj::operator uint8_t():
 
 
 def tp_obj::operator[] (int index) -> tp_obj:
-	if this->type.type_id==TP_STRING:
+	if this->type.type_id==TP_STRING or this->type.type_id==TP_STRING_ATOMIC:
 		auto ptr = tp_string_getptr(*this)
 		char c = ptr[index]
 		//std::cout << c << std::endl;
@@ -909,6 +912,8 @@ def tp_obj::as_vector() -> std::vector<tp_obj>:
 def len(tp_obj self) ->int:
 	int type = self.type.type_id
 	if type == TP_STRING:
+		return (int)(tp_string_len(self))
+	elif type == TP_STRING_ATOMIC:
 		return (int)(tp_string_len(self))
 	elif type == TP_DICT:
 		return (int)(self.dict.val->len)

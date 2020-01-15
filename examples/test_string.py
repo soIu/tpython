@@ -1,3 +1,5 @@
+print('testing string...')
+
 print( ['X', 'Y', 'Z'] )
 
 s = 'x y z'

@@ -14,6 +14,8 @@ def tp_hash(TP, tp_obj v) ->int:
 		case TP_NONE: return 0
 		case TP_NUMBER: return tpd_lua_hash(&v.number.val, sizeof(tp_num))
 		case TP_STRING: return tpd_lua_hash(tp_string_getptr(v), tp_string_len(v))
+		case TP_STRING_ATOMIC:
+			return tpd_lua_hash(tp_string_getptr(v), tp_string_len(v))
 		case TP_DICT: return tpd_lua_hash(&v.dict.val, sizeof(void*))
 		case TP_LIST:
 			int r = v.list.val->len
@@ -23,9 +25,9 @@ def tp_hash(TP, tp_obj v) ->int:
 				r += (vv.type.type_id != TP_LIST) ? tp_hash(tp, v.list.val->items[n]) : tpd_lua_hash(&vv.list.val, sizeof(void*))
 			return r
 		case TP_FUNC: return tpd_lua_hash(&v.func.info, sizeof(void*))
-		case TP_DATA: return tpd_lua_hash(&v.data.val, sizeof(void*))
+		##case TP_DATA: return tpd_lua_hash(&v.data.val, sizeof(void*))
 	//tp_raise(0, tp_string_atom(tp, "(tp_hash) TypeError: value unhashable"));
-	std::cout << "ERROR unexpected type: " << v.type.type_id << std::endl
+	std::cout << "tp_hash ERROR unexpected type: " << v.type.type_id << std::endl
 	throw "ERROR in tp_hash.cpp invalid type to hash"
 
 

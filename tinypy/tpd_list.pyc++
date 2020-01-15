@@ -62,9 +62,6 @@ def tpd_list_extend(TP, tpd_list * self, tpd_list * v):
 		tpd_list_append(tp, self, v->items[i])
 
 def tpd_list_pop(TP,tpd_list *self, int n, const char *error) ->tp_obj:
-	if defined(DEBUG):
-		print("tpd_list_pop - index = ", n)
-		print("	list len = ", self->len)
 	if self->len == 0:
 		throw "ERROR: pop from empty list"
 	tp_obj r = tpd_list_get(tp,self,n,error)

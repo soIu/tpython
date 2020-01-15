@@ -13,10 +13,10 @@ def tp_grey(TP, tp_obj v):
 	if (v.type.type_id < TP_GC_TRACKED || (!v.gc.gci) || *v.gc.gci) { return; }
 	if (v.type.type_id == TP_STRING && v.type.magic == TP_STRING_ATOM) { return; }
 	*v.gc.gci = 1;
-	if v.type.type_id == TP_DATA:
-		## terminal types, no need to follow
-		tpd_list_appendx(tp, tp->black, v)
-		return
+	##if v.type.type_id == TP_DATA:
+	##	## terminal types, no need to follow
+	##	tpd_list_appendx(tp, tp->black, v)
+	##	return
 	## need to follow the referents
 	tpd_list_appendx(tp, tp->grey, v)
 
@@ -100,14 +100,11 @@ def tp_delete(TP, tp_obj v):
 		#endif
 		tp_free(tp, v.string.info)
 		return
-	elif type == TP_DATA:
-		#if DEBUG > 3
-		  std::cout << "  GC FREE DATA" << std::endl;
-		#endif
-		if v.data.info->free:
-			v.data.info->free(tp,v)
-		tp_free(tp, v.data.info)
-		return
+	##elif type == TP_DATA:
+	##	if v.data.info->free:
+	##		v.data.info->free(tp,v)
+	##	tp_free(tp, v.data.info)
+	##	return
 	elif type == TP_FUNC:
 		#if DEBUG > 3
 		  std::cout << "  GC FREE FUNC" << std::endl;

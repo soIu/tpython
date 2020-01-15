@@ -69,10 +69,8 @@ def tp_enter_frame(TP, tp_obj globals, tp_obj code, tp_obj * ret_dest):
 
 def _tp_raise(TP, tp_obj e):
 	print("tp_vm.cpp _tp_raise (RAISE RUNTIME ERROR)")
-	tp_obj message = tp_str(tp, e)
-	std::cout << "  error message: " << message.string.val << std::endl
-	std::cout << "  object type: " << e.type.type_id << std::endl
-	throw message.string.val
+	std::cout << "  error message: " << e << std::endl
+	throw "RuntimeError"
 
 def tp_print_stack(TP):
 	int i
@@ -542,6 +540,9 @@ def tp_step(TP) ->int:
 					return 0
 					break
 				case TP_ICALL:
+					if defined(DEBUG):
+						print("calling on type = ", RB.type.type_id)
+						print(RB)
 					f->cur = cur + 1
 					RA = tp_call(tp,RB,RC)
 					GA

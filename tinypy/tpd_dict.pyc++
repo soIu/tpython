@@ -37,7 +37,7 @@ def tpd_dict_realloc(TP, tpd_dict *self, int len):
 		tpd_dict_hashset(tp, self, items[i].hash, items[i].key, items[i].val)
 	tp_free(tp, items)
 
-
+/* the move from TP_STRING_ATOM to TP_STRING_ATOMIC broke this - looks slow for small dicts anyways - mask was to optimize the for loop
 def tpd_dict_hashfind(TP, tpd_dict * self, int hash, tp_obj k) -> int:
 	int i,idx = hash & self->mask
 	for (i=idx; i<idx+self->alloc; i++):
@@ -48,6 +48,14 @@ def tpd_dict_hashfind(TP, tpd_dict * self, int hash, tp_obj k) -> int:
 		if (tp_cmp(tp, self->items[n].key, k) != 0) { continue; }
 		return n
 	return -1
+*/
+
+def tpd_dict_hashfind(TP, tpd_dict * self, int hash, tp_obj k) -> int:
+	int i,idx = 0
+	for (i=idx; i<idx+self->alloc; i++):
+		int n = i
+		if (self->items[n].hash == hash) { return n; }
+	return -1
 
 
 def tpd_dict_new(TP) -> tpd_dict* :
@@ -56,6 +64,10 @@ def tpd_dict_new(TP) -> tpd_dict* :
 
 
 def tpd_dict_hashsetx(TP, tpd_dict * self, int hash, tp_obj k, tp_obj v):
+	if defined(DEBUG):
+		print("tpd_dict_hashsetx")
+		print("hash=", hash)
+		std::cout << "key=" << k << std::endl;
 	int n = tpd_dict_hashfind(tp, self, hash, k)
 	if n == -1:
 		if self->len >= (self->alloc/2):
