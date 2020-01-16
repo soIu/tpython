@@ -440,6 +440,7 @@ def rebuild(stage=None):
 
 	elif '--pgo' in sys.argv:
 		if '--clang' in sys.argv:
+			os.system('rm *.profraw')
 			makefile_gen_pgo = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe).replace('<EXEOPTS>', ' -fprofile-instr-generate=default.profraw ' + exeopts).replace('<OPTIONS>', ' -fprofile-generate ' + opts).replace('<MODULES>', mods).replace('<SDL_INCLUDE>', sdl_inc)
 			makefile_use_pgo = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe).replace('<EXEOPTS>', ' -fprofile-instr-use ' + exeopts).replace('<OPTIONS>', ' -fprofile-use ' + opts).replace('<MODULES>', mods).replace('<SDL_INCLUDE>', sdl_inc)
 		else:

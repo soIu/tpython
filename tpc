@@ -20,6 +20,7 @@ except ImportError:
 class DState:
 	def __init__(self,code,fname):
 		self.classes = []
+		self.globals256_funcs = {}  ## func name : args names
 		self.globals256     = [] ## max size is 256
 		self.const_numbers = []  ## max size is 256
 		self.header = []
@@ -637,13 +638,23 @@ def do_call(t,r=None):
 
 	if t.items[0].type == 'name' and t.items[0].val in D.globals256 and t.items[0].val not in D.classes:
 		## note: b is an empty list, or can have items from a call like: `foo(bar=xxx)`  TODO support fast calls for that style
+		func_name = t.items[0].val
 		if not b and c is None and d is None:
-			## global fast call ##
-			if len(a)==1:
-				t1 = do(a[0])
-				code(200, r, D.globals256.index(t.items[0].val), t1 )
-				free_tmp(t1)
-				return r
+			if func_name in D.globals256_funcs:
+				## global fast call - bypasses paramlist ##
+				args = D.globals256_funcs[func_name]
+				if len(args)==1:
+					t1 = do(a[0])
+					code(201, r, D.globals256.index(t.items[0].val), t1 )
+					free_tmp(t1)
+					return r
+			else:
+				## global fast call ##
+				if len(a)==1:
+					t1 = do(a[0])
+					code(200, r, D.globals256.index(t.items[0].val), t1 )
+					free_tmp(t1)
+					return r
 
 	fnc = do(items[0])
 
@@ -702,45 +713,64 @@ def do_local(t,r=None):
 
 def do_def(tok,kls=None):
 	items = tok.items
-
+	is_global256 = False
 	func_name = items[0].val
 	if len(D.stack)==1 and len(D.globals256)<256 and func_name not in D.globals256:
 		## allows recursive functions ##
 		D.globals256.append(func_name)
+		is_global256 = True
+		D.globals256_funcs[func_name] = []
 
 	t = get_tag()
 	rf = fnc(t,'end')
 
 	D.begin()
-	setpos(tok.pos)
-	r = do_local(Token(tok.pos,'name','__params'))
-	do_info(items[0].val)
-	a,b,c,d = p_filter(items[1].items)
-	for p in a:
-		v = do_local(p)
-		tmp = _do_none()
-		code(GET,v,r,tmp)
-		free_tmp(tmp) #REG
-	for p in b:
-		v = do_local(p.items[0])
-		do(p.items[1],v)
-		tmp = _do_none()
-		code(IGET,v,r,tmp)
-		free_tmp(tmp) #REG
-	if c != None:
-		v = do_local(c.items[0])
-		tmp = _do_string('*')
-		code(GET,v,r,tmp)
-		free_tmp(tmp) #REG
-	if d != None:
-		e = do_local(d.items[0])
-		code(DICT,e,0,0)
-		tmp = _do_none()
-		code(IGET,e,r,tmp)
-		free_tmp(tmp) #REG
-	free_tmp(do(items[2])) #REG
-	D.end()
 
+	setpos(tok.pos)  ## note: this is optimized away when not in debug mode
+
+	a,b,c,d = p_filter(items[1].items)
+	if is_global256 and not b and not c and not d and len(a) <= 2:
+		## super fast global function call, bypassing the params list
+		for p in a:
+			D.globals256_funcs[func_name].append(p.val)
+			v = do_local(p)
+	else:
+		## this is a clever trick by Hassey, because __params is the first local variable,
+		## it is known to be at register zero, at runtime in tp_ops.pyc++ - the tp_call 
+		## function shoves the param list into register zero just after calling tp_enter_frame,
+		## and just before tp_run_frame - which calls the bytecode compiled function.
+		r = do_local(Token(tok.pos,'name','__params'))
+		## using the same technique as above and a special bytecode, the param list can
+		## be bypassed entirely, and instead the function args can be directly set in the
+		## function registers.
+		do_info(items[0].val)  ## note: this is optimized away when not in debug mode
+		for p in a:
+			v = do_local(p)
+			tmp = _do_none()
+			code(GET,v,r,tmp)
+			free_tmp(tmp) #REG
+		for p in b:
+			v = do_local(p.items[0])
+			do(p.items[1],v)
+			tmp = _do_none()
+			code(IGET,v,r,tmp)
+			free_tmp(tmp) #REG
+		if c != None:
+			v = do_local(c.items[0])
+			tmp = _do_string('*')
+			code(GET,v,r,tmp)
+			free_tmp(tmp) #REG
+		if d != None:
+			e = do_local(d.items[0])
+			code(DICT,e,0,0)
+			tmp = _do_none()
+			code(IGET,e,r,tmp)
+			free_tmp(tmp) #REG
+
+	## do function body ##
+	free_tmp(do(items[2])) #REG
+
+	D.end()
 	tag(t,'end')
 
 	if kls == None:

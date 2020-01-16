@@ -394,7 +394,15 @@ def tp_step(TP) ->int:
 					break
 				case TP_IMOVE: RA = RB; break;
 				case TP_IIF: if (tp_true(tp,RA)) { cur += 1; } break;
-				case TP_IEQ: RA = tp_number(tp_cmp(tp,RB,RC)==0); break;
+				case TP_IEQ:
+					if RB.type.type_id==TP_NUMBER and RC.type.type_id==TP_NUMBER:
+						if RB.number.val==RC.number.val:
+							RA = tp_number(1)
+						else:
+							RA = tp_number(0)
+					else:
+						RA = tp_number(tp_cmp(tp,RB,RC)==0)
+					break
 				case TP_ILE: RA = tp_number(tp_cmp(tp,RB,RC)<=0); break;
 				case TP_ILT: RA = tp_number(tp_cmp(tp,RB,RC)<0); break;
 				case TP_IGGET:
@@ -531,6 +539,21 @@ def tp_step(TP) ->int:
 					##tp_run_frame(tp)
 					##RA = dest
 					tpd_list_free(tp, fast_params.list.val)
+					GA
+					return 0
+					break
+				case 201:
+					## fast global function call
+					if defined(DEBUG):
+						print("^^^^^^^^^^^^^fast global call (no param list) ^^^^^^^^^^^^^")
+						print("fast call func type:", __globals256__[ VB ].type.type_id)
+						print("fast call func magic:", __globals256__[ VB ].type.magic)
+					f->cur = cur + 1
+					tp_obj dest = tp_None
+					tp_enter_frame(tp, __globals256__[ VB ].func.info->globals, __globals256__[ VB ].func.info->code, &dest)
+					tp->frames[tp->cur].regs[0] = RC
+					tp_run_frame(tp)
+					RA = dest
 					GA
 					return 0
 					break
