@@ -8,6 +8,28 @@ def tpd_lua_hash(void const *v,int l) ->int:
 		h = h^((h<<5)+(h>>2)+((unsigned char *)v)[i-1])
 	return h
 
+def tp_hash_tiny_string(char s[12]) ->int:
+	int h = s[0]
+	for i in range(12):
+		if s[i]=='\0':
+			break
+		##h += (s[i] + 50) ## note with a hash function this simple, the builtins `dir` and `len` will collide
+		## quick fixes ##
+		if s[i]=='g' and i==0:
+			h += (s[i] * 512) + 100099
+		elif s[i]=='s' and i==0:
+			h += (s[i] * 256) + 999
+		elif s[i]=='d':
+			h += (s[i] * 128) + i
+		elif s[i]=='i':
+			h += (s[i] * 64) - i
+		elif s[i]=='r':
+			h += (s[i] * 32) + i
+		else:
+			h += s[i] + i
+	if defined(DEBUG):
+		print("tp_hash_tiny_string ", h)
+	return h
 
 def tp_hash(TP, tp_obj v) ->int:
 	switch v.type.type_id:
@@ -16,7 +38,12 @@ def tp_hash(TP, tp_obj v) ->int:
 		case TP_STRING: return tpd_lua_hash(tp_string_getptr(v), tp_string_len(v))
 		case TP_STRING_ATOMIC:
 			return tpd_lua_hash(tp_string_getptr(v), tp_string_len(v))
-		case TP_DICT: return tpd_lua_hash(&v.dict.val, sizeof(void*))
+		case TP_STRING_TINY:
+			if defined(DEBUG):
+				print(v)
+			return tp_hash_tiny_string(v.str.val)
+		case TP_DICT:
+			return tpd_lua_hash(&v.dict.val, sizeof(void*))
 		case TP_LIST:
 			int r = v.list.val->len
 			int n

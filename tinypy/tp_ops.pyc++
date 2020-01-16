@@ -1,3 +1,59 @@
+## Pythonic++ helper functions ##
+def len(char s[12]) ->int:
+	int n = 0
+	for i in range(12):
+		if s[i]=='\0':
+			break
+		else:
+			n ++
+	return n
+
+def len(tp_obj self) ->int:
+	int type = self.type.type_id
+	if type == TP_STRING_TINY:
+		return len(self.str.val)
+	elif type == TP_STRING:
+		return (int)(tp_string_len(self))
+	elif type == TP_STRING_ATOMIC:
+		return (int)(tp_string_len(self))
+	elif type == TP_DICT:
+		return (int)(self.dict.val->len)
+	elif type == TP_LIST:
+		return (int)(self.list.val->len)
+	//tp_raise(tp_None,tp_string_atom(tp, "(tp_len) TypeError: len() of unsized object"));
+	throw "TypeError in tp_ops.cpp:len invalid object type to use the len function with"
+
+def len(const tp_obj *self) ->int:
+	return len(*self)
+
+def len(const char* s) ->int:
+	return strlen(s)
+
+def chr(int n) ->unsigned char:
+	return (unsigned char)n
+
+def ord(char c) ->int:
+	return (int)((unsigned char)c)
+
+def isstring(tp_obj ob) ->bool:
+	if ob.type.type_id==TP_STRING_TINY:
+		return true
+	elif ob.type.type_id == TP_STRING:
+		return true
+	elif ob.type.type_id==TP_STRING_ATOMIC:
+		return true
+	else:
+		return false
+
+def isstring(TPTypeID t)->bool:
+	if t == TP_STRING_TINY:
+		return true
+	elif t == TP_STRING:
+		return true
+	elif t == TP_STRING_ATOMIC:
+		return true
+	else:
+		return false
 
 ## Function: tp_true
 ## Check the truth value of an object
@@ -123,7 +179,7 @@ def tp_set_by_char(TP, tp_obj self, char c, tp_obj value):
 
 @static
 def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
-	int type = self.type.type_id
+	auto type = self.type.type_id
 	tp_obj r
 	if type == TP_LIST:
 		if k.type.type_id == TP_NUMBER:
@@ -131,51 +187,49 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			int n = k.number.val
 			n = (n<0?l+n:n)
 			return tpd_list_get(tp, self.list.val, n, "tp_get")
-		elif k.type.type_id == TP_STRING or k.type.type_id==TP_STRING_ATOMIC:
+		elif isstring(k):
 			##if tp_vget(tp, self, k, &r, 1):
 			##	return r
-			std::string skey = std::string(k)
-			if skey=="append":
+			if k=="append":
 				return tp_method(tp, self, tpy_list_append)
-			elif skey=="pop":
+			elif k=="pop":
 				return tp_method(tp, self, tpy_list_pop)
-			elif skey=="index":
+			elif k=="index":
 				return tp_method(tp, self, tpy_list_index)
-			elif skey=="extend":
+			elif k=="extend":
 				return tp_method(tp, self, tpy_list_extend)
-			elif skey=="insert":
+			elif k=="insert":
 				return tp_method(tp, self, tpy_list_insert)
 			else:
 				throw "invalid list method"
 		elif k.type.type_id == TP_NONE:
 			return tpd_list_pop(tp, self.list.val, 0, "tp_get")
-	elif type == TP_STRING or type==TP_STRING_ATOMIC:
+	elif isstring(type):
 		if k.type.type_id == TP_NUMBER:
 			int l = tp_string_len(self)
 			int n = k.number.val
 			n = (n<0?l+n:n)
 			if (n >= 0 && n < l) { return tp_string_t_from_const(tp, tp->chars[(unsigned char) tp_string_getptr(self)[n]], 1); }
-		elif k.type.type_id == TP_STRING:
-			std::string skey = std::string(k)
-			if skey=="join":
+		elif isstring(k.type.type_id):
+			if k=="join":
 				return tp_method(tp, self, tpy_str_join)
-			elif skey=="split":
+			elif k=="split":
 				return tp_method(tp, self, tpy_str_split)
-			elif skey=="splitlines":
+			elif k=="splitlines":
 				return tp_method(tp, self, tpy_str_splitlines)
-			elif skey=="index":
+			elif k=="index":
 				return tp_method(tp, self, tpy_str_index)
-			elif skey=="find":
+			elif k=="find":
 				return tp_method(tp, self, tpy_str_find)
-			elif skey=="strip":
+			elif k=="strip":
 				return tp_method(tp, self, tpy_str_strip)
-			elif skey=="replace":
+			elif k=="replace":
 				return tp_method(tp, self, tpy_str_replace)
-			elif skey=="reverse":
+			elif k=="reverse":
 				return tp_method(tp, self, tpy_str_reverse)
-			elif skey=="startswith":
+			elif k=="startswith":
 				return tp_method(tp, self, tpy_str_startswith)
-			elif skey=="endswith":
+			elif k=="endswith":
 				return tp_method(tp, self, tpy_str_endswith)
 			else:
 				print("------------------------")
@@ -362,9 +416,11 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			  print("	begin _tp_get: ")
 			  print(tp_as_string(tp,k))
 			#endif
-			TP_META_BEGIN(self,"__getitem__")
-			  return tp_call(tp, meta, tp_params_v1(tp, k))
-			TP_META_END
+			## calling TP_META_BEGIN is slow, instead __getitem__ should be checked for just once,
+			## then if found it could use self.type.magic
+			##TP_META_BEGIN(self,"__getitem__")
+			##  return tp_call(tp, meta, tp_params_v1(tp, k))
+			##TP_META_END
 			#ifdef DEBUG
 			  print("	falling back to tp_vget")
 			#endif
@@ -597,6 +653,9 @@ def tp_mul(TP,tp_obj a, tp_obj b) -> tp_obj:
 	if a.type.type_id == TP_NUMBER:
 		## TODO what cases are this for?
 		tp_obj c = a; a = b; b = c
+	if a.type.type_id == TP_STRING_TINY && b.type.type_id == TP_NUMBER:
+		int n = b.number.val
+		return tp_string_mul(tp, a, n)
 	if a.type.type_id == TP_STRING && b.type.type_id == TP_NUMBER:
 		int n = b.number.val
 		return tp_string_mul(tp, a, n)
@@ -618,7 +677,11 @@ def tp_mul(TP,tp_obj a, tp_obj b) -> tp_obj:
 ## Returns the number of items in a list or dict, or the length of a string.
 def tp_len(TP,tp_obj self) -> tp_obj:
 	int type = self.type.type_id;
-	if type == TP_STRING:
+	if type == TP_STRING_TINY:
+		##note: do not call strlen directly, because it reads until it hits a null byte, but max is 12
+		##return tp_number( strlen(self.str.val) )
+		return tp_number( len(self.str.val) )
+	elif type == TP_STRING:
 		return tp_number(tp_string_len(self))
 	elif type == TP_DICT:
 		return tp_number(self.dict.val->len)
@@ -643,6 +706,7 @@ def tp_cmp(TP, tp_obj a, tp_obj b) ->int:
 		case TP_NUMBER: return _tp_sign(a.number.val-b.number.val);
 		case TP_INTEGER: return _tp_sign_int(a.integer.val-b.integer.val);
 		case TP_STRING: return tp_string_cmp(a, b);
+		case TP_STRING_TINY: return tp_string_cmp(a, b);
 		case TP_LIST: return tp_list_cmp(tp, a, b);
 		case TP_DICT: return a.dict.val - b.dict.val;
 		case TP_FUNC: return a.func.info - b.func.info;
@@ -658,6 +722,23 @@ def tp_mod(TP, tp_obj a, tp_obj b) -> tp_obj:
 		case TP_NUMBER:
 			if b.type.type_id == TP_NUMBER:
 				return tp_number(((long)a.number.val) % ((long)b.number.val))
+			break
+		case TP_STRING_TINY:
+			auto parts = split_tiny_string_as_stdvec(a, "%s")
+			int i = 0
+			std::string out = std::string("")
+			for (auto & part : parts):
+				out += part
+				if i+1 == parts.size():
+					break
+				if b.type.type_id == TP_LIST:
+					if i >= b.list.val->len:
+						throw "string format error - replacement marks `%s` is greater than items from list"
+					out += tp_as_string(tp, b.list.val->items[i], false)
+				else:
+					out += tp_as_string(tp, b, false)
+				i ++
+			return tp_string_from_stdstring(tp, out )
 			break
 		case TP_STRING:
 			//return tp_ez_call(tp, "__builtins__", "format", tp_params_v2(tp, a, b)) // DEPRECATED
@@ -759,7 +840,7 @@ def tp_bitwise_not(TP, tp_obj a) ->tp_obj:
 
 def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 	if defined(DEBUG):
-		print("tp_ops.pyc++ - tp_call params:")
+		print("--------tp_ops.pyc++ - tp_call params:")
 		print(params)
 	## Im not sure we should have to do this, but just for giggles we will.
 	tp->params = params
@@ -783,7 +864,7 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 		TP_META_END
 	if self.type.type_id == TP_FUNC:
 		if defined(DEBUG):
-			print("	call - TP_FUNC")
+			print("____________call - TP_FUNC_____________")
 		if self.type.magic == TP_FUNC_MASK_CPP:
 			#ifdef DEBUG
 			  print("	TP_FUNC_MASK_CPP")
@@ -813,7 +894,7 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 			return r
 		else:
 			if defined(DEBUG):
-				print("	call - BYTECODE FUNCTION")
+				print("=============call - BYTECODE FUNCTION==============")
 			## compiled Python function
 			tp_obj dest = tp_None
 			tp_enter_frame(tp, self.func.info->globals,self.func.info->code, &dest)
@@ -842,7 +923,33 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 
 @const
 def tp_obj::operator==(const char* s) ->bool:
-	return std::string(tp_string_getptr(*this))==std::string(s);
+	if this->type.type_id==TP_STRING_TINY:
+		int lena = len(this)
+		int lenb = len(s)
+		if lena != lenb:
+			return false
+		for i in range(lena):
+			if this->str.val[i] != s[i]:
+				return false
+		return true
+	else:
+		return std::string(*this)==std::string(s);
+
+@const
+def tp_obj::operator==(const tp_obj other) ->bool:
+	if isstring(this->type.type_id):
+		print("string==string")
+		print(*this)
+		print(other)
+		if not isstring(other.type.type_id):
+			return false
+		return std::string(*this) == std::string(other)
+	elif this->type.type_id==TP_NUMBER:
+		if other.type.type_id != TP_NUMBER:
+			return false
+		return this->number.val == other.number.val
+	else:
+		throw "TODO == op for some object type"
 
 @const
 def tp_obj::operator int():
@@ -854,12 +961,15 @@ def tp_obj::operator float():
 
 @const
 def tp_obj::operator std::string():
-	return std::string( tp_string_getptr(*this) )
+	if this->type.type_id == TP_STRING_TINY:
+		return std::string( (const char*)&this->str.val, len(this->str.val) )
+	else:
+		return std::string( tp_string_getptr(*this) )
 
 
-@const
-def tp_obj::operator const char*():
-	return tp_string_getptr(*this)
+##@const
+##def tp_obj::operator const char*():
+##	return tp_string_getptr(*this)
 
 @const
 def tp_obj::operator char():
@@ -871,7 +981,9 @@ def tp_obj::operator uint8_t():
 
 
 def tp_obj::operator[] (int index) -> tp_obj:
-	if this->type.type_id==TP_STRING or this->type.type_id==TP_STRING_ATOMIC:
+	if this->type.type_id==TP_STRING_TINY:
+		return tp_string_tiny( this->str.val[index] )
+	elif this->type.type_id==TP_STRING or this->type.type_id==TP_STRING_ATOMIC:
 		auto ptr = tp_string_getptr(*this)
 		char c = ptr[index]
 		//std::cout << c << std::endl;
@@ -911,23 +1023,5 @@ def tp_obj::as_vector() -> std::vector<tp_obj>:
 		r.push_back( this->list.val->items[i] )
 	return r
 
-## Pythonic++ helper functions ##
-def len(tp_obj self) ->int:
-	int type = self.type.type_id
-	if type == TP_STRING:
-		return (int)(tp_string_len(self))
-	elif type == TP_STRING_ATOMIC:
-		return (int)(tp_string_len(self))
-	elif type == TP_DICT:
-		return (int)(self.dict.val->len)
-	elif type == TP_LIST:
-		return (int)(self.list.val->len)
-	//tp_raise(tp_None,tp_string_atom(tp, "(tp_len) TypeError: len() of unsized object"));
-	throw "TypeError in tp_ops.cpp:len invalid object type to use the len function with"
 
-def chr(int n) ->unsigned char:
-	return (unsigned char)n
-
-def ord(char c) ->int:
-	return (int)((unsigned char)c)
 

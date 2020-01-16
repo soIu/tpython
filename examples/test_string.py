@@ -1,4 +1,5 @@
-print('testing string...')
+print('testing a short string `hi`...')
+print('hi')
 
 print( ['X', 'Y', 'Z'] )
 
@@ -30,6 +31,8 @@ print( a %("FOO", "BAR") )
 abc = ','.join(['A', 'B', 'C'])
 print( abc )
 print( abc.replace(',', '_') )
+cba = abc.reverse()
+print(cba)
 
 ## in regular python the following would fail, but in tpython it is allowed ##
 print( a % b )

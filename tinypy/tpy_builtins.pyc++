@@ -59,7 +59,7 @@ def tpy_len(TP) ->tp_obj:
 def tpy_getattr(TP)->tp_obj:
 	tp_obj ob = TP_OBJ()
 	tp_obj name = TP_OBJ()
-	if name.type.type_id != TP_STRING:
+	if not isstring(name.type.type_id):
 		throw "ERROR: getattr - name is not a string"
 	return tp_get(tp, ob, name)
 
@@ -67,7 +67,7 @@ def tpy_setattr(TP)->tp_obj:
 	tp_obj ob = TP_OBJ()
 	tp_obj name = TP_OBJ()
 	tp_obj value = TP_OBJ()
-	if name.type.type_id != TP_STRING:
+	if not isstring(name.type.type_id):
 		throw "ERROR: setattr - name is not a string"
 	return tp_set(tp, ob, name, value)
 
@@ -97,7 +97,7 @@ def tpy_dir(TP) ->tp_obj:
 		r.append("index")
 		r.append("sort")
 		r.append("extend")
-	elif ob.type.type_id == TP_STRING:
+	elif isstring(ob.type.type_id):
 		r.append("join")
 		r.append("split")
 		r.append("splitlines")
@@ -129,7 +129,7 @@ def tpy_hasattr(TP) ->tp_obj:
 	## note this is slow and could be optimized
 	tp_obj names = tpy_dir(tp)
 	tp_obj attrname = TP_OBJ()
-	if attrname.type.type_id != TP_STRING:
+	if not isstring(attrname.type.type_id):
 		throw "ERROR: hasattr attr name is not a string"
 	for i in range(len(names)):
 		if names[i] == attrname:

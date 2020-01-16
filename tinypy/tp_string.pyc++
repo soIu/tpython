@@ -25,14 +25,37 @@ def tp_string_t(TP, int n) ->tp_obj:
 ##	r.string.val = v
 ##	return r
 
-def tp_string_atom(TP, const char * v) ->tp_obj:
+def tp_string_tiny(const char * v, int len) ->tp_obj:
 	tp_obj r
-	r.type.type_id = TP_STRING_ATOMIC
+	r.type.type_id = TP_STRING_TINY
 	## note magic must be set, malloc/realloc will not always clear all the bytes and set them to zero
 	r.type.magic = TP_STRING_NONE
-	r.atomstr.val = v
+	for i in range(len):
+		r.str.val[i] = v[i]
+	if len < 12:
+		r.str.val[len]='\0'
 	return r
 
+def tp_string_atom(TP, const char * v) ->tp_obj:
+	int n = strlen(v)
+	if n <= 12:
+		return tp_string_tiny(v, n)
+	else:
+		tp_obj r
+		r.type.type_id = TP_STRING_ATOMIC
+		## note magic must be set, malloc/realloc will not always clear all the bytes and set them to zero
+		r.type.magic = TP_STRING_NONE
+		r.atomstr.val = v
+		return r
+
+
+def tp_string_tiny(const char c) ->tp_obj:
+	tp_obj r
+	r.type.type_id = TP_STRING_TINY
+	## note magic must be set, malloc/realloc will not always clear all the bytes and set them to zero
+	r.type.magic = TP_STRING_NONE
+	r.str.val[0] = c
+	return r
 
 ## Return a untracked string object from external memory.
 def tp_string_from_const(TP, const char *s, int n) ->tp_obj:
@@ -95,6 +118,9 @@ def tp_string_getptr(tp_obj s) -> char* :
 		throw "TP_STRING_ATOM is DEPRECATED"
 	if s.type.type_id == TP_STRING_ATOMIC:
 		return (char*) s.atomstr.val
+	elif s.type.type_id == TP_STRING_TINY:
+		## this will not work :(
+		return (char*)&s.str.val
 	else:
 		return s.string.info->s
 
@@ -104,6 +130,13 @@ def tp_string_len(tp_obj s)->int:
 		throw "TP_STRING_ATOM is DEPRECATED"
 	if s.type.type_id == TP_STRING_ATOMIC:
 		return strlen(s.atomstr.val)
+	elif s.type.type_id == TP_STRING_TINY:
+		int n = 0
+		for i in range(12):
+			if s.str.val[i]=='\0':
+				break
+			n ++
+		return n
 	else:
 		return s.string.info->len
 
@@ -116,6 +149,8 @@ def tp_string_view(TP, tp_obj s, int a, int b) ->tp_obj:
 	int l = tp_string_len(s)
 	a = _tp_max(0,(a<0?l+a:a))
 	b = _tp_min(l,(b<0?l+b:b))
+	if s.type.type_id==TP_STRING_TINY:
+		throw "TODO string view on a tiny string"
 	tp_obj r = tp_string_from_const(tp, tp_string_getptr(s) + a, b - a)
 	##r.string.info->base = s  ## this was used by gc_follow
 	r.type.magic = TP_STRING_VIEW
@@ -153,11 +188,20 @@ def tp_str_index(tp_obj s, tp_obj k) ->int:
 
 
 def tp_string_cmp(tp_obj a, tp_obj b) ->int:
-	int l = _tp_min(tp_string_len(a), tp_string_len(b))
-	int v = memcmp(tp_string_getptr(a), tp_string_getptr(b), l)
-	if v == 0:
-		v = tp_string_len(a) - tp_string_len(b)
-	return v
+	if a.type.type_id == TP_STRING_TINY:
+		if b.type.type_id != TP_STRING_TINY:
+			throw "can only compare a tiny string another other tiny string"
+		if len(a.str.val) != 1:
+			throw "tp_string_cmp - tiny string operand1 is not of length 1"
+		if len(b.str.val) != 1:
+			throw "tp_string_cmp - tiny string operand2 is not of length 1"
+		return (int)(a.str.val[0] - b.str.val[0])
+	else:
+		int l = _tp_min(tp_string_len(a), tp_string_len(b))
+		int v = memcmp(tp_string_getptr(a), tp_string_getptr(b), l)
+		if v == 0:
+			v = tp_string_len(a) - tp_string_len(b)
+		return v
 
 
 def tp_string_add(TP, tp_obj a, tp_obj b) ->tp_obj:
@@ -174,10 +218,14 @@ def tp_string_mul(TP, tp_obj a, int n) ->tp_obj:
 	if n <= 0:
 		tp_obj r = tp_string_t(tp, 0)
 		return r
-	tp_obj r = tp_string_t(tp, al*n)
-	char *s = tp_string_getptr(r)
-	int i
-	for (i=0; i<n; i++):
-		memcpy(s+al*i, tp_string_getptr(a), al)
-	return r
+	else:
+		tp_obj r = tp_string_t(tp, al*n)
+		char *s = tp_string_getptr(r)
+		if a.type.type_id == TP_STRING_TINY:
+			for i in range(n):
+				memcpy(s+al*i, (char*)&a.str.val, al)
+		else:
+			for i in range(n):
+				memcpy(s+al*i, tp_string_getptr(a), al)
+		return r
 

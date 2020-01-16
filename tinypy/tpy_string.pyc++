@@ -1,6 +1,10 @@
 def tpy_str_startswith(TP) ->tp_obj:
+	print("tpy_str_startswith")
 	std::string self = TP_OBJ()
 	std::string val = TP_OBJ()
+	print(self)
+	print(val)
+	print("--------------------")
 	if self.substr(0, val.size()) == val:
 		return tp_number(1)
 	else:
@@ -19,41 +23,83 @@ def tpy_str_endswith(TP) ->tp_obj:
 
 def tpy_str_reverse(TP) ->tp_obj:
 	tp_obj self = TP_OBJ()
-	std::string s = std::string(tp_string_getptr(self), tp_string_len(self) )
-	std::reverse(s.begin(), s.end())
-	return tp_string_from_stdstring(tp, s)
+	if self.type.type_id==TP_STRING_TINY:
+		std::string s = std::string( (const char*)&self.str.val, strlen(self.str.val) )
+		std::reverse(s.begin(), s.end())
+		return tp_string_tiny(s.c_str(), s.size())
+	else:
+		std::string s = std::string(tp_string_getptr(self), tp_string_len(self) )
+		std::reverse(s.begin(), s.end())
+		return tp_string_from_stdstring(tp, s)
 
 
 def tpy_str_join(TP) ->tp_obj:
 	tp_obj delim = TP_OBJ()
 	tp_obj val = TP_OBJ()
-	int l=0,i
-	tp_obj r
-	char *s
-	for (i=0; i<val.list.val->len; i++):
-		if i!=0:
-			l += tp_string_len(delim)
-		l += tp_string_len(tp_str(tp, val.list.val->items[i]))
-	r = tp_string_t(tp,l)
-	s = tp_string_getptr(r)
-	l = 0
-	for (i=0; i<val.list.val->len; i++):
-		tp_obj e
-		if i!=0:
-			memcpy(s+l, tp_string_getptr(delim), tp_string_len(delim)); l += tp_string_len(delim)
-		e = tp_str(tp, val.list.val->items[i])
-		memcpy(s+l, tp_string_getptr(e), tp_string_len(e)); l += tp_string_len(e)
+	if delim.type.type_id==TP_STRING_TINY:
+		std::string de = std::string((const char*)&delim.str.val, strlen(delim.str.val))
+		std::string ss = ""
+		int n = len(val)
+		for i in range(n):
+			tp_obj item = val.list.val->items[i]
+			ss += tp_as_string(tp, item, false)
+			if i<n-1:
+				ss += de
+		if ss.size() <=12:
+			return tp_string_tiny(ss.c_str(), ss.size())
+		else:
+			return tp_string_from_stdstring(tp, ss)
+	else:
+		int l=0,i
+		tp_obj r
+		char *s
+		for (i=0; i<val.list.val->len; i++):
+			if i!=0:
+				l += tp_string_len(delim)
+			l += tp_string_len(tp_str(tp, val.list.val->items[i]))
+		r = tp_string_t(tp,l)
+		s = tp_string_getptr(r)
+		l = 0
+		for (i=0; i<val.list.val->len; i++):
+			tp_obj e
+			if i!=0:
+				memcpy(s+l, tp_string_getptr(delim), tp_string_len(delim)); l += tp_string_len(delim)
+			e = tp_str(tp, val.list.val->items[i])
+			memcpy(s+l, tp_string_getptr(e), tp_string_len(e)); l += tp_string_len(e)
+		return r
+
+@static
+def split_tiny_string(TP, tp_obj txt, tp_obj delims) -> tp_obj:
+	tp_obj r = tp_list_t(tp)
+	if strlen(delims.str.val) != 1:
+		throw "ERROR: can only split a tiny string by a single character tiny string"
+	int len = 1
+	std::string text = std::string( (const char*)&txt.str.val, strlen(txt.str.val))
+	std::size_t start = text.find(delims.str.val[0]), end = 0
+	if start == std::string::npos:
+		r.append(text)
+		return r
+	if start != std::string::npos:
+		r.append(text.substr(0, start))
+	while (end = text.find(delims.str.val[0], start+len)) != std::string::npos:
+		r.append(text.substr(start+len, (end-len) - start))
+		start = text.find(delims.str.val[0], end)
+	if start != std::string::npos:
+		r.append(text.substr(start+len))
 	return r
 
 
 def tpy_str_split(TP) ->tp_obj:
 	tp_obj v = TP_OBJ()
 	tp_obj d = TP_OBJ()
-	tp_obj r = tp_list_t(tp)
-	auto parts = __split_string__(v, d)
-	for (auto & part : parts):
-		r.append(part)
-	return r
+	if v.type.type_id==TP_STRING_TINY and d.type.type_id==TP_STRING_TINY:
+		return split_tiny_string(tp, v,d)
+	else:
+		tp_obj r = tp_list_t(tp)
+		auto parts = __split_string__(v, d)
+		for (auto & part : parts):
+			r.append(part)
+		return r
 
 def tpy_str_splitlines(TP) ->tp_obj:
 	tp_obj v = TP_OBJ()
@@ -80,14 +126,17 @@ def tpy_str_index(TP) ->tp_obj:
 
 def tpy_chr(TP) ->tp_obj:
 	int v = TP_NUM()
-	return tp_string_t_from_const(tp, tp->chars[(unsigned char)v], 1)
+	return tp_string_tiny( (unsigned char)v )
+	##return tp_string_t_from_const(tp, tp->chars[(unsigned char)v], 1)
 
 
 def tpy_ord(TP) ->tp_obj:
-	tp_obj s = TP_STR()
-	if tp_string_len(s) != 1:
-		tp_raise(tp_None,tp_string_atom(tp, "tp_ord TypeError: `ord()` expected a character"))
-	return tp_number((unsigned char)tp_string_getptr(s)[0])
+	##tp_obj s = TP_STR()
+	##if tp_string_len(s) != 1:
+	##	tp_raise(tp_None,tp_string_atom(tp, "tp_ord TypeError: `ord()` expected a character"))
+	##return tp_number((unsigned char)tp_string_getptr(s)[0])
+	tp_obj s = TP_OBJ()
+	return tp_number( (unsigned char)s.str.val[0] )
 
 
 def tpy_str_strip(TP) ->tp_obj:

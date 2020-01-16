@@ -317,7 +317,7 @@ def rebuild(stage=None):
 	else:  ## linux
 		if '--profile' in sys.argv:
 			opts += ' -O1 -g -pg '
-			exeopts += ' -O0 -g -pg '
+			exeopts += ' -O1 -g -pg '
 
 		else:
 			if '--secure-binary' in sys.argv:
@@ -439,13 +439,23 @@ def rebuild(stage=None):
 		subprocess.check_call([gradlew, 'installDebug'])
 
 	elif '--pgo' in sys.argv:
-		makefile_gen_pgo = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe).replace('<EXEOPTS>', ' -fprofile-generate ' + exeopts).replace('<OPTIONS>', ' -fprofile-generate ' + opts).replace('<MODULES>', mods).replace('<SDL_INCLUDE>', sdl_inc)
-		makefile_use_pgo = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe).replace('<EXEOPTS>', ' -fprofile-use ' + exeopts).replace('<OPTIONS>', ' -fprofile-use ' + opts).replace('<MODULES>', mods).replace('<SDL_INCLUDE>', sdl_inc)
+		if '--clang' in sys.argv:
+			makefile_gen_pgo = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe).replace('<EXEOPTS>', ' -fprofile-instr-generate=default.profraw ' + exeopts).replace('<OPTIONS>', ' -fprofile-generate ' + opts).replace('<MODULES>', mods).replace('<SDL_INCLUDE>', sdl_inc)
+			makefile_use_pgo = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe).replace('<EXEOPTS>', ' -fprofile-instr-use ' + exeopts).replace('<OPTIONS>', ' -fprofile-use ' + opts).replace('<MODULES>', mods).replace('<SDL_INCLUDE>', sdl_inc)
+		else:
+			makefile_gen_pgo = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe).replace('<EXEOPTS>', ' -fprofile-generate ' + exeopts).replace('<OPTIONS>', ' -fprofile-generate ' + opts).replace('<MODULES>', mods).replace('<SDL_INCLUDE>', sdl_inc)
+			makefile_use_pgo = Makefile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe).replace('<EXEOPTS>', ' -fprofile-use ' + exeopts).replace('<OPTIONS>', ' -fprofile-use ' + opts).replace('<MODULES>', mods).replace('<SDL_INCLUDE>', sdl_inc)
 
 		open('Makefile', 'wb').write(makefile_gen_pgo)
 		subprocess.check_call(['make', 'clean'])
 		subprocess.check_call(['make'])
 		subprocess.check_call(['time', './tpython++'])
+
+		if '--clang' in sys.argv:
+			for f in os.listdir('.'):
+				if f.endswith('.profraw'):
+					subprocess.check_call(['llvm-profdata-6.0', 'merge', '-output=default.profdata', f])
+					break
 
 		open('Makefile', 'wb').write(makefile_use_pgo)
 		subprocess.check_call(['make', 'clean'])

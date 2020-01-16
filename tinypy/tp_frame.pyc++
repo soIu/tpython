@@ -3,9 +3,27 @@ def tp_frame_nt(TP, tp_obj globals, tp_obj code, tp_obj * ret_dest) -> tpd_frame
 	tpd_frame f
 	f.globals = globals
 	f.code = code
-	f.cur = (tpd_code*) tp_string_getptr(f.code)
+	if code.type.type_id == TP_STRING_TINY:
+		if defined(DEBUG):
+			print("new tp_frame_nt - TINY CODE")
+		f.cur = (tpd_code*)&f.code.str.val
+	elif isstring(f.code.type.type_id):
+		if defined(DEBUG):
+			print("new tp_frame_nt - CODE")
+			print("type flag: ", f.code.type.type_id)
+			print("magic flag: ", f.code.type.magic)
+			print("num bytes: ", f.code.string.info->len)
+		f.cur = (tpd_code*) tp_string_getptr(f.code)
+	else:
+		print("ERROR in tp_frame_nt - invalid code object, expected a string instead got:")
+		print(code)
+		#ifdef DEBUG
+		  f.cur = (tpd_code*) tp_string_getptr(f.code)
+		#else
+		  throw "ERROR in tp_frame_nt - invalid code object"
+		#endif
 	f.jmp = 0
-	f.regs = (tp->cur <= 0?tp->regs:tp->frames[tp->cur].regs+tp->frames[tp->cur].cregs)
+	f.regs = (tp->cur <= 0 ? tp->regs : tp->frames[tp->cur].regs+tp->frames[tp->cur].cregs)
 	f.regs[0] = f.globals
 	f.regs[1] = f.code
 	f.regs += TP_REGS_EXTRA
@@ -16,5 +34,6 @@ def tp_frame_nt(TP, tp_obj globals, tp_obj code, tp_obj * ret_dest) -> tpd_frame
 		f.line = tp_string_atom(tp, "")
 		f.name = tp_string_atom(tp, "?")
 		f.fname = tp_string_atom(tp, "?")
+		print("new tp_frame_nt - READY")
 	return f
 

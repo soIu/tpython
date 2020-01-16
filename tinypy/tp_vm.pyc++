@@ -377,39 +377,19 @@ def tp_step(TP) ->int:
 					continue
 					break
 				case TP_ISTRING:
-					#ifdef TP_SANDBOX
-					  tp_bounds(tp,cur,(UVBC/4)+1);
-					#endif
-					// RA = tp_string_n((*(cur+1)).string.val,UVBC); // from TinyPy - May 13, 2009
-					#ifdef DEBUG
-					  print("NEW STRING")
-					  std::cout <<  std::string((*(cur+1)).string.val, UVBC) << std::endl;
-					#endif
-					//int a = (*(cur+1)).string.val - tp_string_getptr(f->code);
-					//RA = tp_string_view(tp, f->code, a, a+UVBC);
-					// string_view is NOT broken, but is slightly slower than tp_string_from_const
-					## hashing a string_view has a 10 percent overhead :(
-					/*
-					if UVBC <= 32:
-						std::string_view s = std::string_view{ (*(cur+1)).string.val, UVBC};
-						##std::cout << "string byte pos: " << (unsigned int)(cur+1) << " = `" << s << "`" << std::endl
-						if __string_cache__.count(s)==1:
-							RA = __string_cache__[s]
-						else:
-							RA = tp_string_from_const(tp, (*(cur+1)).string.val, UVBC )
-							__string_cache__[s]=RA
-							##print("string cache miss")
-							##print(RA)
+					## old notes: RA = tp_string_n((*(cur+1)).string.val,UVBC); // from TinyPy - May 13, 2009
+					if defined(DEBUG):
+						print("NEW STRING")
+						std::cout <<  std::string((*(cur+1)).string.val, UVBC) << std::endl;
+						print("len of new string = ", UVBC)
+					##int a = (*(cur+1)).string.val - tp_string_getptr(f->code);
+					##RA = tp_string_view(tp, f->code, a, a+UVBC);
+					## old notes: string_view is NOT broken, but is slightly slower than tp_string_from_const
+					if UVBC <= 12:
+						## stack allocated string
+						RA = tp_string_tiny( (*(cur+1)).string.val, UVBC )
 					else:
-					*/
-					RA = tp_string_from_const(tp, (*(cur+1)).string.val, UVBC )
-					##	pass
-					##else:
-					##	print(RA)
-					//if (UVBC <= 5)  // this should work, bug causes some memory error, string becomes a func?
-					//	RA = tp_string_atom_from_stdstring(tp, std::string((*(cur+1)).string.val, UVBC) );
-					//else
-					//	RA = tp_string_from_const(tp, (*(cur+1)).string.val, UVBC );
+						RA = tp_string_from_const(tp, (*(cur+1)).string.val, UVBC )
 					cur += (UVBC/4)+1
 					break
 				case TP_IMOVE: RA = RB; break;
@@ -422,7 +402,12 @@ def tp_step(TP) ->int:
 						print("Global Get - TP_IGGET")
 						std::cout << "  RA: " << tp_as_string(tp, RA) << std::endl;  // destination register
 						std::cout << "  RB: " << tp_as_string(tp, RB) << std::endl;  // name of variable to fetch
-					if RB.string.info->len==1:
+					if RB.type.type_id==TP_STRING_TINY:
+						if len(RB)==1:
+							RA = __global_objects__[ (int)RB.str.val[0] ];
+						elif not tp_iget(tp, &RA, f->globals, RB):
+							RA = tp_get(tp,tp->builtins,RB); GA;
+					elif RB.string.info->len==1:
 						RA = __global_objects__[ (int)RB.string.info->s[0] ];
 					elif not tp_iget(tp, &RA, f->globals, RB):
 						RA = tp_get(tp,tp->builtins,RB); GA;
@@ -442,7 +427,12 @@ def tp_step(TP) ->int:
 						print("Global Set - TP_IGSET")
 						std::cout << "  RA: " << tp_as_string(tp, RA) << std::endl;  // variable name to set to
 						std::cout << "  RB: " << tp_as_string(tp, RB) << std::endl;  // value of variable
-					if RA.string.info->len==1:
+					if RA.type.type_id==TP_STRING_TINY:
+						if len(RA)==1:
+							__global_objects__[ (int)RA.str.val[0] ] = RB
+						else:
+							tp_set(tp,f->globals,RA,RB)
+					elif RA.string.info->len==1:
 						//int idx = (int)RA.string.info->s[0];
 						//std::cout << "global set index: " << idx << std::endl;
 						__global_objects__[ (int)RA.string.info->s[0] ] = RB
@@ -525,16 +515,21 @@ def tp_step(TP) ->int:
 				case TP_ISETJMP: f->jmp = SVBC?cur+SVBC:0; break;
 				case 200:
 					## fast global function call
+					if defined(DEBUG):
+						print("^^^^^^^^^^^^^fast global call^^^^^^^^^^^^^")
+						print("fast call func type:", __globals256__[ VB ].type.type_id)
+						print("fast call func magic:", __globals256__[ VB ].type.magic)
 					f->cur = cur + 1
 					tp_obj fast_params = tp_list_nt(tp)
 					##fast_params.append(RC)
 					tpd_param_list_append(tp, fast_params.list.val, RC)
-					##RA = tp_call(tp, __globals256__[ VB ], fast_params)
-					tp_obj dest = tp_None
-					tp_enter_frame(tp, __globals256__[ VB ].func.info->globals, __globals256__[ VB ].func.info->code, &dest)
-					tp->frames[tp->cur].regs[0] = fast_params
-					tp_run_frame(tp)
-					RA = dest
+					RA = tp_call(tp, __globals256__[ VB ], fast_params)
+					## this fails because it assumes that its a bytecode function, when it could be any type
+					##tp_obj dest = tp_None
+					##tp_enter_frame(tp, __globals256__[ VB ].func.info->globals, __globals256__[ VB ].func.info->code, &dest)
+					##tp->frames[tp->cur].regs[0] = fast_params
+					##tp_run_frame(tp)
+					##RA = dest
 					tpd_list_free(tp, fast_params.list.val)
 					GA
 					return 0
@@ -549,6 +544,8 @@ def tp_step(TP) ->int:
 					return 0
 					break
 				case TP_IDEF:
+					if defined(DEBUG):
+						print("TP_IDEF new function decl")
 					int a = (*(cur+1)).string.val - tp_string_getptr(f->code)
 					if(tp_string_getptr(f->code)[a] == ';') throw "TP_IDEF if(tp_string_getptr(f->code)[a] == ';')";
 					RA = tp_def(
@@ -580,6 +577,8 @@ def tp_step(TP) ->int:
 					print("RA: ", RA)
 					break
 				case TP_ILINE:
+					if defined(DEBUG):
+						print("TP_ILINE - get and set current source line")
 					int a = (*(cur+1)).string.val - tp_string_getptr(f->code)
 					if(tp_string_getptr(f->code)[a] == ';') throw "TP_ILINE if(tp_string_getptr(f->code)[a] == ';')";
 					printf("line: %s \n", (*(cur+1)).string.val )

@@ -11,6 +11,8 @@ print('testing list')
 b = [a,2]
 print(len(b))
 print(dir(b))
+print('len of b should be 2')
+print( len(b) )
 assert len(b)==2
 assert any(b)
 assert any([])==False
@@ -24,12 +26,18 @@ assert len(d)==2
 
 print('testing string')
 s = 'mystring'
+print(s)
+print('len of s')
+print(len(s))
+print('dir of s')
 print(dir(s))
 assert len(s)==8
 
 print('testing getattr')
 func = getattr(s, 'startswith')
 print(func)
+print('calling func')
+print( func('my') )
 assert func('my')
 
 print('testing setattr on a class instance')
@@ -40,6 +48,7 @@ ob = MyClass()
 print(dir(ob))
 setattr(ob, 'FOO', 'BAR')
 print(dir(ob))
+print('test ob.FOO')
 print(ob.FOO)
 
 print('testing hasattr on a class instance')
@@ -60,9 +69,16 @@ else:
 print('testing setattr on a dict')
 setattr(d, 'FOO', 'BAR')
 print(dir(d))
-print(d.FOO)
+##print('test d.FOO')
+##print(d.FOO)  ## this is not allowed
+print('d["FOO"]')
+print(d['FOO'])
+
+print('d.update')
 print(d.update)
+print('d.update="XXX"')
 d.update = 'XXX'
+print('d.update')
 print(d.update)
 d['update'] = 'XXX'
 print(d.update)
@@ -77,8 +93,5 @@ print( 'sizeof object:',sizeof(ob) )
 print( 'sizeof list:',sizeof(b) )
 print( 'sizeof dict:',sizeof(d) )
 print( 'sizeof function:', sizeof(func) )
-
-v = vec3(1.1, 2.2, 3.3)
-print( 'sizeof vec3:', sizeof(v) )
 
 
