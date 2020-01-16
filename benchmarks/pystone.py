@@ -1,6 +1,6 @@
 
 class Record:
-	def __init__(self, PtrComp = None, Discr = 0, EnumComp = 0, IntComp = 0, StringComp = 0):
+	def __init__(self, PtrComp, Discr, EnumComp, IntComp, StringComp):
 		self.PtrComp = PtrComp
 		self.Discr = Discr
 		self.EnumComp = EnumComp
@@ -163,14 +163,8 @@ def Proc0(loops):
 	global PtrGlb
 	global PtrGlbNext
 
-	PtrGlbNext = Record( PtrComp=None, Discr=0, EnumComp=0, IntComp=0, StringComp=0 )
-	PtrGlb = Record(
-		PtrComp=PtrGlbNext, 
-		Discr=Ident1, 
-		EnumComp=Ident3, 
-		IntComp=40, 
-		StringComp="DHRYSTONE PROGRAM, SOME STRING"
-	)
+	PtrGlbNext = Record(None, 0, 0, 0, 0 )
+	PtrGlb = Record(PtrGlbNext, Ident1, Ident3, 40, "DHRYSTONE PROGRAM, SOME STRING")
 
 	String1Loc = "DHRYSTONE PROGRAM, 1'ST STRING"
 	Array2Glob[8][7] = 10

@@ -142,7 +142,14 @@ struct TPTypeInfo:
 	unsigned int magic :2
 
 
+##enum TPFuncMagic:
+##	TP_FUNC_MASK_C = 1,
+##	TP_FUNC_MASK_METHOD = 2,
+##	TP_FUNC_MASK_CPP = 100,
+##	TP_FUNC_MASK_METHOD_CPP = 101
+
 enum TPFuncMagic:
+	TP_FUNC_BYTECODE = 0,
 	TP_FUNC_MASK_C = 1,
 	TP_FUNC_MASK_METHOD = 2,
 	TP_FUNC_MASK_CPP = 100,
@@ -233,15 +240,15 @@ class tp_obj:
 	if defined(BLENDOT_TYPES):
 		struct { TPTypeInfo type; struct Vector2 vec; } vec2;
 		struct { TPTypeInfo type; struct Vector3 vec; } vec3;
-		struct { TPTypeInfo type; struct Quat q; } quat;
-		struct { TPTypeInfo type; struct Color c; } color;
-		struct { TPTypeInfo type; struct Rect2 r; } rect;
-		struct { TPTypeInfo type; struct Face3 t; } tri;
-		struct { TPTypeInfo type; struct Plane p; } plane;
-		struct { TPTypeInfo type; struct AABB a; } aabb;
-		struct { TPTypeInfo type; struct Basis m; } mat3;
-		struct { TPTypeInfo type; struct Transform t; } trans;
-		struct { TPTypeInfo type; struct RID r; } rid;
+		struct { TPTypeInfo type; struct Quat *q; } quat;
+		struct { TPTypeInfo type; struct Color *c; } color;
+		struct { TPTypeInfo type; struct Rect2 *r; } rect;
+		struct { TPTypeInfo type; struct Face3 *t; } tri;
+		struct { TPTypeInfo type; struct Plane *p; } plane;
+		struct { TPTypeInfo type; struct AABB *a; } aabb;
+		struct { TPTypeInfo type; struct Basis *m; } mat3;
+		struct { TPTypeInfo type; struct Transform *t; } trans;
+		struct { TPTypeInfo type; struct RID *r; } rid;
 		struct { TPTypeInfo type; struct Spatial *ptr; } spatial;
 		struct { TPTypeInfo type; struct ArrayMesh *ptr; } mesh;
 		struct { TPTypeInfo type; struct MeshInstance *ptr; } meshi;
@@ -567,63 +574,64 @@ def tp_vec3(Vector3 v) -> tp_obj:
 @static
 def tp_quat(double x, double y, double z, double w) -> tp_obj:
 	tp_obj val = {TP_QUAT};
-	val.quat.q.x = x
-	val.quat.q.y = y
-	val.quat.q.z = z
-	val.quat.q.w = w
+	val.quat.q🠊x = x
+	val.quat.q🠊y = y
+	val.quat.q🠊z = z
+	val.quat.q🠊w = w
 	return val
 
 @static
 def tp_color(double r, double g, double b, double a) -> tp_obj:
 	tp_obj val = {TP_COLOR};
-	val.color.c.r = r
-	val.color.c.g = g
-	val.color.c.b = b
-	val.color.c.a = a
+	val.color.c = new Color()
+	val.color.c🠊r = r
+	val.color.c🠊g = g
+	val.color.c🠊b = b
+	val.color.c🠊a = a
 	return val
 
 @static
 def tp_rect(double x, double y, double w, double h) -> tp_obj:
 	tp_obj val = {TP_RECT};
-	val.rect.r = Rect2(x,y,w,h)
+	val.rect.r = new Rect2(x,y,w,h)
 	return val
 
 @static
 def tp_tri(Vector3 a, Vector3 b, Vector3 c) -> tp_obj:
 	tp_obj val = {TP_TRI};
-	val.tri.t = Face3(a,b,c)
+	val.tri.t = new Face3(a,b,c)
 	return val
 
 @static
 def tp_plane(Vector3 normal, double length) -> tp_obj:
 	tp_obj val = {TP_PLANE};
-	val.plane.p = Plane(normal, length)
+	val.plane.p = new Plane(normal, length)
 	return val
 
 @static
 def tp_aabb(Vector3 pos, Vector3 size) -> tp_obj:
 	tp_obj val = {TP_AABB};
-	val.aabb.a = AABB(pos,size)
+	val.aabb.a = new AABB(pos,size)
 	return val
 
 
 @static
 def tp_mat3(Vector3 a, Vector3 b, Vector3 c) -> tp_obj:
 	tp_obj val = {TP_MAT3};
-	val.mat3.m = Basis(a,b,c)
+	val.mat3.m = new Basis(a,b,c)
 	return val
 
 @static
-def tp_trans(Basis b, Vector3 origin) -> tp_obj:
+def tp_trans(Basis *b, Vector3 origin) -> tp_obj:
 	tp_obj val = {TP_TRANS};
-	val.trans.t = Transform(b, origin)
+	val.trans.t = new Transform(*b, origin)
 	return val
 
 @static
 def tp_rid(int id) -> tp_obj:
 	tp_obj val = {TP_RID};
-	val.rid.r = RID()
-	val.rid.r.set_id(id)
+	val.rid.r = new RID()
+	val.rid.r🠊set_id(id)
 	return val
 
 @static
@@ -837,57 +845,57 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 			ss << "vec3( x=" << self.vec3.vec.x << ", y=" << self.vec3.vec.y << ", z=" << self.vec3.vec.z << ")"
 			break
 		case TP_QUAT:
-			ss << "quat( x=" << self.quat.q.x << ", y=" << self.quat.q.y << ", z=" << self.quat.q.z << ", w=" << self.quat.q.w << ")"
+			ss << "quat( x=" << self.quat.q🠊x << ", y=" << self.quat.q🠊y << ", z=" << self.quat.q🠊z << ", w=" << self.quat.q🠊w << ")"
 			break
 		case TP_COLOR:
-			ss << "color( red=" << self.color.c.r << ", green=" << self.color.c.g << ", blue=" << self.color.c.b << ", alpha=" << self.color.c.a << ")"
+			ss << "color( red=" << self.color.c🠊r << ", green=" << self.color.c🠊g << ", blue=" << self.color.c🠊b << ", alpha=" << self.color.c🠊a << ")"
 			break
 		case TP_RECT:
-			ss << "rect( x=" << self.rect.r.position.x << ", y=" << self.rect.r.position.y << ", width=" << self.rect.r.size.x << ", height=" << self.rect.r.size.y << ")"
+			ss << "rect( x=" << self.rect.r🠊position.x << ", y=" << self.rect.r🠊position.y << ", width=" << self.rect.r🠊size.x << ", height=" << self.rect.r🠊size.y << ")"
 			break
 		case TP_TRI:
 			ss << "tri(" << std::endl
-			ss << "	a:  x=" << self.tri.t.vertex[0].x << ", y=" << self.tri.t.vertex[0].y << ", z=" << self.tri.t.vertex[0].z << std::endl
-			ss << "	b:  x=" << self.tri.t.vertex[1].x << ", y=" << self.tri.t.vertex[1].y << ", z=" << self.tri.t.vertex[1].z << std::endl
-			ss << "	c:  x=" << self.tri.t.vertex[2].x << ", y=" << self.tri.t.vertex[2].y << ", z=" << self.tri.t.vertex[2].z << std::endl
+			ss << "	a:  x=" << self.tri.t🠊vertex[0].x << ", y=" << self.tri.t🠊vertex[0].y << ", z=" << self.tri.t🠊vertex[0].z << std::endl
+			ss << "	b:  x=" << self.tri.t🠊vertex[1].x << ", y=" << self.tri.t🠊vertex[1].y << ", z=" << self.tri.t🠊vertex[1].z << std::endl
+			ss << "	c:  x=" << self.tri.t🠊vertex[2].x << ", y=" << self.tri.t🠊vertex[2].y << ", z=" << self.tri.t🠊vertex[2].z << std::endl
 			ss << ")"
 			break
 		case TP_PLANE:
 			ss << "plane(" << std::endl
-			ss << "	normal:  x=" << self.plane.p.normal.x << ", y=" << self.plane.p.normal.y << ", z=" << self.plane.p.normal.z << std::endl
-			ss << "	length:  " << self.plane.p.d << std::endl
+			ss << "	normal:  x=" << self.plane.p🠊normal.x << ", y=" << self.plane.p🠊normal.y << ", z=" << self.plane.p🠊normal.z << std::endl
+			ss << "	length:  " << self.plane.p🠊d << std::endl
 			ss << ")"
 			break
 		case TP_AABB:
 			ss << "aabb(" << std::endl
-			ss << "	position:  x=" << self.aabb.a.position.x << ", y=" << self.aabb.a.position.y << ", z=" << self.aabb.a.position.z << std::endl
-			ss << "	size:  x=" << self.aabb.a.size.x << ", y=" << self.aabb.a.size.y << ", z=" << self.aabb.a.size.z << std::endl
+			ss << "	position:  x=" << self.aabb.a🠊position.x << ", y=" << self.aabb.a🠊position.y << ", z=" << self.aabb.a🠊position.z << std::endl
+			ss << "	size:  x=" << self.aabb.a🠊size.x << ", y=" << self.aabb.a🠊size.y << ", z=" << self.aabb.a🠊size.z << std::endl
 			ss << ")"
 			break
 		case TP_MAT3:
 			ss << "mat3(" << std::endl
-			ss << "	" << self.mat3.m.elements[0].x << ", " << self.mat3.m.elements[0].y << ", " << self.mat3.m.elements[0].z << std::endl
-			ss << "	" << self.mat3.m.elements[1].x << ", " << self.mat3.m.elements[1].y << ", " << self.mat3.m.elements[1].z << std::endl
-			ss << "	" << self.mat3.m.elements[2].x << ", " << self.mat3.m.elements[2].y << ", " << self.mat3.m.elements[2].z << std::endl
+			ss << "	" << self.mat3.m🠊elements[0].x << ", " << self.mat3.m🠊elements[0].y << ", " << self.mat3.m🠊elements[0].z << std::endl
+			ss << "	" << self.mat3.m🠊elements[1].x << ", " << self.mat3.m🠊elements[1].y << ", " << self.mat3.m🠊elements[1].z << std::endl
+			ss << "	" << self.mat3.m🠊elements[2].x << ", " << self.mat3.m🠊elements[2].y << ", " << self.mat3.m🠊elements[2].z << std::endl
 			ss << ")"
 			break
 		case TP_TRANS:
 			ss << "transform(" << std::endl
-			ss << "	vec3( x=" << self.trans.t.origin.x << ", y=" << self.trans.t.origin.y << ", z=" << self.trans.t.origin.z << ")"  << std::endl
+			ss << "	vec3( x=" << self.trans.t🠊origin.x << ", y=" << self.trans.t🠊origin.y << ", z=" << self.trans.t🠊origin.z << ")"  << std::endl
 			ss << "	mat3(" << std::endl
-			ss << "		" << self.trans.t.basis.elements[0].x << ", " << self.trans.t.basis.elements[0].y << ", " << self.trans.t.basis.elements[0].z << std::endl
-			ss << "		" << self.trans.t.basis.elements[1].x << ", " << self.trans.t.basis.elements[1].y << ", " << self.trans.t.basis.elements[1].z << std::endl
-			ss << "		" << self.trans.t.basis.elements[2].x << ", " << self.trans.t.basis.elements[2].y << ", " << self.trans.t.basis.elements[2].z << std::endl
+			ss << "		" << self.trans.t🠊basis.elements[0].x << ", " << self.trans.t🠊basis.elements[0].y << ", " << self.trans.t🠊basis.elements[0].z << std::endl
+			ss << "		" << self.trans.t🠊basis.elements[1].x << ", " << self.trans.t🠊basis.elements[1].y << ", " << self.trans.t🠊basis.elements[1].z << std::endl
+			ss << "		" << self.trans.t🠊basis.elements[2].x << ", " << self.trans.t🠊basis.elements[2].y << ", " << self.trans.t🠊basis.elements[2].z << std::endl
 			ss << "	)" << std::endl
 			ss << ")"
 			break
 		case TP_RID:
-			ss << "RID( id=" << self.rid.r.get_id() << ")"
+			ss << "RID( id=" << self.rid.r🠊get_id() << ")"
 			break
 		case TP_SPATIAL:
-			Vector3 pos = self.spatial.ptr->get_translation()
-			Vector3 rot = self.spatial.ptr->get_rotation_degrees()
-			Vector3 scl = self.spatial.ptr->get_scale()
+			Vector3 pos = self.spatial.ptr🠊get_translation()
+			Vector3 rot = self.spatial.ptr🠊get_rotation_degrees()
+			Vector3 scl = self.spatial.ptr🠊get_scale()
 			ss << "spatial(" << std::endl
 			ss << "	addr:		" << self.spatial.ptr << std::endl
 			ss << "	position:	x=" << pos.x << ", y=" << pos.y << ", z=" << pos.z << std::endl

@@ -201,6 +201,10 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			elif k=="insert":
 				return tp_method(tp, self, tpy_list_insert)
 			else:
+				print("invalid list method - self:")
+				print(self)
+				print("invalid list method - key:")
+				print(k)
 				throw "invalid list method"
 		elif k.type.type_id == TP_NONE:
 			return tpd_list_pop(tp, self.list.val, 0, "tp_get")
@@ -284,118 +288,118 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			throw "vector3 missing member"
 	elif type == TP_QUAT:
 		if k == "x":
-			return tp_number(self.quat.q.x)
+			return tp_number(self.quat.q🠊x)
 		elif k == "y":
-			return tp_number(self.quat.q.y)
+			return tp_number(self.quat.q🠊y)
 		elif k == "z":
-			return tp_number(self.quat.q.z)
+			return tp_number(self.quat.q🠊z)
 		elif k == "w":
-			return tp_number(self.quat.q.w)
+			return tp_number(self.quat.q🠊w)
 		elif k == "length":
 			auto fn = def[=](tp_vm *t):
-				return tp_number(self.quat.q.length())
+				return tp_number(self.quat.q🠊length())
 			return tp_function(tp, fn)
 		elif k == "normalized":
 			## note, do not need to create a new tp_vec2 because this is already a copy
 			auto fn = def[=](tp_vm *t):
 				auto v = self
-				v.quat.q.normalize()
+				v.quat.q🠊normalize()
 				return v
 			return tp_function(tp, fn)
 		else:
 			throw "quat missing member"
 	elif type == TP_COLOR:
 		if k == "r":
-			return tp_number(self.color.c.r)
+			return tp_number(self.color.c🠊r)
 		elif k == "g":
-			return tp_number(self.color.c.g)
+			return tp_number(self.color.c🠊g)
 		elif k == "b":
-			return tp_number(self.color.c.b)
+			return tp_number(self.color.c🠊b)
 		elif k == "a":
-			return tp_number(self.color.c.a)
+			return tp_number(self.color.c🠊a)
 		elif k == "darkened":
 			## note, do not need to create a new tp_vec2 because this is already a copy
 			auto fn = def[=](TP):
 				auto amount = TP_OBJ()
 				auto v = self
-				v.color.c = self.color.c.darkened(amount.number.val)
+				v.color.c🠊darkened(amount.number.val)
 				return v
 			return tp_function(tp, fn)
 		else:
 			throw "color missing member"
 	elif type == TP_RECT:
 		if k == "x":
-			return tp_number(self.rect.r.position.x)
+			return tp_number(self.rect.r🠊position.x)
 		elif k == "y":
-			return tp_number(self.rect.r.position.y)
+			return tp_number(self.rect.r🠊position.y)
 		elif k == "width":
-			return tp_number(self.rect.r.size.x)
+			return tp_number(self.rect.r🠊size.x)
 		elif k == "height":
-			return tp_number(self.rect.r.size.y)
+			return tp_number(self.rect.r🠊size.y)
 		elif k == "get_area":
 			auto fn = def[=](tp_vm *t):
-				return tp_number(self.rect.r.get_area())
+				return tp_number(self.rect.r🠊get_area())
 			return tp_function(tp, fn)
 		else:
 			throw "rect missing member"
 	elif type == TP_TRI:
 		if k == "a":
-			return tp_vec3(self.tri.t.vertex[0])
+			return tp_vec3(self.tri.t🠊vertex[0])
 		elif k == "b":
-			return tp_vec3(self.tri.t.vertex[1])
+			return tp_vec3(self.tri.t🠊vertex[1])
 		elif k == "c":
-			return tp_vec3(self.tri.t.vertex[2])
+			return tp_vec3(self.tri.t🠊vertex[2])
 		else:
 			throw "tri missing member"
 	elif type == TP_PLANE:
 		if k == "normal":
-			return tp_vec3(self.plane.p.normal)
+			return tp_vec3(self.plane.p🠊normal)
 		elif k == "length":
-			return tp_number(self.plane.p.d)
+			return tp_number(self.plane.p🠊d)
 		elif k == "distance_to":
 			auto fn = def[=](TP):
 				auto point = TP_OBJ()
-				return tp_number(self.plane.p.distance_to(point.vec3.vec))
+				return tp_number(self.plane.p🠊distance_to(point.vec3.vec))
 			return tp_function(tp, fn)
 		else:
 			throw "plane missing member"
 	elif type == TP_AABB:
 		if k == "position":
-			return tp_vec3(self.aabb.a.position)
+			return tp_vec3(self.aabb.a🠊position)
 		elif k == "size":
-			return tp_vec3(self.aabb.a.size)
+			return tp_vec3(self.aabb.a🠊size)
 		elif k == "merge":
 			auto fn = def[=](TP):
 				auto other = TP_OBJ()
 				auto a = self
-				a.aabb.a = self.aabb.a.merge( other.aabb.a )
+				a.aabb.a🠊merge( *other.aabb.a )
 				return a
 			return tp_function(tp, fn)
 		else:
 			throw "aabb missing member"
 	elif type == TP_SPATIAL:
 		if k == "position":
-			return tp_vec3(self.spatial.ptr->get_translation())
+			return tp_vec3(self.spatial.ptr🠊get_translation())
 		elif k == "rotation":
-			return tp_vec3(self.spatial.ptr->get_rotation_degrees())
+			return tp_vec3(self.spatial.ptr🠊get_rotation_degrees())
 		elif k == "scale":
-			return tp_vec3(self.spatial.ptr->get_scale())
+			return tp_vec3(self.spatial.ptr🠊get_scale())
 		elif k == "set_position":
 			auto fn = def[=](TP):
 				auto ob = TP_OBJ()
-				self.spatial.ptr->set_translation(ob.vec3.vec)
+				self.spatial.ptr🠊set_translation(ob.vec3.vec)
 				return self
 			return tp_function(tp, fn)
 		elif k == "set_rotation":
 			auto fn = def[=](TP):
 				auto ob = TP_OBJ()
-				self.spatial.ptr->set_rotation_degrees(ob.vec3.vec)
+				self.spatial.ptr🠊set_rotation_degrees(ob.vec3.vec)
 				return self
 			return tp_function(tp, fn)
 		elif k == "set_scale":
 			auto fn = def[=](TP):
 				auto ob = TP_OBJ()
-				self.spatial.ptr->set_scale(ob.vec3.vec)
+				self.spatial.ptr🠊set_scale(ob.vec3.vec)
 				return self
 			return tp_function(tp, fn)
 		else:
@@ -543,47 +547,47 @@ def tp_set(TP,tp_obj self, tp_obj k, tp_obj v) -> tp_obj:
 		return self
 	elif type == TP_QUAT:
 		if k == "x":
-			self.quat.q.x = v.number.val
+			self.quat.q🠊x = v.number.val
 		elif k == "y":
-			self.quat.q.y = v.number.val
+			self.quat.q🠊y = v.number.val
 		elif k == "z":
-			self.quat.q.z = v.number.val
+			self.quat.q🠊z = v.number.val
 		elif k == "w":
-			self.quat.q.w = v.number.val
+			self.quat.q🠊w = v.number.val
 		else:
 			throw "quat type missing member"
 		return self
 	elif type == TP_COLOR:
 		if k == "r":
-			self.color.c.r = v.number.val
+			self.color.c🠊r = v.number.val
 		elif k == "g":
-			self.color.c.g = v.number.val
+			self.color.c🠊g = v.number.val
 		elif k == "b":
-			self.color.c.b = v.number.val
+			self.color.c🠊b = v.number.val
 		elif k == "a":
-			self.color.c.a = v.number.val
+			self.color.c🠊a = v.number.val
 		else:
 			throw "color type missing member"
 		return self
 	elif type == TP_RECT:
 		if k == "x":
-			self.rect.r.position.x = v.number.val
+			self.rect.r🠊position.x = v.number.val
 		elif k == "y":
-			self.rect.r.position.y = v.number.val
+			self.rect.r🠊position.y = v.number.val
 		elif k == "width":
-			self.rect.r.size.x = v.number.val
+			self.rect.r🠊size.x = v.number.val
 		elif k == "height":
-			self.rect.r.size.y = v.number.val
+			self.rect.r🠊size.y = v.number.val
 		else:
 			throw "rect type missing member"
 		return self
 	elif type == TP_TRI:
 		if k == "a":
-			self.tri.t.vertex[0] = v.vec3.vec
+			self.tri.t🠊vertex[0] = v.vec3.vec
 		elif k == "b":
-			self.tri.t.vertex[1] = v.vec3.vec
+			self.tri.t🠊vertex[1] = v.vec3.vec
 		elif k == "c":
-			self.tri.t.vertex[2] = v.vec3.vec
+			self.tri.t🠊vertex[2] = v.vec3.vec
 		else:
 			throw "tri type missing member"
 		return self
@@ -608,10 +612,11 @@ def tp_set(TP,tp_obj self, tp_obj k, tp_obj v) -> tp_obj:
 		tp_dict_set(tp, self, k, v)
 		return self
 	elif type == TP_OBJECT:
-		TP_META_BEGIN(self,"__set__")
-		  tp_call(tp,meta,tp_params_v2(tp,k,v))
-		  return self
-		TP_META_END
+		## TODO
+		##TP_META_BEGIN(self,"__set__")
+		##  tp_call(tp,meta,tp_params_v2(tp,k,v))
+		##  return self
+		##TP_META_END
 		tp_dict_set(tp, self, k, v)
 		return self
 	//tp_raise(,tp_string_atom(tp, "(tp_set) TypeError: object does not support item assignment"));
@@ -636,7 +641,7 @@ def tp_add(TP, tp_obj a, tp_obj b) -> tp_obj:
 		return a
 	elif a.type.type_id == TP_QUAT && a.type.type_id == b.type.type_id:
 		## a is already a copy
-		a.quat.q = a.quat.q + b.quat.q
+		##TODO fixme##a.quat.q = &((*a.quat.q) + (*b.quat.q))
 		return a
 	#endif
 	##tp_raise(tp_None,tp_string_atom(tp, "(tp_add) TypeError: ?"));
@@ -665,7 +670,7 @@ def tp_mul(TP,tp_obj a, tp_obj b) -> tp_obj:
 	#ifdef BLENDOT_TYPES
 	if a.type.type_id == TP_MAT3:
 		## note `a` is already a copy
-		a.mat3.m *= b.mat3.m
+		*a.mat3.m *= *b.mat3.m
 		return a
 	#endif
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_mul) TypeError: ?"));
@@ -840,8 +845,9 @@ def tp_bitwise_not(TP, tp_obj a) ->tp_obj:
 
 def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 	if defined(DEBUG):
-		print("--------tp_ops.pyc++ - tp_call params:")
-		print(params)
+		print("----------tp_call-----------")
+		##print("--------tp_ops.pyc++ - tp_call params:")
+		##TODO FIXME##print(params)  ## segfaults here sometimes - malloc error
 	## Im not sure we should have to do this, but just for giggles we will.
 	tp->params = params
 	if self.type.type_id == TP_INTERFACE:
@@ -898,7 +904,8 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 			## compiled Python function
 			tp_obj dest = tp_None
 			tp_enter_frame(tp, self.func.info->globals,self.func.info->code, &dest)
-			if self.type.magic & TP_FUNC_MASK_METHOD:
+			##if self.type.magic & TP_FUNC_MASK_METHOD:
+			if self.func.info->instance.type.type_id != TP_NONE:
 				tp->frames[tp->cur].regs[0] = params
 				tpd_list_insert(tp, params.list.val, 0, self.func.info->instance)
 			else:

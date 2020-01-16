@@ -155,10 +155,6 @@ def tp_step(TP) ->int:
 	tp_obj *regs = f->regs
 	tpd_code *cur = f->cur
 	while 1:
-		#ifdef TP_SANDBOX
-		  printf("WARN SANDBOX MODE IS DEPRECATED\n");
-		  tp_bounds(tp,cur,1);
-		#endif
 		tpd_code e = *cur
 		#ifdef DEBUG
 		  if (e.i < TP_ITOTAL) fprintf(stdout,"%2d.%4d: %-6s %3d %3d %3d\n",tp->cur,cur - (tpd_code*)f->code.string.info->s,tp_strings[e.i],VA,VB,VC);
@@ -448,19 +444,28 @@ def tp_step(TP) ->int:
 						tp_set(tp,f->globals,RA,RB)
 					break
 				case TP_IADD:
-					#ifdef DEBUG
-					  print("+ TP_IADD +")
-					  std::cout << "  RA: " << tp_as_string(tp, RA) << std::endl;  // destination register
-					  std::cout << "  RB: " << tp_as_string(tp, RB) << std::endl;  // first operand
-					  std::cout << "  RC: " << tp_as_string(tp, RC) << std::endl;  // second operand
-					#endif
+					if defined(DEBUG):
+						print("+ TP_IADD +")
+						std::cout << "  RA: " << tp_as_string(tp, RA) << std::endl;  // destination register
+						std::cout << "  RB: " << tp_as_string(tp, RB) << std::endl;  // first operand
+						std::cout << "  RC: " << tp_as_string(tp, RC) << std::endl;  // second operand
 					if RB.type.type_id == TP_NUMBER:
 						RA = tp_number(RB.number.val+RC.number.val)
 					else:
 						RA = tp_add(tp,RB,RC)
 					break
-				case TP_ISUB: RA = tp_sub(tp,RB,RC); break;
-				case TP_IMUL: RA = tp_mul(tp,RB,RC); break;
+				case TP_ISUB:
+					if RB.type.type_id==TP_NUMBER:
+						RA = tp_number(RB.number.val - RC.number.val)
+					else:
+						RA = tp_sub(tp,RB,RC)
+					break
+				case TP_IMUL:
+					if RB.type.type_id==TP_NUMBER:
+						RA = tp_number(RB.number.val * RC.number.val)
+					else:
+						RA = tp_mul(tp,RB,RC)
+					break
 				case TP_IDIV:
 					RA = tp_div(tp,RB,RC)
 					break
@@ -516,47 +521,11 @@ def tp_step(TP) ->int:
 					if defined(DEBUG):
 						print("	PARAMS: result - RA = ", RA)
 						print("	PARAMS: nargs  - VC = ", VC)
-						print("	PARAMS: args[] - RB = ", &RB)
+						##crashes sometimes?##print("	PARAMS: args[] - RB = ", &RB)
 					break;
 				case TP_ILEN: RA = tp_len(tp,RB); break;
 				case TP_IJUMP: cur += SVBC; continue; break;
 				case TP_ISETJMP: f->jmp = SVBC?cur+SVBC:0; break;
-				case 200:
-					## fast global function call
-					if defined(DEBUG):
-						print("^^^^^^^^^^^^^fast global call^^^^^^^^^^^^^")
-						print("fast call func type:", __globals256__[ VB ].type.type_id)
-						print("fast call func magic:", __globals256__[ VB ].type.magic)
-					f->cur = cur + 1
-					tp_obj fast_params = tp_list_nt(tp)
-					##fast_params.append(RC)
-					tpd_param_list_append(tp, fast_params.list.val, RC)
-					RA = tp_call(tp, __globals256__[ VB ], fast_params)
-					## this fails because it assumes that its a bytecode function, when it could be any type
-					##tp_obj dest = tp_None
-					##tp_enter_frame(tp, __globals256__[ VB ].func.info->globals, __globals256__[ VB ].func.info->code, &dest)
-					##tp->frames[tp->cur].regs[0] = fast_params
-					##tp_run_frame(tp)
-					##RA = dest
-					tpd_list_free(tp, fast_params.list.val)
-					GA
-					return 0
-					break
-				case 201:
-					## fast global function call
-					if defined(DEBUG):
-						print("^^^^^^^^^^^^^fast global call (no param list) ^^^^^^^^^^^^^")
-						print("fast call func type:", __globals256__[ VB ].type.type_id)
-						print("fast call func magic:", __globals256__[ VB ].type.magic)
-					f->cur = cur + 1
-					tp_obj dest = tp_None
-					tp_enter_frame(tp, __globals256__[ VB ].func.info->globals, __globals256__[ VB ].func.info->code, &dest)
-					tp->frames[tp->cur].regs[0] = RC
-					tp_run_frame(tp)
-					RA = dest
-					GA
-					return 0
-					break
 				case TP_ICALL:
 					if defined(DEBUG):
 						print("calling on type = ", RB.type.type_id)
@@ -610,9 +579,55 @@ def tp_step(TP) ->int:
 						f->line = tp_string_view(tp, f->code, a, a+VA*4-1)
 						f->lineno = UVBC
 					break;
+				case 200:
+					## fast global function call - no args
+					if defined(DEBUG):
+						print("^^^^^^^^^^^^^fast global call (args:0) ^^^^^^^^^^^^^")
+						print("fast call func type:", __globals256__[ VB ].type.type_id)
+						print("fast call func magic:", __globals256__[ VB ].type.magic)
+					f->cur = cur + 1
+					tp_obj dest = tp_None
+					tp_enter_frame(tp, __globals256__[ VB ].func.info->globals, __globals256__[ VB ].func.info->code, &dest)
+					tp_run_frame(tp)
+					RA = dest
+					GA
+					return 0
+					break
+				case 201:
+					## fast global function call - single arg
+					if defined(DEBUG):
+						print("^^^^^^^^^^^^^fast global call (args:1) ^^^^^^^^^^^^^")
+						print("fast call func type:", __globals256__[ VB ].type.type_id)
+						print("fast call func magic:", __globals256__[ VB ].type.magic)
+					f->cur = cur + 1
+					tp_obj dest = tp_None
+					tp_enter_frame(tp, __globals256__[ VB ].func.info->globals, __globals256__[ VB ].func.info->code, &dest)
+					tp->frames[tp->cur].regs[0] = RC
+					tp_run_frame(tp)
+					RA = dest
+					GA
+					return 0
+					break
 				default:
-					printf("INVALID BYTE CODE: %i \n", e.i);
-					tp_raise(0,tp_string_atom(tp, "tp_step RuntimeError: invalid instruction"));
+					if e.i >= 202:
+						## fast global function call - up to 4 args
+						if defined(DEBUG):
+							print("^^^^^^^^^^^^^fast global call (args:n) ^^^^^^^^^^^^^")
+							print("fast call func type:", __globals256__[ VB ].type.type_id)
+							print("fast call func magic:", __globals256__[ VB ].type.magic)
+						f->cur = cur + 1
+						tp_obj dest = tp_None
+						tp_enter_frame(tp, __globals256__[ VB ].func.info->globals, __globals256__[ VB ].func.info->code, &dest)
+						for i in range(e.i-200):
+							tp->frames[tp->cur].regs[i] = regs[ VC + i ]
+						tp_run_frame(tp)
+						RA = dest
+						GA
+						return 0
+						break
+					else:
+						printf("INVALID BYTE CODE: %i \n", e.i);
+						tp_raise(0,tp_string_atom(tp, "tp_step RuntimeError: invalid instruction"));
 					break;
 		#ifdef TP_SANDBOX
 		  tp_time_update(tp)
