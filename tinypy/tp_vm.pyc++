@@ -120,7 +120,9 @@ def tp_return(TP, tp_obj v):
 		*dest = v; tp_grey(tp,v)
 	##memset(tp->frames[tp->cur].regs,0,TP_REGS_PER_FRAME*sizeof(tp_obj));
 	##fprintf(stderr,"regs:%d\n",(tp->frames[tp->cur].cregs+1));
-	memset(tp->frames[tp->cur].regs-TP_REGS_EXTRA,0,(TP_REGS_EXTRA+tp->frames[tp->cur].cregs)*sizeof(tp_obj))
+	## is this memset to clear the really required?
+	if defined(DEBUG):
+		memset(tp->frames[tp->cur].regs-TP_REGS_EXTRA,0,(TP_REGS_EXTRA+tp->frames[tp->cur].cregs)*sizeof(tp_obj))
 	tp->cur -= 1
 
 

@@ -191,17 +191,16 @@ def Service::start():
 
 #else
 def main(int argc,  char *argv[]) -> int:
-	#ifdef DEBUG
-	  std::cout << "starting tpython interpreter..." << std::endl;
-	#endif
-	std::cout << "sizeof tp_vm = " << sizeof(tp_vm) << std::endl;
-	std::cout << "sizeof tp_obj = " << sizeof(tp_obj) << std::endl;
-	std::cout << "sizeof TPTypeInfo = " << sizeof(TPTypeInfo) << std::endl;
-	std::cout << "sizeof tpd_frame = " << sizeof(tpd_frame) << std::endl;
-	std::cout << "sizeof tpd_list = " << sizeof(tpd_list) << std::endl;
-	std::cout << "sizeof tpd_dict = " << sizeof(tpd_dict) << std::endl;
-	std::cout << "sizeof tpd_item = " << sizeof(tpd_item) << std::endl;
-	std::cout << "sizeof tpd_string = " << sizeof(tpd_string) << std::endl;
+	if defined(DEBUG):
+		std::cout << "starting tpython interpreter..." << std::endl;
+		std::cout << "sizeof tp_vm = " << sizeof(tp_vm) << std::endl;
+		std::cout << "sizeof tp_obj = " << sizeof(tp_obj) << std::endl;
+		std::cout << "sizeof TPTypeInfo = " << sizeof(TPTypeInfo) << std::endl;
+		std::cout << "sizeof tpd_frame = " << sizeof(tpd_frame) << std::endl;
+		std::cout << "sizeof tpd_list = " << sizeof(tpd_list) << std::endl;
+		std::cout << "sizeof tpd_dict = " << sizeof(tpd_dict) << std::endl;
+		std::cout << "sizeof tpd_item = " << sizeof(tpd_item) << std::endl;
+		std::cout << "sizeof tpd_string = " << sizeof(tpd_string) << std::endl;
 	#ifndef __EMSCRIPTEN_major__
 	  signal(SIGSEGV, crash_handler); // memory segfault
 	  signal(SIGABRT, crash_handler); // some old places in tinypy code had used `abort()`

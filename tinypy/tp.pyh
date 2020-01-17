@@ -479,6 +479,7 @@ def _tp_raise(TP,tp_obj);
 def tp_string_atom(TP, const char * v)->tp_obj;
 
 def tp_string_len(tp_obj s) ->int;
+def tp_string_tiny_len(tp_obj s)->int;
 
 def tp_string_getptr(tp_obj s) ->char*;
 

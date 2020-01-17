@@ -140,6 +140,14 @@ def tp_string_len(tp_obj s)->int:
 	else:
 		return s.string.info->len
 
+def tp_string_tiny_len(tp_obj s)->int:
+	int n = 0
+	for i in range(12):
+		if s.str.val[i]=='\0':
+			break
+		n ++
+	return n
+
 
 ## Create a new string which is a substring slice (view) of another STRING.
 ## the returned object does not allocate new memory. It refers to the same

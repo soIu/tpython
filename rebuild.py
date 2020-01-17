@@ -178,7 +178,7 @@ def rebuild(stage=None):
 	elif '--miniunreal' in sys.argv or '--unreal' in sys.argv:
 		defs = '-DUNREAL_TYPES'
 		mods = ''
-	else:
+	elif '--blendot' in sys.argv:
 		defs = '-DBLENDOT_TYPES'
 		mods = BlendotTypesFiles
 	opts = ''

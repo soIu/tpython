@@ -1,6 +1,260 @@
-## File: Dict
-## Functions for dealing with dictionaries.
+/*
+   xxHash - Extremely Fast Hash algorithm
+   Header File
+   Copyright (C) 2012-2016, Yann Collet.
 
+   BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
+
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are
+   met:
+
+	   * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+	   * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following disclaimer
+   in the documentation and/or other materials provided with the
+   distribution.
+
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+   You can contact the author at :
+   - xxHash source repository : https://github.com/Cyan4973/xxHash
+*/
+
+typedef uint32_t XXH32_hash_t;
+typedef uint32_t xxh_u32;
+typedef uint8_t xxh_u8;
+
+/*!XXH_REROLL:
+ * Whether to reroll XXH32_finalize, and XXH64_finalize,
+ * instead of using an unrolled jump table/if statement loop.
+ *
+ * This is automatically defined on -Os/-Oz on GCC and Clang. */
+#ifndef XXH_REROLL
+#  if defined(__OPTIMIZE_SIZE__)
+#    define XXH_REROLL 1
+#  else
+#    define XXH_REROLL 0
+#  endif
+#endif
+
+/* Force direct memory access. Only works on CPU which support unaligned memory access in hardware */
+static xxh_u32 XXH_read32(const void* memPtr) { return *(const xxh_u32*) memPtr; }
+
+#define XXH_rotl32(x,r) (((x) << (r)) | ((x) >> (32 - (r))))
+static xxh_u32 XXH_swap32(xxh_u32 x) {
+    return  ((x << 24) & 0xff000000 ) | ((x <<  8) & 0x00ff0000 ) | ((x >>  8) & 0x0000ff00 ) | ((x >> 24) & 0x000000ff );
+}
+
+/* ***************************
+*  Memory reads
+*****************************/
+typedef enum { XXH_aligned, XXH_unaligned } XXH_alignment;
+define(XXH_CPU_LITTLE_ENDIAN=1)
+
+xxh_u32 XXH_readLE32(const void* ptr) {
+    return XXH_CPU_LITTLE_ENDIAN ? XXH_read32(ptr) : XXH_swap32(XXH_read32(ptr));
+}
+
+static xxh_u32 XXH_readBE32(const void* ptr) {
+    return XXH_CPU_LITTLE_ENDIAN ? XXH_swap32(XXH_read32(ptr)) : XXH_read32(ptr);
+}
+
+xxh_u32 XXH_readLE32_align(const void* ptr, XXH_alignment align){
+    if (align==XXH_unaligned) {
+        return XXH_readLE32(ptr);
+    } else {
+        return XXH_CPU_LITTLE_ENDIAN ? *(const xxh_u32*)ptr : XXH_swap32(*(const xxh_u32*)ptr);
+    }
+}
+
+/* *******************************************************************
+*  32-bit hash functions
+*********************************************************************/
+static const xxh_u32 PRIME32_1 = 0x9E3779B1U;   /* 0b10011110001101110111100110110001 */
+static const xxh_u32 PRIME32_2 = 0x85EBCA77U;   /* 0b10000101111010111100101001110111 */
+static const xxh_u32 PRIME32_3 = 0xC2B2AE3DU;   /* 0b11000010101100101010111000111101 */
+static const xxh_u32 PRIME32_4 = 0x27D4EB2FU;   /* 0b00100111110101001110101100101111 */
+static const xxh_u32 PRIME32_5 = 0x165667B1U;   /* 0b00010110010101100110011110110001 */
+
+static xxh_u32 XXH32_round(xxh_u32 acc, xxh_u32 input){
+    acc += input * PRIME32_2;
+    acc  = XXH_rotl32(acc, 13);
+    acc *= PRIME32_1;
+#if defined(__GNUC__) && defined(__SSE4_1__) && !defined(XXH_ENABLE_AUTOVECTORIZE)
+    /* UGLY HACK:
+     * This inline assembly hack forces acc into a normal register. This is the
+     * only thing that prevents GCC and Clang from autovectorizing the XXH32 loop
+     * (pragmas and attributes don't work for some resason) without globally
+     * disabling SSE4.1.
+     *
+     * The reason we want to avoid vectorization is because despite working on
+     * 4 integers at a time, there are multiple factors slowing XXH32 down on
+     * SSE4:
+     * - There's a ridiculous amount of lag from pmulld (10 cycles of latency on newer chips!)
+     *   making it slightly slower to multiply four integers at once compared to four
+     *   integers independently. Even when pmulld was fastest, Sandy/Ivy Bridge, it is
+     *   still not worth it to go into SSE just to multiply unless doing a long operation.
+     *
+     * - Four instructions are required to rotate,
+     *      movqda tmp,  v // not required with VEX encoding
+     *      pslld  tmp, 13 // tmp <<= 13
+     *      psrld  v,   19 // x >>= 19
+     *      por    v,  tmp // x |= tmp
+     *   compared to one for scalar:
+     *      roll   v, 13    // reliably fast across the board
+     *      shldl  v, v, 13 // Sandy Bridge and later prefer this for some reason
+     *
+     * - Instruction level parallelism is actually more beneficial here because the
+     *   SIMD actually serializes this operation: While v1 is rotating, v2 can load data,
+     *   while v3 can multiply. SSE forces them to operate together.
+     *
+     * How this hack works:
+     * __asm__(""       // Declare an assembly block but don't declare any instructions
+     *          :       // However, as an Input/Output Operand,
+     *          "+r"    // constrain a read/write operand (+) as a general purpose register (r).
+     *          (acc)   // and set acc as the operand
+     * );
+     *
+     * Because of the 'r', the compiler has promised that seed will be in a
+     * general purpose register and the '+' says that it will be 'read/write',
+     * so it has to assume it has changed. It is like volatile without all the
+     * loads and stores.
+     *
+     * Since the argument has to be in a normal register (not an SSE register),
+     * each time XXH32_round is called, it is impossible to vectorize. */
+    __asm__("" : "+r" (acc));
+#endif
+    return acc;
+}
+
+/* mix all bits */
+static xxh_u32 XXH32_avalanche(xxh_u32 h32){
+    h32 ^= h32 >> 15;
+    h32 *= PRIME32_2;
+    h32 ^= h32 >> 13;
+    h32 *= PRIME32_3;
+    h32 ^= h32 >> 16;
+    return(h32);
+}
+
+#define XXH_get32bits(p) XXH_readLE32_align(p, align)
+
+static xxh_u32 XXH32_finalize(xxh_u32 h32, const xxh_u8* ptr, size_t len, XXH_alignment align){
+#define PROCESS1               \
+    h32 += (*ptr++) * PRIME32_5; \
+    h32 = XXH_rotl32(h32, 11) * PRIME32_1 ;
+
+#define PROCESS4                         \
+    h32 += XXH_get32bits(ptr) * PRIME32_3; \
+    ptr+=4;                                \
+    h32  = XXH_rotl32(h32, 17) * PRIME32_4 ;
+
+    /* Compact rerolled version */
+    if (XXH_REROLL) {
+        len &= 15;
+        while (len >= 4) {
+            PROCESS4;
+            len -= 4;
+        }
+        while (len > 0) {
+            PROCESS1;
+            --len;
+        }
+        return XXH32_avalanche(h32);
+    } else {
+         switch(len&15) /* or switch(bEnd - p) */ {
+           case 12:      PROCESS4;
+                         /* fallthrough */
+           case 8:       PROCESS4;
+                         /* fallthrough */
+           case 4:       PROCESS4;
+                         return XXH32_avalanche(h32);
+
+           case 13:      PROCESS4;
+                         /* fallthrough */
+           case 9:       PROCESS4;
+                         /* fallthrough */
+           case 5:       PROCESS4;
+                         PROCESS1;
+                         return XXH32_avalanche(h32);
+
+           case 14:      PROCESS4;
+                         /* fallthrough */
+           case 10:      PROCESS4;
+                         /* fallthrough */
+           case 6:       PROCESS4;
+                         PROCESS1;
+                         PROCESS1;
+                         return XXH32_avalanche(h32);
+
+           case 15:      PROCESS4;
+                         /* fallthrough */
+           case 11:      PROCESS4;
+                         /* fallthrough */
+           case 7:       PROCESS4;
+                         /* fallthrough */
+           case 3:       PROCESS1;
+                         /* fallthrough */
+           case 2:       PROCESS1;
+                         /* fallthrough */
+           case 1:       PROCESS1;
+                         /* fallthrough */
+           case 0:       return XXH32_avalanche(h32);
+        }
+        //XXH_ASSERT(0);
+        return h32;   /* reaching this point is deemed impossible */
+    }
+}
+
+
+def XXH32_endian_align(const xxh_u8* input, size_t len, xxh_u32 seed, XXH_alignment align) ->xxh_u32:
+	const xxh_u8* bEnd = input + len
+	xxh_u32 h32
+	if len >= 16:
+		const xxh_u8* const limit = bEnd - 15
+		xxh_u32 v1 = seed + PRIME32_1 + PRIME32_2
+		xxh_u32 v2 = seed + PRIME32_2
+		xxh_u32 v3 = seed + 0
+		xxh_u32 v4 = seed - PRIME32_1
+		do {
+		  v1 = XXH32_round(v1, XXH_get32bits(input)); input += 4
+		  v2 = XXH32_round(v2, XXH_get32bits(input)); input += 4
+		  v3 = XXH32_round(v3, XXH_get32bits(input)); input += 4
+		  v4 = XXH32_round(v4, XXH_get32bits(input)); input += 4
+		} while (input < limit);
+		h32 = XXH_rotl32(v1, 1)  + XXH_rotl32(v2, 7) + XXH_rotl32(v3, 12) + XXH_rotl32(v4, 18)
+	else:
+		h32  = seed + PRIME32_5
+	h32 += (xxh_u32)len
+	return XXH32_finalize(h32, input, len&15, align)
+
+
+
+##Calculate the 32-bit hash of sequence "length" bytes stored at memory address "input".
+##The memory between input & input+length must be valid (allocated and read-accessible).
+##"seed" can be used to alter the result predictably.
+##Speed on Core 2 Duo @ 3 GHz (single thread, SMHasher benchmark) : 5.4 GB/s
+
+def XXH32(const void* input, size_t length, XXH32_hash_t seed=0) ->XXH32_hash_t:
+	return XXH32_endian_align((const xxh_u8*)input, length, seed, XXH_aligned);
+
+def XXH32unaligned(const void* input, size_t length, XXH32_hash_t seed=0) ->XXH32_hash_t:
+	return XXH32_endian_align((const xxh_u8*)input, length, seed, XXH_unaligned);
+
+
+#ifdef ORIG_TPY_HASH
 def tpd_lua_hash(void const *v,int l) ->int:
 	int i,step = (l>>5)+1
 	int h = l + (l >= 4?*(int*)v:0)
@@ -57,4 +311,50 @@ def tp_hash(TP, tp_obj v) ->int:
 	std::cout << "tp_hash ERROR unexpected type: " << v.type.type_id << std::endl
 	throw "ERROR in tp_hash.cpp invalid type to hash"
 
+#else
 
+def tp_hash(TP, tp_obj v) ->int:
+	switch v.type.type_id:
+		case TP_NONE:
+			return 0
+		case TP_NUMBER:
+			return XXH32(&v.number.val, sizeof(double))
+		case TP_STRING:
+			int n = tp_string_len(v)
+			if n & 3 == 0:
+				return XXH32(tp_string_getptr(v), n)
+			else:
+				return XXH32unaligned(tp_string_getptr(v), n)
+		case TP_STRING_ATOMIC:
+			int n = tp_string_len(v)
+			if n & 3 == 0:
+				return XXH32(tp_string_getptr(v), n)
+			else:
+				return XXH32unaligned(tp_string_getptr(v), n)
+		case TP_STRING_TINY:
+			if defined(DEBUG):
+				print(v)
+			int n = tp_string_tiny_len(v)
+			if n & 3 == 0:
+				return XXH32(&v.str.val, n)
+			else:
+				return XXH32unaligned(&v.str.val, n)
+		case TP_DICT:
+			return XXH32(&v.dict.val, sizeof(void*))
+		case TP_LIST:
+			int r = v.list.val->len
+			for n in range(v.list.val->len):
+				tp_obj vv = v.list.val->items[n]
+				if vv.type.type_id == TP_LIST:
+					r += XXH32(&vv.list.val, sizeof(void*))
+				else:
+					r += tp_hash(tp, v.list.val->items[n])
+			return r
+		case TP_FUNC:
+			return XXH32(&v.func.info, sizeof(void*))
+		##case TP_DATA: return tpd_lua_hash(&v.data.val, sizeof(void*))
+	//tp_raise(0, tp_string_atom(tp, "(tp_hash) TypeError: value unhashable"));
+	std::cout << "tp_hash ERROR unexpected type: " << v.type.type_id << std::endl
+	throw "ERROR in tp_hash.cpp invalid type to hash"
+
+#endif
