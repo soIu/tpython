@@ -3,6 +3,9 @@
 #ifndef TP_H
 #define TP_H
 
+if defined(USE_RPMALLOC):
+	import "rpmalloc.h"
+
 if defined(__EMSCRIPTEN_major__):
 	import <emscripten.h>
 
@@ -436,9 +439,14 @@ extern tp_obj tp_None;
 
 define(None=tp_None)
 
-define( tp_malloc(TP,x) calloc((x),1) )
-define( tp_realloc(TP,x,y) realloc(x,y) )
-define( tp_free(TP,x) free(x) )
+if defined(USE_RPMALLOC):
+	define( tp_malloc(TP,x) rpcalloc(1,(x)) )
+	define( tp_realloc(TP,x,y) rprealloc(x,y) )
+	define( tp_free(TP,x) rpfree(x) )
+else:
+	define( tp_malloc(TP,x) calloc((x),1) )
+	define( tp_realloc(TP,x,y) realloc(x,y) )
+	define( tp_free(TP,x) free(x) )
 
 
 def tp_track(TP, tp_obj)->tp_obj;

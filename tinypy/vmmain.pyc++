@@ -156,36 +156,36 @@ def main(int argc,  char *argv[]) -> int:
 	    __init_libself__()
 	  #endif
 	#endif
-	#ifdef USE_PYTHON
-	  Py_SetStandardStreamEncoding("utf-8", "surrogateescape");
-	  Py_Initialize();
-	#endif
-	#ifdef USE_EMBEDDED_BYTECODE
-	  run_vm_embedded(argc, argv);
-	#else
-	if argc==1:
-		std::cout << "Error: no bytecode or py file provided" << std::endl;
-	elif argc==2:
-		std::string f = std::string(argv[1])
-		if defined(DEBUG):
-			print( f )
-		if f.size() > 3:
-			if f.substr( f.size()-3, f.size() ) == std::string(".py"):
-				#ifdef USE_PYTHON
-				compile_and_run_py_file(f)
-				#else
-				print("Error: tpython must be built with CPython to compile py files to bytecode")
-				#endif
-				return 0
-		run_vm(argc, argv, 1)
-	elif argc==3:
-		std::thread t1( [=]{run_vm(argc, argv, 1);} );
-		std::thread t2( [=]{run_vm(argc, argv, 2);} );
-		t1.join();
-		t2.join();
+	if defined(USE_RPMALLOC):
+		rpmalloc_initialize();
+	if defined(USE_PYTHON):
+		Py_SetStandardStreamEncoding("utf-8", "surrogateescape");
+		Py_Initialize();
+	if defined(USE_EMBEDDED_BYTECODE):
+		run_vm_embedded(argc, argv);
 	else:
-		std::cout << "TODO: more than two threads it not yet supported" << std::endl;
-	#endif
+		if argc==1:
+			std::cout << "Error: no bytecode or py file provided" << std::endl;
+		elif argc==2:
+			std::string f = std::string(argv[1])
+			if defined(DEBUG):
+				print( f )
+			if f.size() > 3:
+				if f.substr( f.size()-3, f.size() ) == std::string(".py"):
+					#ifdef USE_PYTHON
+					compile_and_run_py_file(f)
+					#else
+					print("Error: tpython must be built with CPython to compile py files to bytecode")
+					#endif
+					return 0
+			run_vm(argc, argv, 1)
+		elif argc==3:
+			std::thread t1( [=]{run_vm(argc, argv, 1);} );
+			std::thread t2( [=]{run_vm(argc, argv, 2);} );
+			t1.join();
+			t2.join();
+		else:
+			std::cout << "TODO: more than two threads it not yet supported" << std::endl;
 	if defined(DEBUG):
 		std::cout << "tpython interpreter exit" << std::endl;
 		std::cout << "sizeof tp_vm = " << sizeof(tp_vm) << std::endl;
