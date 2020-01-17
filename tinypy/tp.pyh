@@ -249,22 +249,22 @@ class tp_obj:
 	@const
 	def operator+ (const tp_obj & first) ->tp_obj:
 		tp_obj val = {TP_NUMBER};
-		val.number.val = this->number.val + first.number.val
+		val.number.val = this🠊number.val + first.number.val
 		return val
 	@const
 	def operator- (const tp_obj & first) ->tp_obj:
 		tp_obj val = {TP_NUMBER};
-		val.number.val = this->number.val - first.number.val
+		val.number.val = this🠊number.val - first.number.val
 		return val
 	@const
 	def operator* (const tp_obj & first) ->tp_obj:
 		tp_obj val = {TP_NUMBER};
-		val.number.val = this->number.val * first.number.val
+		val.number.val = this🠊number.val * first.number.val
 		return val
 	@const
 	def operator/ (const tp_obj & first) ->tp_obj:
 		tp_obj val = {TP_NUMBER};
-		val.number.val = this->number.val / first.number.val
+		val.number.val = this🠊number.val / first.number.val
 		return val
 	friend std::ostream & operator << (std::ostream &out, const tp_obj &self);
 	void append(const char *s);
@@ -773,22 +773,22 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 				  std::cout << "STRING VIEW" << std::endl;
 				#endif
 				if quote_strings:
-					ss << "\"" << std::string(self.string.info->s, self.string.info->len) << "\""
+					ss << "\"" << std::string(self.string.info🠊s, self.string.info🠊len) << "\""
 				else:
-					ss << std::string(self.string.info->s, self.string.info->len)
+					ss << std::string(self.string.info🠊s, self.string.info🠊len)
 			else:
 				if self.type.magic == TP_STRING_EXTERN:
 					//std::cout << "STRING EXTERN" << std::endl;
 					if quote_strings:
-						ss << "\"" << self.string.info->s << "\"";
+						ss << "\"" << self.string.info🠊s << "\"";
 					else:
-						ss << self.string.info->s
+						ss << self.string.info🠊s
 				else:
 					//std::cout << "STRING TYPE" << std::endl;
 					if quote_strings:
-						ss << "\"" << self.string.info->s << "\"";
+						ss << "\"" << self.string.info🠊s << "\"";
 					else:
-						ss << self.string.info->s
+						ss << self.string.info🠊s
 			break
 		case TP_INTEGER: ss << self.integer.val; break;
 		case TP_NUMBER:
@@ -803,47 +803,47 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 				##ss << "function<" << self.func.info->cppfunc << ">"
 				ss << "function<c++>"
 			else:
-				ss << "function<" << self.func.info->cfunc << ">"
+				ss << "function<" << self.func.info🠊cfunc << ">"
 			break
 		case TP_LIST:
 			ss << "["
-			for (int i=0; i<self.list.val->len; i++):
+			for (int i=0; i<self.list.val🠊len; i++):
 				ss << tp_as_string(tp, self.list.val->items[i]) << ","
 			ss << "]"
 			break
 		case TP_DICT:
 			ss << "{"
-			for (int i=0; i<self.dict.val->alloc; i++):
-				if self.dict.val->items[i].used != 1:
+			for (int i=0; i<self.dict.val🠊alloc; i++):
+				if self.dict.val🠊items[i].used != 1:
 					continue
 				##std::cout << self.dict.val->items[i].key << std::endl;
-				ss << tp_as_string(tp, self.dict.val->items[i].key) << ":"
-				ss << tp_as_string(tp, self.dict.val->items[i].val)
+				ss << tp_as_string(tp, self.dict.val🠊items[i].key) << ":"
+				ss << tp_as_string(tp, self.dict.val🠊items[i].val)
 				ss << ","
 			ss << "}"
 			break
 		case TP_OBJECT:
 			ss << "object<" << self.object.val << ">{"
-			for (int i=0; i<self.dict.val->alloc; i++):
-				if self.dict.val->items[i].used != 1:
+			for (int i=0; i<self.dict.val🠊alloc; i++):
+				if self.dict.val🠊items[i].used != 1:
 					continue
-				ss << tp_as_string(tp, self.dict.val->items[i].key) << ":"
-				if self.dict.val->items[i].val.type.type_id==TP_OBJECT:
-					ss << "object<" << (void*)self.dict.val->items[i].val.object.val << ">"
+				ss << tp_as_string(tp, self.dict.val🠊items[i].key) << ":"
+				if self.dict.val🠊items[i].val.type.type_id==TP_OBJECT:
+					ss << "object<" << (void*)self.dict.val🠊items[i].val.object.val << ">"
 				else:
-					ss << tp_as_string(tp, self.dict.val->items[i].val)
+					ss << tp_as_string(tp, self.dict.val🠊items[i].val)
 				ss << ","
 			ss << "}"
 			break
 		case TP_INTERFACE:
 			ss << "interface<" << self.interface.val << ">{"
-			for (int i=0; i<self.interface.val->alloc; i++):
-				if self.interface.val->items[i].used != 1:
+			for (int i=0; i<self.interface.val🠊alloc; i++):
+				if self.interface.val🠊items[i].used != 1:
 					continue
-				ss << tp_as_string(tp, self.interface.val->items[i].key) << "::"
-				ss << self.interface.val->items[i].hash
-				if self.interface.val->items[i].val.type.type_id == TP_FUNC:
-					ss << "::" << tp_as_string(tp, self.interface.val->items[i].val)
+				ss << tp_as_string(tp, self.interface.val🠊items[i].key) << "::"
+				ss << self.interface.val🠊items[i].hash
+				if self.interface.val🠊items[i].val.type.type_id == TP_FUNC:
+					ss << "::" << tp_as_string(tp, self.interface.val🠊items[i].val)
 				ss << ", "
 			ss << "}"
 			break
@@ -977,14 +977,14 @@ def print(void* v):
 @static
 def print(std::vector<int> v):
 	std::cout << "[std::vector<int> "
-	for (int i=0; i<v.size(); i++):
+	for i in range(v.size()):
 		std::cout << v[i] << ","
 	std::cout << "]" << std::endl;
 
 @static
 def print(std::vector<std::vector<int>> v):
 	std::cout << "[std::vector<std::vector<int>> " << std::endl
-	for (int i=0; i<v.size(); i++):
+	for i in range(v.size()):
 		std::cout << "\t"
 		print(v[i])
 	std::cout << "]" << std::endl;

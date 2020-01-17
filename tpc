@@ -19,6 +19,7 @@ except ImportError:
 
 class DState:
 	def __init__(self,code,fname):
+		self.function_stack = []
 		self.class_stack = []
 		self.classes = []
 		self.globals256_funcs = {}  ## func name : args names
@@ -115,10 +116,18 @@ def setpos(v):
 	write(val)
 
 def code(i,a=0,b=0,c=0, head=False):
-	if not istype(i,'number'): raise
-	if not istype(a,'number'): raise
-	if not istype(b,'number'): raise
-	if not istype(c,'number'): raise
+	if not istype(i,'number'):
+		raise RuntimeError('code.i is not a number')
+	if not istype(a,'number'):
+		if a is None:
+			## probably should print a warning here
+			a = 0
+		else:
+			raise RuntimeError('code.a is not a number: %s' %a)
+	if not istype(b,'number'):
+		raise RuntimeError('code.b is not a number: %s' %b)
+	if not istype(c,'number'):
+		raise RuntimeError('code.c is not a number: %s' %c)
 	write(('code',i,a,b,c), head=head)
 
 def code_16(i,a,b):
@@ -134,8 +143,14 @@ def _do_string(v,r=None):
 	code_16(STRING,r,len(v))
 	write(val)
 	return r
+
 def do_string(t,r=None):
-	return _do_string(t.val,r)
+	if len(t.val)==1:
+		r = get_tmp(r)
+		code(199, a=r, b=ord(t.val))
+		return r
+	else:
+		return _do_string(t.val,r)
 
 def _do_number(v,r=None):
 	r = get_tmp(r)
@@ -417,6 +432,25 @@ def do_symbol(t,r=None):
 							code(71, a=ord(a.val), b=ord(b.val), c=ord(c.val))
 						return None
 
+		if D.function_stack and t.val == '=' and r is None:
+			if items[0].type == 'name' and items[0].val not in D.globals:
+				a = items[0]
+				expr = items[1]
+				if expr.type == 'symbol' and expr.val == '+':
+					b = expr.items[0]
+					c = expr.items[1]
+					## is this really safe? not really any speed up
+					if b.type=='name' and b.val not in D.globals and c.type=='number' and c.val.isdigit():
+							num = int(c.val)
+							if num > 0 and num < 256:
+								#r = get_reg(a)  ## crashes
+								r = do_local(a,r)
+								if D.function_stack and b.val in D.function_stack[-1]['args']:
+									code(190, a=r, b=D.function_stack[-1]['args'].index(b.val), c=num)
+								else:
+									code(190, a=r, b=get_reg(b.val), c=num)
+								return r
+
 		return do_set_ctx(items[0],items[1]);
 
 	elif t.val in cmps:
@@ -436,7 +470,7 @@ def do_symbol(t,r=None):
 		b = items[1]
 		if a.type == 'name' and a.val in D.globals and len(a.val)==1:
 			if b.type == 'name' and b.val in D.globals and len(b.val)==1:
-				print('r=', r)
+				print('global fast op return reg=', r)
 				if r is None:
 					r = 0
 				if t.val == '+':
@@ -451,6 +485,18 @@ def do_symbol(t,r=None):
 				elif t.val == '/':
 					code(67, a=r, b=ord(a.val), c=ord(b.val))
 					return r
+
+		if a.type=='name' and a.val not in D.globals and r:
+			if b.type=='number' and str(b.val).isdigit():
+				num = int(b.val)
+				if num > 0 and num < 256:
+					if t.val == '+':
+						## is this really safe? not really any speed up
+						if D.function_stack and a.val in D.function_stack[-1]['args']:
+							code(190, a=r, b=D.function_stack[-1]['args'].index(a.val), c=num)
+						else:
+							code(190, a=r, b=get_reg(a.val), c=num)
+						return r
 
 		return infix(metas[t.val],items[0],items[1],r)
 
@@ -775,12 +821,18 @@ def do_def(tok,kls=None):
 	setpos(tok.pos)  ## note: this is optimized away when not in debug mode
 
 	a,b,c,d = p_filter(items[1].items)
+
+	D.function_stack.append({'name':func_name, 'args':[]})
+	for arg in a:
+		D.function_stack[-1]['args'].append(arg.val)
+
 	if is_global256 and not b and not c and not d and len(a) <= 29:
 		assert not kls
 		## super fast global function call, bypassing the params list
-		for p in a:
+		for i,p in enumerate(a):
 			D.globals256_funcs[func_name].append(p.val)
 			v = do_local(p)
+			set_reg(i, p.val)  ## this should have fixed the get reg problem for function args ???
 	elif func_name=="__init__" and len(D.class_stack)==1 and D.class_stack[-1] in D.globals256 and not b and not c and not d and len(a) <= 29:
 		class_name = D.class_stack[-1]
 		assert class_name not in D.globals256_funcs
@@ -826,6 +878,7 @@ def do_def(tok,kls=None):
 
 	D.end()
 	tag(t,'end')
+	D.function_stack.pop()
 
 	if kls == None:
 		if D._globals: do_globals(Token(tok.pos,0,0,[items[0]]))

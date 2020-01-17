@@ -318,8 +318,8 @@ def rebuild(stage=None):
 
 	else:  ## linux
 		if '--profile' in sys.argv:
-			opts += ' -O1 -g -pg '
-			exeopts += ' -O1 -g -pg '
+			opts += ' -O3 -g -pg '
+			exeopts += ' -O3 -g -pg '
 
 		else:
 			if '--secure-binary' in sys.argv:

@@ -300,6 +300,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			ln = ln.replace(u'🠊', '->')
 		if u'⧟' in ln:
 			ln = ln.replace(u'⧟', ',')
+
 		s = ln.strip()
 
 		## check for function calls, or forward defs
@@ -540,6 +541,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			pass
 		elif s == '@static':
 			pass
+		elif s == '@constexpr':
+			out.append('constexpr')
 		elif s in ('@javascript', '@js'):
 			em_js = True
 		elif s.startswith('@template('):

@@ -55,6 +55,7 @@ def tp_string_tiny(const char c) ->tp_obj:
 	## note magic must be set, malloc/realloc will not always clear all the bytes and set them to zero
 	r.type.magic = TP_STRING_NONE
 	r.str.val[0] = c
+	r.str.val[1] = '\0'
 	return r
 
 ## Return a untracked string object from external memory.

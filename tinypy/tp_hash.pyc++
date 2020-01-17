@@ -151,6 +151,7 @@ static xxh_u32 XXH32_avalanche(xxh_u32 h32){
 
 #define XXH_get32bits(p) XXH_readLE32_align(p, align)
 
+@constexpr
 static xxh_u32 XXH32_finalize(xxh_u32 h32, const xxh_u8* ptr, size_t len, XXH_alignment align){
 #define PROCESS1               \
     h32 += (*ptr++) * PRIME32_5; \
@@ -219,9 +220,10 @@ static xxh_u32 XXH32_finalize(xxh_u32 h32, const xxh_u8* ptr, size_t len, XXH_al
 }
 
 
+@constexpr
 def XXH32_endian_align(const xxh_u8* input, size_t len, xxh_u32 seed, XXH_alignment align) ->xxh_u32:
 	const xxh_u8* bEnd = input + len
-	xxh_u32 h32
+	xxh_u32 h32 = 0
 	if len >= 16:
 		const xxh_u8* const limit = bEnd - 15
 		xxh_u32 v1 = seed + PRIME32_1 + PRIME32_2
@@ -240,18 +242,19 @@ def XXH32_endian_align(const xxh_u8* input, size_t len, xxh_u32 seed, XXH_alignm
 	h32 += (xxh_u32)len
 	return XXH32_finalize(h32, input, len&15, align)
 
-
-
 ##Calculate the 32-bit hash of sequence "length" bytes stored at memory address "input".
 ##The memory between input & input+length must be valid (allocated and read-accessible).
 ##"seed" can be used to alter the result predictably.
 ##Speed on Core 2 Duo @ 3 GHz (single thread, SMHasher benchmark) : 5.4 GB/s
 
+@constexpr
 def XXH32(const void* input, size_t length, XXH32_hash_t seed=0) ->XXH32_hash_t:
 	return XXH32_endian_align((const xxh_u8*)input, length, seed, XXH_aligned);
 
+@constexpr
 def XXH32unaligned(const void* input, size_t length, XXH32_hash_t seed=0) ->XXH32_hash_t:
 	return XXH32_endian_align((const xxh_u8*)input, length, seed, XXH_unaligned);
+
 
 
 #ifdef ORIG_TPY_HASH

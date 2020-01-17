@@ -374,6 +374,12 @@ def tp_step(TP) ->int:
 					cur += sizeof(tp_num)/4
 					continue
 					break
+				case 199:
+					if defined(DEBUG):
+						print("new tiny char string")
+						std::cout << (char)VB << std::endl;
+					RA = tp_string_tiny((char)VB)
+					break
 				case TP_ISTRING:
 					## old notes: RA = tp_string_n((*(cur+1)).string.val,UVBC); // from TinyPy - May 13, 2009
 					if defined(DEBUG):
@@ -391,7 +397,14 @@ def tp_step(TP) ->int:
 					cur += (UVBC/4)+1
 					break
 				case TP_IMOVE: RA = RB; break;
-				case TP_IIF: if (tp_true(tp,RA)) { cur += 1; } break;
+				case TP_IIF:
+					if RA.type.type_id==TP_NUMBER:
+						if RA.number.val:
+							cur += 1
+					else:
+						if tp_true(tp,RA):
+							cur += 1
+					break;
 				case TP_IEQ:
 					if RB.type.type_id==TP_NUMBER and RC.type.type_id==TP_NUMBER:
 						if RB.number.val==RC.number.val:
@@ -445,10 +458,16 @@ def tp_step(TP) ->int:
 					else:
 						tp_set(tp,f->globals,RA,RB)
 					break
+				case 190:
+					if defined(DEBUG):
+						print("+ FAST TP_IADD +")
+						std::cout << "  RB: " << tp_as_string(tp, RB) << std::endl;  // first operand
+						std::cout << "  RC: " << tp_as_string(tp, RC) << std::endl;  // second operand
+					RA = tp_number(RB.number.val + VC)
+					break
 				case TP_IADD:
 					if defined(DEBUG):
 						print("+ TP_IADD +")
-						std::cout << "  RA: " << tp_as_string(tp, RA) << std::endl;  // destination register
 						std::cout << "  RB: " << tp_as_string(tp, RB) << std::endl;  // first operand
 						std::cout << "  RC: " << tp_as_string(tp, RC) << std::endl;  // second operand
 					if RB.type.type_id == TP_NUMBER:
