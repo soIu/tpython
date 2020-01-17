@@ -638,44 +638,69 @@ def do_call(t,r=None):
 	items = t.items
 	a,b,c,d = p_filter(t.items[1:])
 
-	if t.items[0].type == 'name' and t.items[0].val in D.globals256 and t.items[0].val not in D.classes:
-		## note: b is an empty list, or can have items from a call like: `foo(bar=xxx)`  TODO support fast calls for that style
-		func_name = t.items[0].val
-		if not b and c is None and d is None:
-			if func_name in D.globals256_funcs:
-				## global fast call - bypasses paramlist ##
-				args = D.globals256_funcs[func_name]
-				assert len(args)==len(a)
-				if len(args) <= 1:
+	if t.items[0].type == 'name' and t.items[0].val in D.globals256:
+		if t.items[0].val in D.classes:
+			class_name = t.items[0].val
+			if not b and c is None and d is None:
+				if class_name in D.globals256_funcs:
+					## global fast call - bypasses paramlist ##
+					args = D.globals256_funcs[class_name]
+					print(a)
+					print(args)
+					assert len(args)-1==len(a)  ## because the first item of `args` is `self`
 					if not args:
-						code(200, r, D.globals256.index(t.items[0].val) )
+						code( 232, r, D.globals256.index(class_name) )
 					else:
-						t1 = do(a[0])
-						code(201, r, D.globals256.index(t.items[0].val), t1 )
-						free_tmp(t1)
+						tmpargs = get_tmps( len(a) )
+						for i, tmpreg in enumerate(tmpargs):
+							bb = do(a[i], tmpreg)
+							if bb != tmpreg:
+								code(MOVE,tmpreg, bb)
+								free_tmp(bb)
+						## this trick shoves the arg count into the byte code type header itself (200+numargs)
+						## the last register (RC) is set to the first reg addr, because get_tmps is a range, this hack works.
+						code( 232+len(args), r, D.globals256.index(class_name), tmpargs[0] )
+						for tmp in tmpargs:
+							assert tmp != 0
+							free_tmp(tmp)
 					return r
-				else:
-					tmpargs = get_tmps( len(a) )
-					for i, tmpreg in enumerate(tmpargs):
-						bb = do(a[i], tmpreg)
-						if bb != tmpreg:
-							code(MOVE,tmpreg, bb)
-							free_tmp(bb)
-					## this trick shoves the arg count into the byte code type header itself (200+numargs)
-					## the last register (RC) is set to the first reg addr, because get_tmps is a range, this hack works.
-					code( 200+len(args), r, D.globals256.index(t.items[0].val), tmpargs[0] )
-					for tmp in tmpargs:
-						assert tmp != 0
-						free_tmp(tmp)
-					return r
-			### this is not safe and a very rare case like `foo=getattr(ob,'bar')`
-			#else:
-			#	## global fast call ##
-			#	if len(a)==1:
-			#		t1 = do(a[0])
-			#		code(200, r, D.globals256.index(t.items[0].val), t1 )
-			#		free_tmp(t1)
-			#		return r
+		else:
+			func_name = t.items[0].val
+			if not b and c is None and d is None:
+				if func_name in D.globals256_funcs:
+					## global fast call - bypasses paramlist ##
+					args = D.globals256_funcs[func_name]
+					assert len(args)==len(a)
+					if len(args) <= 1:
+						if not args:
+							code(200, r, D.globals256.index(t.items[0].val) )
+						else:
+							t1 = do(a[0])
+							code(201, r, D.globals256.index(t.items[0].val), t1 )
+							free_tmp(t1)
+						return r
+					else:
+						tmpargs = get_tmps( len(a) )
+						for i, tmpreg in enumerate(tmpargs):
+							bb = do(a[i], tmpreg)
+							if bb != tmpreg:
+								code(MOVE,tmpreg, bb)
+								free_tmp(bb)
+						## this trick shoves the arg count into the byte code type header itself (200+numargs)
+						## the last register (RC) is set to the first reg addr, because get_tmps is a range, this hack works.
+						code( 200+len(args), r, D.globals256.index(t.items[0].val), tmpargs[0] )
+						for tmp in tmpargs:
+							assert tmp != 0
+							free_tmp(tmp)
+						return r
+				### this is not safe and a very rare case like `foo=getattr(ob,'bar')`
+				#else:
+				#	## global fast call ##
+				#	if len(a)==1:
+				#		t1 = do(a[0])
+				#		code(200, r, D.globals256.index(t.items[0].val), t1 )
+				#		free_tmp(t1)
+				#		return r
 
 	fnc = do(items[0])
 
@@ -750,11 +775,18 @@ def do_def(tok,kls=None):
 	setpos(tok.pos)  ## note: this is optimized away when not in debug mode
 
 	a,b,c,d = p_filter(items[1].items)
-	if is_global256 and not b and not c and not d and len(a) <= 55:
+	if is_global256 and not b and not c and not d and len(a) <= 29:
 		assert not kls
 		## super fast global function call, bypassing the params list
 		for p in a:
 			D.globals256_funcs[func_name].append(p.val)
+			v = do_local(p)
+	elif func_name=="__init__" and len(D.class_stack)==1 and D.class_stack[-1] in D.globals256 and not b and not c and not d and len(a) <= 29:
+		class_name = D.class_stack[-1]
+		assert class_name not in D.globals256_funcs
+		D.globals256_funcs[class_name] = []
+		for p in a:
+			D.globals256_funcs[class_name].append(p.val)
 			v = do_local(p)
 	else:
 		## this is a clever trick by Hassey, because __params is the first local variable,

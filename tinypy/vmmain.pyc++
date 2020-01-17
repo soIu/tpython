@@ -1,10 +1,8 @@
-#ifdef INCLUDEOS
+if defined(INCLUDEOS):
 	import <service>
-#endif
 
-#ifdef USE_PYTHON
+if defined(USE_PYTHON):
 	import <Python.h>
-#endif
 
 import "tp.gen.h"
 import <thread>
@@ -62,16 +60,10 @@ import <sstream>
 	#endif
 #endif
 
-// https://stackoverflow.com/questions/77005/how-to-automatically-generate-a-stacktrace-when-my-program-crashes
+## https://stackoverflow.com/questions/77005/how-to-automatically-generate-a-stacktrace-when-my-program-crashes
 def crash_handler(int sig):
 	fprintf(stderr, "Error: signal %d:\n", sig);
 	#ifdef __MINGW64__
-	//void *array[10];
-	//size_t size;
-	// get void* for all entries on the stack
-	//size = backtrace(array, 10);   // not supported in MINGW
-	// print out all the frames to stderr, with unreadable names
-	//backtrace_symbols_fd(array, size, STDERR_FILENO);
 	#else
 	  #ifndef __EMSCRIPTEN_major__
 	    #ifndef INCLUDEOS
@@ -137,70 +129,21 @@ def compile_and_run_py_file(std::string filename):
 	catch (const char * str):
 		std::cout << "Runtime Exception: " << str << std::endl;
 	tp_deinit(tp)
-
-
 #endif
 
-def test_pyob():
-	std::cout << "sizeof tp_obj = " << sizeof(tp_obj) << std::endl;
-	std::cout << "sizeof pyob = " << sizeof(pyob) << std::endl;
-	pyob parray[2];
-	std::cout << "sizeof pyob array = " << sizeof(parray) << std::endl;
-	auto p = pyob()
-	p.set( 100 )
-	std::cout << "pyob.get() = " << p.get() << std::endl;
-	##p.set( 16777216 )  ## largest whole number a float can hold
-	std::cout << "pyob.get() = " << p.get() << std::endl;
-	##p.set( 16777217 )  ## this overflows a float
-	std::cout << "pyob.get() = " << p.get() << std::endl;
-	volatile int loops = 16777217*64
-	for i in range(loops):
-		p.real += 0.0001
-		volatile pyob xxx = pyob();
-		##volatile pyob xxx = {};
-		xxx.real += 0.0001
-	std::cout << "pyob.get() = " << p.get() << std::endl;
-	std::cout << "pyob.real = " << p.real << std::endl;
-
-def test_tp_obj():
-	std::cout << "sizeof tp_obj = " << sizeof(tp_obj) << std::endl;
-	std::cout << "sizeof pyob = " << sizeof(pyob) << std::endl;
-	pyob parray[2];
-	std::cout << "sizeof pyob array = " << sizeof(parray) << std::endl;
-	auto p = tp_number(0)
-	p.number.val = 100
-	std::cout << "tp_obj.number.val = " << p.number.val << std::endl;
-	##p.number.val = 16777216
-	std::cout << "tp_obj.number.val = " << p.number.val << std::endl;
-	##p.number.val = 16777217
-	std::cout << "tp_obj.number.val = " << p.number.val << std::endl;
-	volatile int loops = 16777217*64
-	for i in range(loops):
-		p.number.val += 0.0001
-		volatile auto xxx = tp_number(0)
-		xxx.number.val += 0.0001
-	std::cout << "tp_obj.number.val = " << p.number.val << std::endl;
 
 
 #ifdef INCLUDEOS
 def Service::start():
-	#ifdef DEBUG
-	  std::cout << "starting tpython interpreter..." << std::endl;
-	#endif
+	if defined(DEBUG):
+		std::cout << "starting tpython interpreter..." << std::endl;
 	run_vm_embedded(0, NULL);
 
 #else
+
 def main(int argc,  char *argv[]) -> int:
 	if defined(DEBUG):
 		std::cout << "starting tpython interpreter..." << std::endl;
-		std::cout << "sizeof tp_vm = " << sizeof(tp_vm) << std::endl;
-		std::cout << "sizeof tp_obj = " << sizeof(tp_obj) << std::endl;
-		std::cout << "sizeof TPTypeInfo = " << sizeof(TPTypeInfo) << std::endl;
-		std::cout << "sizeof tpd_frame = " << sizeof(tpd_frame) << std::endl;
-		std::cout << "sizeof tpd_list = " << sizeof(tpd_list) << std::endl;
-		std::cout << "sizeof tpd_dict = " << sizeof(tpd_dict) << std::endl;
-		std::cout << "sizeof tpd_item = " << sizeof(tpd_item) << std::endl;
-		std::cout << "sizeof tpd_string = " << sizeof(tpd_string) << std::endl;
 	#ifndef __EMSCRIPTEN_major__
 	  signal(SIGSEGV, crash_handler); // memory segfault
 	  signal(SIGABRT, crash_handler); // some old places in tinypy code had used `abort()`
@@ -217,9 +160,6 @@ def main(int argc,  char *argv[]) -> int:
 	  Py_SetStandardStreamEncoding("utf-8", "surrogateescape");
 	  Py_Initialize();
 	#endif
-	#ifdef DEBUG
-	  std::cout << "ready to start VM..." << std::endl;
-	#endif
 	#ifdef USE_EMBEDDED_BYTECODE
 	  run_vm_embedded(argc, argv);
 	#else
@@ -227,21 +167,17 @@ def main(int argc,  char *argv[]) -> int:
 		std::cout << "Error: no bytecode or py file provided" << std::endl;
 	elif argc==2:
 		std::string f = std::string(argv[1])
-		print( f )
-		if f=="--bench-tp-obj":
-			test_tp_obj()
-		elif f=="--bench-new-tp-obj":
-			test_pyob()
-		else:
-			if f.size() > 3:
-				if f.substr( f.size()-3, f.size() ) == std::string(".py"):
-					#ifdef USE_PYTHON
-					compile_and_run_py_file(f)
-					#else
-					print("Error: tpython must be built with CPython to compile py files to bytecode")
-					#endif
-					return 0
-			run_vm(argc, argv, 1)
+		if defined(DEBUG):
+			print( f )
+		if f.size() > 3:
+			if f.substr( f.size()-3, f.size() ) == std::string(".py"):
+				#ifdef USE_PYTHON
+				compile_and_run_py_file(f)
+				#else
+				print("Error: tpython must be built with CPython to compile py files to bytecode")
+				#endif
+				return 0
+		run_vm(argc, argv, 1)
 	elif argc==3:
 		std::thread t1( [=]{run_vm(argc, argv, 1);} );
 		std::thread t2( [=]{run_vm(argc, argv, 2);} );
@@ -250,5 +186,16 @@ def main(int argc,  char *argv[]) -> int:
 	else:
 		std::cout << "TODO: more than two threads it not yet supported" << std::endl;
 	#endif
+	if defined(DEBUG):
+		std::cout << "tpython interpreter exit" << std::endl;
+		std::cout << "sizeof tp_vm = " << sizeof(tp_vm) << std::endl;
+		std::cout << "sizeof tp_obj = " << sizeof(tp_obj) << std::endl;
+		std::cout << "sizeof TPTypeInfo = " << sizeof(TPTypeInfo) << std::endl;
+		std::cout << "sizeof tpd_frame = " << sizeof(tpd_frame) << std::endl;
+		std::cout << "sizeof tpd_list = " << sizeof(tpd_list) << std::endl;
+		std::cout << "sizeof tpd_dict = " << sizeof(tpd_dict) << std::endl;
+		std::cout << "sizeof tpd_item = " << sizeof(tpd_item) << std::endl;
+		std::cout << "sizeof tpd_string = " << sizeof(tpd_string) << std::endl;
+		std::cout << "sizeof tpd_func = " << sizeof(tpd_func) << std::endl;
 	return 0;
 #endif

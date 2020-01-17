@@ -165,6 +165,8 @@ def rebuild(stage=None):
 	mode = 'linux'
 	exe = 'tpython++'
 	exeopts = ''
+	defs = ''
+	mods = ''
 
 	CC = 'c++'
 	if '--clang' in sys.argv:

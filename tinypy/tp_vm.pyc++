@@ -611,8 +611,8 @@ def tp_step(TP) ->int:
 					return 0
 					break
 				default:
-					if e.i >= 202:
-						## fast global function call - up to 4 args
+					if e.i >= 202 and e.i < 232:
+						## fast global function call - up to 29 args
 						if defined(DEBUG):
 							print("^^^^^^^^^^^^^fast global call (args:n) ^^^^^^^^^^^^^")
 							print("fast call func type:", __globals256__[ VB ].type.type_id)
@@ -624,6 +624,28 @@ def tp_step(TP) ->int:
 							tp->frames[tp->cur].regs[i] = regs[ VC + i ]
 						tp_run_frame(tp)
 						RA = dest
+						GA
+						return 0
+						break
+					elif e.i >= 232:
+						## fast construct class
+						if defined(DEBUG):
+							print("^^^^^^^^^^^^^fast construct class (args:n) ^^^^^^^^^^^^^")
+							print("fast call func type:", __globals256__[ VB ].type.type_id)
+							print("fast call func magic:", __globals256__[ VB ].type.magic)
+						f->cur = cur + 1
+						tp_obj dest = tp_None
+						tp_obj iface = __globals256__[ VB ]
+						tp_obj __init__ = tp_dict_get(tp, iface, tp_string_atom(tp,"__init__"))
+						tp_obj self = tp_object(tp)
+						self.obj.info->meta = iface
+						tp_enter_frame(tp, __init__.func.info->globals, __init__.func.info->code, &dest)
+						tp->frames[tp->cur].regs[0] = self
+						if e.i > 232:
+							for i in range(e.i-232):
+								tp->frames[tp->cur].regs[i+1] = regs[ VC + i ]
+						tp_run_frame(tp)
+						RA = self
 						GA
 						return 0
 						break
