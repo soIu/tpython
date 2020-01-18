@@ -553,7 +553,7 @@ def __eval_js(const char* code):
 ##import <emscripten/threading.h>
 def tpy_eval_js(TP) ->tp_obj:
 	tp_obj code = TP_OBJ()
-	__eval_js(code)
+	__eval_js( std::string(code).c_str() )
 	##emscripten_sync_run_in_main_runtime_thread(code)
 	return None
 
@@ -561,14 +561,14 @@ def tpy_eval_js_returns(TP) ->tp_obj:
 	tp_obj code = TP_OBJ()
 	tp_obj rtype = TP_OBJ()
 	if rtype == "void":
-		__eval_js(code)
+		__eval_js(std::string(code).c_str())
 		return None
 	elif rtype == "int":
-		return tp_number(emscripten_run_script_int(code))
+		return tp_number(emscripten_run_script_int(std::string(code).c_str()))
 	elif rtype == "float":
-		return tp_number(emscripten_run_script_int(code))
+		return tp_number(emscripten_run_script_int(std::string(code).c_str()))
 	elif rtype == "string":
-		return tp_string_from_stdstring(tp, std::string(emscripten_run_script_string(code)) )
+		return tp_string_from_stdstring(tp, std::string(emscripten_run_script_string(std::string(code).c_str())) )
 
 
 #else

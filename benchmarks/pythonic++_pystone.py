@@ -166,8 +166,8 @@ with c++:
 			IntLoc1 = Proc2(IntLoc1)
 			ops += 1
 		return ops
-	@module( mymod )
-	def pystones(loops):
+	@module( my_cpp_module )
+	def run_pystones(loops):
 		print("enter pystones...")
 		Array1Glob = std::vector<int>()
 		for i in range(51):
@@ -180,11 +180,11 @@ with c++:
 		return None
 
 
-import mymod
+import my_cpp_module
 
 def main():
 	print('enter main...')
 	LOOPS = 100000
-	mymod.pystones( LOOPS )
+	my_cpp_module.run_pystones( LOOPS )
 
 main()

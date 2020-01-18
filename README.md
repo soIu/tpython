@@ -3,6 +3,8 @@
 A tiny GIL-less python implementation (based on TinyPy), written in Pythonic++ (a dialect of C++), and optimized for speed and portability to mobile platforms.
 TPython++ is used by the Blendot game engine.  http://blendot.org
 
+![alt text](https://miro.medium.com/max/1164/1*SWL51u0qro4N6_peZOxu5w.png "Pystone Benchmark")
+
 # history
 
 TinyPy is the smallest Python implementation ever, just 64K, created by Phil Hassey in 2008.  TPython++ is based on RainWoodMans fork of TinyPy. https://github.com/rainwoodman/tinypy
@@ -15,26 +17,6 @@ In TPython to multiply you simply use `*`, or unicode times `×`, there is no di
 For better readablity, TPython also supports the unicode division symbol, so to divide you can use either: `/` or `÷`
 
 Another difference is `eval` and `exec` are not allowed in TPython, your scripts must be compiled ahead of time.
-
-# Blendot Types
-
-Blendot is a hard fork of the Godot game engine. The Blendot rewrite replaces C++ with Pythonic++, and GDScript with TPython.
-By default TPython is built with the minimal core types of Blendot, and provides the following types:
-* vec2
-* vec3
-* quat
-* color
-* rect
-* tri
-* plane
-* aabb
-* mat3
-* transform
-* RID
-* spatial
-* mesh
-
-If you do not need these types, you can pass the option `--no-blendot` to `rebuild.py`
 
 # Compile TPython++
 
@@ -67,13 +49,16 @@ Options for `rebuild.py`
 * `--windows` (compile exe for MS Windows)
 * `--arm` (compile exe for ARM)
 * `--wasm` (use Emscripten to compile wasm binary)
+* `--html` (use Emscripten to compile wasm binary)
 * `--android` (compile exe for Android)
 * `--sdl` (link to SDL2 and make `sdl` module available)
-* `--no-blendot` (do not build with Blendot math and object types)
+* `--blendot` (build with Blendot math and object types)
 * `--cpython` (link to libpython and allow calling CPython from TPython)
 * `--pgo` (compile exe twice, and use profile guided optimizations)
 * `--clean` (remove all cached `.o` files)
 * `--debug` (turn on extra debugging)
+* `--std-malloc` (use standard malloc instead of RPMalloc)
+* `--clang` (compile with clang6 instead of gcc)
 
 
 # Compile TPython Scripts to Bytecode
@@ -151,7 +136,8 @@ Importing external headers from the system can be done using: `import <someheade
 Note if your header is written in Pythonic++, as a `.pyh` file, then you will import it as: `import "myheader.gen.h"`
 
 References can use standard C++ syntax `&`, or with the curved upwards arrow `⤴`.
-Pointers can use `*` or the black rightwards arrow head `⮞`
+Pointer types can use `*` or the black rightwards arrow head `⮞`
+Pointer objects can use `🠊` instead of `->`
 
 Templates can use regular C++ syntax, `<>` or `≼≽`.
 Templates with multiple arguments can be separated with `,` or `⧟`.
@@ -268,6 +254,25 @@ import mycppmodule
 mycppmodule.foo(99, 'hello', 'world')
 ```
 
+# Blendot Types
+
+Blendot is a hard fork of the Godot game engine. The Blendot rewrite replaces C++ with Pythonic++, and GDScript with TPython.
+TPython can be built with the minimal core types of Blendot by passing `--blendot` option to `rebuild.py`, and provides the following types:
+* vec2
+* vec3
+* quat
+* color
+* rect
+* tri
+* plane
+* aabb
+* mat3
+* transform
+* RID
+* spatial
+* mesh
+
+
 # Benchmarks and Articles
 
 https://medium.com/@judge_raptor/the-smallest-fastest-python-ever-827a36390fbf
@@ -283,3 +288,5 @@ https://medium.com/@judge_raptor/the-smallest-fastest-most-secure-python-ever-5f
 https://medium.com/@judge_raptor/the-first-high-performance-game-engine-written-in-python-a2be13ff34f2
 
 https://medium.com/@judge_raptor/c-6e89c6bbc8f0
+
+https://medium.com/@judge_raptor/2x-faster-than-python-7c15ab0a9286

@@ -183,7 +183,7 @@ def rebuild(stage=None):
 		defs = '-DBLENDOT_TYPES'
 		mods = BlendotTypesFiles
 
-	if '--std-malloc' in sys.argv:
+	if '--std-malloc' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv:
 		mkfile = Makefile
 	else:
 		defs += ' -DUSE_RPMALLOC '
