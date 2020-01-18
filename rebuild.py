@@ -135,6 +135,8 @@ def gen_interpreter(stage=None):
 		'./tpython++compiler.py', 
 		'./tinypy'
 	]
+	if '--blendot' in sys.argv:
+		cmd.append('--blendot')
 	if '--debug' in sys.argv:
 		cmd.append('--debug')
 	if '--secure' in sys.argv:
@@ -183,7 +185,7 @@ def rebuild(stage=None):
 		defs = '-DBLENDOT_TYPES'
 		mods = BlendotTypesFiles
 
-	if '--std-malloc' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv:
+	if '--std-malloc' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv or '--includeos' in sys.argv:
 		mkfile = Makefile
 	else:
 		defs += ' -DUSE_RPMALLOC '

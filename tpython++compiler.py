@@ -1326,7 +1326,11 @@ def walk_path(path, res):
 		if file.endswith(('.pyc++', '.pyh')):
 			res.append([path,file])
 		elif os.path.isdir(os.path.join(path,file)):
-			walk_path( os.path.join(path,file), res)
+			if file == 'blendot':
+				if '--blendot' in sys.argv:
+					walk_path( os.path.join(path,file), res)
+			else:
+				walk_path( os.path.join(path,file), res)
 
 def pythonicpp_translate( path, file=None, secure=False, secure_binary=False, mangle_map=None, obfuscate_map=None, unreal=False, unreal_project=None, vis=None, vis_cursor=None ):
 	if file:
