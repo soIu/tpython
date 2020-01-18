@@ -183,8 +183,9 @@ def rebuild(stage=None):
 		defs = '-DBLENDOT_TYPES'
 		mods = BlendotTypesFiles
 
-	mkfile = Makefile
-	if '--rpmalloc' in sys.argv:
+	if '--std-malloc' in sys.argv:
+		mkfile = Makefile
+	else:
 		defs += ' -DUSE_RPMALLOC '
 		mkfile = MakefileWithRPMalloc.replace('<C>', C)
 

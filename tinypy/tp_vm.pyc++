@@ -526,6 +526,16 @@ def tp_step(TP) ->int:
 								RA.list.val->items[ (int)RB.number.val ] = RC
 						else:
 							RA = tp_set(tp,RA,RB,RC)
+					elif RA.type.type_id == TP_OBJECT and RB.type.type_id==TP_STRING_TINY:
+						if RB.type.type_id == TP_STRING_TINY:
+							if RB.type.magic == TP_STRING_MAGIC_HASH:
+								tpd_dict_hashsetx(tp, RA.dict.val, RB.str.val[11], RB, RC)
+							else:
+								tpd_dict_hashsetx(tp, RA.dict.val, tp_hash(tp, RB), RB, RC)
+						else:
+							tpd_dict_hashsetx(tp, RA.dict.val, tp_hash(tp, RB), RB, RC)
+						if RC.type.type_id >= TP_GC_TRACKED:
+							tp_grey(tp, RC)
 					else:
 						RA = tp_set(tp,RA,RB,RC)
 					break
