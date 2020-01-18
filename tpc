@@ -8,6 +8,7 @@
 import os, sys, random
 
 DEBUG_PARSER = True
+DEBUG_ENCODER = True
 
 ## from encode.py ##
 try:
@@ -743,6 +744,8 @@ def do_del(tt):
 
 def do_call(t,r=None):
 	assert t.type == 'call'
+	if DEBUG_ENCODER:
+		print(t)
 	## fast printing optimization
 	if t.items[0].type == 'name' and t.items[0].val == 'print':
 		if len(t.items[1:]) >= 2 and t.items[-1].type == 'symbol' and t.items[-1].val == '=':
@@ -766,17 +769,25 @@ def do_call(t,r=None):
 	if t.items[0].type == 'name' and t.items[0].val in D.globals256:
 		if t.items[0].val in D.classes:
 			class_name = t.items[0].val
+			if DEBUG_ENCODER:
+				print(orange('class `%s` in globals256 and in D.classes' %class_name))
+
 			if not b and c is None and d is None:
 				if class_name in D.globals256_funcs:
 					## global fast call - bypasses paramlist ##
 					args = D.globals256_funcs[class_name]
-					print(a)
-					print(args)
+					if DEBUG_ENCODER:
+						print(orange('class name in globals256_funcs'))
+						print(a)
+						print(args)
 					assert len(args)-1==len(a)  ## because the first item of `args` is `self`
-					if not args:
+					if not len(a):
 						code( 232, r, D.globals256.index(class_name) )
 					else:
 						tmpargs = get_tmps( len(a) )
+						if DEBUG_ENCODER:
+							print(orange('temp regs:'), tmpargs)
+
 						for i, tmpreg in enumerate(tmpargs):
 							bb = do(a[i], tmpreg)
 							if bb != tmpreg:
@@ -791,9 +802,15 @@ def do_call(t,r=None):
 					return r
 		else:
 			func_name = t.items[0].val
+			if DEBUG_ENCODER:
+				print(orange('calling function `%s` in globals256' %func_name))
+
 			if not b and c is None and d is None:
 				if func_name in D.globals256_funcs:
 					## global fast call - bypasses paramlist ##
+					if DEBUG_ENCODER:
+						print(orange('doing fast call'))
+
 					args = D.globals256_funcs[func_name]
 					assert len(args)==len(a)
 					if len(args) <= 1:
@@ -1900,7 +1917,7 @@ class Token:
 		prefix = ''
 		#if full_debug_mode and hasattr(self, 'nud') and self.nud:
 		#	prefix = '<%s>' % self.nud.func_name
-		if self.items is not None:
+		if self.items is not None and self.val is not None:
 			if self.val in '+-/*<>':
 				return prefix + red('(') + self.val.join([i._format() for i in self.items]) + red(')')
 			elif len(self.val) == 2 and self.val[1]=='=':
@@ -2256,7 +2273,9 @@ class py2bc:
 		if not "tinypy" in sys.version:
 			if not '-co' in sys.argv:
 				s = preprocess_source(s)
+		print( yellow('--------tokenize-----------') )
 		tokens = tokenize().tokenize(s)
+		print( yellow('--------parse-----------') )
 		try:
 			t = parse.parse(s,tokens)
 		except:
@@ -2265,7 +2284,14 @@ class py2bc:
 			print(P.stack)
 			print(P.tokens[P.pos])
 			raise SyntaxError(P.lastline )
-		r = encode.encode(fname,s,t)
+		print( yellow('--------encode-----------') )
+		try:
+			r = encode.encode(fname,s,t)
+		except:
+			print()
+			print( red('=========encode error=========') )
+			raise RuntimeError('byte encoding error')
+
 		return r
 
 #def main(src, dest):  ## called from tinypy?
