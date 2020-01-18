@@ -14,6 +14,8 @@ import <iostream>
 import <fstream>
 import <sstream>
 
+if defined(PROFILE_HASHING):
+	def print_hash_stats();
 
 #ifndef __MINGW64__
 	#ifndef __EMSCRIPTEN_major__
@@ -197,5 +199,7 @@ def main(int argc,  char *argv[]) -> int:
 		std::cout << "sizeof tpd_item = " << sizeof(tpd_item) << std::endl;
 		std::cout << "sizeof tpd_string = " << sizeof(tpd_string) << std::endl;
 		std::cout << "sizeof tpd_func = " << sizeof(tpd_func) << std::endl;
+	if defined(PROFILE_HASHING):
+		print_hash_stats()
 	return 0;
 #endif

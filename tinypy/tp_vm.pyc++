@@ -374,11 +374,17 @@ def tp_step(TP) ->int:
 					cur += sizeof(tp_num)/4
 					continue
 					break
-				case 199:
+				case 198:
 					if defined(DEBUG):
 						print("new tiny char string")
 						std::cout << (char)VB << std::endl;
 					RA = tp_string_tiny((char)VB)
+					break
+				case 199:
+					if defined(DEBUG):
+						print("new tiny interned string")
+					RA = tp_string_tiny( (*(cur+1)).string.val, VB, VC )
+					cur += (VB/4)+1
 					break
 				case TP_ISTRING:
 					## old notes: RA = tp_string_n((*(cur+1)).string.val,UVBC); // from TinyPy - May 13, 2009
@@ -392,11 +398,15 @@ def tp_step(TP) ->int:
 					if UVBC <= 12:
 						## stack allocated string
 						RA = tp_string_tiny( (*(cur+1)).string.val, UVBC )
+						## note: can not use the byte code position for hash cashing
+						##std::cout << RA << " " << tp->cur << " " << (unsigned long)f->cur << std::endl;
 					else:
 						RA = tp_string_from_const(tp, (*(cur+1)).string.val, UVBC )
 					cur += (UVBC/4)+1
 					break
-				case TP_IMOVE: RA = RB; break;
+				case TP_IMOVE:
+					RA = RB
+					break
 				case TP_IIF:
 					if RA.type.type_id==TP_NUMBER:
 						if RA.number.val:

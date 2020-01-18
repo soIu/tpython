@@ -161,7 +161,7 @@ enum TPFuncMagic:
 
 enum TPStringMagic:
 	TP_STRING_NONE = 0,
-	TP_STRING_ATOM = 1,
+	TP_STRING_MAGIC_HASH = 1,
 	TP_STRING_EXTERN = 2,
 	TP_STRING_VIEW = 3
 
@@ -1048,6 +1048,7 @@ def split_tiny_string_as_stdvec(tp_obj txt, std::string delims) -> std::vector<s
 		tokens.push_back(text.substr(start+len))
 	return tokens
 
+static std::unordered_map<int, uint32_t>  __tiny_string_hash_cache__ = {};
 
 import "tp_ops.gen.h"
 

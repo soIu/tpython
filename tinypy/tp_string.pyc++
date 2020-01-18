@@ -36,19 +36,6 @@ def tp_string_tiny(const char * v, int len) ->tp_obj:
 		r.str.val[len]='\0'
 	return r
 
-def tp_string_atom(TP, const char * v) ->tp_obj:
-	int n = strlen(v)
-	if n <= 12:
-		return tp_string_tiny(v, n)
-	else:
-		tp_obj r
-		r.type.type_id = TP_STRING_ATOMIC
-		## note magic must be set, malloc/realloc will not always clear all the bytes and set them to zero
-		r.type.magic = TP_STRING_NONE
-		r.atomstr.val = v
-		return r
-
-
 def tp_string_tiny(const char c) ->tp_obj:
 	tp_obj r
 	r.type.type_id = TP_STRING_TINY
@@ -57,6 +44,61 @@ def tp_string_tiny(const char c) ->tp_obj:
 	r.str.val[0] = c
 	r.str.val[1] = '\0'
 	return r
+
+def tp_string_tiny(const char * v, int len, char minihash) ->tp_obj:
+	tp_obj r
+	r.type.type_id = TP_STRING_TINY
+	r.type.magic = TP_STRING_MAGIC_HASH
+	for i in range(len):
+		r.str.val[i] = v[i]
+		if i > 10:
+			std::cout << v << std::endl;
+			throw "tiny string with minihash must be less than 11 bytes"
+	r.str.val[len]='\0'
+	## 8bit hash (interned index) is the last byte
+	r.str.val[11] = minihash
+	return r
+
+static int __num_tiny_string_atoms__ = 0;
+static std::unordered_map<std::string,int> __tiny_string_atoms__ = {};
+
+def tp_string_tiny_atom(const char * v) ->tp_obj:
+	tp_obj r
+	int len = strlen(v)
+	r.type.type_id = TP_STRING_TINY
+	r.type.magic = TP_STRING_MAGIC_HASH
+	for i in range(len):
+		r.str.val[i] = v[i]
+		if i > 10:
+			std::cout << v << std::endl;
+			throw "tiny string with minihash must be less than 11 bytes"
+	r.str.val[len]='\0'
+	if __tiny_string_atoms__.count( std::string(v) )==1:
+		r.str.val[11] = __tiny_string_atoms__[std::string(v)]
+	else:
+		if defined(DEBUG):
+			std::cout << "'" << v << "', ## 8bit hash = " << __num_tiny_string_atoms__ << std::endl;
+		## 8bit hash (interned index) is the last byte
+		r.str.val[11] = __num_tiny_string_atoms__
+		__tiny_string_atoms__[std::string(v)] = __num_tiny_string_atoms__
+		__num_tiny_string_atoms__ ++
+	return r
+
+def tp_string_atom(TP, const char * v) ->tp_obj:
+	int n = strlen(v)
+	if n <= 12:
+		if n <= 10:
+			return tp_string_tiny_atom(v)
+		else:
+			return tp_string_tiny(v, n)
+	else:
+		tp_obj r
+		r.type.type_id = TP_STRING_ATOMIC
+		## note magic must be set, malloc/realloc will not always clear all the bytes and set them to zero
+		r.type.magic = TP_STRING_NONE
+		r.atomstr.val = v
+		return r
+
 
 ## Return a untracked string object from external memory.
 def tp_string_from_const(TP, const char *s, int n) ->tp_obj:
@@ -95,17 +137,8 @@ def tp_string_from_buffer(TP, const char *s, int n) ->tp_obj:
 	memcpy(tp_string_getptr(r), s, n)
 	return r
 
-
+## TODO check where and how this is used, maybe deprecate, tp could be NULL - this is bad.
 def tp_string_from_stdstring(TP, std::string s) ->tp_obj:
-	#ifdef DEBUG
-	  std::cout << "tp_string.cpp tp_string_from_stdstring: " << std::endl;
-	  std::cout << s << std::endl;
-	#endif
-	//tp_obj r = tp_string_t(tp, s.size());
-	//memcpy(tp_string_getptr(r), s.c_str(), s.size()+1);
-	//s.copy(tp_string_getptr(r), s.size());
-	//return r;
-	//return tp_track(tp, tp_string_from_const(tp, s.c_str(), s.size()));
 	char *dst = new char[s.size()+1]
 	std::strcpy(dst, s.c_str())
 	if tp:
@@ -115,20 +148,17 @@ def tp_string_from_stdstring(TP, std::string s) ->tp_obj:
 
 
 def tp_string_getptr(tp_obj s) -> char* :
-	if s.type.magic == TP_STRING_ATOM:
-		throw "TP_STRING_ATOM is DEPRECATED"
 	if s.type.type_id == TP_STRING_ATOMIC:
 		return (char*) s.atomstr.val
 	elif s.type.type_id == TP_STRING_TINY:
 		## this will not work :(
-		return (char*)&s.str.val
+		##return (char*)&s.str.val
+		throw "can not call tp_string_getptr on a tiny string"
 	else:
 		return s.string.info->s
 
 
 def tp_string_len(tp_obj s)->int:
-	if s.type.magic == TP_STRING_ATOM:
-		throw "TP_STRING_ATOM is DEPRECATED"
 	if s.type.type_id == TP_STRING_ATOMIC:
 		return strlen(s.atomstr.val)
 	elif s.type.type_id == TP_STRING_TINY:

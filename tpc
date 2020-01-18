@@ -22,6 +22,76 @@ class DState:
 		self.function_stack = []
 		self.class_stack = []
 		self.classes = []
+		self.strings256 = [
+			'<builtins>',
+			'__name__',
+			'__file__',
+			'__dict__',
+			'sizeof',
+			'any',
+			'compile',
+			'print',
+			'range',
+			'min',
+			'max',
+			'bind',
+			'copy',
+			'__import__',
+			'__merge__',
+			'len',
+			'dir',
+			'__assert__',
+			'str',
+			'float',
+			'istype',
+			'isinstance',
+			'chr',
+			'fpack',
+			'funpack',
+			'abs',
+			'eval',
+			'exec',
+			'number',
+			'int',
+			'bool',
+			'dict',
+			'list',
+			'round',
+			'ord',
+			'hasattr',
+			'getattr',
+			'setattr',
+			'getraw',
+			'setmeta',
+			'getmeta',
+			'module',
+			'repr',
+			'evaljs',
+			'javascript',
+			'__call__',
+			'__new__',
+			'object',
+			'update',
+			'keys',
+			'values',
+			'version',
+			'modules',
+			'argv',
+			'sys',
+			'os',
+			'<builtin>',
+			'exists',
+			'read',
+			'load',
+			'system',
+			'mtime',
+			'save',
+			'random',
+			'uniform',
+			'__main__',
+			'__init__',
+		]
+
 		self.globals256_funcs = {}  ## func name : args names
 		self.globals256     = [] ## max size is 256
 		self.const_numbers = []  ## max size is 256
@@ -140,14 +210,21 @@ def get_code16(i,a,b):
 def _do_string(v,r=None):
 	r = get_tmp(r)
 	val = v + "\0"*(4-len(v)%4)
-	code_16(STRING,r,len(v))
+	## for the string to use the precomputed 8bit hash is must be less than 10 bytes,
+	## because the 8bit hash is shoved into the last byte, and second to last is the null terminator.
+	if len(v) <= 10 and len(D.strings256) < 256:
+		if v not in D.strings256:
+			D.strings256.append(v)
+		code(199, r, len(v), D.strings256.index(v) )
+	else:
+		code_16(STRING,r,len(v))
 	write(val)
 	return r
 
 def do_string(t,r=None):
 	if len(t.val)==1:
 		r = get_tmp(r)
-		code(199, a=r, b=ord(t.val))
+		code(198, a=r, b=ord(t.val))
 		return r
 	else:
 		return _do_string(t.val,r)

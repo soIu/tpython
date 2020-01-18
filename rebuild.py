@@ -188,6 +188,9 @@ def rebuild(stage=None):
 		defs += ' -DUSE_RPMALLOC '
 		mkfile = MakefileWithRPMalloc.replace('<C>', C)
 
+	if '--profile-hashing' in sys.argv:
+		defs += ' -DPROFILE_HASHING '
+
 	sdl_inc = ''
 	use_sdl = False
 	embed_bytecode = False

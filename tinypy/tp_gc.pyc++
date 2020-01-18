@@ -11,12 +11,9 @@ def tp_grey(TP, tp_obj v):
 	  std::cout << "tp_gc.cpp tp_grey" << std::endl;
 	#endif
 	if (v.type.type_id < TP_GC_TRACKED || (!v.gc.gci) || *v.gc.gci) { return; }
-	if (v.type.type_id == TP_STRING && v.type.magic == TP_STRING_ATOM) { return; }
+	if (v.type.type_id == TP_STRING && v.type.magic == TP_STRING_EXTERN) { return; }
+	## this unsafe union hackery is probably what crashes tpd_dict when its struct order is changed
 	*v.gc.gci = 1;
-	##if v.type.type_id == TP_DATA:
-	##	## terminal types, no need to follow
-	##	tpd_list_appendx(tp, tp->black, v)
-	##	return
 	## need to follow the referents
 	tpd_list_appendx(tp, tp->grey, v)
 

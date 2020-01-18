@@ -978,6 +978,13 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				w += '#ifdef ' + s.split('defined(')[-1][:-2]
 				macro_indent.append(indent)
 			else:
+				if ('==' in s or '!=' in s) and not s.count('('):
+					if ' & ' in s:
+						raise SyntaxError("using the bitwise & operator without wrapping its operands in `()` is invalid\n" + s)
+					elif ' | ' in s:
+						raise SyntaxError("using the bitwise | operator without wrapping its operands in `()` is invalid\n" + s)
+					elif ' ^ ' in s:
+						raise SyntaxError("using the bitwise ^ operator without wrapping its operands in `()` is invalid\n" + s)
 				autobrace += 1
 				w += 'if(' + s[len('if '):-1] + ') {'
 				draw_type = 'down-arrow-callout'

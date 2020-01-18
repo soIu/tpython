@@ -247,14 +247,60 @@ def XXH32_endian_align(const xxh_u8* input, size_t len, xxh_u32 seed, XXH_alignm
 ##"seed" can be used to alter the result predictably.
 ##Speed on Core 2 Duo @ 3 GHz (single thread, SMHasher benchmark) : 5.4 GB/s
 
-@constexpr
-def XXH32(const void* input, size_t length, XXH32_hash_t seed=0) ->XXH32_hash_t:
-	return XXH32_endian_align((const xxh_u8*)input, length, seed, XXH_aligned);
-
-@constexpr
-def XXH32unaligned(const void* input, size_t length, XXH32_hash_t seed=0) ->XXH32_hash_t:
-	return XXH32_endian_align((const xxh_u8*)input, length, seed, XXH_unaligned);
-
+if defined(PROFILE_HASHING):
+	static std::map<uint32_t,long> __num_hashes__ = {};
+	static std::map<uint32_t,long> __num_uhashes__ = {};
+	static std::map<uint32_t,std::string> __string_hashes__ = {};
+	static std::map<uint32_t,std::string> __tstring_hashes__ = {};
+	static std::map<uint32_t,std::string> __astring_hashes__ = {};
+	def print_hash_stats():
+		print("=========unaligned hashes=========")
+		for (auto p : __num_uhashes__):
+			if p.second<=100:
+				continue
+			std::cout << p.first << "::" << p.second
+			if __string_hashes__.count(p.first)==1:
+				std::cout << "		string = " << __string_hashes__[p.first]
+			if __tstring_hashes__.count(p.first)==1:
+				std::cout << "		tiny string = " << __tstring_hashes__[p.first]
+			if __astring_hashes__.count(p.first)==1:
+				std::cout << "		atomic string = " << __astring_hashes__[p.first]
+			std::cout << std::endl;
+		print("=========aligned hashes=========")
+		for (auto p : __num_hashes__):
+			if p.second<=100:
+				continue
+			std::cout << p.first << "::" << p.second 
+			if __string_hashes__.count(p.first)==1:
+				std::cout << "		string = " << __string_hashes__[p.first]
+			if __tstring_hashes__.count(p.first)==1:
+				std::cout << "		tiny string = " << __tstring_hashes__[p.first]
+			if __astring_hashes__.count(p.first)==1:
+				std::cout << "		atomic string = " << __astring_hashes__[p.first]
+			std::cout << std::endl;
+	def XXH32(const void* input, size_t length, XXH32_hash_t seed=0) ->XXH32_hash_t:
+		uint32_t hash = XXH32_endian_align((const xxh_u8*)input, length, seed, XXH_aligned)
+		if __num_hashes__.count(hash)==1:
+			__num_hashes__[hash] += 1
+		else:
+			__num_hashes__[hash] = 1
+		return hash
+	def XXH32unaligned(const void* input, size_t length, XXH32_hash_t seed=0) ->XXH32_hash_t:
+		uint32_t hash = XXH32_endian_align((const xxh_u8*)input, length, seed, XXH_unaligned)
+		if __num_uhashes__.count(hash)==1:
+			__num_uhashes__[hash] += 1
+		else:
+			__num_uhashes__[hash] = 1
+		return hash
+	#################################
+else:
+	@constexpr
+	def XXH32(const void* input, size_t length, XXH32_hash_t seed=0) ->XXH32_hash_t:
+		return XXH32_endian_align((const xxh_u8*)input, length, seed, XXH_aligned)
+	@constexpr
+	def XXH32unaligned(const void* input, size_t length, XXH32_hash_t seed=0) ->XXH32_hash_t:
+		return XXH32_endian_align((const xxh_u8*)input, length, seed, XXH_unaligned)
+	#################################
 
 
 #ifdef ORIG_TPY_HASH
@@ -317,6 +363,7 @@ def tp_hash(TP, tp_obj v) ->int:
 #else
 
 def tp_hash(TP, tp_obj v) ->int:
+	uint32_t hash = 0
 	switch v.type.type_id:
 		case TP_NONE:
 			return 0
@@ -324,24 +371,39 @@ def tp_hash(TP, tp_obj v) ->int:
 			return XXH32(&v.number.val, sizeof(double))
 		case TP_STRING:
 			int n = tp_string_len(v)
-			if n & 3 == 0:
-				return XXH32(tp_string_getptr(v), n)
+			if (n & 3) == 0:
+				hash = XXH32(tp_string_getptr(v), n)
 			else:
-				return XXH32unaligned(tp_string_getptr(v), n)
+				hash = XXH32unaligned(tp_string_getptr(v), n)
+			if defined(PROFILE_HASHING):
+				std::string s = v
+				__string_hashes__[hash] = s
+			return hash
 		case TP_STRING_ATOMIC:
 			int n = tp_string_len(v)
-			if n & 3 == 0:
-				return XXH32(tp_string_getptr(v), n)
+			if (n & 3) == 0:
+				hash = XXH32(tp_string_getptr(v), n)
 			else:
-				return XXH32unaligned(tp_string_getptr(v), n)
+				hash = XXH32unaligned(tp_string_getptr(v), n)
+			if defined(PROFILE_HASHING):
+				std::string s = v
+				__astring_hashes__[hash] = s
+			return hash
 		case TP_STRING_TINY:
 			if defined(DEBUG):
 				print(v)
-			int n = tp_string_tiny_len(v)
-			if n & 3 == 0:
-				return XXH32(&v.str.val, n)
+			if v.type.magic==TP_STRING_MAGIC_HASH:
+				hash = (int)v.str.val[11]
 			else:
-				return XXH32unaligned(&v.str.val, n)
+				int n = tp_string_tiny_len(v)
+				if (n & 3) == 0:
+					hash = XXH32(&v.str.val, n)
+				else:
+					hash = XXH32unaligned(&v.str.val, n)
+			if defined(PROFILE_HASHING):
+				std::string s = v
+				__tstring_hashes__[hash] = s
+			return hash
 		case TP_DICT:
 			return XXH32(&v.dict.val, sizeof(void*))
 		case TP_LIST:

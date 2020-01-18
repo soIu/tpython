@@ -332,7 +332,7 @@ def tpy_getraw(TP) ->tp_obj:
 
 def tp_class(TP) ->tp_obj:
 	tp_obj klass = tp_interface_t(tp)
-	klass.obj.info->meta = tp_get(tp, tp->builtins, tp_string_atom(tp, "object"))
+	klass.obj.info->meta = tp_get(tp, tp->builtins, tp_string_tiny_atom("object"))
 	return klass
 
 
@@ -630,7 +630,7 @@ def tp_module_builtins_init(TP):
 	{"getmeta",tpy_getmeta},
 	{"module", tpy_module},
 	{"repr", tpy_repr},
-	{"eval_js", tpy_eval_js},
+	{"evaljs", tpy_eval_js},
 	{"javascript", tpy_eval_js_returns},
 	#ifdef BLENDOT_TYPES
 	{"vec2", tpy_vec2},
@@ -650,18 +650,16 @@ def tp_module_builtins_init(TP):
 	#ifdef UNREAL_TYPES
 	{"UObject", tpy_uobject},
 	#endif
-	#ifdef TP_SANDBOX
-	{"sandbox",tpy_sandbox_},
-	#endif
 	{0,0},
 	};
 	int i
 	for (i=0; b[i].s; i++):
-		tp_set(tp, builtins, tp_string_atom(tp, b[i].s), tp_function(tp,(tp_obj (*)(tp_vm *))b[i].f))
+		##tp_set(tp, builtins, tp_string_atom(tp, b[i].s), tp_function(tp,(tp_obj (*)(tp_vm *))b[i].f))
+		tp_set(tp, builtins, tp_string_tiny_atom(b[i].s), tp_function(tp,(tp_obj (*)(tp_vm *))b[i].f))
 	o = tp_interface_t(tp)
 	tp_set(tp, o, tp_string_atom(tp, "__call__"), tp_function(tp, tpy_object_call))
 	tp_set(tp, o, tp_string_atom(tp, "__new__"),  tp_function(tp, tpy_object_new))
-	tp_set(tp, builtins, tp_string_atom(tp, "object"), o)
+	tp_set(tp, builtins, tp_string_tiny_atom("object"), o)
 	tp_set(tp, tp->_dict_meta, tp_string_atom(tp, "update"), tp_function(tp, tpy_dict_merge))
 	tp_set(tp, tp->_dict_meta, tp_string_atom(tp, "keys"), tp_function(tp, tpy_dict_keys))
 	tp_set(tp, tp->_dict_meta, tp_string_atom(tp, "values"), tp_function(tp, tpy_dict_values))
