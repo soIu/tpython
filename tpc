@@ -7,6 +7,8 @@
 
 import os, sys, random
 
+DEBUG_PARSER = True
+
 ## from encode.py ##
 try:
 	## scrambled interp codes ##
@@ -1338,12 +1340,29 @@ class PData:
 		self.token = None
 		self.stack = []
 		self._terminal = 0
+		self.indent = 0
+		self.lastline = ''
+
+
 	def init(self):
 		global omap,dmap
 		omap = cpy(base_dmap)
 		dmap = cpy(base_dmap)
 		self.advance()
+
+	## advance to next string of val
 	def advance(self,val=None):
+		if val is not None and DEBUG_PARSER:
+			if val == 'indent':
+				self.indent += 1
+				print()
+				print('\t'*self.indent, end='')
+				self.lastline = ''
+			elif val == 'dedent':
+				self.indent -= 1
+				print()
+				print('\t'*self.indent, end='')
+				self.lastline = ''
 		if not check(self.token,val):
 			error('expected '+val,self.token)
 		if self.pos < len(self.tokens):
@@ -1812,6 +1831,14 @@ class parse:
 		return r
 	@classmethod
 	def do(cls, t):
+		if DEBUG_PARSER:
+			info = str(t)
+			if info:
+				if info.startswith('\n'):
+					print(info, end='')
+				else:
+					print(info, ' ', end='')
+					P.lastline += info + ' '
 		if t.type == 'symbol': r = gmap(t, t.val)
 		else: r = gmap(t, t.type)
 		merge(t, r)
@@ -1828,25 +1855,87 @@ class parse:
 
 
 ## from tokenize.py ##
+cNone='\033[00m'
+cRed='\033[01;31m'
+cGreen='\033[01;32m'
+cBlue='\033[01;34m'
+cYellow='\033[01;33m'
+cPurple='\033[01;35m'
+cCyan='\033[01;36m'
+cWhite='\033[01;37m'
+cBold='\033[1m'
+cUnderline='\033[4m'
+cOrange = '\033[00;33m'
+
+def red( s ):
+	return cRed + str(s) + cNone
+def green( s ):
+	return cGreen + str(s) + cNone
+def blue( s ):
+	return cBlue + str(s) + cNone
+def orange( s ):
+	return cOrange + str(s) + cNone
+def yellow( s ):
+	return cYellow + str(s) + cNone
+def purple( s ):
+	return cPurple + str(s) + cNone
+def cyan( s ):
+	return cCyan + str(s) + cNone
+def white( s ):
+	return cWhite + str(s) + cNone
+def bold( s ):
+	return cBold + str(s) + cNone
+def underline( s ):
+	return cUnderline + str(s) + cNone
 
 class Token:
+	## debug printing is done in class parse.do
 	def __init__(self,pos=(0,0),type='symbol',val=None,items=None):
-		self.pos,self.type,self.val,self.items=pos,type,val,items
+		self.pos   = pos
+		self.type  = type
+		self.val   = val
+		self.items = items
 
-	def _format(self, full_debug_mode=False):
+	def _format(self, full_debug_mode=True):
 		prefix = ''
-		if full_debug_mode and hasattr(self, 'nud') and self.nud:
-			prefix = '<%s>' % self.nud.func_name
+		#if full_debug_mode and hasattr(self, 'nud') and self.nud:
+		#	prefix = '<%s>' % self.nud.func_name
 		if self.items is not None:
 			if self.val in '+-/*<>':
-				return prefix + '(' + self.val.join([i._format() for i in self.items]) + ')'
+				return prefix + red('(') + self.val.join([i._format() for i in self.items]) + red(')')
 			elif len(self.val) == 2 and self.val[1]=='=':
 				return prefix + self.val.join([i._format() for i in self.items])
 			else:
 				prefix += str(self.val)
-				return prefix + '[' + ', '.join([i._format() for i in self.items]) + ']'
+				return prefix + red('[') + ', '.join([i._format() for i in self.items]) + red(']')
+		elif self.type == 'nl':
+			#return '\n  ## new line'
+			return '\n' + ('\t' * P.indent)
+		elif self.type == 'name':
+			if self.val=='self':
+				return underline(self.val)
+			else:
+				return green(self.val)
+		elif self.type == 'symbol':
+			if self.val in ('if', 'elif', 'else'):
+				return purple(self.val)
+			elif self.val =='def':
+				return blue(self.val)
+			elif self.val == 'class':
+				return orange(self.val)
+			elif self.val == 'return':
+				return red(self.val)
+			return cyan(self.val)
+		elif self.type == 'number':
+			return yellow(self.val)
+		elif self.type == 'string':
+			return bold("`" + self.val + "`")
+		elif self.type in ('indent', 'dedent'):
+			# indent printing is done in PData.advance
+			return ''
 		else:
-			return prefix + str(self.type) + ':' + str(self.val)
+			return prefix + red(self.type) + '<' + str(self.val) + '>'
+
 	def __repr__(self):
 		return self._format()
 
@@ -2165,7 +2254,14 @@ class py2bc:
 			if not '-co' in sys.argv:
 				s = preprocess_source(s)
 		tokens = tokenize().tokenize(s)
-		t = parse.parse(s,tokens)
+		try:
+			t = parse.parse(s,tokens)
+		except:
+			print()
+			print( red('=========parse error=========') )
+			print(P.stack)
+			print(P.tokens[P.pos])
+			raise SyntaxError(P.lastline )
 		r = encode.encode(fname,s,t)
 		return r
 
@@ -2216,7 +2312,6 @@ def preprocess_source(src, optimize=True, unsafe=False, inspect=False):
 		print('-'*80)
 
 	src = '\n'.join(out)
-	print(src)
 	if inspect:
 		raise RuntimeError(src)
 
