@@ -1910,6 +1910,7 @@ class Token:
 				return prefix + red('[') + ', '.join([i._format() for i in self.items]) + red(']')
 		elif self.type == 'nl':
 			#return '\n  ## new line'
+			P.lastline = ''
 			return '\n' + ('\t' * P.indent)
 		elif self.type == 'name':
 			if self.val=='self':
@@ -1933,6 +1934,8 @@ class Token:
 		elif self.type in ('indent', 'dedent'):
 			# indent printing is done in PData.advance
 			return ''
+		elif self.type == 'eof':
+			return '\n'
 		else:
 			return prefix + red(self.type) + '<' + str(self.val) + '>'
 
@@ -2277,30 +2280,40 @@ def preprocess_source(src, optimize=True, unsafe=False, inspect=False):
 		return src
 	out = []
 	for ln in src.splitlines():
-		if ln.strip().startswith("for ") and ' in ' in ln and 'range(' in ln:
-			tabs = ln.count('\t')
-			start = end = None
-			loops = ln.split('range(')[-1].split(')')[0]
-			if ',' in loops:
-				start, end = loops.split(',')
-			if unsafe:
-				ln = ('\t'*tabs) + ('loop %s:' %loops)  ## this is fast but not fully working
-				out.append(ln)
-			else:
-				itername = ln.split('for ')[-1].split(' in ')[0]
-				if start is not None and end is not None:
-					## convert to a while loop, which is much faster in tinypy
-					out.append(('\t'*tabs) + itername + ('= %s -1' %start) )
-					ln = ('\t'*tabs) + 'while %s+1 < %s:' %(itername, end)
-					out.append(ln)
-					out.append(('\t'* (tabs+1) ) + itername + '+= 1')
-				else:
-					## convert to a while loop, which is much faster in tinypy
-					out.append(('\t'*tabs) + itername + '= -1')
-					ln = ('\t'*tabs) + 'while %s+1 < %s:' %(itername, loops)
-					out.append(ln)
-					out.append(('\t'* (tabs+1) ) + itername + '+= 1')
 
+		if ln.strip().startswith("for ") and ' in ' in ln:
+			if '#' in ln:
+				ln = ln.split('#')[0]
+
+			if 'range(' in ln:
+				tabs = ln.count('\t')
+				ln = ln.strip()
+				start = end = None
+				if not ln.endswith("):"):
+					print( red("a `for i in range(x):` loop must end with `):`") )
+					raise SyntaxError( red(ln) )
+				loops = ln.split('range(')[-1][:-2]
+				if ',' in loops:
+					start, end = loops.split(',')
+				if unsafe:
+					ln = ('\t'*tabs) + ('loop %s:' %loops)  ## this is fast but not fully working
+					out.append(ln)
+				else:
+					itername = ln.split('for ')[-1].split(' in ')[0]
+					if start is not None and end is not None:
+						## convert to a while loop, which is much faster in tinypy
+						out.append(('\t'*tabs) + itername + ('= %s -1' %start) )
+						ln = ('\t'*tabs) + 'while %s+1 < %s:' %(itername, end)
+						out.append(ln)
+						out.append(('\t'* (tabs+1) ) + itername + '+= 1')
+					else:
+						## convert to a while loop, which is much faster in tinypy
+						out.append(('\t'*tabs) + itername + '= -1')
+						ln = ('\t'*tabs) + 'while %s+1 < %s:' %(itername, loops)
+						out.append(ln)
+						out.append(('\t'* (tabs+1) ) + itername + '+= 1')
+			else:
+				out.append(ln)
 		else:
 			out.append(ln)
 
