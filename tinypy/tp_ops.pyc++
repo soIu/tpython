@@ -805,6 +805,9 @@ def tp_sub(TP,tp_obj a, tp_obj b) ->tp_obj:
 def tp_div(TP,tp_obj a, tp_obj b) ->tp_obj:
 	if a.type.type_id == TP_NUMBER && a.type.type_id == b.type.type_id:
 		return tp_number( a.number.val / b.number.val )
+	else:
+		print(a)
+		print(b)
 	throw "TypeError: operand type `/` requires numbers"
 
 def tp_pow(TP,tp_obj a,tp_obj b) ->tp_obj:

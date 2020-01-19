@@ -767,6 +767,34 @@ def do_call(t,r=None):
 	items = t.items
 	a,b,c,d = p_filter(t.items[1:])
 
+	## special case for directly calling `MyClass.__init__(self, ...)` from a subclass
+	if t.items[0].type == 'mget' and t.items[0].items[0].type=='name' and t.items[0].items[0].val in D.classes:
+		if t.items[0].items[1].type=='string' and t.items[0].items[1].val=='__init__':
+			#func_name = t.items[0].items[1].val  ## this is __init__ but actually we are cheating and calling the class like a regular function call
+			func_name = t.items[0].items[0].val
+			if not b and c is None and d is None:
+				if func_name in D.globals256_funcs:
+					## global fast call - bypasses paramlist ##
+					if DEBUG_ENCODER:
+						print(orange('doing fast call MyClass.__init__(self,...)'))
+
+					args = D.globals256_funcs[func_name]
+					assert len(args)==len(a)
+					assert len(args) >= 1  ## because `self` must be passed as the first arg in this case
+					tmpargs = get_tmps( len(a) )
+					for i, tmpreg in enumerate(tmpargs):
+						bb = do(a[i], tmpreg)
+						if bb != tmpreg:
+							code(MOVE,tmpreg, bb)
+							free_tmp(bb)
+					## this trick shoves the arg count into the byte code type header itself (200+numargs)
+					## the last register (RC) is set to the first reg addr, because get_tmps is a range, this hack works.
+					code( 200+len(args), r, D.globals256.index(func_name), tmpargs[0] )
+					for tmp in tmpargs:
+						assert tmp != 0
+						free_tmp(tmp)
+					return r
+
 	if t.items[0].type == 'name' and t.items[0].val in D.globals256:
 		if t.items[0].val in D.classes:
 			class_name = t.items[0].val

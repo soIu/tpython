@@ -669,7 +669,17 @@ def tp_step(TP) ->int:
 							print("fast call func magic:", __globals256__[ VB ].type.magic)
 						f->cur = cur + 1
 						tp_obj dest = tp_None
-						tp_enter_frame(tp, __globals256__[ VB ].func.info->globals, __globals256__[ VB ].func.info->code, &dest)
+						if __globals256__[ VB ].type.type_id == TP_FUNC:
+							tp_enter_frame(tp, __globals256__[ VB ].func.info->globals, __globals256__[ VB ].func.info->code, &dest)
+						else:
+							## support calling a parent class constructor from a subclass, like: `BaseClass.__init__(self,...)`
+							tp_obj __init__ = None
+							tp_obj k = tp_string_tiny_atom("__init__")
+							if tp_vget(tp, __globals256__[ VB ], k, &__init__, 0):
+								tp_enter_frame(tp, __init__.func.info->globals, __init__.func.info->code, 0)
+							else:
+								print(__globals256__[ VB ])
+								throw "error calling a base class `__init__` constructor"
 						for i in range(e.i-200):
 							tp->frames[tp->cur].regs[i] = regs[ VC + i ]
 						tp_run_frame(tp)
