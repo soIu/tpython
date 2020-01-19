@@ -687,27 +687,28 @@ def tp_step(TP) ->int:
 						tp_obj iface = __globals256__[ VB ]
 						##tp_obj __init__ = tp_dict_get(tp, iface, tp_string_atom(tp,"__init__"))
 						tp_obj __init__ = None
-						tp_obj k = tp_string_tiny_atom("__init__")
-						int ihash = tp_hash(tp, k)
-						int n = tpd_dict_hashfind(tp, iface.dict.val, ihash, k)
-						if n < 0:
-							tp_obj __base__ = tp_dict_get(tp, iface, tp_string_atom(tp,"__base__"))
-							n = tpd_dict_hashfind(tp, __base__.dict.val, ihash, k)
-							if n < 0:
-								print(__base__)
-								throw "can not find __init__ method on base class"
-							else:
-								__init__ = tpd_dict_get(tp, __base__.dict.val, n)
-						else:
-							__init__ = tpd_dict_get(tp, iface.dict.val, n)
 						tp_obj self = tp_object(tp)
 						self.obj.info->meta = iface
-						tp_enter_frame(tp, __init__.func.info->globals, __init__.func.info->code, 0)
-						tp->frames[tp->cur].regs[0] = self
-						if e.i > 232:
-							for i in range(e.i-232):
-								tp->frames[tp->cur].regs[i+1] = regs[ VC + i ]
-						tp_run_frame(tp)
+						tp_obj k = tp_string_tiny_atom("__init__")
+						##int ihash = tp_hash(tp, k)
+						##int n = tpd_dict_hashfind(tp, iface.dict.val, ihash, k)
+						##if n < 0:
+						##	tp_obj __base__ = tp_dict_get(tp, iface, tp_string_atom(tp,"__base__"))
+						##	n = tpd_dict_hashfind(tp, __base__.dict.val, ihash, k)
+						##	if n < 0:
+						##		print(__base__)
+						##		throw "can not find __init__ method on base class"
+						##	else:
+						##		__init__ = tpd_dict_get(tp, __base__.dict.val, n)
+						##else:
+						##	__init__ = tpd_dict_get(tp, iface.dict.val, n)
+						if tp_vget(tp, iface, k, &__init__, 0):
+							tp_enter_frame(tp, __init__.func.info->globals, __init__.func.info->code, 0)
+							tp->frames[tp->cur].regs[0] = self
+							if e.i > 232:
+								for i in range(e.i-232):
+									tp->frames[tp->cur].regs[i+1] = regs[ VC + i ]
+							tp_run_frame(tp)
 						if defined(DEBUG):
 							print("-----------made new instance--------")
 							print(self)

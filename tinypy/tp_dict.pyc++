@@ -57,15 +57,16 @@ def tp_interface_from_items(TP, int n, tp_obj * argv) ->tp_obj:
 
 def tp_interface_with_name(TP, tp_obj name) ->tp_obj:
 	tp_obj r = tp_interface_t(tp)
-	tp_set(tp, r, tp_string_tiny_atom("__name__"), name)
-	tp_set(tp, r, tp_string_tiny_atom("__base__"), None)
+	if defined(DEBUG):
+		tp_set(tp, r, tp_string_tiny_atom("__name__"), name)
 	return r
 
 def tp_interface_with_name_and_base(TP, tp_obj name, tp_obj base) ->tp_obj:
 	tp_obj r = tp_interface_t(tp)
-	tp_set(tp, r, tp_string_tiny_atom("__name__"), name)
-	tp_set(tp, r, tp_string_tiny_atom("__base__"), base)
-	r.interface.val->meta = base
+	if defined(DEBUG):
+		tp_set(tp, r, tp_string_tiny_atom("__name__"), name)
+		tp_set(tp, r, tp_string_tiny_atom("__base__"), base)
+	r.dict.val->meta = base
 	return r
 
 

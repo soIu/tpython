@@ -8,6 +8,9 @@ class Foo:
 	def get_y(self):
 		return self.y
 
+class Bar(object):
+	def bar(self):
+		return 1
 
 def test():
 	f = Foo( 1, 'hello world')
@@ -16,5 +19,8 @@ def test():
 	print(f.y)
 	print(f.get_y())
 
+	print('testing Bar')
+	b = Bar()
+	assert b.bar()==1
 
 test()
