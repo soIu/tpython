@@ -41,10 +41,25 @@ def test():
 	d.append(c)
 	print(d)
 
-	## TODO support list comprehensions
 	print('testing list comp')
 	e = [i for i in range(10)]
 	print(e)	
+
+	print('testing list * n')
+	m = [0] * 3
+	assert len(m)==3
+	print(m)
+	
+	print('testing range')
+	r = range(10)
+	print(r)
+	assert len(r)==10
+	print('testing iter over range')
+	for j in r:
+		print(j)
+	print('testing iter over range again')
+	for j in r:
+		print(j)
 	
 
 test()

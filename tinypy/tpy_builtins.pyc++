@@ -229,8 +229,9 @@ def tpy_abs(TP) ->tp_obj:
 
 
 def tpy_int(TP) ->tp_obj:
-	return tp_number((long)tpy_float(tp).number.val)
-
+	##return tp_number((long)tpy_float(tp).number.val)
+	int n = TP_NUM()
+	return tp_number(n)
 
 def _roundf(tp_num v) ->double:
 	tp_num av = fabs(v)
