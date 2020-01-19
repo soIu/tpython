@@ -73,6 +73,7 @@ class DState:
 			'javascript',
 			'__call__',
 			'__new__',
+			'__init__',
 			'object',
 			'update',
 			'keys',
@@ -92,8 +93,8 @@ class DState:
 			'random',
 			'uniform',
 			'__main__',
-			'__init__',
 		]
+		print( blue('number of internal tiny atomic strings: '), len(self.strings256) )
 
 		self.globals256_funcs = {}  ## func name : args names
 		self.globals256     = [] ## max size is 256
@@ -990,20 +991,30 @@ def do_class(t):
 	tok = t
 	items = t.items
 	parent = None
+	set_base = False
 	if items[0].type == 'name':
 		name = items[0].val
 		parent = Token(tok.pos,'name','object')
 	else:
 		name = items[0].items[0].val
 		parent = items[0].items[1]
+		set_base = True
+		if DEBUG_ENCODER:
+			print('parent class: ', parent)
 
 	D.class_stack.append(name)
 
 	if name not in D.classes:
 		D.classes.append(name)
 
-	kls = do_classdecl()
-	un_tmp(kls)
+	##kls = do_classdecl()
+	##un_tmp(kls)
+	kls = get_tmp()
+	ts = _do_string(name)
+	if set_base and parent.val in D.globals256:
+		code(177, kls, ts, D.globals256.index(parent.val) )
+	else:
+		code(IFACE, kls, ts )
 
 	print("New Class: ", name, " stack-level=", len(D.stack))
 	if len(D.stack)==1 and len(D.globals256) < 256:
@@ -1011,14 +1022,15 @@ def do_class(t):
 		D.globals256.append(name)
 		code(156, D.globals256.index(name), kls )
 	else:
-		ts = _do_string(name)
+		#ts = _do_string(name)
 		code(GSET,ts,kls)
-		free_tmp(ts) #REG
+		#free_tmp(ts) #REG
+	free_tmp(ts)
 	
-	free_tmp(do(Token(tok.pos,'call',None,[
-		Token(tok.pos,'name','setmeta'),
-		Token(tok.pos,'reg',kls),
-		parent])))
+	##free_tmp(do(Token(tok.pos,'call',None,[
+	##	Token(tok.pos,'name','setmeta'),
+	##	Token(tok.pos,'reg',kls),
+	##	parent])))
 		
 	for member in items[1].items:
 		if member.type == 'def': do_def(member,kls)

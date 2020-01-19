@@ -554,7 +554,18 @@ def tp_step(TP) ->int:
 				case TP_IHAS: RA = tp_has(tp,RB,RC); break;
 				case TP_IIGET: tp_iget(tp,&RA,RB,RC); break;
 				case TP_IDEL: tp_del(tp,RA,RB); break;
-				case TP_IIFACE: RA = tp_interface_from_items(tp, VC/2, &RB); break;
+				case 177:
+					if defined(DEBUG):
+						std::cout << "new interface with name = " << RB << std::endl;
+						std::cout << "and base = " << __globals256__[VC] << std::endl;
+					RA = tp_interface_with_name_and_base(tp, RB, __globals256__[VC])
+					break;
+				case TP_IIFACE:
+					##RA = tp_interface_from_items(tp, VC/2, &RB);  ## DEPRECATED
+					if defined(DEBUG):
+						std::cout << "new interface with name = " << RB << std::endl;
+					RA = tp_interface_with_name(tp, RB)
+					break;
 				case TP_IDICT: RA = tp_dict_from_items(tp, VC/2, &RB); break;
 				case TP_ILIST: RA = tp_list_from_items(tp, VC, &RB); break;
 				case TP_IPARAMS:
@@ -673,17 +684,34 @@ def tp_step(TP) ->int:
 							print("fast call func type:", __globals256__[ VB ].type.type_id)
 							print("fast call func magic:", __globals256__[ VB ].type.magic)
 						f->cur = cur + 1
-						tp_obj dest = tp_None
 						tp_obj iface = __globals256__[ VB ]
-						tp_obj __init__ = tp_dict_get(tp, iface, tp_string_atom(tp,"__init__"))
+						##tp_obj __init__ = tp_dict_get(tp, iface, tp_string_atom(tp,"__init__"))
+						tp_obj __init__ = None
+						tp_obj k = tp_string_tiny_atom("__init__")
+						int ihash = tp_hash(tp, k)
+						int n = tpd_dict_hashfind(tp, iface.dict.val, ihash, k)
+						if n < 0:
+							tp_obj __base__ = tp_dict_get(tp, iface, tp_string_atom(tp,"__base__"))
+							n = tpd_dict_hashfind(tp, __base__.dict.val, ihash, k)
+							if n < 0:
+								print(__base__)
+								throw "can not find __init__ method on base class"
+							else:
+								__init__ = tpd_dict_get(tp, __base__.dict.val, n)
+						else:
+							__init__ = tpd_dict_get(tp, iface.dict.val, n)
 						tp_obj self = tp_object(tp)
 						self.obj.info->meta = iface
-						tp_enter_frame(tp, __init__.func.info->globals, __init__.func.info->code, &dest)
+						tp_enter_frame(tp, __init__.func.info->globals, __init__.func.info->code, 0)
 						tp->frames[tp->cur].regs[0] = self
 						if e.i > 232:
 							for i in range(e.i-232):
 								tp->frames[tp->cur].regs[i+1] = regs[ VC + i ]
 						tp_run_frame(tp)
+						if defined(DEBUG):
+							print("-----------made new instance--------")
+							print(self)
+							print("_________________")
 						RA = self
 						GA
 						return 0

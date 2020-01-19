@@ -486,6 +486,7 @@ def _tp_raise(TP,tp_obj);
  */
 
 def tp_string_atom(TP, const char * v)->tp_obj;
+def tp_string_tiny_atom(const char * v)->tp_obj;
 
 def tp_string_len(tp_obj s) ->int;
 def tp_string_tiny_len(tp_obj s)->int;
@@ -848,10 +849,16 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 			for (int i=0; i<self.interface.val🠊alloc; i++):
 				if self.interface.val🠊items[i].used != 1:
 					continue
-				ss << tp_as_string(tp, self.interface.val🠊items[i].key) << "::"
-				ss << self.interface.val🠊items[i].hash
+				ss << tp_as_string(tp, self.interface.val🠊items[i].key) << "::hash<"
+				ss << self.interface.val🠊items[i].hash << ">"
 				if self.interface.val🠊items[i].val.type.type_id == TP_FUNC:
 					ss << "::" << tp_as_string(tp, self.interface.val🠊items[i].val)
+				elif isstring(self.interface.val🠊items[i].val.type.type_id):
+					ss << "::" << tp_as_string(tp, self.interface.val🠊items[i].val)
+				elif self.interface.val🠊items[i].val.type.type_id==TP_NONE:
+					ss << "::None"
+				elif self.interface.val🠊items[i].val.type.type_id==TP_NUMBER:
+					ss << "::" << self.interface.val🠊items[i].val.number.val
 				ss << ", "
 			ss << "}"
 			break

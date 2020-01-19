@@ -659,6 +659,8 @@ def tp_module_builtins_init(TP):
 	o = tp_interface_t(tp)
 	tp_set(tp, o, tp_string_atom(tp, "__call__"), tp_function(tp, tpy_object_call))
 	tp_set(tp, o, tp_string_atom(tp, "__new__"),  tp_function(tp, tpy_object_new))
+	## reserve the __init__ name - making an 8bit hash for it ##
+	tp_string_tiny_atom("__init__")
 	tp_set(tp, builtins, tp_string_tiny_atom("object"), o)
 	tp_set(tp, tp->_dict_meta, tp_string_atom(tp, "update"), tp_function(tp, tpy_dict_merge))
 	tp_set(tp, tp->_dict_meta, tp_string_atom(tp, "keys"), tp_function(tp, tpy_dict_keys))

@@ -42,17 +42,30 @@ def tp_object_t(TP) ->tp_obj:
 	return tp_track(tp, tp_object_nt(tp))
 
 
-def tp_dict_from_items (TP, int n, tp_obj * argv) ->tp_obj:
+def tp_dict_from_items(TP, int n, tp_obj * argv) ->tp_obj:
 	tp_obj r = tp_dict_t(tp)
 	for (int i=0; i<n; i++):
 		tp_set(tp, r, argv[i*2], argv[i*2+1])
 	return r
 
 
-def tp_interface_from_items (TP, int n, tp_obj * argv) ->tp_obj:
+def tp_interface_from_items(TP, int n, tp_obj * argv) ->tp_obj:
 	tp_obj r = tp_interface_t(tp)
 	for (int i=0; i<n; i++):
 		tp_set(tp, r, argv[i*2], argv[i*2+1])
+	return r
+
+def tp_interface_with_name(TP, tp_obj name) ->tp_obj:
+	tp_obj r = tp_interface_t(tp)
+	tp_set(tp, r, tp_string_tiny_atom("__name__"), name)
+	tp_set(tp, r, tp_string_tiny_atom("__base__"), None)
+	return r
+
+def tp_interface_with_name_and_base(TP, tp_obj name, tp_obj base) ->tp_obj:
+	tp_obj r = tp_interface_t(tp)
+	tp_set(tp, r, tp_string_tiny_atom("__name__"), name)
+	tp_set(tp, r, tp_string_tiny_atom("__base__"), base)
+	r.interface.val->meta = base
 	return r
 
 
@@ -60,10 +73,8 @@ def tp_dict_get(TP, tp_obj self, tp_obj k) ->tp_obj:
 	int hash = tp_hash(tp, k)
 	int n = tpd_dict_hashfind(tp, self.dict.val, hash, k)
 	if n < 0:
-		char * str = tp_cstr(tp, k)
-		tp_obj message = tp_printf(tp, "tpd_dict_get KeyError: %s (%d)", str, hash)
-		std::cout << "key not found: " << str << std::endl
-		tp_free(tp, str)
+		std::cout << self << std::endl;
+		std::cout << "key not found: " << k << " hash: " << hash << std::endl
 		//tp_raise(tp_None, message);
 		throw "ERROR in tp_dict.cpp:tp_dict_get KeyError"
 	return tpd_dict_get(tp, self.dict.val, n)
