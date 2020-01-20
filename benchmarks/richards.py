@@ -166,7 +166,7 @@ class Task(TaskState):
 		WorkArea.taskTab[i] = self
 
 	def fn(self,pkt,r):
-		print('NotImplementedError')
+		raise NotImplementedError
 
 	def addPacket(self,p,old):
 		if self.input is None:

@@ -24,7 +24,8 @@ class DState:
 	def __init__(self,code,fname):
 		self.function_stack = []
 		self.class_stack = []
-		self.classes = []
+		self.classes = {}
+		self.fast_meth_defs = {}
 		self.strings256 = [
 			'<builtins>',
 			'__name__',
@@ -794,8 +795,50 @@ def do_call(t,r=None):
 						assert tmp != 0
 						free_tmp(tmp)
 					return r
+	elif t.items[0].type == 'mget' and t.items[0].items[0].type=='name' and not b and not c and not d:
+		#ALWAYS SAFE#if t.items[0].items[1].type=='string' and t.items[0].items[0].val !='self':
+		if t.items[0].items[1].type=='string' and t.items[0].items[0].val:
+			## some variable.foo(...), check if this is a fast callable method
+			methname  = t.items[0].items[1].val
+			classinfo = None
+			methinfo  = None
+			hits = 0
+			for cname in D.classes:
+				cinfo = D.classes[cname]
+				if methname in cinfo['methods'] and cinfo['methods'][methname]:
+					classinfo = cinfo
+					methinfo = cinfo['methods'][methname]
+					hits += 1
+			if hits == 1 and methinfo['can_fast_call']:
+				fast_meth_name = '__%s_%s__' % (classinfo['name'], methinfo['name'])
+				if len(D.globals256) < 256 and len(D.globals256_funcs) < 256 and methinfo['global256'] is None:
+					assert fast_meth_name not in D.globals256
+					assert fast_meth_name not in D.globals256_funcs
+					D.globals256.append(fast_meth_name)
+					D.globals256_funcs[fast_meth_name] = methinfo['args']
+					methinfo['global256'] = D.globals256.index(fast_meth_name)
+					D.fast_meth_defs[ fast_meth_name ] = methinfo['token']
+				if methinfo['global256']:
+					if DEBUG_ENCODER:
+						print(orange('doing fast method call of type %s and %s(...)' %(classinfo['name'], methinfo['name'])))
+					func_name = fast_meth_name
+					args = D.globals256_funcs[func_name]
+					assert len(args)-1 == len(a)
+					## need to insert the mget named var here, because it is `self`
+					a.insert(0, t.items[0].items[0])
+					tmpargs = get_tmps( len(a) )
+					for i, tmpreg in enumerate(tmpargs):
+						bb = do(a[i], tmpreg)
+						if bb != tmpreg:
+							code(MOVE,tmpreg, bb)
+							free_tmp(bb)
+					code( 200+len(args), r, D.globals256.index(func_name), tmpargs[0] )
+					for tmp in tmpargs:
+						assert tmp != 0
+						free_tmp(tmp)
+					return r
 
-	if t.items[0].type == 'name' and t.items[0].val in D.globals256:
+	elif t.items[0].type == 'name' and t.items[0].val in D.globals256:
 		if t.items[0].val in D.classes:
 			class_name = t.items[0].val
 			if DEBUG_ENCODER:
@@ -928,6 +971,29 @@ def do_local(t,r=None):
 		D.vars.append(t.val)
 	return get_reg(t.val)
 
+def do_fast_meth_def(tok, meth_name):
+	items = tok.items
+	t = get_tag()
+	rf = fnc(t,'end')
+	D.begin()
+	setpos(tok.pos)  ## note: this is optimized away when not in debug mode
+	a,b,c,d = p_filter(items[1].items)
+	for p in a:
+		v = do_local(p)
+
+	## do function body ##
+	free_tmp(do(items[2])) #REG
+
+	D.end()
+	tag(t,'end')
+
+	#if D._globals: do_globals(Token(tok.pos,0,0,[items[0]]))
+	#r = do_set_ctx(items[0],Token(tok.pos,'reg',rf))
+	code(156, D.globals256.index(meth_name), rf )
+
+	free_tmp(rf)
+
+
 def do_def(tok,kls=None):
 	items = tok.items
 	is_global256 = False
@@ -946,6 +1012,19 @@ def do_def(tok,kls=None):
 	setpos(tok.pos)  ## note: this is optimized away when not in debug mode
 
 	a,b,c,d = p_filter(items[1].items)
+
+	if D.class_stack:
+		classinfo = D.classes[ D.class_stack[-1] ]
+		assert func_name not in classinfo['methods']
+		classinfo['methods'][ func_name ] = {
+			'name'    : func_name,
+			'args'    : a,
+			'returns' : None,
+			'token'   : tok,
+			'is_polymorphic' : False,  ## is overridden by a subclass
+			'can_fast_call' : not b and not c and not d,
+			'global256' : None,  ## optional secondary generated fast call function
+		}
 
 	D.function_stack.append({'name':func_name, 'args':[]})
 	for arg in a:
@@ -1032,8 +1111,11 @@ def do_class(t):
 
 	D.class_stack.append(name)
 
+	classinfo = {'name':name,'vars':[], 'methods':{}, 'parent': parent, 'children':[]}
 	if name not in D.classes:
-		D.classes.append(name)
+		D.classes[name] = classinfo
+	else:
+		raise SyntaxError('class is already defined')
 
 	##kls = do_classdecl()
 	##un_tmp(kls)
@@ -1269,8 +1351,19 @@ def do_assert(t):
 	return
 
 def do_raise(t):
-	if t.items: r = do(t.items[0])
-	else: r = _do_none()
+	if t.items:
+		r = do(t.items[0])
+		## special case for methods in a class, if it raises NotImplementedError, then it is abstract and polymorphic
+		if t.items[0].type == 'name' and t.items[0].val == 'NotImplementedError':
+			if D.class_stack and D.function_stack:
+				func_name = D.function_stack[-1]['name']
+				classinfo = D.classes[ D.class_stack[-1] ]
+				if func_name in classinfo['methods']:
+					methinfo = classinfo['methods'][func_name]
+					methinfo['can_fast_call'] = False
+					methinfo['is_polymorphic'] = True
+	else:
+		r = _do_none()
 	code(RAISE,r)
 	free_tmp(r)
 	return
@@ -1347,13 +1440,42 @@ class encode:
 		D = DState(s,fname)
 		D.begin(True)
 		do(t)
+		#D.end()
+
+		maincodes = list(D.out)
+		D.out = []
+
+		finalcodes = [ maincodes[0] ]
+
+		if D.fast_meth_defs:
+			print( yellow('======= doing fast meth defs - first pass =======') )
+			mdefs1 = list( D.fast_meth_defs.keys() )
+			print(mdefs1)
+			for meth_name in mdefs1:
+				tok = D.fast_meth_defs[meth_name]
+				do_fast_meth_def(tok, meth_name)
+			print( yellow('======= doing fast meth defs - second pass =======') )
+			mdefs2 = list( D.fast_meth_defs.keys() )
+			for meth_name in mdefs2:
+				if meth_name in mdefs1:
+					continue
+				print(meth_name)
+				tok = D.fast_meth_defs[meth_name]
+				do_fast_meth_def(tok, meth_name)
+
+		for code in D.out:
+			finalcodes.append(code)
+
+		finalcodes.extend( maincodes[1:] )
+		D.out = finalcodes
 		D.end()
+
 		if '--inspect-bytecode' in sys.argv:
-			print(D.out)
 			for chunk in D.out:
 				print(chunk)
 
 		map_tags()
+
 		out = []
 		for part in D.out:
 			if type(part) is str:
