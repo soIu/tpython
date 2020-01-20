@@ -20,15 +20,17 @@ def tp_func_t(TP, int t, void *v, tp_obj c, tp_obj s, tp_obj g) ->tp_obj:
 
 
 def tp_bind(TP, tp_obj function, tp_obj self) ->tp_obj:
-	return tp_func_t(
-	  tp,
-	  function.type.magic | TP_FUNC_MASK_METHOD,
-	  ##function.func.cfnc,
-	  function.func.info->cfunc,
-	  function.func.info->code,
-	  self,
-	  function.func.info->globals);
-
+	##return tp_func_t(
+	##  tp,
+	##  function.type.magic | TP_FUNC_MASK_METHOD,
+	##  ##function.func.cfnc,
+	##  function.func.info->cfunc,
+	##  function.func.info->code,
+	##  self,
+	##  function.func.info->globals);
+	function.func.info->instance=self
+	function.type.magic |= TP_FUNC_MASK_METHOD
+	return function
 
 def tp_def(TP, tp_obj code, tp_obj g) ->tp_obj:
 	return tp_func_t(tp,1,0,code,tp_None,g)

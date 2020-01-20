@@ -122,18 +122,18 @@ enum TPTypeID:
 	TP_MESH    = 15,
 	TP_MESHI   = 16,
 	TP_UOBJECT   = 20,
+	TP_INTERFACE = 28,
+	TP_FUNC = 29,
 	TP_STRING_ATOMIC=30,
 	TP_STRING_TINY=31
 	## this is not a type, any type >= TP_GC_TRACKED is garbage collected
 	TP_GC_TRACKED = 32,
-	TP_FUNC = 33,
 	TP_LIST = 34,
 	TP_STRING = 35,
 	## this is not a type, any type >= TP_HAS_META can have a metatype
 	TP_HAS_META = 40,
 	TP_DICT = 41,
 	TP_OBJECT = 42,
-	TP_INTERFACE = 43,
 
 
 ##struct TPTypeInfo:
@@ -757,6 +757,68 @@ def len(const tp_obj *self) ->int;
 def len(const char* s) ->int;
 def isstring(tp_obj ob)->bool;
 def isstring(TPTypeID id)->bool;
+
+static std::string cNone   = "\033[00m"
+static std::string cRed    ="\033[01;31m"
+static std::string cGreen  ="\033[01;32m"
+static std::string cBlue   ="\033[01;34m"
+static std::string cYellow ="\033[01;33m"
+static std::string cPurple ="\033[01;35m"
+static std::string cCyan   ="\033[01;36m"
+static std::string cWhite  ="\033[01;37m"
+static std::string cBold   ="\033[1m"
+static std::string cOrange = "\033[00;33m"
+static std::string cUnderline="\033[4m"
+
+enum DebugColors:
+	DRED
+	DGREEN
+	DBLUE
+	DYELLOW
+	DPURPLE
+	DCYAN
+	DWHITE
+	DBOLD
+	DORANGE
+	DUNDER
+
+@static
+def print(DebugColors clr, const char *s):
+	switch clr:
+		case DRED:
+			std::cout << cRed << s
+			break
+		case DGREEN:
+			std::cout << cGreen << s
+			break
+		case DBLUE:
+			std::cout << cBlue << s
+			break
+		case DYELLOW:
+			std::cout << cYellow << s
+			break
+		case DPURPLE:
+			std::cout << cPurple << s
+			break
+		case DCYAN:
+			std::cout << cCyan << s
+			break
+		case DWHITE:
+			std::cout << cWhite << s
+			break
+		case DBOLD:
+			std::cout << cBold << s
+			break
+		case DORANGE:
+			std::cout << cOrange << s
+			break
+		case DUNDER:
+			std::cout << cUnderline << s
+			break
+		default:
+			std::cout << s
+			break
+	std::cout << cNone << std::endl;
 
 
 @static

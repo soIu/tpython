@@ -8,5 +8,12 @@ def test():
 	print('testing bitwise ops')
 	print(100 ^ 0xd008)
 	assert 100 ^ 0xd008 == 53356
+	
+	print( 100 & 199 )
+	assert (100 & 199) == 68
+	
+	## TODO fixme
+	print('TODO fix `100 & 199 == 68`')
+	assert 100 & 199 == 68
 
 test()

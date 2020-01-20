@@ -1,9 +1,12 @@
 
 def _tp_lookup_(TP, tp_obj self, int hash, tp_obj k, tp_obj *member, int bind, int depth) ->int:
 	tp_obj meta
-	if self.type.type_id < TP_HAS_META:
+	if self.type.type_id == TP_INTERFACE:
+		meta = self.dict.val->meta
+	elif self.type.type_id < TP_HAS_META:
 		return 0
 	else:
+		## shouldn't this be self.dict.val->meta ?
 		meta = self.obj.info->meta
 	//this was incorrect, it should also search objects, how did this get broken?
 	//if(self.type.type_id == TP_INTERFACE) {
@@ -46,10 +49,33 @@ def _tp_lookup_(TP, tp_obj self, int hash, tp_obj k, tp_obj *member, int bind, i
 
 
 def tp_vget(TP, tp_obj self, tp_obj k, tp_obj * member, int bind) ->int:
+	int n = 0
 	int hash = tp_hash(tp, k)
 	if defined(DEBUG):
 		std::cout << "tp_vget: key=" << k << " hash=" << hash << std::endl;
-	return _tp_lookup_(tp, self, hash, k, member, bind, 0)
+	if self.type.type_id == TP_OBJECT:
+		n = tpd_dict_hashfind(tp, self.dict.val->meta.dict.val, hash, k)
+		if n != -1:
+			*member = self.dict.val->meta.dict.val->items[n].val
+			if member->type.type_id == TP_FUNC:
+				*member = tp_bind(tp, *member, self)
+			return 1
+		else:
+			## cache method if found on interface object (the class) to avoid future calls to _tp_lookup_
+			n = _tp_lookup_(tp, self, hash, k, member, bind, 0)
+			if n == 1:
+				if member->type.type_id == TP_FUNC:
+					##if defined(DEBUG):
+					std::cout << "caching new method from parent class: " << k << std::endl;
+					##if bind:
+					*member = tp_bind(tp, *member, self)
+					tpd_dict_hashsetx(tp, self.dict.val->meta.dict.val, hash, k, *member)
+				##else:
+				##	print(*member)
+				##	throw "bad"
+			return n
+	else:
+		return _tp_lookup_(tp, self, hash, k, member, bind, 0)
 
 
 #define TP_META_BEGIN(self,name) \

@@ -345,7 +345,7 @@ def tp_step(TP) ->int:
 				case TP_INAME:
 					if defined(DEBUG):
 						f->name = RA
-						std::cout << "set function name =" << tp_as_string(tp, RA) << std::endl;
+						std::cout << cYellow << "set function name f->name =" << tp_as_string(tp, RA) << cNone <<std::endl;
 					break
 				case TP_IINTEGER:
 					RA = tp_integer( VB );
@@ -389,9 +389,7 @@ def tp_step(TP) ->int:
 				case TP_ISTRING:
 					## old notes: RA = tp_string_n((*(cur+1)).string.val,UVBC); // from TinyPy - May 13, 2009
 					if defined(DEBUG):
-						print("NEW STRING")
-						std::cout <<  std::string((*(cur+1)).string.val, UVBC) << std::endl;
-						print("len of new string = ", UVBC)
+						std::cout << "NEW STRING " << cGreen <<  std::string((*(cur+1)).string.val, UVBC) << cNone << " len=" << cBlue << UVBC << cNone << std::endl;
 					##int a = (*(cur+1)).string.val - tp_string_getptr(f->code);
 					##RA = tp_string_view(tp, f->code, a, a+UVBC);
 					## old notes: string_view is NOT broken, but is slightly slower than tp_string_from_const
@@ -501,7 +499,10 @@ def tp_step(TP) ->int:
 					RA = tp_div(tp,RB,RC)
 					break
 				case TP_ICMP: RA = tp_number(tp_cmp(tp,RB,RC)); break;
-				case TP_IMGET: RA = tp_mget(tp,RB,RC); GA; break;
+				case TP_IMGET:
+					RA = tp_mget(tp,RB,RC)
+					GA
+					break
 				case TP_IGET:
 					## note: tp_get has a special case for lists where if the index is None,
 					## the first item is removed and returned, this will be DEPRECATED later.
@@ -625,7 +626,7 @@ def tp_step(TP) ->int:
 						print("TP_ILINE - get and set current source line")
 					int a = (*(cur+1)).string.val - tp_string_getptr(f->code)
 					if(tp_string_getptr(f->code)[a] == ';') throw "TP_ILINE if(tp_string_getptr(f->code)[a] == ';')";
-					printf("line: %s \n", (*(cur+1)).string.val )
+					std::cout << "line: " << cOrange << (*(cur+1)).string.val <<  cNone << std::endl;
 					cur += VA
 					if defined(DEBUG):
 						f->line = tp_string_view(tp, f->code, a, a+VA*4-1)

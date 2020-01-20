@@ -10,8 +10,18 @@ def tp_grey(TP, tp_obj v):
 	#if DEBUG > 5
 	  std::cout << "tp_gc.cpp tp_grey" << std::endl;
 	#endif
-	if (v.type.type_id < TP_GC_TRACKED || (!v.gc.gci) || *v.gc.gci) { return; }
-	if (v.type.type_id == TP_STRING && v.type.magic == TP_STRING_EXTERN) { return; }
+	if v.type.type_id < TP_GC_TRACKED:
+		## TODO this should print a warning
+		return
+	if v.type.type_id == TP_STRING:
+		## TODO the v.string.info pointer still needs to be freed for both extern and string views
+		## note should copy the bytes from the code object, because it gets freed later.
+		## TODO string literals should not be using extern or view at all.
+		if v.type.magic == TP_STRING_EXTERN:
+			return
+		elif v.type.magic == TP_STRING_VIEW:
+			return
+	if ((!v.gc.gci) || *v.gc.gci) { return; }
 	## this unsafe union hackery is probably what crashes tpd_dict when its struct order is changed
 	*v.gc.gci = 1;
 	## need to follow the referents
@@ -83,9 +93,8 @@ def tp_delete(TP, tp_obj v):
 		tpd_list_free(tp, v.list.val)
 		return;
 	elif type == TP_DICT || type == TP_INTERFACE || type == TP_OBJECT:
-		#if DEBUG > 3
-		  std::cout << "  GC FREE DICT/INTERFACE/OBJECT" << std::endl;
-		#endif
+		if defined(DEBUG):
+			print(DPURPLE, "  GC FREE DICT/INTERFACE/OBJECT")
 		tpd_dict_free(tp, v.dict.val)
 		return
 	elif type == TP_STRING:

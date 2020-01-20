@@ -152,7 +152,7 @@ static tp_obj _tp_get(TP, tp_obj self, tp_obj k, int mget);
 ## lookup using []; never bind functions
 def tp_get(TP, tp_obj self, tp_obj k) ->tp_obj:
 	if defined(DEBUG):
-		print("tp_get")
+		print(DYELLOW,"tp_get")
 	##if self.type.type_id==TP_LIST and k.type.type_id==TP_NONE and self.list.val->len==0:
 	##	print("	self.list.val->len =", self.list.val->len)
 	##	throw "list[None] hack list len is zero - this should never happen"
@@ -160,6 +160,8 @@ def tp_get(TP, tp_obj self, tp_obj k) ->tp_obj:
 
 ## lookup using .; always bind functions. FIXME: static and class binding
 def tp_mget(TP, tp_obj self, tp_obj k) ->tp_obj:
+	if defined(DEBUG):
+		print(DYELLOW, "tp_mget")
 	return _tp_get(tp, self, k, 1)
 
 def tp_get_by_char(TP, tp_obj d, char c) ->tp_obj:
@@ -179,6 +181,9 @@ def tp_set_by_char(TP, tp_obj self, char c, tp_obj value):
 
 @static
 def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
+	if defined(DEBUG):
+		print(self)
+		print(DYELLOW, "------------------")
 	auto type = self.type.type_id
 	tp_obj r
 	if type == TP_LIST:
@@ -207,6 +212,8 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 				print(k)
 				throw "invalid list method"
 		elif k.type.type_id == TP_NONE:
+			if defined(DEBUG):
+				std::cout << cRed << "list.pop(None)" << cNone << std::endl;
 			return tpd_list_pop(tp, self.list.val, 0, "tp_get")
 	elif isstring(type):
 		if k.type.type_id == TP_NUMBER:
@@ -417,7 +424,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 		elif type == TP_OBJECT:
 			## not a raw dict, must be object or interface
 			if defined(DEBUG):
-				print("	_tp_get on an object ")
+				print(DORANGE, "	_tp_get on an object ")
 			## calling TP_META_BEGIN is slow, instead __getitem__ should be checked for just once,
 			## then if found it could use self.type.magic
 			##TP_META_BEGIN(self,"__getitem__")
@@ -425,14 +432,14 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			##TP_META_END
 			if tp_vget(tp, self, k, &r, mget):
 				return r
-		elif type == TP_INTERFACE:
-			if tp_vget(tp, self, k, &r, 0):
-				return r
-			else:
-				print("GET ERROR: on TP_INTERFACE")
-				std::cout << "key=" << k << " hash=" << tp_hash(NULL, k) << std::endl;
-	## deal with list / string keys on any unknown types
-	if k.type.type_id == TP_LIST:
+	elif type == TP_INTERFACE:
+		if tp_vget(tp, self, k, &r, 0):
+			return r
+		else:
+			print(DRED, "GET ERROR: on TP_INTERFACE")
+			std::cout << "key=" << k << " hash=" << tp_hash(NULL, k) << std::endl;
+	elif k.type.type_id == TP_LIST:
+		## deal with list / string keys on any unknown types - TODO check how this is used
 		int a,b,l
 		tp_obj tmp
 		l = tp_len(tp,self).number.val
@@ -461,8 +468,8 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 	##elif k.type.type_id == TP_STRING:
 	##	## this is not correct, unknowntype.foo should not return unknowntype
 	##	return tp_copy(tp, self)
-	std::cout << "GET ERROR: self =" << self << std::endl;
-	std::cout << "GET ERROR: key =" << k << std::endl;
+	std::cout << cRed << "GET ERROR: self = " << cNone << self << std::endl;
+	std::cout << cRed << "GET ERROR: key =" << cNone << k << cBlue << " hash=" << tp_hash(tp,k) << cNone << std::endl;
 	throw "GET ERROR - in tp_ops.cpp - unexpected type or invalid key/index"
 
 ## function: tp_copy
@@ -763,7 +770,7 @@ def tp_bitwise_and(TP,tp_obj _a,tp_obj _b) ->tp_obj:
 	if _a.type.type_id == TP_NUMBER && _a.type.type_id == _b.type.type_id:
 		tp_num a = _a.number.val
 		tp_num b = _b.number.val
-		return tp_number( ((long)a) & ((long)b) )
+		return tp_number( (int)(((long)a) & ((long)b)) )
 	throw "TypeError: operand type `bitwise and` requires numbers"
 
 def tp_bitwise_or(TP,tp_obj _a,tp_obj _b) ->tp_obj:
@@ -921,17 +928,21 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 			return r
 		else:
 			if defined(DEBUG):
-				print("=============call - BYTECODE FUNCTION==============")
+				print(DYELLOW, "============= calling BYTECODE FUNCTION ==============")
+				print(params)
 			## compiled Python function
 			tp_obj dest = tp_None
 			tp_enter_frame(tp, self.func.info->globals,self.func.info->code, &dest)
 			##if self.type.magic & TP_FUNC_MASK_METHOD:
+			##if self.type.magic == 3:
 			if self.func.info->instance.type.type_id != TP_NONE:
 				tp->frames[tp->cur].regs[0] = params
 				tpd_list_insert(tp, params.list.val, 0, self.func.info->instance)
 			else:
 				tp->frames[tp->cur].regs[0] = params
 			tp_run_frame(tp)
+			if defined(DEBUG):
+				print(DGREEN, "=============BYTECODE FUNCTION OK ==============")
 			return dest
 	//tp_echo(tp, self);
 	print("ERROR in tp_call - object type: ")
