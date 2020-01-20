@@ -386,7 +386,7 @@ def entry_point(iterations):
 		print('#ERROR incorrect results!')
 
 def main():
-	iterations = 4
+	iterations = 24
 	total_s = entry_point(iterations)
 
 main()

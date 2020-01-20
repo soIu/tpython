@@ -173,6 +173,13 @@ def rebuild(stage=None):
 	if '--clang' in sys.argv:
 		CC = 'clang++-6.0'
 		C  = 'clang-6.0'
+		clang_path = os.path.expanduser('~/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-16.04')
+		for arg in sys.argv:
+			if arg.startswith('--clang-path='):
+				clang_path = arg.split('=')[-1]
+		if os.path.isdir(clang_path):
+			CC = os.path.join(clang_path, 'bin/clang++')
+			C = os.path.join(clang_path, 'bin/clang')
 
 
 	if '--no-blendot' in sys.argv or '--includeos' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv:

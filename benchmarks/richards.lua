@@ -318,9 +318,8 @@ local function main(loops)
 end
 
 
-for i = 1, 4 do
-	if "incorrect" == main(4) then
-		os.exit(1)
-	end
+if "incorrect" == main(24) then
+  print("ERROR")
+	os.exit(1)
 end
 

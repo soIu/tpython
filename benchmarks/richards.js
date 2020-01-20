@@ -539,7 +539,7 @@ Packet.prototype.toString = function () {
 };
 
 function main() {
-	for (var i=0; i<4; i++) {
+	for (var i=0; i<24; i++) {
 		runRichards();
 	}
 }
