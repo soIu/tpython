@@ -130,6 +130,39 @@ def auto_semicolon(ln):
 					ln += ';'
 	return ln
 
+def is_untyped_global_var(s):
+	if s.startswith('//'):
+		return False
+	elif s.startswith('define'):
+		return False
+	elif s.startswith('('):
+		return False
+	elif s.count('=') == 1:
+		decl, value = s.split('=')
+		decl = decl.strip()
+		value = value.strip()
+		if ' ' not in decl:
+			return True
+	return False
+
+def guess_type_of_var(s):
+	assert s.count('=') == 1
+	ctype = None
+	decl, val = s.split('=')
+	if val.endswith(';'):
+		val = val[:-1]
+	decl = decl.strip()
+	val = val.strip()
+	assert ' ' not in decl
+	if val.isdigit():
+		ctype = 'long'
+	elif val.count('"')==2 and decl.count('[')==1 and decl.count(']')==1:
+		ctype = 'char'
+
+	if ctype:
+		return (ctype, decl, val)
+	raise RuntimeError('can not guess type for: ' + s)
+
 def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=False, binary_scramble=False, mangle_map=None, fodg=None, unreal_plugin_name=None, vis_cursor=None, mode='c++' ):
 	if not type(source) is list:
 		source = source.splitlines()
@@ -248,6 +281,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	unreal_blueprint = []
 	extern_funcs = []
 	em_js = False
+	user_pythonic = file_name.endswith('__user_pythonic__.pyh')
+
 
 	if 'functions' in info:
 		functions = info['functions']
@@ -441,15 +476,36 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			in_func = False
 			em_js = False
 
+
 		if s.startswith('##'):
 			ln = ln.replace('##', '//')
 			out.append(ln)
 
-		#elif s.startswith('#'):
-		#	out.append(ln)
-		#	if ln == '#endif':
-		#		autobrace = 0
-		#	continue
+		elif user_pythonic and indent==1 and not ln.startswith(' ') and is_untyped_global_var(s):
+			ctype, cname, cval = guess_type_of_var(s)
+			## check if ctype needs to be a const or a define, if used in a switch/case or an array decl size
+			requires_const = False
+			requires_define = False
+			for line in source:
+				if cname in line and 'case ' in line and ':' in line:
+					#requires_const = True  ## a const is vaild for use in a switch/case, but a define is better
+					requires_define = True
+				if cname in line and '[' in line and ']' in line:
+					if cname in line.split('[')[-1].split(']')[0]:
+						## just because its in brackes it is not for sure that's its an array decl size
+						if '=' in line:
+							pass
+						elif '&'+cname in line.split():
+							pass
+						else:
+							requires_define = True
+							break
+			if requires_define:
+				out.append('#define ' + cname + ' ' + cval)
+			else:
+				if requires_const:
+					ctype = 'const ' + ctype
+				out.append(ctype + ' ' + s + ';')
 		elif s.startswith('unreal.blueprint') and s.endswith(':'):
 			in_blueprint = True
 			blueprint_name = s.split('(')[-1].split(')')[0].strip()
@@ -692,6 +748,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				raise SyntaxError(s)
 			arg_types = []
 			func_post = []
+			auto_templates = []
 			for i, arg in enumerate(rawargs.split(',')):
 				arg = arg.strip()
 				if not arg:
@@ -747,8 +804,13 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 							raise SyntaxError('@javascript function invalid argument type: %s' %arg)
 
 					elif ' ' not in arg and arg != 'TP' and arg != 'void' and arg != '...' and arg != 'VARIANT_ARG_DECLARE':
-						arg = 'auto ' + arg
-						arg_types.append('auto')
+						## clang can not use auto for func params :(
+						if user_pythonic:
+							auto_templates.append(arg)
+							arg = 'T_%s %s' % (len(auto_templates)-1, arg)
+						else:
+							arg = 'auto ' + arg
+							arg_types.append('auto')
 					elif arg == 'TP':
 						arg_types.append('tp_vm*')
 					elif arg == '...':
@@ -812,6 +874,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				if prevs == '@static':
 					functions[ func_name ]['static'] = True
 
+			if auto_templates:
+				out.append('template<' + ','.join( ['typename T_%s' %i for i in range(len(auto_templates))] ) + '>')
 
 			exopts = ''
 			if prevs == '@const':
@@ -1477,7 +1541,8 @@ def pythonicpp_translate( path, file=None, secure=False, secure_binary=False, ma
 				open(os.path.join(path,file),'rb').read().decode('utf-8'), 
 				header="/*generated from: %s*/" %file, info=info, 
 				binary_scramble=secure_binary, mangle_map=mangle_map,
-				swap_self_to_this=file=='__user_pythonic__.pyh'
+				swap_self_to_this=file=='__user_pythonic__.pyh',
+				file_name = os.path.join(path,file)
 			)
 			if unreal:
 				assert unreal_plugin_name
