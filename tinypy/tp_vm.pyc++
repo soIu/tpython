@@ -1,3 +1,5 @@
+static tp_obj __tiny_strings_256__[256] = {};
+
 
 ## write to standard output
 def tp_default_echo(const char* string, int length):
@@ -383,7 +385,12 @@ def tp_step(TP) ->int:
 				case 199:
 					if defined(DEBUG):
 						print("new tiny interned string")
-					RA = tp_string_tiny( (*(cur+1)).string.val, VB, VC )
+					## this caching only adds a 5% overhead to tp_step, and eliminates the 13% overhead of calling tp_string_tiny
+					if __tiny_strings_256__[VC].type.type_id != TP_NONE:
+						RA = __tiny_strings_256__[VC]
+					else:
+						RA = tp_string_tiny( (*(cur+1)).string.val, VB, VC )
+						__tiny_strings_256__[VC] = RA
 					cur += (VB/4)+1
 					break
 				case TP_ISTRING:
