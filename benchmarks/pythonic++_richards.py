@@ -75,14 +75,14 @@ with c++:
 	def createtask(id, pri, wkq, state, fn, v1, v2):
 		task *t = (task *)malloc(sizeof(task))
 		tasktab[id] = t
-		t->t_link   = tasklist
-		t->t_id     = id
-		t->t_pri    = pri
-		t->t_wkq    = wkq
-		t->t_state  = state
-		t->t_fn     = fn
-		t->t_v1     = v1
-		t->t_v2     = v2
+		t🠊t_link   = tasklist
+		t🠊t_id     = id
+		t🠊t_pri    = pri
+		t🠊t_wkq    = wkq
+		t🠊t_state  = state
+		t🠊t_fn     = fn
+		t🠊t_v1     = v1
+		t🠊t_v2     = v2
 		tasklist    = t
 	## note: can not use auto templates everywhere, the compiler must be able to deduce the types,
 	## here link must be typed as `packet*`
@@ -91,10 +91,10 @@ with c++:
 		packet *p = (packet *)malloc(sizeof(packet))
 		for (i=0; i<=BUFSIZE; i++):
 			p->p_a2[i] = 0
-		p->p_link = link
-		p->p_id = id
-		p->p_kind = kind
-		p->p_a1 = 0
+		p🠊p_link = link
+		p🠊p_id = id
+		p🠊p_kind = kind
+		p🠊p_a1 = 0
 		return p
 	def trace(a):
 		if ( --layout <= 0 ):
@@ -108,20 +108,20 @@ with c++:
 			pkt=0
 			switch (tcb->t_state):
 				case S_WAITPKT:
-					pkt = tcb->t_wkq;
-					tcb->t_wkq = pkt->p_link;
-					tcb->t_state = tcb->t_wkq == 0 ? S_RUN : S_RUNPKT;
+					pkt = tcb🠊t_wkq;
+					tcb🠊t_wkq = pkt🠊p_link;
+					tcb🠊t_state = tcb🠊t_wkq == 0 ? S_RUN : S_RUNPKT;
 				case S_RUN:
 					pass
 				case S_RUNPKT:
-					taskid = tcb->t_id;
-					v1 = tcb->t_v1;
-					v2 = tcb->t_v2;
+					taskid = tcb🠊t_id;
+					v1 = tcb🠊t_v1;
+					v2 = tcb🠊t_v2;
 					if (tracing):
 						trace(taskid+'0');
-					newtcb = (*(tcb->t_fn))(pkt);
-					tcb->t_v1 = v1;
-					tcb->t_v2 = v2;
+					newtcb = (*(tcb🠊t_fn))(pkt);
+					tcb🠊t_v1 = v1;
+					tcb🠊t_v2 = v2;
 					tcb = newtcb;
 					break;
 				case S_WAIT:
@@ -133,17 +133,17 @@ with c++:
 				case S_HOLDWAIT:
 					pass
 				case S_HOLDWAITPKT:
-					tcb = tcb->t_link;
+					tcb = tcb🠊t_link;
 					break;
 				default:
 					return;
 	def wait_task() ->task*:
-		tcb->t_state |= WAITBIT;
+		tcb🠊t_state |= WAITBIT;
 		return (tcb);
 	def holdself() ->task*:
 		++holdcount
-		tcb->t_state |= HOLDBIT
-		return (tcb->t_link)
+		tcb🠊t_state |= HOLDBIT
+		return (tcb🠊t_link)
 	def findtcb(id) ->task*:
 		task *t = 0
 		if (1<=id && id<=(long)tasktab[0]) t = tasktab[id];
@@ -153,28 +153,28 @@ with c++:
 		task *t;
 		t = findtcb(id)
 		if ( t==0 ) return (0);
-		t->t_state &= NOTHOLDBIT;
-		if ( t->t_pri > tcb->t_pri ) return (t);
+		t🠊t_state &= NOTHOLDBIT;
+		if ( t🠊t_pri > tcb🠊t_pri ) return (t);
 		return tcb
 	def qpkt(pkt) -> task*:
 		task *t
 		t = findtcb(pkt->p_id)
 		if (t==0) return (t);
 		qpktcount++
-		pkt->p_link = 0
-		pkt->p_id = taskid
-		if t->t_wkq==0:
-			t->t_wkq = pkt
-			t->t_state |= PKTBIT
-			if (t->t_pri > tcb->t_pri) return (t);
+		pkt🠊p_link = 0
+		pkt🠊p_id = taskid
+		if t🠊t_wkq==0:
+			t🠊t_wkq = pkt
+			t🠊t_state |= PKTBIT
+			if (t🠊t_pri > tcb🠊t_pri) return (t);
 		else:
-			append(pkt, (packet *)&(t->t_wkq))
+			append(pkt, (packet *)&(t🠊t_wkq))
 		return tcb
 	def idlefn(packet *pkt) -> task*:
 		if --v2==0:
 			return holdself()
-		if (v1&1) == 0:
-			v1 = ( v1>>1) & MAXINT
+		if (v1 & 1) == 0:
+			v1 = ( v1 >> 1) & MAXINT
 			return release(I_DEVA)
 		else:
 			v1 = ( (v1>>1) & MAXINT) ^ 0XD008
@@ -185,8 +185,8 @@ with c++:
 		else:
 			int i;
 			v1 = I_HANDLERA + I_HANDLERB - v1;
-			pkt->p_id = v1;
-			pkt->p_a1 = 0;
+			pkt🠊p_id = v1;
+			pkt🠊p_a1 = 0;
 			for (i=0; i<=BUFSIZE; i++):
 				v2++
 				if ( v2 > 26 ) v2 = 1; (pkt->p_a2)[i] = alphabet[v2];
@@ -199,14 +199,14 @@ with c++:
 			packet *workpkt = (packet *)v1
 			count = workpkt->p_a1
 			if count > BUFSIZE:
-				v1 = (long)(((packet *)v1)->p_link)
+				v1 = (long)(((packet *)v1)🠊p_link)
 				return qpkt(workpkt)
 			if v2 != 0:
 				packet *devpkt
 				devpkt = (packet *)v2
-				v2 = (long)(((packet *)v2)->p_link)
-				devpkt->p_a1 = workpkt->p_a2[count];
-				workpkt->p_a1 = count+1
+				v2 = (long)(((packet *)v2)🠊p_link)
+				devpkt🠊p_a1 = workpkt🠊p_a2[count];
+				workpkt🠊p_a1 = count+1
 				return qpkt(devpkt)
 		return wait_task()
 	def devfn(packet *pkt) -> task*:
@@ -218,7 +218,7 @@ with c++:
 			return qpkt(pkt)
 		else:
 			v1 = (long)pkt
-			if (tracing) trace(pkt->p_a1);
+			if (tracing) trace(pkt🠊p_a1);
 			return holdself()
 	def bench() ->int:
 		packet *wkq = 0

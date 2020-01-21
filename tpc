@@ -811,8 +811,8 @@ def do_call(t,r=None):
 					methinfo = cinfo['methods'][methname]
 					hits += 1
 			if hits == 1 and methinfo['can_fast_call'] and not D.in_return:
-				#fast_meth_name = '__%s_%s__' % (classinfo['name'], methinfo['name'])
-				fast_meth_name = '__%s__' % methinfo['name']
+				fast_meth_name = '%s::%s' % (classinfo['name'], methinfo['name'])
+				#fast_meth_name = '__%s__' % methinfo['name']
 				if len(D.globals256) < 256 and len(D.globals256_funcs) < 256 and methinfo['global256'] is None:
 					assert fast_meth_name not in D.globals256
 					assert fast_meth_name not in D.globals256_funcs

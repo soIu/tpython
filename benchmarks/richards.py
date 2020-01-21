@@ -14,14 +14,11 @@ I_HANDLERA = 3
 I_HANDLERB = 4
 I_DEVA = 5
 I_DEVB = 6
-
 # Packet types
 K_DEV = 1000
 K_WORK = 1001
-
 # Packet
 BUFSIZE = 4
-
 TASKTABSIZE = 10
 tracing = False
 layout = 0
@@ -33,8 +30,6 @@ def trace(a):
 		print()
 		layout = 50
 	print(a)
-
-
 
 class Packet(object):
 	def __init__(self,l,i,k):
@@ -58,28 +53,22 @@ class Packet(object):
 			return lst
 
 # Task Records
-
 class TaskRec(object):
 	pass
-
 class DeviceTaskRec(TaskRec):
 	def __init__(self):
 		self.pending = None
-
 class IdleTaskRec(TaskRec):
 	def __init__(self):
 		self.control = 1
 		self.count = 10000
-
 class HandlerTaskRec(TaskRec):
 	def __init__(self):
 		self.work_in = None
 		self.device_in = None
-
 	def workInAdd(self,p):
 		self.work_in = p.append_to(self.work_in)
 		return self.work_in
-
 	def devInAdd(self,p):
 		self.device_in = p.append_to(self.device_in)
 		return self.device_in
@@ -89,59 +78,47 @@ class WorkerTaskRec(TaskRec):
 		self.dest = I_HANDLERA
 		self.count = 0
 # Task
-
 class TaskState(object):
 	def __init__(self):
 		self.pktpending = True
 		self.tskwaiting = False
 		self.tskholding = False
-
 	def packetPending(self):
 		self.pktpending = True
 		self.tskwaiting = False
 		self.tskholding = False
 		return self
-
 	def waiting(self):
 		self.pktpending = False
 		self.tskwaiting = True
 		self.tskholding = False
 		return self
-
 	def running(self):
 		self.pktpending = False
 		self.tskwaiting = False
 		self.tskholding = False
 		return self
-
 	# waiting with packet
 	def waitPacket(self):
 		self.pktpending = True
 		self.tskwaiting = True
 		self.tskholding = False
 		return self
-		
 	# is packet pending
 	def isPending(self):
 		return self.pktpending
-
 	# is task waiting
 	def isTskWait(self):
 		return self.tskwaiting
-
 	# is task holding
 	def isTskHold(self):
 		return self.tskholding
-
 	# task holding or waiting
 	def isHoldWait(self):
 		return self.tskholding or (not self.pktpending and self.tskwaiting)
-
 	# is waiting with packet
 	def isWaitPkt(self):
 		return self.pktpending and self.tskwaiting and not self.tskholding
-
-
 
 class TaskWorkArea(object):
 	def __init__(self):
@@ -188,21 +165,15 @@ class Task(TaskState):
 				self.packetPending()
 		else:
 			msg = None
-
 		return self.fn(msg,self.handle)
-
 
 	def waitTask(self):
 		self.tskwaiting = True
 		return self
-
-
 	def hold(self):
 		WorkArea.holdCount += 1
 		self.tskholding = True
 		return self.link
-
-
 	def release(self,i):
 		t = self.findtcb(i)
 		t.tskholding = False
@@ -210,25 +181,19 @@ class Task(TaskState):
 			return t
 		else:
 			return self
-
-
 	def qpkt(self,pkt):
 		t = self.findtcb(pkt.ident)
 		WorkArea.qpktCount += 1
 		pkt.link = None
 		pkt.ident = self.ident
 		return t.addPacket(pkt,self)
-
-
 	def findtcb(self,id):
 		t = WorkArea.taskTab[id]
 		if t is None:
 			print('Exception in findtcb')
 		return t
 			
-
 # DeviceTask
-
 
 class DeviceTask(Task):
 	def __init__(self,i,p,w,s,r):
@@ -239,7 +204,8 @@ class DeviceTask(Task):
 		if pkt is None:
 			pkt = d.pending
 			if pkt is None:
-				return self.waitTask()
+				tsk = self.waitTask()
+				return tsk
 			else:
 				d.pending = None
 				return self.qpkt(pkt)
@@ -247,8 +213,6 @@ class DeviceTask(Task):
 			d.pending = pkt
 			if tracing: trace(pkt.datum)
 			return self.hold()
-
-
 
 class HandlerTask(Task):
 	def __init__(self,i,p,w,s,r):
@@ -263,7 +227,8 @@ class HandlerTask(Task):
 				h.devInAdd(pkt)
 		work = h.work_in
 		if work is None:
-			return self.waitTask()
+			tsk = self.waitTask()
+			return tsk
 		count = work.datum
 		if count >= BUFSIZE:
 			h.work_in = work.link
@@ -271,7 +236,8 @@ class HandlerTask(Task):
 
 		dev = h.device_in
 		if dev is None:
-			return self.waitTask()
+			tsk = self.waitTask()
+			return tsk
 
 		h.device_in = dev.link
 		dev.datum = work.data[count]
@@ -279,7 +245,6 @@ class HandlerTask(Task):
 		return self.qpkt(dev)
 
 # IdleTask
-
 
 class IdleTask(Task):
 	def __init__(self,i,p,w,s,r):
@@ -296,10 +261,8 @@ class IdleTask(Task):
 		else:
 			i.control = int(i.control/2) ^ 0xd008
 			return self.release(I_DEVB)
-			
 
 # WorkTask
-
 
 A = ord('A')
 
@@ -310,7 +273,8 @@ class WorkTask(Task):
 	def fn(self,pkt,r):
 		w = r
 		if pkt is None:
-			return self.waitTask()
+			tsk = self.waitTask()
+			return tsk
 		if w.dest == I_HANDLERA:
 			dest = I_HANDLERB
 		else:
@@ -336,7 +300,6 @@ def schedule():
 		else:
 			if tracing: trace(chr(ord("0")+t.ident))
 			t = t.runTask()
-
 
 class Richards(object):
 	def run(self, iterations):
