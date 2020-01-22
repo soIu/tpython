@@ -1,7 +1,8 @@
+##def tp_frame_nt(TP, tp_obj globals, tp_obj code, tp_obj * ret_dest) -> tpd_frame:
 
-def tp_frame_nt(TP, tp_obj globals, tp_obj code, tp_obj * ret_dest) -> tpd_frame:
+def tp_frame_nt(TP, tp_obj code, tp_obj * ret_dest) -> tpd_frame:
 	tpd_frame f
-	f.globals  = globals
+	##f.globals  = globals
 	f.code     = code
 	if f.code.type.type_id == TP_STRING_TINY:
 		if defined(DEBUG):
@@ -24,7 +25,8 @@ def tp_frame_nt(TP, tp_obj globals, tp_obj code, tp_obj * ret_dest) -> tpd_frame
 		#endif
 	f.jmp = 0
 	f.regs = (tp->cur <= 0 ? tp->regs : tp->frames[tp->cur].regs+tp->frames[tp->cur].cregs)
-	f.regs[0] = f.globals
+	##f.regs[0] = f.globals
+	##f.regs[0] = globals  ## how was this used?
 	f.regs[1] = f.code
 	f.regs += TP_REGS_EXTRA
 	f.ret_dest = ret_dest
@@ -37,8 +39,8 @@ def tp_frame_nt(TP, tp_obj globals, tp_obj code, tp_obj * ret_dest) -> tpd_frame
 		print("new tp_frame_nt - READY")
 	return f
 
-def tp_frame_nt(TP, tp_obj func, tp_obj * ret_dest) -> tpd_frame:
-	tpd_frame f = tp_frame_nt(tp, func.func.info->globals, func.func.info->code, ret_dest)
-	##f.function = func
-	return f
+##def tp_frame_nt(TP, tp_obj func, tp_obj * ret_dest) -> tpd_frame:
+##	tpd_frame f = tp_frame_nt(tp, func.func.info->globals, func.func.info->code, ret_dest)
+##	##f.function = func
+##	return f
 

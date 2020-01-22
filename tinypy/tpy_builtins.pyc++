@@ -408,16 +408,16 @@ def tpy_import(TP) ->tp_obj:
 
 def tpy_exec(TP) ->tp_obj:
 	tp_obj code = TP_OBJ()
-	tp_obj globals = TP_OBJ()
+	##tp_obj globals = TP_OBJ()
 	tp_obj r = tp_None
-	return tp_exec(tp, code, globals)
+	return tp_exec(tp, code)
 
 
 def tpy_eval(TP) ->tp_obj:
 	tp_obj text = TP_STR()
-	tp_obj globals = TP_TYPE(TP_DICT)
+	##tp_obj globals = TP_TYPE(TP_DICT)
 	tp_obj code = tp_compile(tp, text, tp_string_atom(tp, "<eval>"))
-	tp_exec(tp, code, globals)
+	tp_exec(tp, code)
 	return tp->last_result
 
 

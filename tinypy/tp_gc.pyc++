@@ -49,10 +49,10 @@ def tp_follow(TP,tp_obj v):
 			tp_grey(tp,v.dict.val->items[i].val)
 	if type >= TP_HAS_META:
 		tp_grey(tp, v.obj.info->meta)
-	if type == TP_FUNC:
-		tp_grey(tp,v.func.info->instance)
-		tp_grey(tp,v.func.info->globals)
-		tp_grey(tp,v.func.info->code)
+	##if type == TP_FUNC:
+	##	tp_grey(tp,v.func.info->instance)
+	##	tp_grey(tp,v.func.info->globals)
+	##	tp_grey(tp,v.func.info->code)
 
 
 ## if called after a sweep, at this point

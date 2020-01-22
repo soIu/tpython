@@ -43,6 +43,7 @@ def tp_params(TP) -> tp_obj:
 
 def tp_params_n(TP,int n, tp_obj argv[]) -> tp_obj:
 	## do not reallocate each call, reuse the same params tiny list
+	## note it is slightly faster to copy to the stack here, rather than directly using tp->params
 	tp_obj r = tp->params
 	r.lst.val->clear()
 	if defined(DEBUG) or defined(DEBUG_CALLS):

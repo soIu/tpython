@@ -12,7 +12,7 @@ def tp_import(TP, tp_obj name, tp_obj code, tp_obj fname) ->tp_obj:
 	##	 tp_run_frame(tp);
 	##} 
 	if code.type.type_id != TP_NONE:
-		tp_exec(tp, code, g)
+		tp_exec(tp, code)
 	else:
 		#ifdef DEBUG
 		  print("WARN: tp_import of nothing")

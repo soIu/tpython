@@ -92,7 +92,8 @@ else:
 	define(TP_GCMAX=524288)
 
 
-define(TP_REGS=16384)
+##define(TP_REGS=16384)
+define(TP_REGS=512)
 
 // fixes bench marking test, might need to be set higher later
 //#define TP_GCMAX 65536  // still not enough for heavy loads
@@ -400,7 +401,7 @@ struct tpd_func:
 	int gci
 	tp_obj code
 	tp_obj instance
-	tp_obj globals
+	##tp_obj globals
 	if defined(DEBUG):
 		tp_obj name
 	void *cfunc
@@ -418,14 +419,13 @@ typedef union tpd_code {
 ## the size of this struct makes a huge speed difference,
 ## just adding name as a default will slow things down.
 struct tpd_frame:
-	##tp_obj function
 	tp_obj code
 	tpd_code *cur
 	tpd_code *jmp
 	tp_obj *regs
 	tp_obj *ret_dest
-	tp_obj globals
-	int cregs
+	##tp_obj globals
+	int cregs : 16
 	if defined(DEBUG):
 		tp_obj name
 		tp_obj fname
@@ -464,6 +464,7 @@ struct tp_vm:
 	tp_obj _regs
 	tp_obj *regs
 	tp_obj root
+	tp_obj globals
 	int jmp
 	tp_obj ex
 	tp_obj last_result
@@ -771,7 +772,7 @@ def tp_import_from_buffer(TP, const char * name, unsigned char *codes, int len)-
 
 def tp_ez_call(TP, const char *mod, const char *func, tp_obj params)->tp_obj;
 def tp_eval_from_cstr(TP, const char *text, tp_obj globals)->tp_obj;
-def tp_exec(TP, tp_obj code, tp_obj globals)->tp_obj;
+def tp_exec(TP, tp_obj code)->tp_obj;
 def tp_compile(TP, tp_obj text, tp_obj fname)->tp_obj;
 
 def tp_data_t(TP, int magic, void *v)->tp_obj;

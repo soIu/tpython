@@ -337,6 +337,9 @@ def rebuild(stage=None):
 		if '--profile' in sys.argv:
 			opts += ' -O3 -g -pg '
 			exeopts += ' -O3 -g -pg '
+		elif '--clang' in sys.argv:
+			opts += ' -Ofast -march=native '
+			exeopts += opts
 
 		else:
 			if '--secure-binary' in sys.argv:

@@ -7,7 +7,7 @@ def tp_func_nt(TP, int t, void *v, tp_obj c, tp_obj s, tp_obj g) ->tp_obj:
 	tpd_func *info = (tpd_func*)tp_malloc(tp, sizeof(tpd_func))
 	info->code = c
 	info->instance = s
-	info->globals = g
+	##info->globals = g
 	r.type.magic = t
 	r.func.info = info
 	##r.func.cfnc = v
@@ -65,7 +65,7 @@ def tp_function(TP, std::function<tp_obj(tp_vm*)> func) ->tp_obj:
 	tpd_func *info = (tpd_func*)tp_malloc(tp, sizeof(tpd_func))
 	info->code = None
 	info->instance = None
-	info->globals = None
+	##info->globals = None
 	info->cppfunc = func
 	r.type.magic = TP_FUNC_MASK_CPP
 	r.func.info = info
@@ -78,7 +78,7 @@ def tp_method(TP, tp_obj self, std::function<tp_obj(tp_vm*)> func) ->tp_obj:
 	tpd_func *info = (tpd_func*)tp_malloc(tp, sizeof(tpd_func))
 	info->code = None
 	info->instance = self
-	info->globals = None
+	##info->globals = None
 	info->cppfunc = func
 	r.type.magic = TP_FUNC_MASK_METHOD_CPP
 	r.func.info = info

@@ -170,10 +170,18 @@ class Task(TaskState):
 	def waitTask(self):
 		self.tskwaiting = True
 		return self
+
 	def hold(self):
 		WorkArea.holdCount += 1
 		self.tskholding = True
 		return self.link
+
+	def findtcb(self,id):
+		t = WorkArea.taskTab[id]
+		if t is None:
+			print('Exception in findtcb')
+		return t
+
 	def release(self,i):
 		t = self.findtcb(i)
 		t.tskholding = False
@@ -186,12 +194,9 @@ class Task(TaskState):
 		WorkArea.qpktCount += 1
 		pkt.link = None
 		pkt.ident = self.ident
-		return t.addPacket(pkt,self)
-	def findtcb(self,id):
-		t = WorkArea.taskTab[id]
-		if t is None:
-			print('Exception in findtcb')
-		return t
+		p = t.addPacket(pkt,self)
+		return p
+
 			
 # DeviceTask
 
@@ -257,10 +262,12 @@ class IdleTask(Task):
 			return self.hold()
 		elif (i.control & 1) == 0:
 			i.control = int(i.control / 2)
-			return self.release(I_DEVA)
+			t = self.release(I_DEVA)
+			return t
 		else:
 			i.control = int(i.control/2) ^ 0xd008
-			return self.release(I_DEVB)
+			t = self.release(I_DEVB)
+			return t
 
 # WorkTask
 

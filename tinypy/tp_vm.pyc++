@@ -25,6 +25,7 @@ def tp_create_vm(void) -> tp_vm*:
 	tp->_regs = tp_list_t(tp);
 	for (i=0; i<TP_REGS; i++) { tp_set(tp, tp->_regs, tp_None, tp_None); }
 	tp->modules = tp_dict_t(tp)
+	tp->globals = tp_dict_t(tp)
 	tp->_params = tp_list_t(tp)
 	if defined(TINY_LIST_PARAMS):
 		tp->params  = tp_tiny_list(tp)
@@ -42,11 +43,13 @@ def tp_create_vm(void) -> tp_vm*:
 	tp_full(tp)
 	return tp
 
-def tp_enter_frame(TP, tp_obj globals, tp_obj code, tp_obj * ret_dest):
-	tpd_frame f = tp_frame_nt(tp, globals, code, ret_dest)
-	//if (f.regs+(256+TP_REGS_EXTRA) >= tp->regs+TP_REGS || tp->cur >= TP_FRAMES-1) {
-	//    tp_raise(,tp_string_atom(tp, "(tp_frame) RuntimeError: stack overflow"));
-	//}
+def tp_enter_frame(TP, tp_obj code, tp_obj * ret_dest):
+	##if tp->frames[tp->cur].cur == NULL:  ## allocating a new frame is already optimized, 
+	## trying to reuse it will crash
+	tpd_frame f = tp_frame_nt(tp, code, ret_dest)
+	##if (f.regs+(256+TP_REGS_EXTRA) >= tp->regs+TP_REGS || tp->cur >= TP_FRAMES-1) {
+	##    tp_raise(,tp_string_atom(tp, "(tp_frame) RuntimeError: stack overflow"));
+	##}
 	if f.regs+(256+TP_REGS_EXTRA) >= tp->regs+TP_REGS:
 		throw "StackOverflowError in tp_vm.cpp:tp_enter_frame (f.regs+(256+TP_REGS_EXTRA) >= tp->regs+TP_REGS)"
 	if tp->cur >= TP_FRAMES-1:
@@ -54,14 +57,14 @@ def tp_enter_frame(TP, tp_obj globals, tp_obj code, tp_obj * ret_dest):
 	tp->cur += 1
 	tp->frames[tp->cur] = f
 
-def tp_enter_frame(TP, tp_obj func, tp_obj * ret_dest):
-	tpd_frame f = tp_frame_nt(tp, func, ret_dest)
-	if f.regs+(256+TP_REGS_EXTRA) >= tp->regs+TP_REGS:
-		throw "StackOverflowError in tp_vm.cpp:tp_enter_frame (f.regs+(256+TP_REGS_EXTRA) >= tp->regs+TP_REGS)"
-	if tp->cur >= TP_FRAMES-1:
-		throw "StackOverflowError in tp_vm.cpp:tp_enter_frame (tp->cur >= TP_FRAMES-1)"
-	tp->cur += 1
-	tp->frames[tp->cur] = f
+##def tp_enter_frame(TP, tp_obj func, tp_obj * ret_dest):
+##	tpd_frame f = tp_frame_nt(tp, func, ret_dest)
+##	if f.regs+(256+TP_REGS_EXTRA) >= tp->regs+TP_REGS:
+##		throw "StackOverflowError in tp_vm.cpp:tp_enter_frame (f.regs+(256+TP_REGS_EXTRA) >= tp->regs+TP_REGS)"
+##	if tp->cur >= TP_FRAMES-1:
+##		throw "StackOverflowError in tp_vm.cpp:tp_enter_frame (tp->cur >= TP_FRAMES-1)"
+##	tp->cur += 1
+##	tp->frames[tp->cur] = f
 
 
 def _tp_raise(TP, tp_obj e):
@@ -432,11 +435,13 @@ def tp_step(TP) ->int:
 					if RB.type.type_id==TP_STRING_TINY:
 						if len(RB)==1:
 							RA = __global_objects__[ (int)RB.str.val[0] ];
-						elif not tp_iget(tp, &RA, f->globals, RB):
+						##elif not tp_iget(tp, &RA, f->globals, RB):
+						elif not tp_iget(tp, &RA, tp->globals, RB):
 							RA = tp_get(tp,tp->builtins,RB); GA;
 					elif RB.string.info->len==1:
 						RA = __global_objects__[ (int)RB.string.info->s[0] ];
-					elif not tp_iget(tp, &RA, f->globals, RB):
+					##elif not tp_iget(tp, &RA, f->globals, RB):
+					elif not tp_iget(tp, &RA, tp->globals, RB):
 						RA = tp_get(tp,tp->builtins,RB); GA;
 					break
 				case 156:
@@ -458,13 +463,15 @@ def tp_step(TP) ->int:
 						if len(RA)==1:
 							__global_objects__[ (int)RA.str.val[0] ] = RB
 						else:
-							tp_set(tp,f->globals,RA,RB)
+							##tp_set(tp,f->globals,RA,RB)
+							tp_set(tp,tp->globals,RA,RB)
 					elif RA.string.info->len==1:
 						//int idx = (int)RA.string.info->s[0];
 						//std::cout << "global set index: " << idx << std::endl;
 						__global_objects__[ (int)RA.string.info->s[0] ] = RB
 					else:
-						tp_set(tp,f->globals,RA,RB)
+						##tp_set(tp,f->globals,RA,RB)
+						tp_set(tp,tp->globals,RA,RB)
 					break
 				case 190:
 					if defined(DEBUG):
@@ -605,7 +612,8 @@ def tp_step(TP) ->int:
 					RA = tp_def(
 					  tp,
 					  tp_string_view(tp, f->code, a, a + (SVBC-1)*4),
-					  f->globals);
+					  ##f->globals);
+					  tp->globals);
 					cur += SVBC
 					continue;
 					break;
@@ -650,7 +658,7 @@ def tp_step(TP) ->int:
 					f->cur = cur + 1
 					tp_obj dest = tp_None
 					##tp_enter_frame(tp, __globals256__[ VB ], &dest)
-					tp_enter_frame(tp, __globals256__[ VB ].func.info->globals, __globals256__[ VB ].func.info->code, &dest)
+					tp_enter_frame(tp, __globals256__[ VB ].func.info->code, &dest)
 					tp_run_frame(tp)
 					RA = dest
 					GA
@@ -665,7 +673,7 @@ def tp_step(TP) ->int:
 					f->cur = cur + 1
 					tp_obj dest = tp_None
 					##tp_enter_frame(tp, __globals256__[ VB ], &dest)
-					tp_enter_frame(tp, __globals256__[ VB ].func.info->globals, __globals256__[ VB ].func.info->code, &dest)
+					tp_enter_frame(tp, __globals256__[ VB ].func.info->code, &dest)
 					tp->frames[tp->cur].regs[0] = RC
 					tp_run_frame(tp)
 					RA = dest
@@ -681,7 +689,7 @@ def tp_step(TP) ->int:
 						f->cur = cur + 1
 						tp_obj dest = tp_None
 						##tp_enter_frame(tp, RB, &dest)
-						tp_enter_frame(tp, RB.func.info->globals, RB.func.info->code, &dest)
+						tp_enter_frame(tp, RB.func.info->code, &dest)
 						for i in range(e.i-180):
 							tp->frames[tp->cur].regs[i] = regs[ VC + i ]
 						tp_run_frame(tp)
@@ -699,7 +707,7 @@ def tp_step(TP) ->int:
 						tp_obj dest = tp_None
 						if __globals256__[ VB ].type.type_id == TP_FUNC:
 							##tp_enter_frame(tp, __globals256__[ VB ], &dest)
-							tp_enter_frame(tp, __globals256__[ VB ].func.info->globals, __globals256__[ VB ].func.info->code, &dest)
+							tp_enter_frame(tp, __globals256__[ VB ].func.info->code, &dest)
 						else:
 							## support calling a parent class constructor from a subclass, like: `BaseClass.__init__(self,...)`
 							tp_obj __init__ = None
@@ -707,7 +715,7 @@ def tp_step(TP) ->int:
 							tp_obj k = ATOM_INIT
 							if tp_vget(tp, __globals256__[ VB ], k, &__init__, 0):
 								##tp_enter_frame(tp, __init__, 0)
-								tp_enter_frame(tp, __init__.func.info->globals, __init__.func.info->code, &dest)
+								tp_enter_frame(tp, __init__.func.info->code, &dest)
 							else:
 								print(__globals256__[ VB ])
 								throw "error calling a base class `__init__` constructor"
@@ -744,7 +752,7 @@ def tp_step(TP) ->int:
 						##else:
 						##	__init__ = tpd_dict_get(tp, iface.dict.val, n)
 						if tp_vget(tp, iface, k, &__init__, 0):
-							tp_enter_frame(tp, __init__, 0)
+							tp_enter_frame(tp, __init__.func.info->code, 0)
 							tp->frames[tp->cur].regs[0] = self
 							if e.i > 232:
 								for i in range(e.i-232):
@@ -774,14 +782,14 @@ def tp_step(TP) ->int:
 ## Function: tp_exec
 ## Execute VM code.
 
-def tp_exec(TP, tp_obj code, tp_obj globals) ->tp_obj:
+def tp_exec(TP, tp_obj code) ->tp_obj:
 	tp_obj r = tp_None
-	tp_enter_frame(tp, globals, code, &r)
+	tp_enter_frame(tp, code, &r)
 	tp_run_frame(tp)
 	return r
 
 def tp_eval_from_cstr(TP, const char *text, tp_obj globals) ->tp_obj:
 	tp_obj code = tp_compile(tp, tp_string_atom(tp, text), tp_string_atom(tp, "<eval>"))
-	tp_exec(tp,code,globals)
+	tp_exec(tp,code)
 	return tp->last_result
 

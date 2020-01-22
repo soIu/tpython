@@ -865,7 +865,7 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 		tp_obj __init__ = None
 		tp_obj inst = tp_object(tp)
 		inst.obj.info->meta = self
-		tp_obj k = tp_string_tiny_atom("__init__")
+		tp_obj k = ATOM_INIT
 		##int ihash = tp_hash(tp, k)
 		##int n = tpd_dict_hashfind(tp, self.dict.val, ihash, k)
 		##if n < 0:
@@ -882,7 +882,7 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 			##__init__.func.info->instance = inst
 			##return tp_call(tp, __init__, params)  ## this will fail because all __init__ functions always bypass the params list
 			##tp_enter_frame(tp, __init__.func.info->globals, __init__.func.info->code, &inst)  ## note: it is wrong to pass &inst here because it gets set to None
-			tp_enter_frame(tp, __init__, 0)
+			tp_enter_frame(tp, __init__.func.info->code, 0)
 			tp->frames[tp->cur].regs[0] = inst
 			for i in range( len(params) ):
 				tp->frames[tp->cur].regs[i+1] = params[i]
@@ -933,7 +933,7 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 				print(params)
 			## compiled Python function
 			tp_obj dest = tp_None
-			tp_enter_frame(tp, self, &dest)
+			tp_enter_frame(tp, self.func.info->code, &dest)
 			##if self.type.magic & TP_FUNC_MASK_METHOD:
 			##if self.type.magic == 3:
 			if self.func.info->instance.type.type_id != TP_NONE:
