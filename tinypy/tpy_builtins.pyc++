@@ -420,6 +420,18 @@ def tpy_eval(TP) ->tp_obj:
 	tp_exec(tp, code, globals)
 	return tp->last_result
 
+
+#ifdef TINY_LIST_PARAMS
+def tpy_print(TP) ->tp_obj:
+	tp_obj params = tp->params
+	tp_obj e
+	print(params)
+	while params.lst.val->next(&e):
+		std::cout << e << " "
+	std::cout << std::endl;
+	return tp_None
+#else
+
 def tpy_print(TP) ->tp_obj:
 	int n = 0
 	tp_obj e
@@ -431,6 +443,7 @@ def tpy_print(TP) ->tp_obj:
 	tp->echo("\n", -1)
 	return tp_None
 
+#endif
 
 def tpy_str(TP) ->tp_obj:
 	tp_obj v = TP_OBJ()
@@ -585,6 +598,7 @@ def tpy_eval_js_returns(TP) ->tp_obj:
 ## https://stackoverflow.com/questions/1591361/understanding-typedefs-for-function-pointers-in-c
 typedef tp_obj (*tp_func_pointer)(tp_vm*);
 
+
 def tp_module_builtins_init(TP):
 	tp_obj builtins = tp->builtins
 	## set an alias for the builtin module; Notice that this module is already imported by the vm.
@@ -661,7 +675,7 @@ def tp_module_builtins_init(TP):
 	tp_set(tp, o, tp_string_atom(tp, "__call__"), tp_function(tp, tpy_object_call))
 	tp_set(tp, o, tp_string_atom(tp, "__new__"),  tp_function(tp, tpy_object_new))
 	## reserve the __init__ name - making an 8bit hash for it ##
-	tp_string_tiny_atom("__init__")
+	ATOM_INIT = tp_string_tiny_atom("__init__")
 	tp_set(tp, builtins, tp_string_tiny_atom("object"), o)
 	tp_set(tp, tp->_dict_meta, tp_string_atom(tp, "update"), tp_function(tp, tpy_dict_merge))
 	tp_set(tp, tp->_dict_meta, tp_string_atom(tp, "keys"), tp_function(tp, tpy_dict_keys))

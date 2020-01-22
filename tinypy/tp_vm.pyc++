@@ -26,7 +26,10 @@ def tp_create_vm(void) -> tp_vm*:
 	for (i=0; i<TP_REGS; i++) { tp_set(tp, tp->_regs, tp_None, tp_None); }
 	tp->modules = tp_dict_t(tp)
 	tp->_params = tp_list_t(tp)
-	for (i=0; i<TP_FRAMES; i++) { tp_set(tp, tp->_params, tp_None, tp_list_t(tp)); }
+	if defined(TINY_LIST_PARAMS):
+		tp->params  = tp_tiny_list(tp)
+	else:
+		for (i=0; i<TP_FRAMES; i++) { tp_set(tp, tp->_params, tp_None, tp_list_t(tp)); }
 	tp_set(tp, tp->root, tp_None, tp->builtins)
 	tp_set(tp, tp->root, tp_None, tp->modules)
 	tp_set(tp, tp->root, tp_None, tp->_regs)
@@ -44,6 +47,15 @@ def tp_enter_frame(TP, tp_obj globals, tp_obj code, tp_obj * ret_dest):
 	//if (f.regs+(256+TP_REGS_EXTRA) >= tp->regs+TP_REGS || tp->cur >= TP_FRAMES-1) {
 	//    tp_raise(,tp_string_atom(tp, "(tp_frame) RuntimeError: stack overflow"));
 	//}
+	if f.regs+(256+TP_REGS_EXTRA) >= tp->regs+TP_REGS:
+		throw "StackOverflowError in tp_vm.cpp:tp_enter_frame (f.regs+(256+TP_REGS_EXTRA) >= tp->regs+TP_REGS)"
+	if tp->cur >= TP_FRAMES-1:
+		throw "StackOverflowError in tp_vm.cpp:tp_enter_frame (tp->cur >= TP_FRAMES-1)"
+	tp->cur += 1
+	tp->frames[tp->cur] = f
+
+def tp_enter_frame(TP, tp_obj func, tp_obj * ret_dest):
+	tpd_frame f = tp_frame_nt(tp, func, ret_dest)
 	if f.regs+(256+TP_REGS_EXTRA) >= tp->regs+TP_REGS:
 		throw "StackOverflowError in tp_vm.cpp:tp_enter_frame (f.regs+(256+TP_REGS_EXTRA) >= tp->regs+TP_REGS)"
 	if tp->cur >= TP_FRAMES-1:
@@ -328,9 +340,10 @@ def tp_step(TP) ->int:
 				case TP_IEOF: tp->last_result = RA; tp_return(tp,tp_None); SR(0); break;
 				case TP_IREGS: f->cregs = VA; break;
 				case TP_INAME:
-					if defined(DEBUG):
-						f->name = RA
-						std::cout << cYellow << "set function name f->name =" << tp_as_string(tp, RA) << cNone <<std::endl;
+					if defined(DEBUG) or defined(DEBUG_CALLS):
+						##f->name = RA
+						std::cout << cYellow << "set function name =" << tp_as_string(tp, RB) << cNone <<std::endl;
+						RA.func.info->name = RB
 					break
 				case TP_IINTEGER:
 					RA = tp_integer( VB );
@@ -342,9 +355,6 @@ def tp_step(TP) ->int:
 					//continue;
 					break
 				case TP_INUMBER:
-					#ifdef TP_SANDBOX
-					  tp_bounds(tp,cur,sizeof(tp_num)/4);
-					#endif
 					double num = *(tp_num*)((*++cur).string.val )
 					if VB==1:
 						RA = tp_number(num)
@@ -359,13 +369,13 @@ def tp_step(TP) ->int:
 					cur += sizeof(tp_num)/4
 					continue
 					break
-				case 198:
+				case 178:
 					if defined(DEBUG):
 						print("new tiny char string")
 						std::cout << (char)VB << std::endl;
 					RA = tp_string_tiny((char)VB)
 					break
-				case 199:
+				case 179:
 					if defined(DEBUG):
 						print("new tiny interned string")
 					## this caching only adds a 5% overhead to tp_step, and eliminates the 13% overhead of calling tp_string_tiny
@@ -537,9 +547,6 @@ def tp_step(TP) ->int:
 					if RC.number.val < tp_len(tp,RB).number.val:
 						RA = tp_iter(tp,RB,RC); GA;
 						RC.number.val += 1
-						#ifdef TP_SANDBOX
-						  tp_bounds(tp,cur,1);
-						#endif
 						cur += 1
 					break
 				case TP_IHAS: RA = tp_has(tp,RB,RC); break;
@@ -560,17 +567,29 @@ def tp_step(TP) ->int:
 				case TP_IDICT: RA = tp_dict_from_items(tp, VC/2, &RB); break;
 				case TP_ILIST: RA = tp_list_from_items(tp, VC, &RB); break;
 				case TP_IPARAMS:
-					RA = tp_params_n(tp,VC,&RB);
-					if defined(DEBUG):
+					if defined(DEBUG) or defined(DEBUG_CALLS):
 						print("	PARAMS: result - RA = ", RA)
 						print("	PARAMS: nargs  - VC = ", VC)
 						##crashes sometimes?##print("	PARAMS: args[] - RB = ", &RB)
+					RA = tp_params_n(tp,VC,&RB);
 					break;
-				case TP_ILEN: RA = tp_len(tp,RB); break;
-				case TP_IJUMP: cur += SVBC; continue; break;
-				case TP_ISETJMP: f->jmp = SVBC?cur+SVBC:0; break;
+				case 169:
+					if defined(TINY_LIST_PARAMS):
+						if RB.lst.val->next(&RA) == false:
+							print(RB)
+							throw "params list iter error"
+						##################################
+					else:
+						throw "TINY_LIST_PARAMS is not enabled"						
+					break;
+				case TP_ILEN:
+					RA = tp_len(tp,RB); break;
+				case TP_IJUMP:
+					cur += SVBC; continue; break;
+				case TP_ISETJMP:
+					f->jmp = SVBC?cur+SVBC:0; break;
 				case TP_ICALL:
-					if defined(DEBUG):
+					if defined(DEBUG) or defined(DEBUG_CALLS):
 						print("calling on type = ", RB.type.type_id)
 						print(RB)
 					f->cur = cur + 1
@@ -579,7 +598,7 @@ def tp_step(TP) ->int:
 					return 0
 					break
 				case TP_IDEF:
-					if defined(DEBUG):
+					if defined(DEBUG) or defined(DEBUG_CALLS):
 						print("TP_IDEF new function decl")
 					int a = (*(cur+1)).string.val - tp_string_getptr(f->code)
 					if(tp_string_getptr(f->code)[a] == ';') throw "TP_IDEF if(tp_string_getptr(f->code)[a] == ';')";
@@ -624,12 +643,13 @@ def tp_step(TP) ->int:
 					break;
 				case 200:
 					## fast global function call - no args
-					if defined(DEBUG):
+					if defined(DEBUG) or defined(DEBUG_CALLS):
 						print("^^^^^^^^^^^^^fast global call (args:0) ^^^^^^^^^^^^^")
 						print("fast call func type:", __globals256__[ VB ].type.type_id)
 						print("fast call func magic:", __globals256__[ VB ].type.magic)
 					f->cur = cur + 1
 					tp_obj dest = tp_None
+					##tp_enter_frame(tp, __globals256__[ VB ], &dest)
 					tp_enter_frame(tp, __globals256__[ VB ].func.info->globals, __globals256__[ VB ].func.info->code, &dest)
 					tp_run_frame(tp)
 					RA = dest
@@ -638,12 +658,13 @@ def tp_step(TP) ->int:
 					break
 				case 201:
 					## fast global function call - single arg
-					if defined(DEBUG):
+					if defined(DEBUG) or defined(DEBUG_CALLS):
 						print("^^^^^^^^^^^^^fast global call (args:1) ^^^^^^^^^^^^^")
 						print("fast call func type:", __globals256__[ VB ].type.type_id)
 						print("fast call func magic:", __globals256__[ VB ].type.magic)
 					f->cur = cur + 1
 					tp_obj dest = tp_None
+					##tp_enter_frame(tp, __globals256__[ VB ], &dest)
 					tp_enter_frame(tp, __globals256__[ VB ].func.info->globals, __globals256__[ VB ].func.info->code, &dest)
 					tp->frames[tp->cur].regs[0] = RC
 					tp_run_frame(tp)
@@ -652,22 +673,41 @@ def tp_step(TP) ->int:
 					return 0
 					break
 				default:
-					if e.i >= 202 and e.i < 232:
+					if e.i >= 180 and e.i < 200:
+						if defined(DEBUG) or defined(DEBUG_CALLS):
+							print("^^^^^^^^^^^^^fast method call (args:n) ^^^^^^^^^^^^^")
+							print("fast call func type:", RB.type.type_id)
+							print("fast call func magic:", RB.type.magic)
+						f->cur = cur + 1
+						tp_obj dest = tp_None
+						##tp_enter_frame(tp, RB, &dest)
+						tp_enter_frame(tp, RB.func.info->globals, RB.func.info->code, &dest)
+						for i in range(e.i-180):
+							tp->frames[tp->cur].regs[i] = regs[ VC + i ]
+						tp_run_frame(tp)
+						RA = dest
+						GA
+						return 0
+						break
+					elif e.i >= 202 and e.i < 232:
 						## fast global function call - up to 29 args
-						if defined(DEBUG):
+						if defined(DEBUG) or defined(DEBUG_CALLS):
 							print("^^^^^^^^^^^^^fast global call (args:n) ^^^^^^^^^^^^^")
 							print("fast call func type:", __globals256__[ VB ].type.type_id)
 							print("fast call func magic:", __globals256__[ VB ].type.magic)
 						f->cur = cur + 1
 						tp_obj dest = tp_None
 						if __globals256__[ VB ].type.type_id == TP_FUNC:
+							##tp_enter_frame(tp, __globals256__[ VB ], &dest)
 							tp_enter_frame(tp, __globals256__[ VB ].func.info->globals, __globals256__[ VB ].func.info->code, &dest)
 						else:
 							## support calling a parent class constructor from a subclass, like: `BaseClass.__init__(self,...)`
 							tp_obj __init__ = None
-							tp_obj k = tp_string_tiny_atom("__init__")
+							##tp_obj k = tp_string_tiny_atom("__init__")
+							tp_obj k = ATOM_INIT
 							if tp_vget(tp, __globals256__[ VB ], k, &__init__, 0):
-								tp_enter_frame(tp, __init__.func.info->globals, __init__.func.info->code, 0)
+								##tp_enter_frame(tp, __init__, 0)
+								tp_enter_frame(tp, __init__.func.info->globals, __init__.func.info->code, &dest)
 							else:
 								print(__globals256__[ VB ])
 								throw "error calling a base class `__init__` constructor"
@@ -680,7 +720,7 @@ def tp_step(TP) ->int:
 						break
 					elif e.i >= 232:
 						## fast construct class
-						if defined(DEBUG):
+						if defined(DEBUG) or defined(DEBUG_CALLS):
 							print("^^^^^^^^^^^^^fast construct class (args:n) ^^^^^^^^^^^^^")
 							print("fast call func type:", __globals256__[ VB ].type.type_id)
 							print("fast call func magic:", __globals256__[ VB ].type.magic)
@@ -690,7 +730,7 @@ def tp_step(TP) ->int:
 						tp_obj __init__ = None
 						tp_obj self = tp_object(tp)
 						self.obj.info->meta = iface
-						tp_obj k = tp_string_tiny_atom("__init__")
+						tp_obj k = ATOM_INIT
 						##int ihash = tp_hash(tp, k)
 						##int n = tpd_dict_hashfind(tp, iface.dict.val, ihash, k)
 						##if n < 0:
@@ -704,13 +744,13 @@ def tp_step(TP) ->int:
 						##else:
 						##	__init__ = tpd_dict_get(tp, iface.dict.val, n)
 						if tp_vget(tp, iface, k, &__init__, 0):
-							tp_enter_frame(tp, __init__.func.info->globals, __init__.func.info->code, 0)
+							tp_enter_frame(tp, __init__, 0)
 							tp->frames[tp->cur].regs[0] = self
 							if e.i > 232:
 								for i in range(e.i-232):
 									tp->frames[tp->cur].regs[i+1] = regs[ VC + i ]
 							tp_run_frame(tp)
-						if defined(DEBUG):
+						if defined(DEBUG) or defined(DEBUG_CALLS):
 							print("-----------made new instance--------")
 							print(self)
 							print("_________________")

@@ -5,12 +5,25 @@
  * list of parameters getting passed to it. Usually, you may want to use
  * <tp_params_n> or <tp_params_v>.
  */
+
+#ifdef TINY_LIST_PARAMS
+
+## slower than regular list params
+def tp_params(TP) -> tp_obj:
+	tp_obj r = tp_tiny_list(tp)
+	tp->params = r
+	return r
+
+#else
+
 def tp_params(TP) -> tp_obj:
 	tp_obj r
 	tp->params = tp->_params.list.val->items[tp->cur]
 	r = tp->_params.list.val->items[tp->cur]
 	r.list.val->len = 0
 	return r
+
+#endif
 
 
 /* Function: tp_params_n
@@ -25,14 +38,32 @@ def tp_params(TP) -> tp_obj:
  * Returns:
  * The parameters list. You may modify it before performing the function call.
  */
+
+#ifdef TINY_LIST_PARAMS
+
+def tp_params_n(TP,int n, tp_obj argv[]) -> tp_obj:
+	## do not reallocate each call, reuse the same params tiny list
+	tp_obj r = tp->params
+	r.lst.val->clear()
+	if defined(DEBUG) or defined(DEBUG_CALLS):
+		print(DRED,"	calling tp_params_n")
+	for (int i=0; i<n; i++):
+		r.lst.val->append(argv[i])
+	## need to reassign here because items are stack allocated
+	tp->params = r
+	return r
+
+#else
+
 def tp_params_n(TP,int n, tp_obj argv[]) -> tp_obj:
 	tp_obj r = tp_params(tp)
-	if defined(DEBUG):
-		print("	calling tp_params_n")
+	if defined(DEBUG) or defined(DEBUG_CALLS):
+		print(DRED,"	calling tp_params_n")
 	for (int i=0; i<n; i++):
 		tpd_param_list_append(tp, r.list.val, argv[i])
 	return r
 
+#endif
 
 /* Function: tp_params_v
  * Pass parameters for a tinypy function call.
@@ -69,11 +100,13 @@ def tp_params_n(TP,int n, tp_obj argv[]) -> tp_obj:
 ##
 
 def tp_params_v1(TP, tp_obj a) -> tp_obj:
+	throw "TODO params_v1"
 	tp_obj r = tp_params(tp)
 	tpd_param_list_append(tp, r.list.val, a)
 	return r
 
 def tp_params_v2(TP, tp_obj a, tp_obj b) -> tp_obj:
+	throw "TODO params_v2"
 	tp_obj r = tp_params(tp)
 	tpd_param_list_append(tp, r.list.val, a)
 	tpd_param_list_append(tp, r.list.val, b)

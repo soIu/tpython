@@ -1022,7 +1022,14 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			autobrace += 1
 			w = '\t' * indent
 			if 'defined(' in s:
-				w += '#ifndef ' + s.split('defined(')[-1][:-2]
+				if s.count('defined(')==2:
+					assert ') or defined(' in s
+					x, y = s.split(') or defined(')
+					x = x.split('defined(')[0]
+					y = y[:-2]
+					w += '#if %s || %s' %(x,y)
+				else:
+					w += '#ifndef ' + s.split('defined(')[-1][:-2]
 				macro_indent.append(indent)
 			else:
 				if '&&' in s or '||' in s:
@@ -1695,7 +1702,8 @@ def main():
 		if len(scripts) == 1:
 			source = scripts[0]
 			tempf = '/tmp/%s_main.py'%name
-			print(source)
+			if '--debug' in sys.argv:
+				print(source)
 			open(tempf, 'wb').write(source.encode('utf-8'))
 			subprocess.check_call(['./tpc']+exargs+['-o', './%s.bytecode'%name, tempf])
 		else:

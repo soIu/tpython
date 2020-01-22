@@ -845,14 +845,14 @@ def tp_bitwise_not(TP, tp_obj a) ->tp_obj:
 ## positional parameter containing the string "hello".
 
 def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
-	if defined(DEBUG):
+	if defined(DEBUG) or defined(DEBUG_CALLS):
 		print("----------tp_call-----------")
 		##print("--------tp_ops.pyc++ - tp_call params:")
 		##TODO FIXME##print(params)  ## segfaults here sometimes - malloc error
 	## Im not sure we should have to do this, but just for giggles we will.
 	tp->params = params
 	if self.type.type_id == TP_INTERFACE:
-		if defined(DEBUG):
+		if defined(DEBUG) or defined(DEBUG_CALLS):
 			print("	call - TP_INTERFACE")
 		##tp_obj meta
 		##if tp_vget(tp, self, tp_string_atom(tp, "__new__"), &meta, 1):
@@ -882,7 +882,7 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 			##__init__.func.info->instance = inst
 			##return tp_call(tp, __init__, params)  ## this will fail because all __init__ functions always bypass the params list
 			##tp_enter_frame(tp, __init__.func.info->globals, __init__.func.info->code, &inst)  ## note: it is wrong to pass &inst here because it gets set to None
-			tp_enter_frame(tp, __init__.func.info->globals, __init__.func.info->code, 0)
+			tp_enter_frame(tp, __init__, 0)
 			tp->frames[tp->cur].regs[0] = inst
 			for i in range( len(params) ):
 				tp->frames[tp->cur].regs[i+1] = params[i]
@@ -891,35 +891,36 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 		return inst
 	elif self.type.magic == TP_OBJECT:
 		## TODO TEST AND FIX, shouldn't above be: `self.type.type_id==TP_OBJECT` ???
-		if defined(DEBUG):
+		if defined(DEBUG) or defined(DEBUG_CALLS):
 			print("	TP_OBJECT __call__")
 		TP_META_BEGIN(self,"__call__")
 		  return tp_call(tp, meta, params)
 		TP_META_END
 	if self.type.type_id == TP_FUNC:
-		if defined(DEBUG):
+		if defined(DEBUG) or defined(DEBUG_CALLS):
 			print("____________call - TP_FUNC_____________")
 		if self.type.magic == TP_FUNC_MASK_CPP:
-			#ifdef DEBUG
-			  print("	TP_FUNC_MASK_CPP")
-			#endif
+			if defined(DEBUG) or defined(DEBUG_CALLS):
+				print("	TP_FUNC_MASK_CPP")
 			tp_obj r = self.func.info->cppfunc(tp)
 			tp_grey(tp, r)
 			return r
 		elif self.type.magic == TP_FUNC_MASK_METHOD_CPP:
-			#ifdef DEBUG
-			  print("	TP_FUNC_MASK_METHOD_CPP")
-			#endif
+			if defined(DEBUG) or defined(DEBUG_CALLS):
+				print("	TP_FUNC_MASK_METHOD_CPP")
 			tpd_list_insert(tp, tp->params.list.val, 0, self.func.info->instance)
 			tp_obj r = self.func.info->cppfunc(tp)
 			tp_grey(tp, r)
 			return r
 		elif not self.type.magic & TP_FUNC_MASK_C:
-			#ifdef DEBUG
-			  print("	TP_FUNC_MASK_C")
-			#endif
+			if defined(DEBUG) or defined(DEBUG_CALLS):
+				print("	TP_FUNC_MASK_C")
 			if self.type.magic & TP_FUNC_MASK_METHOD:
-				tpd_list_insert(tp, tp->params.list.val, 0, self.func.info->instance)
+				if defined(TINY_LIST_PARAMS):
+					tp->params.lst.val->push_front(self.func.info->instance)
+				else:
+					tpd_list_insert(tp, tp->params.list.val, 0, self.func.info->instance)
+				#########################################################################
 			tp_obj (* cfunc)(tp_vm *)
 			##cfunc = (tp_obj (*)(tp_vm*))self.func.cfnc
 			cfunc = (tp_obj (*)(tp_vm*))self.func.info->cfunc
@@ -927,21 +928,25 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 			tp_grey(tp, r)
 			return r
 		else:
-			if defined(DEBUG):
+			if defined(DEBUG) or defined(DEBUG_CALLS):
 				print(DYELLOW, "============= calling BYTECODE FUNCTION ==============")
 				print(params)
 			## compiled Python function
 			tp_obj dest = tp_None
-			tp_enter_frame(tp, self.func.info->globals,self.func.info->code, &dest)
+			tp_enter_frame(tp, self, &dest)
 			##if self.type.magic & TP_FUNC_MASK_METHOD:
 			##if self.type.magic == 3:
 			if self.func.info->instance.type.type_id != TP_NONE:
+				#ifdef TINY_LIST_PARAMS
+				  params.lst.val->push_front(self.func.info->instance)
+				#else
+				  tpd_list_insert(tp, params.list.val, 0, self.func.info->instance)
+				#endif
 				tp->frames[tp->cur].regs[0] = params
-				tpd_list_insert(tp, params.list.val, 0, self.func.info->instance)
 			else:
 				tp->frames[tp->cur].regs[0] = params
 			tp_run_frame(tp)
-			if defined(DEBUG):
+			if defined(DEBUG) or defined(DEBUG_CALLS):
 				print(DGREEN, "=============BYTECODE FUNCTION OK ==============")
 			return dest
 	//tp_echo(tp, self);

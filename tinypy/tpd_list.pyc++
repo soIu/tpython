@@ -1,3 +1,15 @@
+## tiny list - stack allocated items ##
+
+#ifdef TINY_LIST_PARAMS
+def tpd_tiny_list_new(TP) ->tpd_tiny_list*:
+	tpd_tiny_list *self = (tpd_tiny_list*) tp_malloc(tp, sizeof(tpd_tiny_list))
+	self->start = 0
+	self->end   = 0
+	return self
+#endif
+
+## large list - heap allocated items ##
+
 def tpd_list_realloc(TP, tpd_list *self, int len):
 	if not len:
 		len=1
@@ -14,7 +26,6 @@ def tpd_list_set(TP, tpd_list *self,int k, tp_obj v, const char *error):
 
 
 def tpd_list_new(TP) -> tpd_list* :
-	##return new tpd_list()
 	##return (tpd_list*) tp_malloc(tp, sizeof(tpd_list))
 	tpd_list *self = (tpd_list*) tp_malloc(tp, sizeof(tpd_list))
 	##self->items = (tp_obj*)tp_malloc(tp, 8 * sizeof(tp_obj))  ## can not allocate ahead of time?

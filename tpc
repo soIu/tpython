@@ -10,6 +10,8 @@ import os, sys, random
 DEBUG_PARSER = True
 DEBUG_ENCODER = True
 
+NEXT = 169
+
 ## from encode.py ##
 try:
 	## scrambled interp codes ##
@@ -221,7 +223,7 @@ def _do_string(v,r=None):
 	if len(v) <= 10 and len(D.strings256) < 256:
 		if v not in D.strings256:
 			D.strings256.append(v)
-		code(199, r, len(v), D.strings256.index(v) )
+		code(179, r, len(v), D.strings256.index(v) )
 	else:
 		code_16(STRING,r,len(v))
 	write(val)
@@ -230,7 +232,7 @@ def _do_string(v,r=None):
 def do_string(t,r=None):
 	if len(t.val)==1:
 		r = get_tmp(r)
-		code(198, a=r, b=ord(t.val))
+		code(178, a=r, b=ord(t.val))
 		return r
 	else:
 		return _do_string(t.val,r)
@@ -804,12 +806,15 @@ def do_call(t,r=None):
 			classinfo = None
 			methinfo  = None
 			hits = 0
+			can_fast_call = 0
 			for cname in D.classes:
 				cinfo = D.classes[cname]
 				if methname in cinfo['methods'] and cinfo['methods'][methname]:
 					classinfo = cinfo
 					methinfo = cinfo['methods'][methname]
 					hits += 1
+					if methinfo['can_fast_call']:
+						can_fast_call += 1
 			if hits == 1 and methinfo['can_fast_call'] and not D.in_return:
 				fast_meth_name = '%s::%s' % (classinfo['name'], methinfo['name'])
 				#fast_meth_name = '__%s__' % methinfo['name']
@@ -839,6 +844,28 @@ def do_call(t,r=None):
 						assert tmp != 0
 						free_tmp(tmp)
 					return r
+
+			elif hits and hits==can_fast_call and False:  ## not safe yet
+				if DEBUG_ENCODER:
+					print(yellow('doing method call of unknown class type %s(...)' %methinfo['name']))
+
+				fnc = do(items[0])
+				## need to insert the mget named var here, because it is `self`
+				a.insert(0, t.items[0].items[0])
+				tmpargs = get_tmps( len(a) )
+				for i, tmpreg in enumerate(tmpargs):
+					bb = do(a[i], tmpreg)
+					if bb != tmpreg:
+						code(MOVE,tmpreg, bb)
+						free_tmp(bb)
+				code( 180+len(a), r, fnc, tmpargs[0] )
+				for tmp in tmpargs:
+					assert tmp != 0
+					free_tmp(tmp)
+
+				free_tmp(fnc) #REG
+				return r
+
 
 	elif t.items[0].type == 'name' and t.items[0].val in D.globals256:
 		if t.items[0].val in D.classes:
@@ -1015,18 +1042,21 @@ def do_def(tok,kls=None):
 
 	a,b,c,d = p_filter(items[1].items)
 
+	methinfo = None
 	if D.class_stack:
 		classinfo = D.classes[ D.class_stack[-1] ]
 		assert func_name not in classinfo['methods']
-		classinfo['methods'][ func_name ] = {
+		methinfo = {
 			'name'    : func_name,
 			'args'    : a,
 			'returns' : None,
 			'token'   : tok,
+			'is_abstract' : None,
 			'is_polymorphic' : False,  ## is overridden by a subclass
 			'can_fast_call' : not b and not c and not d,
 			'global256' : None,  ## optional secondary generated fast call function
 		}
+		classinfo['methods'][ func_name ] = methinfo
 
 	D.function_stack.append({'name':func_name, 'args':[]})
 	for arg in a:
@@ -1046,6 +1076,10 @@ def do_def(tok,kls=None):
 		for p in a:
 			D.globals256_funcs[class_name].append(p.val)
 			v = do_local(p)
+	elif methinfo and methinfo['can_fast_call'] and False:  ## not safe yet
+		for p in a:
+			v = do_local(p)
+
 	else:
 		## this is a clever trick by Hassey, because __params is the first local variable,
 		## it is known to be at register zero, at runtime in tp_ops.pyc++ - the tp_call 
@@ -1058,9 +1092,13 @@ def do_def(tok,kls=None):
 		do_info(items[0].val)  ## note: this is optimized away when not in debug mode
 		for p in a:
 			v = do_local(p)
-			tmp = _do_none()
-			code(GET,v,r,tmp)
-			free_tmp(tmp) #REG
+			## old style params are slightly slower, but has better calling support, unlimited arg count, keyword args, etc.
+			if '--old-style-params' in sys.argv:
+				tmp = _do_none()
+				code(GET,v,r,tmp)
+				free_tmp(tmp) #REG
+			else:
+				code(NEXT,v,r)
 		for p in b:
 			v = do_local(p.items[0])
 			do(p.items[1],v)
@@ -1086,13 +1124,18 @@ def do_def(tok,kls=None):
 	tag(t,'end')
 	D.function_stack.pop()
 
+	rn = do_string(items[0])
+
+	code(NAME,rf, rn)
+
+
 	if kls == None:
 		if D._globals: do_globals(Token(tok.pos,0,0,[items[0]]))
 		r = do_set_ctx(items[0],Token(tok.pos,'reg',rf))
 	else:
-		rn = do_string(items[0])
 		code(SET,kls,rn,rf)
-		free_tmp(rn)
+
+	free_tmp(rn)
 
 	free_tmp(rf)
 
@@ -1366,8 +1409,9 @@ def do_raise(t):
 				classinfo = D.classes[ D.class_stack[-1] ]
 				if func_name in classinfo['methods']:
 					methinfo = classinfo['methods'][func_name]
-					methinfo['can_fast_call'] = False
+					#methinfo['can_fast_call'] = False
 					methinfo['is_polymorphic'] = True
+					methinfo['is_abstract'] = True
 	else:
 		r = _do_none()
 	code(RAISE,r)
@@ -1400,13 +1444,21 @@ def do_break(t): jump(D.tstack[-1],'break')
 def do_continue(t): jump(D.tstack[-1],'continue')
 def do_pass(t): code(PASS)
 
+## DEPRECATED
 def do_info(name='?'):
-	if D.nopos: return
-	code(FILE,free_tmp(_do_string(D.fname)))
-	code(NAME,free_tmp(_do_string(name)))
+	return
+	if '--debug-calls' in sys.argv:
+		code(NAME,free_tmp(_do_string(name)))
+	elif D.nopos:
+		return
+	else:
+		code(FILE,free_tmp(_do_string(D.fname)))
+		code(NAME,free_tmp(_do_string(name)))
+
 def do_module(t):
 	do_info()
 	free_tmp(do(t.items[0])) #REG
+
 def do_reg(t,r=None): return t.val
 
 fmap = {

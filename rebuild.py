@@ -139,6 +139,8 @@ def gen_interpreter(stage=None):
 		cmd.append('--blendot')
 	if '--debug' in sys.argv:
 		cmd.append('--debug')
+	if '--debug-calls' in sys.argv:
+		cmd.append('--debug-calls')
 	if '--secure' in sys.argv:
 		cmd.append('--secure')
 	if '--secure-binary' in sys.argv:
@@ -350,9 +352,10 @@ def rebuild(stage=None):
 	if '--debug' in sys.argv:
 		defs += ' -DDEBUG'
 		opts += ' -g -rdynamic'
-	elif mode == 'linux':
-		#opts += ' -fno-exceptions'  ## TODO
-		pass
+	elif '--debug-calls' in sys.argv:
+		defs += ' -DDEBUG_CALLS'
+		opts += ' -g -rdynamic'
+
 	if '--secure-binary' in sys.argv:
 		if '-rdynamic' not in opts:
 			opts += ' -rdynamic'
