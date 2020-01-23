@@ -2,7 +2,7 @@ import sdl
 
 SW = 320
 SH = 240
-pal = [((min(255,v)),(min(255,v*3/2)),(min(255,v*2))) for v in range(0,256)]
+pal = [((min(255,v)),(min(255,v*3/2)),(min(255,v*2))) for v in range(256)]
 
 def julia(s,ca,cb):
 	for y in range(SH):
@@ -30,7 +30,7 @@ def julia(s,ca,cb):
 	return False
 
 def main():
-	print(pal)
+	print('enter main')
 	sdl.initialize()
 	sdl.window( (SW,SH) )
 	i = 0
@@ -47,5 +47,4 @@ def main():
 		sdl.delay(100)
 
 	
-if __name__ == '__main__':
-	main()
+main()
