@@ -20,6 +20,8 @@ def len(tp_obj self) ->int:
 		return (int)(self.dict.val->len)
 	elif type == TP_LIST:
 		return (int)(self.list.val->len)
+	elif type == TP_LIST_TINY:
+		return (int)(self.lst.val->len())
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_len) TypeError: len() of unsized object"));
 	throw "TypeError in tp_ops.cpp:len invalid object type to use the len function with"
 
@@ -77,7 +79,6 @@ def tp_true(TP,tp_obj v) ->int:
 def tp_has(TP,tp_obj self, tp_obj k) ->tp_obj:
 	int type = self.type.type_id
 	if type == TP_DICT or type == TP_INTERFACE:
-		print( tp_hash(tp, k) )
 		if tpd_dict_hashfind(tp, self.dict.val, tp_hash(tp, k), k) != -1:
 			return tp_True
 		return tp_False
@@ -1063,7 +1064,6 @@ def tp_obj::operator[] (int index) -> tp_obj:
 	elif this->type.type_id==TP_LIST:
 		return this->list.val->items[index]
 	else:
-		throw "bad"
 		return _tp_get(NULL, *this, tp_number(index), 0)
 
 

@@ -145,7 +145,8 @@ def tpy_assert(TP) ->tp_obj:
 def tpy_range(TP) ->tp_obj:
 	int a,b,c,i
 	tp_obj r = tp_list_t(tp)
-	switch tp->params.list.val->len:
+	##switch tp->params.list.val->len:
+	switch len(tp->params):
 		case 1:
 			a = 0
 			b = TP_NUM()
