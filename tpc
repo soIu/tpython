@@ -24,6 +24,7 @@ except ImportError:
 
 class DState:
 	def __init__(self,code,fname):
+		self.imports = []
 		self.function_stack = []
 		self.class_stack = []
 		self.classes = {}
@@ -215,12 +216,12 @@ def code_16(i,a,b):
 def get_code16(i,a,b):
 	return ('code',i,a,(b&0xff00)>>8,(b&0xff)>>0)
 
-def _do_string(v,r=None):
+def _do_string(v,r=None, no_intern=False):
 	r = get_tmp(r)
 	val = v + "\0"*(4-len(v)%4)
 	## for the string to use the precomputed 8bit hash is must be less than 10 bytes,
 	## because the 8bit hash is shoved into the last byte, and second to last is the null terminator.
-	if len(v) <= 10 and len(D.strings256) < 256:
+	if len(v) <= 10 and len(D.strings256) < 256 and not no_intern:
 		if v not in D.strings256:
 			D.strings256.append(v)
 		code(179, r, len(v), D.strings256.index(v) )
@@ -234,6 +235,8 @@ def do_string(t,r=None):
 		r = get_tmp(r)
 		code(178, a=r, b=ord(t.val))
 		return r
+	elif hasattr(t, 'no_intern'):
+		return _do_string(t.val,r, no_intern=True)
 	else:
 		return _do_string(t.val,r)
 
@@ -486,9 +489,25 @@ def do_symbol(t,r=None):
 	if t.val in isets:
 		return imanage(t,do_symbol)
 	if t.val == 'is':
-		return infix(EQ,items[0],items[1],r)
+		if items[1].type == 'symbol' and items[1].val == 'None':
+			r = get_tmp(r)
+			b = do(items[0], r)
+			code(159, r, b)
+			if r != b:
+				free_tmp(b)
+			return r
+		else:
+			return infix(EQ,items[0],items[1],r)
 	if t.val == 'isnot':
-		return infix(CMP,items[0],items[1],r)
+		if items[1].type == 'symbol' and items[1].val == 'None':
+			r = get_tmp(r)
+			b = do(items[0], r)
+			code(158, r, b)
+			if r != b:
+				free_tmp(b)
+			return r
+		else:
+			return infix(CMP,items[0],items[1],r)
 	if t.val == 'not':
 		return unary(NOT, items[0], r)
 	if t.val == 'in':
@@ -681,7 +700,11 @@ def do_import(t):
 	else:
 		mod, name = t.items
 
+	if mod.val not in D.imports:
+		D.imports.append(mod.val)
+
 	mod.type = 'string'
+	mod.no_intern = True
 	v = do_call(Token(t.pos,'call',None,[
 		Token(t.pos,'name','__import__'),
 		mod,
@@ -911,6 +934,7 @@ def do_call(t,r=None):
 					## global fast call - bypasses paramlist ##
 					if DEBUG_ENCODER:
 						print(orange('doing fast call'))
+						print(red(func_name))
 
 					args = D.globals256_funcs[func_name]
 					assert len(args)==len(a)
@@ -944,6 +968,12 @@ def do_call(t,r=None):
 				#		code(200, r, D.globals256.index(t.items[0].val), t1 )
 				#		free_tmp(t1)
 				#		return r
+
+	if DEBUG_ENCODER:
+		print(yellow('---doing regular call---'))
+		print( items[0] )
+		print(yellow('------------------------'))
+
 
 	fnc = do(items[0])
 
@@ -1328,6 +1358,9 @@ def do_comp(t,r=None):
 
 def do_if(t):
 	items = t.items
+	#if len(items)==1:
+	#if 'None' in str(items):
+	#	raise RuntimeError(items)
 	t = get_tag()
 	n = 0
 	for tt in items:
@@ -1540,6 +1573,12 @@ class encode:
 				out.append(part.encode('latin1'))
 			else:
 				out.append(part)
+
+		print(green("encode to bytecodes complete"))
+
+		print( purple("D.strings256:") )
+		print(D.strings256)
+
 		D = None
 		# Use a function instead of ''.join() so that bytes and
 		# strings during bootstrap

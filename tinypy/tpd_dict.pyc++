@@ -100,3 +100,13 @@ def tpd_dict_del(TP, tpd_dict * self, int n):
 	self->items[n].used = -1
 	self->len -= 1
 
+
+def tpd_dict_get_by_stdstring(TP, tpd_dict* self, std::string key) ->tp_obj:
+	for i in range(self->alloc):
+		if self->items[i].used != 1:
+			continue
+		elif std::string(self->items[i].key) == key:
+			return self->items[i].val
+	throw "tpd_dict_get_by_stdstring failed"
+
+

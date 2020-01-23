@@ -169,6 +169,10 @@ enum TPStringMagic:
 	TP_STRING_EXTERN = 2,
 	TP_STRING_VIEW = 3
 
+enum TPModuleMagic:
+	TP_MODULE_INTERNAL = 0,
+	TP_MODULE_EXTERNAL_MAGIC = 1,
+
 
 typedef double tp_num;
 ##typedef long double tp_num;
@@ -765,6 +769,7 @@ def tp_params_v1(TP, tp_obj a)->tp_obj;
 def tp_params_v2(TP, tp_obj a, tp_obj b)->tp_obj;
 
 def tp_import(TP, tp_obj name, tp_obj code, tp_obj fname)->tp_obj;
+def tp_import(TP, const char* name, const char* fname)->tp_obj;
 
 def tp_import_from_buffer_with_filename(TP, const char * fname, const char * name, void *codes, int len)->tp_obj;
 def tp_import_from_buffer(TP, const char * name, unsigned char *codes, int len)->tp_obj;
@@ -971,8 +976,13 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 			for (int i=0; i<self.dict.val🠊alloc; i++):
 				if self.dict.val🠊items[i].used != 1:
 					continue
-				##std::cout << self.dict.val->items[i].key << std::endl;
+				std::cout << self.dict.val->items[i].key << std::endl;
 				ss << tp_as_string(tp, self.dict.val🠊items[i].key) << ":"
+				## this was only an issue when tp->modules was a dict, now its an interface
+				##if isstring(self.dict.val->items[i].key.type.type_id) and (self.dict.val->items[i].key == "__builtins__" or self.dict.val->items[i].key == "modules"):
+				##	##throw "cyclic reference"
+				##	ss << "{...}"
+				##else:
 				ss << tp_as_string(tp, self.dict.val🠊items[i].val)
 				ss << ","
 			ss << "}"
@@ -1100,6 +1110,9 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 
 def tp_get_by_char(TP, tp_obj d, char c)->tp_obj;
 def tp_set_by_char(TP, tp_obj d, char c, tp_obj v);
+def tp_set(TP, tp_obj d, const char* s, tp_obj v) ->tp_obj;
+def tp_set(TP, tp_obj d, const char* s, const char* v) ->tp_obj;
+def tp_extern_interface(TP) ->tp_obj;
 
 ## python-style print helper funcs ##
 

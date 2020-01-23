@@ -24,7 +24,8 @@ def tp_create_vm(void) -> tp_vm*:
 	## gc initialized, can use tpy_ functions.
 	tp->_regs = tp_list_t(tp);
 	for (i=0; i<TP_REGS; i++) { tp_set(tp, tp->_regs, tp_None, tp_None); }
-	tp->modules = tp_dict_t(tp)
+	##tp->modules = tp_dict_t(tp)
+	tp->modules = tp_interface_t(tp)
 	tp->globals = tp_dict_t(tp)
 	tp->_params = tp_list_t(tp)
 	if defined(TINY_LIST_PARAMS):
@@ -505,9 +506,35 @@ def tp_step(TP) ->int:
 				case TP_IDIV:
 					RA = tp_div(tp,RB,RC)
 					break
-				case TP_ICMP: RA = tp_number(tp_cmp(tp,RB,RC)); break;
+				case 158:
+					if RB.type.type_id != TP_NONE:
+						RA = tp_number(1)
+					else:
+						RA = tp_number(0)
+					break
+				case 159:
+					if RB.type.type_id == TP_NONE:
+						RA = tp_number(1)
+					else:
+						RA = tp_number(0)
+					break
+				case TP_ICMP:
+					RA = tp_number(tp_cmp(tp,RB,RC))
+					break
 				case TP_IMGET:
-					RA = tp_mget(tp,RB,RC)
+					if defined(DEBUG):
+						print(DRED, "MGET")
+						print(RB)
+						print(RC)
+					if RB.type.type_id==TP_OBJECT:
+						if tp_vget(tp, RB, RC, &RA, 1)==0:
+							print(RC)
+							throw "error getting member of object"
+					elif RB.type.type_id==TP_INTERFACE and RB.type.magic == TP_MODULE_EXTERNAL_MAGIC:
+						## external modules, like `sdl`, do not use interned tiny strings, so must lookup by slower key==key checking instead of hash
+						RA = tpd_dict_get_by_stdstring(tp, RB.dict.val, std::string(RC))
+					else:
+						RA = tp_mget(tp,RB,RC)
 					GA
 					break
 				case TP_IGET:

@@ -1,3 +1,16 @@
+## import of pure C/CPP modules with no byte code
+
+def tp_import(TP, const char* name, const char* fname) ->tp_obj:
+	tp_obj g = tp_interface_t(tp)
+	g.type.magic = TP_MODULE_EXTERNAL_MAGIC
+	tp_set(tp, g, tp_string_atom(tp, "__name__"), name)
+	tp_set(tp, g, tp_string_atom(tp, "__file__"), fname)
+	##tp_set(tp, g, tp_string_atom(tp, "__dict__"), g)  ## do not create a cyclic ref which causes debug printing to crash
+	tp_set(tp, tp->modules, name, g)
+	return g
+
+## import of bytecode modules
+
 def tp_import(TP, tp_obj name, tp_obj code, tp_obj fname) ->tp_obj:
 	tp_obj g
 	g = tp_interface_t(tp)
@@ -6,6 +19,7 @@ def tp_import(TP, tp_obj name, tp_obj code, tp_obj fname) ->tp_obj:
 	//tp_set(tp, g, tp_string_atom(tp, "__code__"), code);
 	tp_set(tp, g, tp_string_atom(tp, "__dict__"), g)
 	tp_set(tp, tp->modules, name, g)
+	##tp_set(tp, tp->globals, name, g)  ## not here
 	## an older versoin of the code does not run frame of jmp == 0. Why?
 	##tp_enter_frame(tp, globals, code, &r);
 	##if (!tp->jmp) {
@@ -13,11 +27,6 @@ def tp_import(TP, tp_obj name, tp_obj code, tp_obj fname) ->tp_obj:
 	##} 
 	if code.type.type_id != TP_NONE:
 		tp_exec(tp, code)
-	else:
-		#ifdef DEBUG
-		  print("WARN: tp_import of nothing")
-		#endif
-		//throw "empty module";
 	return g
 
 ## Function: tp_import

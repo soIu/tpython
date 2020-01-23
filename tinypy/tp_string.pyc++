@@ -36,6 +36,9 @@ def tp_string_tiny(const char * v, int len) ->tp_obj:
 		r.str.val[len]='\0'
 	return r
 
+def tp_string_tiny(const char * v) ->tp_obj:
+	return tp_string_tiny(v, strlen(v))
+
 def tp_string_tiny(const char c) ->tp_obj:
 	tp_obj r
 	r.type.type_id = TP_STRING_TINY
@@ -230,11 +233,19 @@ def tp_string_cmp(tp_obj a, tp_obj b) ->int:
 	if a.type.type_id == TP_STRING_TINY:
 		if b.type.type_id != TP_STRING_TINY:
 			throw "can only compare a tiny string another other tiny string"
-		if len(a.str.val) != 1:
-			throw "tp_string_cmp - tiny string operand1 is not of length 1"
-		if len(b.str.val) != 1:
-			throw "tp_string_cmp - tiny string operand2 is not of length 1"
-		return (int)(a.str.val[0] - b.str.val[0])
+		int na = len(a.str.val)
+		int nb = len(b.str.val)
+		if na==1 and nb==1:
+			return (int)(a.str.val[0] - b.str.val[0])
+		elif na < nb:
+			return -1
+		elif na > nb:
+			return 1
+		elif na == nb:
+			## TODO check how standard python deals with `'foo' < 'bar'`
+			if std::string(a) == std::string(b):
+				return 0
+			return -1
 	else:
 		int l = _tp_min(tp_string_len(a), tp_string_len(b))
 		int v = memcmp(tp_string_getptr(a), tp_string_getptr(b), l)

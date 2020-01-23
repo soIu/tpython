@@ -19,6 +19,13 @@ def tp_dict_t(TP) ->tp_obj:
 def tp_dict(TP) ->tp_obj:
 	return tp_track(tp, tp_dict_nt(tp))
 
+def tp_extern_interface(TP) ->tp_obj:
+	tp_obj r = {TP_INTERFACE};
+	r.dict.val = tpd_dict_new(tp)
+	r.obj.info->meta = tp_None
+	r.type.magic = TP_MODULE_EXTERNAL_MAGIC
+	return r
+
 
 def tp_interface_nt(TP) ->tp_obj:
 	tp_obj r = {TP_INTERFACE};

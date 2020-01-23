@@ -76,7 +76,8 @@ def tp_true(TP,tp_obj v) ->int:
 ## Returns tp_True if self[k] exists, tp_False otherwise.
 def tp_has(TP,tp_obj self, tp_obj k) ->tp_obj:
 	int type = self.type.type_id
-	if type == TP_DICT:
+	if type == TP_DICT or type == TP_INTERFACE:
+		print( tp_hash(tp, k) )
 		if tpd_dict_hashfind(tp, self.dict.val, tp_hash(tp, k), k) != -1:
 			return tp_True
 		return tp_False
@@ -621,6 +622,30 @@ def tp_set(TP,tp_obj self, tp_obj k, tp_obj v) -> tp_obj:
 	throw "TypeError in tp_ops.cpp:tp_set object does not support item assignment"
 
 
+## used by modules, strings are not interned with 8bit hashes even though v is required to be a tiny string ##
+def tp_set(TP,tp_obj self, tp_obj k, const char* v) -> tp_obj:
+	if strlen(v) > 12:
+		throw "tp_set(obj, key, string) - string is more than 12 bytes"
+	## need to check here if v has already been 8bit hashed? because some modules may use internal names
+	return tp_set(tp, self, k, tp_string_tiny(v))
+
+
+## used by modules, strings are not interned with 8bit hashes even though k is required to be a tiny string ##
+def tp_set(TP,tp_obj self, const char* k, tp_obj v) -> tp_obj:
+	if strlen(k) > 12:
+		throw "tp_set(obj, string key, value) - string key is more than 12 bytes"
+	## need to check here if v has already been 8bit hashed? because some modules may use internal names
+	return tp_set(tp, self, tp_string_tiny(k), v)
+
+def tp_set(TP,tp_obj self, const char* k, const char* v) -> tp_obj:
+	if strlen(k) > 12:
+		throw "tp_set(obj, string key, string value) - string key is more than 12 bytes"
+	if strlen(v) > 12:
+		throw "tp_set(obj, string key, string value) - string value is more than 12 bytes"
+	return tp_set(tp, self, tp_string_tiny(k), tp_string_tiny(v) )
+
+
+#######################################################################
 def tp_add(TP, tp_obj a, tp_obj b) -> tp_obj:
 	if a.type.type_id == TP_NUMBER && a.type.type_id == b.type.type_id:
 		return tp_number(a.number.val+b.number.val)
@@ -1033,7 +1058,12 @@ def tp_obj::operator[] (int index) -> tp_obj:
 		//std::cout << c << std::endl;
 		std::string s{c};
 		return tp_string_from_stdstring(NULL,s)
+	elif this->type.type_id==TP_LIST_TINY:
+		return this->lst.val->items[index]
+	elif this->type.type_id==TP_LIST:
+		return this->list.val->items[index]
 	else:
+		throw "bad"
 		return _tp_get(NULL, *this, tp_number(index), 0)
 
 

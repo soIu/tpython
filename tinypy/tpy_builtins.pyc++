@@ -369,6 +369,9 @@ def tpy_bool(TP) ->tp_obj:
 def tpy_import(TP) ->tp_obj:
 	tp_obj modname = TP_OBJ()
 	tp_obj member = TP_OBJ()
+	print(DGREEN, "tpy_import")
+	print(tp->modules)
+	print(modname)
 	if not tp_has(tp, tp->modules, modname).number.val:
 		tp_raise(tp_None, tp_string_atom(tp, "tpy_import: cannot import module"))
 	tp_obj mod = tp_get(tp, tp->modules, modname)

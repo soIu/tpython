@@ -47,17 +47,19 @@ tp_obj _sdl_delay(TP) {
 
 Uint32 _sdl_list_to_color(TP,tp_obj clr,SDL_Surface *s) {
 	int r,g,b;
-	r = tp_get(tp,clr,tp_number(0)).number.val;
-	g = tp_get(tp,clr,tp_number(1)).number.val;
-	b = tp_get(tp,clr,tp_number(2)).number.val;
+	r = clr[0];
+	g = clr[1];
+	b = clr[2];
 	return SDL_MapRGB(s->format,r,g,b);
 }
 
 
 tp_obj _sdl_create_window(TP) {
-	tp_obj sz = TP_TYPE(TP_LIST);
-	int w = tp_get(tp,sz,tp_number(0)).number.val;
-	int h = tp_get(tp,sz,tp_number(1)).number.val;
+	print("create sdl window...");
+	tp_obj sz = TP_OBJ();
+	print(sz);
+	int w = sz[0];
+	int h = sz[1];
 	_sdl_width = w;
 	_sdl_height = h;
 	_sdl_window = SDL_CreateWindow(
@@ -80,11 +82,13 @@ tp_obj _sdl_create_window(TP) {
 }
 
 tp_obj _sdl_draw(TP) {
-	tp_obj pos = TP_TYPE(TP_LIST);
-	tp_obj clr = TP_TYPE(TP_LIST);
+	tp_obj pos = TP_OBJ();
+	tp_obj clr = TP_OBJ();
 	SDL_Rect r;
-	r.x = tp_get(tp,pos,tp_number(0)).number.val;
-	r.y = tp_get(tp,pos,tp_number(1)).number.val;
+	//r.x = tp_get(tp,pos,tp_number(0)).number.val;
+	//r.y = tp_get(tp,pos,tp_number(1)).number.val;
+	r.x = pos[0].number.val;
+	r.y = pos[1].number.val;
 	if (tp_len(tp,pos).number.val == 4) {
 		r.w = tp_get(tp,pos,tp_number(2)).number.val;
 		r.h = tp_get(tp,pos,tp_number(3)).number.val;
@@ -102,35 +106,35 @@ tp_obj _sdl_event_get(TP) {
 	SDL_Event e;
 	tp_obj r = tp_list(tp);
 	while (SDL_PollEvent(&e)) {
-		tp_obj d = tp_object(tp);
-		tp_set(tp,d,tp_string_atom(tp, "type"),tp_number(e.type));
+		tp_obj d = tp_extern_interface(tp);
+		tp_set(tp,d, "type", tp_number(e.type));
 		switch (e.type) {
 			case SDL_KEYDOWN:
-				tp_set(tp,d,tp_string_atom(tp, "type"),tp_string_atom(tp,"KEYDOWN"));
-				tp_set(tp,d,tp_string_atom(tp, "key"),tp_number(e.key.keysym.scancode));
-				tp_set(tp,d,tp_string_atom(tp, "sym"),tp_number(e.key.keysym.sym));
-				tp_set(tp,d,tp_string_atom(tp, "mod"),tp_number(e.key.keysym.mod));
+				tp_set(tp,d, "type", "KEYDOWN");
+				tp_set(tp,d, "key",  tp_number(e.key.keysym.scancode));
+				tp_set(tp,d, "sym",  tp_number(e.key.keysym.sym));
+				tp_set(tp,d, "mod",  tp_number(e.key.keysym.mod));
 				break;
 			case SDL_KEYUP:
-				tp_set(tp,d,tp_string_atom(tp, "type"),tp_string_atom(tp,"KEYUP"));
-				tp_set(tp,d,tp_string_atom(tp, "key"),tp_number(e.key.keysym.scancode));
-				tp_set(tp,d,tp_string_atom(tp, "sym"),tp_number(e.key.keysym.sym));
-				tp_set(tp,d,tp_string_atom(tp, "mod"),tp_number(e.key.keysym.mod));
+				tp_set(tp,d, "type", "KEYUP");
+				tp_set(tp,d, "key",  tp_number(e.key.keysym.scancode));
+				tp_set(tp,d, "sym",  tp_number(e.key.keysym.sym));
+				tp_set(tp,d, "mod",  tp_number(e.key.keysym.mod));
 				break;
 			case SDL_MOUSEMOTION:
-				tp_set(tp,d,tp_string_atom(tp, "type"),tp_string_atom(tp,"MOUSE"));
-				tp_set(tp,d,tp_string_atom(tp, "x"),tp_number(e.motion.x));
-				tp_set(tp,d,tp_string_atom(tp, "y"),tp_number(e.motion.y));
-				tp_set(tp,d,tp_string_atom(tp, "rx"),tp_number(e.motion.xrel));
-				tp_set(tp,d,tp_string_atom(tp, "ry"),tp_number(e.motion.yrel));
-				tp_set(tp,d,tp_string_atom(tp, "state"),tp_number(e.motion.state));
+				tp_set(tp,d, "type", "MOUSE");
+				tp_set(tp,d, "x",  tp_number(e.motion.x));
+				tp_set(tp,d, "y",  tp_number(e.motion.y));
+				tp_set(tp,d, "rx", tp_number(e.motion.xrel));
+				tp_set(tp,d, "ry", tp_number(e.motion.yrel));
+				tp_set(tp,d, "state", tp_number(e.motion.state));
 				break;
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEBUTTONUP:
-				tp_set(tp,d,tp_string_atom(tp, "type"),tp_string_atom(tp,"CLICK"));
-				tp_set(tp,d,tp_string_atom(tp, "x"),tp_number(e.button.x));
-				tp_set(tp,d,tp_string_atom(tp, "y"),tp_number(e.button.y));
-				tp_set(tp,d,tp_string_atom(tp, "button"),tp_number(e.button.button));
+				tp_set(tp,d, "type", "CLICK");
+				tp_set(tp,d, "x", tp_number(e.button.x));
+				tp_set(tp,d, "y", tp_number(e.button.y));
+				tp_set(tp,d, "button", tp_number(e.button.button));
 				break;
 		}
 		//tp_set(tp,r,tp_None,d);
@@ -140,13 +144,13 @@ tp_obj _sdl_event_get(TP) {
 }
 
 void tp_module_sdl_init(TP) {
-	tp_obj g = tp_import(tp, tp_string_atom(tp, "sdl"), tp_None, tp_string_atom(tp, "<builtin>"));
-	tp_set(tp,g,tp_string_atom(tp, "initialize"),tp_function(tp,_sdl_init_video));
-	tp_set(tp,g,tp_string_atom(tp, "window"),tp_function(tp,_sdl_create_window));
-	tp_set(tp,g,tp_string_atom(tp, "clear"),tp_function(tp,_sdl_display_clear));
-	tp_set(tp,g,tp_string_atom(tp, "flip"),tp_function(tp,_sdl_display_flip));
-	tp_set(tp,g,tp_string_atom(tp, "draw"),tp_function(tp,_sdl_draw));
-	tp_set(tp,g,tp_string_atom(tp, "delay"),tp_function(tp,_sdl_delay));
-	tp_set(tp,g,tp_string_atom(tp, "quit"),tp_function(tp,_sdl_quit));
-	tp_set(tp,g,tp_string_atom(tp, "poll"),tp_function(tp,_sdl_event_get));
+	tp_obj g = tp_import(tp, "sdl", "<builtin>");
+	tp_set(tp,g, "initialize", tp_function(tp,_sdl_init_video));
+	tp_set(tp,g, "window", tp_function(tp,_sdl_create_window));
+	tp_set(tp,g, "clear",  tp_function(tp,_sdl_display_clear));
+	tp_set(tp,g, "flip",   tp_function(tp,_sdl_display_flip));
+	tp_set(tp,g, "draw",   tp_function(tp,_sdl_draw));
+	tp_set(tp,g, "delay",  tp_function(tp,_sdl_delay));
+	tp_set(tp,g, "quit",   tp_function(tp,_sdl_quit));
+	tp_set(tp,g, "poll",   tp_function(tp,_sdl_event_get));
 }

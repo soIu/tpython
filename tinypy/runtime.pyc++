@@ -4,13 +4,11 @@ import <fstream>
 import <sstream>
 
 
-#ifdef USE_PYTHON
-  extern "C" int PyRun_SimpleString(const char* script);
-#endif
+if defined(USE_PYTHON):
+	extern "C" int PyRun_SimpleString(const char* script);
 
-#ifdef USE_SDL
-  import "module_sdl.h"
-#endif
+if defined(USE_SDL):
+	import "module_sdl.h"
 
 std::mt19937 *__rand_engine = NULL;
 
@@ -154,9 +152,9 @@ def tp_module_random_init(TP):
 	  std::random_device rand_dev
 	  __rand_engine = new std::mt19937(rand_dev())
 	#endif
-	tp_obj rand = tp_import(tp, tp_string_atom(tp, "random"), tp_None, tp_string_atom(tp, "<builtin>"))
-	tp_set(tp, rand, tp_string_atom(tp, "random"), tp_function(tp, tpy_random))
-	tp_set(tp, rand, tp_string_atom(tp, "uniform"), tp_function(tp, tpy_uniform))
+	tp_obj rand = tp_import(tp, "random", "<builtin>")
+	tp_set(tp, rand, "random", tp_function(tp, tpy_random))
+	tp_set(tp, rand, "uniform", tp_function(tp, tpy_uniform))
 
 
 #ifdef INCLUDEOS_VGA
