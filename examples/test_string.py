@@ -34,6 +34,14 @@ print( abc.replace(',', '_') )
 cba = abc.reverse()
 print(cba)
 
+ln = '                          '
+for c in ln:
+	if c==' ':
+		continue
+	else:
+		print('long line of spaces failed')
+		assert 0
+
 ## in regular python the following would fail, but in tpython it is allowed ##
 print( a % b )
 print( a %([1,2], {'mykey':'myvalue'}) )

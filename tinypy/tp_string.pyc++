@@ -246,6 +246,20 @@ def tp_string_cmp(tp_obj a, tp_obj b) ->int:
 			if std::string(a) == std::string(b):
 				return 0
 			return -1
+	elif a.type.type_id == TP_STRING and b.type.type_id==TP_STRING_TINY:
+		int na = len(a)
+		int nb = len(b.str.val)
+		if na==1 and nb==1:
+			return (int)(tp_string_getptr(a)[0] - b.str.val[0])
+		elif na < nb:
+			return -1
+		elif na > nb:
+			return 1
+		elif na == nb:
+			## TODO check how standard python deals with `'foo' < 'bar'`
+			if std::string(a) == std::string(b):
+				return 0
+			return -1
 	else:
 		int l = _tp_min(tp_string_len(a), tp_string_len(b))
 		int v = memcmp(tp_string_getptr(a), tp_string_getptr(b), l)

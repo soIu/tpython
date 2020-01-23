@@ -726,6 +726,8 @@ def tp_cmp(TP, tp_obj a, tp_obj b) ->int:
 			return _tp_sign_int(a.integer.val - (int)b.number.val)
 		elif a.type.type_id==TP_NUMBER && b.type.type_id==TP_INTEGER:
 			return _tp_sign_int( (int)a.number.val - b.integer.val);
+		elif isstring(a) and isstring(b):
+			return tp_string_cmp(a,b)
 		//std::cout << "first type: " << a.type.type_id << std::endl;
 		//std::cout << "second type: " << b.type.type_id << std::endl;
 		//throw "invalid compare of different types";
