@@ -1,7 +1,9 @@
 #!/usr/bin/python
 import os, sys, subprocess, random, json
-## run from any folder fix
-os.chdir( os.path.split(__file__)[0] )
+
+# always generate code relative to this file.
+workspace_dir = os.path.dirname(os.path.abspath(__file__))
+os.chdir(workspace_dir)
 
 ## Ubuntu Notes:
 ## sudo apt-get install g++-arm-linux-gnueabi gcc-arm-linux-gnueabi binutils-arm-linux-gnueabi
@@ -53,11 +55,11 @@ def gen_interpreter_codes(randomize=False):
 	enums.append('TP_ITOTAL')
 	tp_vm_enums = 'enum {%s};' % ','.join(enums)
 	tp_vm_debug_strings = 'const char *tp_strings[TP_ITOTAL] = {%s};' % ','.join(['"%s"' %a for a in codes])
-	open('./tinypy/interpreter_codes.gen.h', 'wb').write(tp_vm_enums)
-	open('./tinypy/interpreter_codes_debug.gen.h', 'wb').write(tp_vm_debug_strings)
+	open('./tinypy/interpreter_codes.gen.h', 'w').write(tp_vm_enums)
+	open('./tinypy/interpreter_codes_debug.gen.h', 'w').write(tp_vm_debug_strings)
 
 	encode_py = '%s = range(%s)' %(','.join(codes), len(codes))
-	open('./tpython_interpreter_codes_gen.py', 'wb').write(encode_py)
+	open('./tpython_interpreter_codes_gen.py', 'w').write(encode_py)
 
 BlendotTypesFiles = '''blendot/mutex.cpp blendot/memory.gen.cpp blendot/pool_allocator.cpp blendot/pool_vector.cpp blendot/message_queue.cpp blendot/object.gen.cpp blendot/node_path.cpp blendot/ip_address.cpp blendot/class_db.cpp blendot/resource.cpp blendot/method_bind.cpp blendot/reference.gen.cpp blendot/ref_ptr.cpp blendot/array.gen.cpp blendot/variant_op.cpp blendot/variant.cpp blendot/string_name.cpp blendot/print_string.cpp blendot/core_string_names.cpp blendot/dictionary.cpp blendot/ustring.cpp blendot/math_funcs.cpp blendot/basis.gen.cpp blendot/vector2.gen.cpp blendot/vector3.gen.cpp blendot/quat.gen.cpp blendot/color.gen.cpp blendot/aabb.gen.cpp blendot/transform.gen.cpp blendot/transform_2d.gen.cpp blendot/rect2.gen.cpp blendot/rid.gen.cpp blendot/scene/main/scene_tree.cpp blendot/scene/main/node.cpp blendot/scene/3d/spatial.gen.cpp blendot/scene/scene_string_names.cpp blendot/main_loop.gen.cpp blendot/engine.gen.cpp blendot/scene/resources/material.cpp blendot/scene/resources/mesh.gen.cpp blendot/scene/resources/surface_tool.cpp blendot/face3.gen.cpp blendot/plane.gen.cpp blendot/scene/resources/shape.cpp blendot/quick_hull.cpp blendot/scene/resources/convex_polygon_shape.cpp blendot/scene/resources/concave_polygon_shape.cpp blendot/triangle_mesh.cpp blendot/servers/visual_server.cpp blendot/image.cpp blendot/geometry.gen.cpp blendot/servers/visual/visual_server_raster.cpp blendot/servers/visual/visual_server_globals.cpp blendot/servers/visual/rasterizer.cpp'''
 
@@ -491,7 +493,7 @@ def rebuild(stage=None):
 		if mode=='windows':
 			makefile = makefile.replace('-rdynamic', '')
 
-		open('Makefile', 'wb').write(makefile)
+		open('Makefile', 'w').write(makefile)
 		subprocess.check_call(['make', 'clean'])
 		subprocess.check_call(['make'])
 		if unreal_plugin:
