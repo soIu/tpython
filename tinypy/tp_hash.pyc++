@@ -151,7 +151,7 @@ static xxh_u32 XXH32_avalanche(xxh_u32 h32){
 
 #define XXH_get32bits(p) XXH_readLE32_align(p, align)
 
-@constexpr
+
 static xxh_u32 XXH32_finalize(xxh_u32 h32, const xxh_u8* ptr, size_t len, XXH_alignment align){
 #define PROCESS1               \
     h32 += (*ptr++) * PRIME32_5; \
@@ -220,7 +220,7 @@ static xxh_u32 XXH32_finalize(xxh_u32 h32, const xxh_u8* ptr, size_t len, XXH_al
 }
 
 
-@constexpr
+
 def XXH32_endian_align(const xxh_u8* input, size_t len, xxh_u32 seed, XXH_alignment align) ->xxh_u32:
 	const xxh_u8* bEnd = input + len
 	xxh_u32 h32 = 0
@@ -294,10 +294,8 @@ if defined(PROFILE_HASHING):
 		return hash
 	#################################
 else:
-	@constexpr
 	def XXH32(const void* input, size_t length, XXH32_hash_t seed=0) ->XXH32_hash_t:
 		return XXH32_endian_align((const xxh_u8*)input, length, seed, XXH_aligned)
-	@constexpr
 	def XXH32unaligned(const void* input, size_t length, XXH32_hash_t seed=0) ->XXH32_hash_t:
 		return XXH32_endian_align((const xxh_u8*)input, length, seed, XXH_unaligned)
 	#################################
