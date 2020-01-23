@@ -94,4 +94,10 @@ print( 'sizeof list:',sizeof(b) )
 print( 'sizeof dict:',sizeof(d) )
 print( 'sizeof function:', sizeof(func) )
 
+print('testing divmod')
+x,y = divmod( 120, 40 )
+print(x)
+print(y)
+assert x == 3
+assert y == 0
 

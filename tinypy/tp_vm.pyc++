@@ -150,7 +150,7 @@ def TP_xSTR(TP, tp_obj obj) ->char *:
 
 static tp_obj __globals256__[256] = {};
 static tp_obj __global_objects__[256] = {};
-static double __const_numbers__[256] = {};
+static tp_num __const_numbers__[256] = {};
 ##static std::unordered_map<std::string_view, tp_obj> __string_cache__ = {};
 
 def tp_step(TP) ->int:
@@ -267,7 +267,7 @@ def tp_step(TP) ->int:
 			if RA.type.type_id == TP_INTEGER:
 				RA.integer.val += (int)VB
 			else:
-				RA.number.val += (double)VB
+				RA.number.val += (tp_num)VB
 		elif e.i == 92:
 			#ifdef DEBUG
 			  print("TP_GLOBAL_INC += n")
@@ -337,7 +337,7 @@ def tp_step(TP) ->int:
 			#ifdef DEBUG
 			  print("FAST IF global+global<=n")
 			#endif
-			if __global_objects__[VA].number.val+__global_objects__[VB].number.val <= (double)VC:
+			if __global_objects__[VA].number.val+__global_objects__[VB].number.val <= (tp_num)VC:
 				cur += 1
 		else:
 			switch e.i:
@@ -359,7 +359,7 @@ def tp_step(TP) ->int:
 					//continue;
 					break
 				case TP_INUMBER:
-					double num = *(tp_num*)((*++cur).string.val )
+					tp_num num = *(double*)((*++cur).string.val )
 					if VB==1:
 						RA = tp_number(num)
 						__const_numbers__[VC] = num
@@ -370,7 +370,9 @@ def tp_step(TP) ->int:
 					#ifdef DEBUG
 					  std::cout << num << std::endl;
 					#endif
-					cur += sizeof(tp_num)/4
+					##cur += sizeof(tp_num)/4
+					## even if internally `long double` is used, bytecode still packs NUMBER in a double 
+					cur += sizeof(double)/4
 					continue
 					break
 				case 178:
@@ -545,6 +547,11 @@ def tp_step(TP) ->int:
 							RA = RB.list.val->items[ RB.list.val->len + (int)RC.number.val ]
 						else:
 							RA = RB.list.val->items[ (int)RC.number.val ]
+					elif RB.type.type_id == TP_LIST_TINY && RC.type.type_id==TP_NUMBER:
+						if RC.number.val < 0:
+							RA = RB.lst.val->items[ RB.lst.val->len() + (int)RC.number.val ]
+						else:
+							RA = RB.lst.val->items[ (int)RC.number.val ]
 					else:
 						##print("IGET")
 						##print(RC)

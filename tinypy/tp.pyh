@@ -173,9 +173,14 @@ enum TPModuleMagic:
 	TP_MODULE_INTERNAL = 0,
 	TP_MODULE_EXTERNAL_MAGIC = 1,
 
-
-typedef double tp_num;
-##typedef long double tp_num;
+if defined(TP_BIG_NUM):
+	import <quadmath.h>
+	##typedef long double tp_num;
+	typedef __float128 tp_num;
+	typedef __int128 tp_int;
+else:
+	typedef double tp_num;
+	typedef int tp_int;
 
 
 /* Type: tp_obj
@@ -1142,7 +1147,7 @@ def print(tp_obj ob):
 	std::cout << ob << std::endl;
 
 @static
-def print(double num):
+def print(tp_num num):
 	std::cout << num << std::endl;
 
 @static

@@ -205,6 +205,9 @@ def rebuild(stage=None):
 	if '--profile-hashing' in sys.argv:
 		defs += ' -DPROFILE_HASHING '
 
+	if '--big-num' in sys.argv:
+		defs += ' -DTP_BIG_NUM'
+
 	sdl_inc = ''
 	use_sdl = False
 	embed_bytecode = False
@@ -347,7 +350,16 @@ def rebuild(stage=None):
 			if '--secure-binary' in sys.argv:
 				opts += ' -O2 -finline-small-functions -march=native'
 			else:
-				opts += ' -O3 -funroll-loops -finline-small-functions -march=native -ffast-math -fno-math-errno -funsafe-math-optimizations -fno-signed-zeros -fno-trapping-math -frename-registers'
+				#opts += ' -O3 -funroll-loops -finline-small-functions -march=native -ffast-math -fno-math-errno -funsafe-math-optimizations -fno-signed-zeros -fno-trapping-math -frename-registers'
+				opts += ' -O3 -funroll-loops -finline-small-functions -march=native -frename-registers'
+				if '--big-num' in sys.argv:
+					opts += ' -m128bit-long-double'
+					#-m96bit-long-double
+					#-m128bit-long-double
+					#-mlong-double-64
+					#-mlong-double-80
+					#-mlong-double-128
+
 			exeopts += opts
 		if '--gcc5' in sys.argv:
 			CC = '/usr/bin/g++-5'

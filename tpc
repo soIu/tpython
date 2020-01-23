@@ -35,6 +35,7 @@ class DState:
 			'__name__',
 			'__file__',
 			'__dict__',
+			'divmod',
 			'sizeof',
 			'any',
 			'compile',

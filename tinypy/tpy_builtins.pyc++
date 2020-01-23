@@ -9,6 +9,24 @@ def tpy_bind(TP) ->tp_obj:
 	tp_obj self = TP_OBJ()
 	return tp_bind(tp, r, self)
 
+def tpy_divmod(TP) ->tp_obj:
+	tp_num x = TP_OBJ().number.val
+	tp_num y = TP_OBJ().number.val
+	tp_obj r = tp_tiny_list(tp)
+	tp_num d = (tp_int)(x) / (tp_int)(y)
+	if defined(TP_BIG_NUM):
+		tp_num m = fmodq(x,y)
+	else:
+		tp_num m = fmod(x,y)
+	if std::isinf(d) or std::isinf(m):
+		throw "math number overflow error in divmod - infinite"
+	if std::isnan(d) or std::isnan(m):
+		throw "math number overflow error in divmod - nan"
+	r.lst.val->append( tp_number(d) )
+	r.lst.val->append( tp_number(m) )
+	return r
+
+
 def tpy_sizeof(TP) ->tp_obj:
 	tp_obj ob = TP_OBJ()
 	return tp_number(sizeof(ob))
@@ -226,7 +244,7 @@ def tpy_funpack(TP) ->tp_obj:
 
 
 def tpy_abs(TP) ->tp_obj:
-	return tp_number(fabs(tpy_float(tp).number.val));
+	return tp_number(std::abs(tpy_float(tp).number.val));
 
 
 def tpy_int(TP) ->tp_obj:
@@ -235,7 +253,7 @@ def tpy_int(TP) ->tp_obj:
 	return tp_number(n)
 
 def _roundf(tp_num v) ->double:
-	tp_num av = fabs(v)
+	tp_num av = std::abs(v)
 	tp_num iv = (long)av
 	av = (av-iv < 0.5?iv:iv+1)
 	return (v<0?-av:av)
@@ -610,6 +628,7 @@ def tp_module_builtins_init(TP):
 	tp_obj o
 	//struct {const char *s;void *f;} b[] = {
 	struct {const char *s; tp_func_pointer f;} b[] = {
+	{"divmod", tpy_divmod},
 	{"sizeof", tpy_sizeof},
 	{"any", tpy_any},
 	{"compile", tpy_compile},
