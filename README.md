@@ -5,6 +5,8 @@ TPython++ is used by the Blendot game engine.  http://blendot.org
 
 ![alt text](https://miro.medium.com/max/1164/1*SWL51u0qro4N6_peZOxu5w.png "Pystone Benchmark")
 
+![alt text](https://miro.medium.com/max/1164/1*Q0XjKb6OiGNo99--TtxjKA.png "Richards Benchmark")
+
 # history
 
 TinyPy is the smallest Python implementation ever, just 64K, created by Phil Hassey in 2008.  TPython++ is based on RainWoodMans fork of TinyPy. https://github.com/rainwoodman/tinypy
@@ -290,3 +292,5 @@ https://medium.com/@judge_raptor/the-first-high-performance-game-engine-written-
 https://medium.com/@judge_raptor/c-6e89c6bbc8f0
 
 https://medium.com/@judge_raptor/2x-faster-than-python-7c15ab0a9286
+
+https://medium.com/@judge_raptor/77x-faster-than-rustpython-f8331c46aea1
