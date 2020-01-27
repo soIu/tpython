@@ -927,23 +927,25 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 	if self.type.type_id == TP_FUNC:
 		if defined(DEBUG) or defined(DEBUG_CALLS):
 			print("____________call - TP_FUNC_____________")
-		if self.type.magic == TP_FUNC_MASK_CPP:
+		if self.type.magic == TP_FUNC_MAGIC_CPP:
 			if defined(DEBUG) or defined(DEBUG_CALLS):
-				print("	TP_FUNC_MASK_CPP")
+				print("	TP_FUNC_MAGIC_CPP")
 			tp_obj r = self.func.info->cppfunc(tp)
 			tp_grey(tp, r)
 			return r
-		elif self.type.magic == TP_FUNC_MASK_METHOD_CPP:
+		##elif self.type.magic == TP_FUNC_MASK_METHOD_CPP:
+		##	if defined(DEBUG) or defined(DEBUG_CALLS):
+		##		print("	TP_FUNC_MASK_METHOD_CPP")
+		##	tpd_list_insert(tp, tp->params.list.val, 0, self.func.info->instance)
+		##	tp_obj r = self.func.info->cppfunc(tp)
+		##	tp_grey(tp, r)
+		##	return r
+		##elif not self.type.magic & TP_FUNC_MASK_C:
+		elif self.type.magic == TP_FUNC_MAGIC_C:
 			if defined(DEBUG) or defined(DEBUG_CALLS):
-				print("	TP_FUNC_MASK_METHOD_CPP")
-			tpd_list_insert(tp, tp->params.list.val, 0, self.func.info->instance)
-			tp_obj r = self.func.info->cppfunc(tp)
-			tp_grey(tp, r)
-			return r
-		elif not self.type.magic & TP_FUNC_MASK_C:
-			if defined(DEBUG) or defined(DEBUG_CALLS):
-				print("	TP_FUNC_MASK_C")
-			if self.type.magic & TP_FUNC_MASK_METHOD:
+				print("	TP_FUNC_MAGIC_C")
+			##if self.type.magic & TP_FUNC_MASK_METHOD:
+			if self.func.info->instance.type.type_id != TP_NONE:
 				if defined(TINY_LIST_PARAMS):
 					tp->params.lst.val->push_front(self.func.info->instance)
 				else:
@@ -955,7 +957,7 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 			tp_obj r = cfunc(tp)
 			tp_grey(tp, r)
 			return r
-		else:
+		elif self.type.magic == TP_FUNC_BYTECODE:
 			if defined(DEBUG) or defined(DEBUG_CALLS):
 				print(DYELLOW, "============= calling BYTECODE FUNCTION ==============")
 				print(params)
@@ -1100,4 +1102,15 @@ def tp_obj::as_vector() -> std::vector<tp_obj>:
 	return r
 
 
+def tp_set_pointer(void *ptr) -> int:
+	if __tpy_rpointers__.count(ptr) > 0:
+		return __tpy_rpointers__[ptr]
+	else:
+		int key = __tpy_pointers__.size()
+		__tpy_pointers__[key] = ptr
+		__tpy_rpointers__[ptr] = key
+		return key
+
+def tp_get_pointer(int key) -> void*:
+	return __tpy_pointers__[ key ]
 

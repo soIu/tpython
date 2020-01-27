@@ -188,16 +188,16 @@ def tpy_range(TP) ->tp_obj:
 	return r
 
 
-def tpy_istype(TP) ->tp_obj:
-	tp_obj v = TP_OBJ()
-	tp_obj t = TP_STR()
-	if (tp_cmp(tp,t,tp_string_atom(tp, "string")) == 0) { return tp_number(v.type.type_id == TP_STRING); }
-	if (tp_cmp(tp,t,tp_string_atom(tp, "list")) == 0) { return tp_number(v.type.type_id == TP_LIST); }
-	if (tp_cmp(tp,t,tp_string_atom(tp, "dict")) == 0) { return tp_number(v.type.type_id == TP_DICT); }
-	if (tp_cmp(tp,t,tp_string_atom(tp, "number")) == 0) { return tp_number(v.type.type_id == TP_NUMBER); }
-	if (tp_cmp(tp,t,tp_string_atom(tp, "func")) == 0) { return tp_number(v.type.type_id == TP_FUNC && (v.type.magic& TP_FUNC_MASK_METHOD) == 0); }
-	if (tp_cmp(tp,t,tp_string_atom(tp, "method")) == 0) { return tp_number(v.type.type_id == TP_FUNC && (v.type.magic& TP_FUNC_MASK_METHOD) != 0); }
-	tp_raise(tp_None,tp_string_atom(tp, "(is_type) TypeError: ?"));
+##def tpy_istype(TP) ->tp_obj:
+##	tp_obj v = TP_OBJ()
+##	tp_obj t = TP_STR()
+##	if (tp_cmp(tp,t,tp_string_atom(tp, "string")) == 0) { return tp_number(v.type.type_id == TP_STRING); }
+##	if (tp_cmp(tp,t,tp_string_atom(tp, "list")) == 0) { return tp_number(v.type.type_id == TP_LIST); }
+##	if (tp_cmp(tp,t,tp_string_atom(tp, "dict")) == 0) { return tp_number(v.type.type_id == TP_DICT); }
+##	if (tp_cmp(tp,t,tp_string_atom(tp, "number")) == 0) { return tp_number(v.type.type_id == TP_NUMBER); }
+##	if (tp_cmp(tp,t,tp_string_atom(tp, "func")) == 0) { return tp_number(v.type.type_id == TP_FUNC && (v.type.magic& TP_FUNC_MASK_METHOD) == 0); }
+##	if (tp_cmp(tp,t,tp_string_atom(tp, "method")) == 0) { return tp_number(v.type.type_id == TP_FUNC && (v.type.magic& TP_FUNC_MASK_METHOD) != 0); }
+##	tp_raise(tp_None,tp_string_atom(tp, "(is_type) TypeError: ?"));
 
 
 def tpy_isinstance(TP) ->tp_obj:
@@ -447,7 +447,7 @@ def tpy_eval(TP) ->tp_obj:
 def tpy_print(TP) ->tp_obj:
 	tp_obj params = tp->params
 	tp_obj e
-	print(params)
+	##print(params)
 	while params.lst.val->next(&e):
 		std::cout << e << " "
 	std::cout << std::endl;
@@ -563,11 +563,20 @@ def tpy_rid(TP) ->tp_obj:
 	tp_obj a = TP_OBJ()
 	return tp_rid( (int)a.number.val )
 
-def tpy_spatial(TP) ->tp_obj:
+def tpy_spatial_new(TP) ->tp_obj:
 	tp_obj pos = TP_OBJ()
 	tp_obj rot = TP_OBJ()
 	tp_obj scl = TP_OBJ()
 	return tp_spatial(pos.vec3.vec, rot.vec3.vec, scl.vec3.vec)
+
+##def tpy_spatial_from_addr(TP) ->tp_obj:
+##	tp_obj ptr = TP_OBJ()
+##	return tp_spatial( reinterpret_cast<std::uintptr_t>(&ptr.number.val) )
+
+def tpy_spatial_from_pointer(TP) ->tp_obj:
+	tp_obj ptr = TP_OBJ()
+	return tp_spatial( ptr )
+
 
 def tpy_mesh(TP) ->tp_obj:
 	return tp_mesh()
@@ -631,8 +640,8 @@ def tp_module_builtins_init(TP):
 	{"divmod", tpy_divmod},
 	{"sizeof", tpy_sizeof},
 	{"any", tpy_any},
-	{"compile", tpy_compile},
-	{"print",tpy_print},
+	##{"compile", tpy_compile},
+	##{"print",tpy_print},
 	{"range",tpy_range},
 	{"min",tpy_min},
 	{"max",tpy_max},
@@ -645,7 +654,7 @@ def tp_module_builtins_init(TP):
 	{"__assert__", tpy_assert},
 	{"str", tpy_str},
 	{"float",tpy_float}, 
-	{"istype",tpy_istype},
+	##{"istype",tpy_istype},  ## TODO `type` should return meta-interface
 	{"isinstance",tpy_isinstance}, 
 	{"chr",tpy_chr}, 
 	{"fpack",tpy_fpack},
@@ -671,8 +680,6 @@ def tp_module_builtins_init(TP):
 	{"evaljs", tpy_eval_js},
 	{"javascript", tpy_eval_js_returns},
 	#ifdef BLENDOT_TYPES
-	{"vec2", tpy_vec2},
-	{"vec3", tpy_vec3},
 	{"quat", tpy_quat},
 	{"color", tpy_color},
 	{"rect", tpy_rect},
@@ -682,7 +689,6 @@ def tp_module_builtins_init(TP):
 	{"aabb", tpy_aabb},
 	{"trans", tpy_trans},
 	{"RID", tpy_rid},
-	{"spatial", tpy_spatial},
 	{"mesh", tpy_mesh},
 	#endif
 	#ifdef UNREAL_TYPES
@@ -694,6 +700,12 @@ def tp_module_builtins_init(TP):
 	for (i=0; b[i].s; i++):
 		##tp_set(tp, builtins, tp_string_atom(tp, b[i].s), tp_function(tp,(tp_obj (*)(tp_vm *))b[i].f))
 		tp_set(tp, builtins, tp_string_tiny_atom(b[i].s), tp_function(tp,(tp_obj (*)(tp_vm *))b[i].f))
+	tp_set(tp, builtins, "print", tp_function(tp, tpy_print))
+	tp_set(tp, builtins, "compile", tp_function(tp, tpy_compile))
+	if defined(BLENDOT_TYPES):
+		tp_set(tp, builtins, "vec2", tp_function(tp, tpy_vec2))
+		tp_set(tp, builtins, "vec3", tp_function(tp, tpy_vec3))
+		tp_set(tp, builtins, "spatial", tp_function(tp, tpy_spatial_from_pointer))
 	o = tp_interface_t(tp)
 	tp_set(tp, o, tp_string_atom(tp, "__call__"), tp_function(tp, tpy_object_call))
 	tp_set(tp, o, tp_string_atom(tp, "__new__"),  tp_function(tp, tpy_object_new))
@@ -703,5 +715,6 @@ def tp_module_builtins_init(TP):
 	tp_set(tp, tp->_dict_meta, tp_string_atom(tp, "update"), tp_function(tp, tpy_dict_merge))
 	tp_set(tp, tp->_dict_meta, tp_string_atom(tp, "keys"), tp_function(tp, tpy_dict_keys))
 	tp_set(tp, tp->_dict_meta, tp_string_atom(tp, "values"), tp_function(tp, tpy_dict_values))
+
 
 

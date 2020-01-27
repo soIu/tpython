@@ -47,6 +47,7 @@ bool SceneState::can_instance() const {
 }
 
 Node *SceneState::instance(GenEditState p_edit_state) const {
+	std::cout << "________________ packed_scene.cpp SceneState::instance ________________" << std::endl;
 
 	// nodes where instancing failed (because something is missing)
 	List<Node *> stray_instances;
@@ -373,7 +374,7 @@ static int _vm_get_variant(const Variant &p_variant, HashMap<Variant, int, Varia
 }
 
 Error SceneState::_parse_node(Node *p_owner, Node *p_node, int p_parent_idx, Map<StringName, int> &name_map, HashMap<Variant, int, VariantHasher, VariantComparator> &variant_map, Map<Node *, int> &node_map, Map<Node *, int> &nodepath_map) {
-
+	std::cout << "~~~~~~~~~~~~~~~~~~ packed_scene.cpp SceneState::_parse_node ~~~~~~~~~~~~~~~~~~~" << std::endl;
 	// this function handles all the work related to properly packing scenes, be it
 	// instanced or inherited.
 	// given the complexity of this process, an attempt will be made to properly
@@ -910,6 +911,7 @@ Error SceneState::pack(Node *p_scene) {
 }
 
 void SceneState::set_path(const String &p_path) {
+	std::cout << "~~~~~~~~~~~~~~~~~~ packed_scene.cpp SceneState::set_path = " << p_path << std::endl;
 
 	path = p_path;
 }
@@ -1079,6 +1081,7 @@ bool SceneState::is_connection(int p_node, const StringName &p_signal, int p_to_
 }
 
 void SceneState::set_bundled_scene(const Dictionary &p_dictionary) {
+	std::cout << "~~~~~~~~~~~~~~~~~~ packed_scene.cpp SceneState::set_bundled_scene ~~~~~~~~~~~~~~~~~~~" << std::endl;
 
 	ERR_FAIL_COND(!p_dictionary.has("names"));
 	ERR_FAIL_COND(!p_dictionary.has("variants"));
@@ -1199,6 +1202,7 @@ void SceneState::set_bundled_scene(const Dictionary &p_dictionary) {
 }
 
 Dictionary SceneState::get_bundled_scene() const {
+	std::cout << "~~~~~~~~~~~~~~~~~~ packed_scene.cpp SceneState::get_bundled_scene ~~~~~~~~~~~~~~~~~~~" << std::endl;
 
 	PoolVector<String> rnames;
 	rnames.resize(names.size());
@@ -1525,6 +1529,7 @@ Vector<NodePath> SceneState::get_editable_instances() const {
 //add
 
 int SceneState::add_name(const StringName &p_name) {
+	std::cout << "~~~~~~~~~~~~~~~~~~ packed_scene.cpp SceneState::add_name = " << String(p_name) << std::endl;
 
 	names.push_back(p_name);
 	return names.size() - 1;
@@ -1541,6 +1546,8 @@ int SceneState::find_name(const StringName &p_name) const {
 }
 
 int SceneState::add_value(const Variant &p_value) {
+	std::cout << "~~~~~~~~~~~~~~~~~~ packed_scene.cpp SceneState::add_value ~~~~~~~~~~~~~~~~~~~" << std::endl;
+	std::cout << String(p_value) << std::endl;
 
 	variants.push_back(p_value);
 	return variants.size() - 1;
@@ -1588,6 +1595,7 @@ void SceneState::set_base_scene(int p_idx) {
 	base_scene_idx = p_idx;
 }
 void SceneState::add_connection(int p_from, int p_to, int p_signal, int p_method, int p_flags, const Vector<int> &p_binds) {
+	std::cout << "~~~~~~~~~~~~~~~~~~ packed_scene.cpp SceneState::add_connection ~~~~~~~~~~~~~~~~~~~" << std::endl;
 
 	ERR_FAIL_INDEX(p_signal, names.size());
 	ERR_FAIL_INDEX(p_method, names.size());
@@ -1651,6 +1659,7 @@ void SceneState::_bind_methods() {
 }
 
 SceneState::SceneState() {
+	std::cout << "~~~~~~~~~~~~~~~~~~ packed_scene.cpp SceneState::SceneState() ~~~~~~~~~~~~~~~~~~~" << std::endl;
 
 	base_scene_idx = -1;
 	last_modified_time = 0;
@@ -1684,6 +1693,9 @@ bool PackedScene::can_instance() const {
 }
 
 Node *PackedScene::instance(GenEditState p_edit_state) const {
+
+	std::cout << "~~~~~~~~~~~~~~~~~~ packed_scene.cpp PackedScene::instance ~~~~~~~~~~~~~~~~~~~" << std::endl;
+
 
 #ifndef TOOLS_ENABLED
 	ERR_FAIL_COND_V_MSG(p_edit_state != GEN_EDIT_STATE_DISABLED, NULL, "Edit state is only for editors, does not work without tools compiled.");
@@ -1751,6 +1763,7 @@ void PackedScene::_bind_methods() {
 }
 
 PackedScene::PackedScene() {
+	std::cout << "~~~~~~~~~~~~~~~~~~ packed_scene.cpp PackedScene::PackedScene ~~~~~~~~~~~~~~~~~~~" << std::endl;
 
 	state = Ref<SceneState>(memnew(SceneState));
 }

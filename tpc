@@ -38,8 +38,8 @@ class DState:
 			'divmod',
 			'sizeof',
 			'any',
-			'compile',
-			'print',
+			#'compile',
+			#'print',
 			'range',
 			'min',
 			'max',
@@ -52,7 +52,7 @@ class DState:
 			'__assert__',
 			'str',
 			'float',
-			'istype',
+			#'istype',
 			'isinstance',
 			'chr',
 			'fpack',
@@ -217,12 +217,15 @@ def code_16(i,a,b):
 def get_code16(i,a,b):
 	return ('code',i,a,(b&0xff00)>>8,(b&0xff)>>0)
 
+
+STRINGS_EX = ('print', 'compile')
+
 def _do_string(v,r=None, no_intern=False):
 	r = get_tmp(r)
 	val = v + "\0"*(4-len(v)%4)
 	## for the string to use the precomputed 8bit hash is must be less than 10 bytes,
 	## because the 8bit hash is shoved into the last byte, and second to last is the null terminator.
-	if len(v) <= 10 and len(D.strings256) < 256 and not no_intern:
+	if len(v) <= 10 and len(D.strings256) < 256 and not no_intern and v not in STRINGS_EX:
 		if v not in D.strings256:
 			D.strings256.append(v)
 		code(179, r, len(v), D.strings256.index(v) )

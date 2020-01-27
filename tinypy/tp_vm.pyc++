@@ -344,7 +344,7 @@ def tp_step(TP) ->int:
 				case TP_IEOF: tp->last_result = RA; tp_return(tp,tp_None); SR(0); break;
 				case TP_IREGS: f->cregs = VA; break;
 				case TP_INAME:
-					if defined(DEBUG) or defined(DEBUG_CALLS):
+					if defined(DEBUG):
 						##f->name = RA
 						std::cout << cYellow << "set function name =" << tp_as_string(tp, RB) << cNone <<std::endl;
 						RA.func.info->name = RB

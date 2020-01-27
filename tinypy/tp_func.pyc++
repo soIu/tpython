@@ -2,12 +2,13 @@
 ## TODO why is this def empty?
 tp_obj tp_call_extern(TP, tp_obj func) {}
 
-def tp_func_nt(TP, int t, void *v, tp_obj c, tp_obj s, tp_obj g) ->tp_obj:
+def tp_func_nt(TP, TPFuncMagic t, void *v, tp_obj c, tp_obj s, tp_obj g) ->tp_obj:
 	tp_obj r = {TP_FUNC};
 	tpd_func *info = (tpd_func*)tp_malloc(tp, sizeof(tpd_func))
 	info->code = c
 	info->instance = s
 	##info->globals = g
+	##r.type.magic = t
 	r.type.magic = t
 	r.func.info = info
 	##r.func.cfnc = v
@@ -15,7 +16,7 @@ def tp_func_nt(TP, int t, void *v, tp_obj c, tp_obj s, tp_obj g) ->tp_obj:
 	return r
 
 
-def tp_func_t(TP, int t, void *v, tp_obj c, tp_obj s, tp_obj g) ->tp_obj:
+def tp_func_t(TP, TPFuncMagic t, void *v, tp_obj c, tp_obj s, tp_obj g) ->tp_obj:
 	return tp_track(tp, tp_func_nt(tp, t, v, c, s, g))
 
 
@@ -28,12 +29,15 @@ def tp_bind(TP, tp_obj function, tp_obj self) ->tp_obj:
 	##  function.func.info->code,
 	##  self,
 	##  function.func.info->globals);
+	#### late binding of self to the method always happens just before the call
+	#### thats why the above creation of a new tpd_func is avoided for methods.
 	function.func.info->instance=self
-	function.type.magic |= TP_FUNC_MASK_METHOD
+	##function.type.magic |= TP_FUNC_MASK_METHOD
 	return function
 
 def tp_def(TP, tp_obj code, tp_obj g) ->tp_obj:
-	return tp_func_t(tp,1,0,code,tp_None,g)
+	##return tp_func_t(tp, 1, 0, code, tp_None, g)
+	return tp_func_t(tp, TP_FUNC_BYTECODE, 0, code, tp_None, g)
 
 
 ## Function: tp_func
@@ -44,16 +48,16 @@ def tp_def(TP, tp_obj code, tp_obj g) ->tp_obj:
 
 def tp_function(TP, tp_obj v(TP)) ->tp_obj:
 	return tp_func_t(
-	  tp,0,
+	  tp, TP_FUNC_MAGIC_C,
 	  (void*)v,  // function pointer `tp_obj (*)(tp_vm*)`
 	  tp_None,tp_None,tp_None);
 
 
 def tp_method(TP,tp_obj self, tp_obj v(TP)) ->tp_obj:
 	return tp_func_t(
-	  tp,2,
+	  tp, TP_FUNC_MAGIC_C,
 	  (void*)v,
-	  tp_None,self,tp_None);
+	  tp_None, self, tp_None);
 
 
 ## c++11 lambda support
@@ -67,9 +71,9 @@ def tp_function(TP, std::function<tp_obj(tp_vm*)> func) ->tp_obj:
 	info->instance = None
 	##info->globals = None
 	info->cppfunc = func
-	r.type.magic = TP_FUNC_MASK_CPP
+	r.type.magic = TP_FUNC_MAGIC_CPP
 	r.func.info = info
-	tp_track(tp, r)
+	##tp_track(tp, r)  ## TODO free pointer
 	return r
 
 
@@ -80,8 +84,8 @@ def tp_method(TP, tp_obj self, std::function<tp_obj(tp_vm*)> func) ->tp_obj:
 	info->instance = self
 	##info->globals = None
 	info->cppfunc = func
-	r.type.magic = TP_FUNC_MASK_METHOD_CPP
+	r.type.magic = TP_FUNC_MAGIC_CPP
 	r.func.info = info
-	tp_track(tp, r)
+	##tp_track(tp, r)  ## TODO free tpd_func pointer
 	return r
 

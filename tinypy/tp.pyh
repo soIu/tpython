@@ -125,6 +125,7 @@ enum TPTypeID:
 	TP_MESH    = 15,
 	TP_MESHI   = 16,
 	TP_UOBJECT   = 20,
+	##TP_POINTER   = 26,
 	TP_LIST_TINY = 27,
 	TP_INTERFACE = 28,
 	TP_FUNC = 29,
@@ -156,11 +157,9 @@ struct TPTypeInfo:
 ##	TP_FUNC_MASK_METHOD_CPP = 101
 
 enum TPFuncMagic:
-	TP_FUNC_BYTECODE = 0,
-	TP_FUNC_MASK_C = 1,
-	TP_FUNC_MASK_METHOD = 2,
-	TP_FUNC_MASK_CPP = 100,
-	TP_FUNC_MASK_METHOD_CPP = 101
+	TP_FUNC_BYTECODE  = 0,
+	TP_FUNC_MAGIC_C   = 1,
+	TP_FUNC_MAGIC_CPP = 2,
 
 
 enum TPStringMagic:
@@ -218,6 +217,7 @@ class tp_obj:
 	tp_obj(TPTypeID t){ type.type_id=t; };
 	union {
 	TPTypeInfo type;
+	##struct { TPTypeInfo type; void* val; } pointer;
 	struct { TPTypeInfo type; int * gci; } gc;
 	struct { TPTypeInfo type; tp_num val; } number;
 	struct { TPTypeInfo type; int val; } integer;
@@ -638,6 +638,27 @@ def tp_integer(int v) -> tp_obj:
 	val.integer.val = v
 	return val
 
+## TPY POINTERS ##
+
+static std::unordered_map<int, void*> __tpy_pointers__ = {};
+static std::unordered_map<void*, int> __tpy_rpointers__ = {};
+
+def tp_set_pointer(void *ptr) -> int;
+def tp_get_pointer(int key) -> void*;
+
+
+##@static
+##def tpy_add_pointer(void *ptr) -> tp_obj:
+##	int key = tp_set_pointer(ptr)
+##	tp_obj num = tp_number( (tp_num)key )
+##	return num
+##@static
+##def tp_pointer(void *ptr) -> tp_obj:
+##	tp_obj val = {TP_POINTER};
+##	val.pointer.val = ptr
+##	return val
+
+
 ## only used by function call params list for now, not GC tracked ##
 #ifdef TINY_LIST_PARAMS
 @static
@@ -733,6 +754,23 @@ def tp_rid(int id) -> tp_obj:
 	tp_obj val = {TP_RID};
 	val.rid.r = new RID()
 	val.rid.r🠊set_id(id)
+	return val
+
+##@static
+##def tp_spatial(std::uintptr_t ptr) -> tp_obj:
+##	tp_obj val = {TP_SPATIAL};
+##	val.spatial.ptr = reinterpret_cast<Spatial*>(ptr)
+##	val.spatial.ptr->set_translation(pos)
+##	val.spatial.ptr->set_rotation_degrees(rot)
+##	val.spatial.ptr->set_scale(scl)
+##	return val
+
+@static
+def tp_spatial(tp_obj ptr) -> tp_obj:
+	tp_obj val = {TP_SPATIAL};
+	##val.spatial.ptr = reinterpret_cast<Spatial*>(ptr.pointer.val)
+	void* p = tp_get_pointer( (int)ptr.number.val )
+	val.spatial.ptr = reinterpret_cast<Spatial*>(p)
 	return val
 
 @static
@@ -961,13 +999,13 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 			break;
 		case TP_NONE: ss << "None"; break;
 		case TP_FUNC:
-			if self.type.magic == TP_FUNC_MASK_CPP:
-				##ss << "function<" << self.func.info->cppfunc << ">"
+			if self.type.magic == TP_FUNC_MAGIC_CPP:
 				ss << "function<c++>"
-			##elif self.type.magic == TP_FUNC_MASK_C:
-			ss << "function<" << self.func.info🠊cfunc << ">"
-			##else:
-			##	ss << "function<" << self.func.info🠊name << ">"
+			elif self.type.magic == TP_FUNC_MAGIC_C:
+				ss << "function<" << self.func.info🠊cfunc << ">"
+			else:
+				##ss << "function<" << self.func.info🠊name << ">"
+				ss << "function<bytecode>"
 			break
 		case TP_LIST:
 			ss << "["

@@ -794,7 +794,12 @@ def Object::to_string() ->String:
 		if valid:
 			return ret
 	#endif
-	return "[" + get_class() + ":" + itos(get_instance_id()) + "]"
+	auto classname = get_class()
+	if classname == "TPYScript":
+		##crashes##return "<" + classname + ":" + itos(get_instance_id()) + ">(" + Ref<Script>(this)->get_source_code() + ")"
+		return "<" + classname + ":" + itos(get_instance_id()) + ">"
+	else:
+		return "[" + classname + ":" + itos(get_instance_id()) + "]"
 
 
 def Object::_changed_callback(Object ⮞p_changed, const char ⮞p_prop):

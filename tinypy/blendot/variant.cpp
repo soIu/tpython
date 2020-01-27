@@ -1590,7 +1590,8 @@ String Variant::stringify(List<const void *> &stack) const {
 
 		} break;
 		default: {
-			return "[" + get_type_name(type) + "]";
+			auto tname = get_type_name(type);
+			return "<some-variant-type>[" + tname + "]";
 		}
 	}
 #endif
