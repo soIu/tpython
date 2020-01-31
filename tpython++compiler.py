@@ -145,7 +145,7 @@ def is_untyped_global_var(s):
 			return True
 	return False
 
-def guess_type_of_var(s, classes=None):
+def guess_type_of_var(s, classes=None, global_auto_unwrap={}):
 	assert s.count('=') == 1
 	ctype = None
 	decl, val = s.split('=')
@@ -163,7 +163,9 @@ def guess_type_of_var(s, classes=None):
 	elif classes:
 		for classname in classes:
 			if classname in val:
-				ctype = classname
+				#ctype = classname
+				ctype = 'tp_obj'
+				global_auto_unwrap[ decl ] = classname
 				break
 	if val.startswith('ord(') and val.endswith(')'):
 		ctype = 'int'
@@ -293,6 +295,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	in_func = False
 	is_virt = False
 	auto_unwrap = {}
+	global_auto_unwrap = {}
 	func_indent = -1
 	func_locals = {}
 	func_globals = []
@@ -557,11 +560,12 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			func_globals = []
 			is_virt = False
 			auto_unwrap = {}
+			auto_unwrap.update(global_auto_unwrap)
 
 		if user_pythonic and not s.startswith('#'):
 			newln = []
 			for part in s.split():
-				if part.count('.')==1 and not part.startswith('self.'):
+				if part.count('.')==1 and not part.startswith( ('self.', '(self.') ):
 					a,b = part.split('.')
 					if a in auto_unwrap:
 						a = 'unwrap(%s,%s)' %(auto_unwrap[a], a)
@@ -569,18 +573,20 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 						hits = []
 						for clsname in classes:
 							if b.split('[')[0] in classes[clsname]['members']:
-								if is_virt:
-									hits.append(clsname)
-									a = a + ('.unwrap<%s>()' %clsname)
-								else:
-									## TODO, normally this is not required
-									a = '(*((%s)%s.pointer.val))' %(clsname, a)
+								#if is_virt:
+								hits.append(clsname)
+								a = a + ('.unwrap<%s>()' %clsname)
+								#else:
+								#	## TODO, normally this is not required
+								#	a = '(*((%s)%s.pointer.val))' %(clsname, a)
 								#break
 							elif '(' in b:
 								if b.split('(')[0] in classes[clsname]['methods']:
 									hits.append(clsname)
 									a = a + ('.unwrap<%s>()' %clsname)
 									#break
+						#if not hits and '(' not in a and a not in classes:
+						#	raise RuntimeError(ln)		
 						if len(hits) > 1:
 							raise SyntaxError('can not auto unwrap a pointer because multiple classes have the same named members or methods: %s line: `%s`' %(str(hits), s))
 					if a != part.split('.')[0]:
@@ -594,6 +600,13 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					for clsname in clsnames:
 						if part.startswith(clsname+'('):
 							part = part.replace(clsname+'(', clsname+'_new(')
+							if s.count('=') == 1:
+								a,b = s.split('=')
+								a = a.strip()
+								if '.' not in a:
+									if a in auto_unwrap and auto_unwrap[a] != clsname:
+										raise RuntimeError("auto unwrap error - type redefined : `%s`" %s)
+									auto_unwrap[a] = clsname
 							break
 					newln.append(part)
 			s = ' '.join(newln)
@@ -617,8 +630,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			else:
 				err = s.split()[-1]
 				out.append('throw "%s";' %err )
-		elif user_pythonic and indent==1 and not ln.startswith(' ') and is_untyped_global_var(s):
-			ctype, cname, cval = guess_type_of_var(s, classes=classes)
+		elif user_pythonic and indent==1 and not ln.startswith(' ') and not s.startswith('@') and is_untyped_global_var(s):
+			ctype, cname, cval = guess_type_of_var(s, classes=classes, global_auto_unwrap=global_auto_unwrap)
 			## check if ctype needs to be a const or a define, if used in a switch/case or an array decl size
 			requires_const = False
 			requires_define = False
@@ -802,6 +815,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			in_class = True
 			class_indent = indent
 			class_name = s[:-1].split()[-1].strip()
+			#class_members = {}
 			base_classes = []
 			tp_obj_subclass = False
 			if s.count('(')==1 and s.count(')')==1:
@@ -813,6 +827,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					base_classes.append(base_class)
 				if 'tp_obj' in base_classes:
 					tp_obj_subclass = True
+			#classes[ class_name ] = {'methods':{}, 'vmethods':{}, 'members':class_members, 'bases':base_classes, 'id':len(classes)+1}
 			classes[ class_name ] = {'methods':{}, 'vmethods':{}, 'members':{}, 'bases':base_classes, 'id':len(classes)+1}
 			if len(base_classes):
 				out.append( 'class %s: public %s {' %(class_name, ','.join(base_classes)))
@@ -1074,13 +1089,20 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				exopts = ' const '
 			if prevs == '@static':
 				returns = 'static ' + returns
+
 			auto_unwrap = {}
+			auto_unwrap.update(global_auto_unwrap)
+
 			if prevs.startswith('@unwrap('):
 				for part in prevs.strip()[len('@unwrap(') : -1].split(','):
 					assert '=' in part
 					a,b = part.split('=')
 					a = a.strip()
 					b = b.strip()
+					if b.startswith("'") and b.endswith("'"):
+						b = b[1:-1]
+					elif b.startswith('"') and b.endswith('"'):
+						b = b[1:-1]
 					auto_unwrap[ a ] = b
 
 			if is_virt:
@@ -1134,19 +1156,23 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 					class_con.extend([
 						'%s(%s) %s{' % (class_name, ','.join(args), exopts),
-						'	print("new class %s");' %class_name,
+						#'	print("new class %s");' %class_name,
 						'	this->type.type_id = TP_POINTER;',
 						'	this->pointer.classid  = %s;' %classes[class_name]['id'] ,
-						'	this->pointer.val  = (void*)this;',
-						'	print(this);',
+						#'	this->pointer.val  = (void*)this;',
+						#'	print(this);',
 						'	this->%s__init__(%s);' % (class_name, ','.join(auto_templates)),
 						'}'
 					])
 					class_new.extend([
-						'%s %s_new(%s) {' % (class_name, class_name, ','.join(args)),
+						## it is not safe to return a copy of the class, because changes made to it will not be updated in obj->pointer.val
+						#'%s %s_new(%s) {' % (class_name, class_name, ','.join(args)),
+						## it is safe to return a tp_obj as a copy, which simply holds a pointer to the new object
+						'tp_obj %s_new(%s) {' % (class_name, ','.join(args)),
 						'	%s* obj = new %s(%s);' % (class_name, class_name, ','.join(auto_templates)),
 						'	obj->pointer.val = (void*)obj;',
-						'	return *obj;',
+						#'	return *obj;',  ## do not return a copy
+						'	return *(tp_obj*)obj;',
 						'}'
 					])
 
@@ -1405,7 +1431,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 		else:
 
-			if user_pythonic and ln.count('=')==1 and in_func and not s.startswith( ('self.', 'unwrap(') ):
+			if user_pythonic and ln.count('=')==1 and in_func and not s.startswith( ('self.', 'unwrap(', 'print(') ):
 				var, val = s.split('=')
 				val = val.strip()
 				var = var.strip()
@@ -1422,6 +1448,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			if in_class and user_pythonic and swap_self_to_this:
 				if '.__init__(self,' in ln:
 					ln = ln.replace('.__init__(self,', '__init__(')
+				elif '.__init__(self)' in ln:
+					ln = ln.replace('.__init__(self)', '__init__()')
 				if 'self.' in ln:
 					if ln.count('=')==1:
 						member, val = s.split('=')

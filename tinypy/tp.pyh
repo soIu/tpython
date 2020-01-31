@@ -218,7 +218,7 @@ class tp_obj:
 	tp_obj(int num){ type.type_id=TP_NUMBER; this->number.val=num; };
 	@template(typename T)
 	def unwrap() -> T*:
-		std::cout << "unwrap::" << this->pointer.val << std::endl;
+		##std::cout << "unwrap::" << this->pointer.val << std::endl;
 		return (T*)this->pointer.val
 	##@virtual
 	##def get() ->tp_obj:
