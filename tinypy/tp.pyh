@@ -125,7 +125,7 @@ enum TPTypeID:
 	TP_MESH    = 15,
 	TP_MESHI   = 16,
 	TP_UOBJECT   = 20,
-	##TP_POINTER   = 26,
+	TP_POINTER   = 26,
 	TP_LIST_TINY = 27,
 	TP_INTERFACE = 28,
 	TP_FUNC = 29,
@@ -215,9 +215,17 @@ struct tp_vm;
 class tp_obj:
 	tp_obj(){};
 	tp_obj(TPTypeID t){ type.type_id=t; };
+	tp_obj(int num){ type.type_id=TP_NUMBER; this->number.val=num; };
+	@template(typename T)
+	def unwrap() -> T*:
+		std::cout << "unwrap::" << this->pointer.val << std::endl;
+		return (T*)this->pointer.val
+	##@virtual
+	##def get() ->tp_obj:
+	##	return *this
 	union {
 	TPTypeInfo type;
-	##struct { TPTypeInfo type; void* val; } pointer;
+	struct { TPTypeInfo type; uint8_t classid; void* val; } pointer;
 	struct { TPTypeInfo type; int * gci; } gc;
 	struct { TPTypeInfo type; tp_num val; } number;
 	struct { TPTypeInfo type; int val; } integer;
@@ -255,20 +263,71 @@ class tp_obj:
 	if defined(UNREAL_TYPES):
 		struct { TPTypeInfo type; struct UObject *ptr; } uob;
 	};  // end of union
+	tp_obj operator=(int n);
 	bool operator==(const char* s) const;
 	bool operator==(const tp_obj) const;
 	operator std::string() const;
+	operator bool() const;
 	operator int() const;
 	operator float() const;
 	##operator const char*() const;
 	operator char() const;
 	operator uint8_t() const;
 	tp_obj operator[] (int index);
+	operator long unsigned int() const {return (long unsigned int)this->number.val;};
+	@const
+	def operator& (int n) ->int:
+		return (int)this🠊number.val & n
+	##@const
+	##def operator > (int n) ->bool:
+	##	return this🠊number.val > n
+	@const
+	def operator > (tp_obj ob) ->bool:
+		return this🠊number.val > ob.number.val
+	@const
+	def operator >= (int n) ->bool:
+		return this🠊number.val >= n
+	@const
+	def operator >= (long n) ->bool:
+		return this🠊number.val >= n
+	@const
+	def operator!= (const tp_obj & ob) ->bool:
+		if this->type.type_id == TP_NONE and ob.type.type_id== TP_NONE:
+			return false
+		elif this->type.type_id == TP_POINTER and ob.type.type_id== TP_NONE:
+			if this->pointer.val==NULL:
+				return false
+			else:
+				return true
+		else:
+			return true
+	@const
+	def operator== (int n) ->bool:
+		return this🠊number.val == n
+	@const
+	def operator== (long n) ->bool:
+		return this🠊number.val == n
+	def operator+= (int n) ->tp_obj:
+		this🠊number.val += n
+		return *this
 	@const
 	def operator+ (const tp_obj & first) ->tp_obj:
 		tp_obj val = {TP_NUMBER};
 		val.number.val = this🠊number.val + first.number.val
 		return val
+	@const
+	def operator+ (const int n) ->tp_obj:
+		tp_obj val = {TP_NUMBER};
+		val.number.val = this🠊number.val + n
+		return val
+	@const
+	def operator- (const int n) ->tp_obj:
+		tp_obj val = {TP_NUMBER};
+		val.number.val = this🠊number.val - n
+		return val
+	def operator-= (int n) ->tp_obj:
+		this🠊number.val -= n
+		return *this
 	@const
 	def operator- (const tp_obj & first) ->tp_obj:
 		tp_obj val = {TP_NUMBER};
@@ -283,6 +342,11 @@ class tp_obj:
 	def operator/ (const tp_obj & first) ->tp_obj:
 		tp_obj val = {TP_NUMBER};
 		val.number.val = this🠊number.val / first.number.val
+		return val
+	@const
+	def operator / (int n) ->tp_obj:
+		tp_obj val = {TP_NUMBER};
+		val.number.val = this🠊number.val / n
 		return val
 	friend std::ostream & operator << (std::ostream &out, const tp_obj &self);
 	void append(const char *s);
@@ -1070,9 +1134,9 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 				ss << ", "
 			ss << "}"
 			break
-		##case TP_DATA:
-		##	ss << "data<" << self.data.val << ">"
-		##	break
+		case TP_POINTER:
+			ss << "pointer<" << self.pointer.val << ">"
+			break
 		#ifdef BLENDOT_TYPES
 		case TP_VEC2:
 			ss << "vec2( x=" << self.vec2.vec.x << ", y=" << self.vec2.vec.y << ")"
@@ -1169,6 +1233,10 @@ def tp_extern_interface(TP) ->tp_obj;
 ## python-style print helper funcs ##
 
 @static
+def print():
+	std::cout << std::endl;
+
+@static
 def print(const char *s):
 	std::cout << s << std::endl;
 
@@ -1179,6 +1247,10 @@ def print(const char *s, int n):
 @static
 def print(const char *s, tp_obj *ob):
 	std::cout << s << " " << *ob << std::endl;
+
+@static
+def print(const char *s, tp_obj ob):
+	std::cout << s << " " << ob << std::endl;
 
 @static
 def print(tp_obj ob):

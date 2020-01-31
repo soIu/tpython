@@ -145,7 +145,7 @@ def is_untyped_global_var(s):
 			return True
 	return False
 
-def guess_type_of_var(s):
+def guess_type_of_var(s, classes=None):
 	assert s.count('=') == 1
 	ctype = None
 	decl, val = s.split('=')
@@ -158,10 +158,28 @@ def guess_type_of_var(s):
 		ctype = 'long'
 	elif val.count('"')==2 and decl.count('[')==1 and decl.count(']')==1:
 		ctype = 'char'
-
+	elif val == 'False' or val == 'True':
+		ctype = 'tp_obj' #'bool'
+	elif classes:
+		for classname in classes:
+			if classname in val:
+				ctype = classname
+				break
+	if val.startswith('ord(') and val.endswith(')'):
+		ctype = 'int'
 	if ctype:
 		return (ctype, decl, val)
+	print('--------classes----------')
+	print(classes)
 	raise RuntimeError('can not guess type for: ' + s)
+
+def get_base_members( classes, class_name, base_members={} ):
+	#for m in classes[class_name]:
+	base_members.update( classes[class_name]['members'] )
+	for base in classes[class_name]['bases']:
+		if base=='tp_obj':
+			continue
+		get_base_members( classes, base, base_members )
 
 def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=False, binary_scramble=False, mangle_map=None, fodg=None, unreal_plugin_name=None, vis_cursor=None, mode='c++' ):
 	if not type(source) is list:
@@ -241,6 +259,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	out = []
 	if header:
 		out.append(header)
+
 	prev = ''
 	prevs = ''
 	previ = -1
@@ -252,6 +271,9 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	in_init_list = False
 	init_list_indent = 0
 	in_class = False
+	class_members = {}
+	class_con = []
+	class_new = []
 	in_struct = False
 	struct_stack = []
 	struct_name = None
@@ -267,7 +289,14 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	lambdabrace = []
 	define = []
 	define_ident = -1
+	func_name = None
 	in_func = False
+	is_virt = False
+	auto_unwrap = {}
+	func_indent = -1
+	func_locals = {}
+	func_globals = []
+	virt_func_dispatch = {}
 	fodgx = -16
 	fodgy = 0
 	fid = 0
@@ -281,8 +310,11 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	unreal_blueprint = []
 	extern_funcs = []
 	em_js = False
+	next_line = ''
 	user_pythonic = file_name.endswith('__user_pythonic__.pyh')
 
+	if user_pythonic:
+		out.append('#define unwrap(T,o) ((T*)o.pointer.val)')
 
 	if 'functions' in info:
 		functions = info['functions']
@@ -290,6 +322,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		functions = {}
 
 	for line_num, ln in enumerate(source):
+		if line_num+1 < len(source):
+			next_line = source[line_num+1]
 		oline = ln
 		draw_type = 'rectangle'
 		color = 'LIGHTBLUE'
@@ -417,8 +451,18 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			elif indent < previ and autobrace:
 				braces = previ - indent
 				b = '\t' * indent
-				#b += ('}'*braces) + "/*macro_indent=%s*/" %macro_indent  ## just for debugging auto bracing
-				b += '}'*braces
+
+				if in_func and indent <= func_indent and user_pythonic:
+					#if indent == func_indent:
+					#	b += 'return None;}'
+					#else:
+					b += '}' * ((previ - func_indent)-1)
+					b += 'return None;}'
+					b += '// end of function: %s  - %s %s' %(func_name, func_indent, indent)
+					in_func = False
+					func_indent = -1
+				else:
+					b += '}'*braces
 				out.append(b)
 				if indent == 0 and in_unreal_plugin:
 					out[-1] += ';'
@@ -431,13 +475,47 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				in_class = False
 				class_indent = 0
 				if not out[-1][-1] == '}':
-					#for outln in out:
-					#	print(outln)
-					#raise SyntaxError(class_name)
+					if class_con:
+						out.extend(class_con)
 					out.append('}')
+				elif class_con:
+					out[-1] = out[-1][:-1]  ## trim ending of class }
+					out.extend(class_con)
+					out.append('}')         ## put back ending of class }
+
 				#out.append('	;// end of class: ' + class_name)
-				out[-1] += ';	// end of class: ' + class_name
+				out[-1] += ';	// end of class: `%s` - members: %s' %(class_name, ', '.join(class_members.keys()))
+
+				if user_pythonic and class_new:
+					## generated myclass_new
+					out.extend(class_new)
+
+				if class_members and user_pythonic:
+					cindex = 0
+					found = False
+					for oln in out:
+						if oln.startswith('class %s:' %class_name):
+							found = True
+							break
+						cindex += 1
+					if found:
+						base_members = {}
+						get_base_members( classes, class_name, base_members )
+						members = ['public:']
+						for mname in class_members:
+							if mname not in base_members:
+								members.append(
+									'%s %s;' %(class_members[mname], mname)
+								)
+						out.insert(cindex+1, '\n'.join(members))
+					else:
+						raise RuntimeError('could not find class def for: ' + class_name)
+					classes[class_name]['members'].update(class_members)
+					class_members = {}
 				class_name = None
+				class_con = []
+				class_new = []
+
 			elif in_struct and indent <= struct_indent:
 				if not out[-1].endswith('}'):
 					out[-1] += '}'
@@ -475,14 +553,72 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 			in_func = False
 			em_js = False
+			func_locals = {}
+			func_globals = []
+			is_virt = False
+			auto_unwrap = {}
 
+		if user_pythonic and not s.startswith('#'):
+			newln = []
+			for part in s.split():
+				if part.count('.')==1 and not part.startswith('self.'):
+					a,b = part.split('.')
+					if a in auto_unwrap:
+						a = 'unwrap(%s,%s)' %(auto_unwrap[a], a)
+					elif is_virt:
+						hits = []
+						for clsname in classes:
+							if b.split('[')[0] in classes[clsname]['members']:
+								if is_virt:
+									hits.append(clsname)
+									a = a + ('.unwrap<%s>()' %clsname)
+								else:
+									## TODO, normally this is not required
+									a = '(*((%s)%s.pointer.val))' %(clsname, a)
+								#break
+							elif '(' in b:
+								if b.split('(')[0] in classes[clsname]['methods']:
+									hits.append(clsname)
+									a = a + ('.unwrap<%s>()' %clsname)
+									#break
+						if len(hits) > 1:
+							raise SyntaxError('can not auto unwrap a pointer because multiple classes have the same named members or methods: %s line: `%s`' %(str(hits), s))
+					if a != part.split('.')[0]:
+						newln.append('%s->%s' %(a,b))
+					else:
+						newln.append(part)
+				else:
+					clsnames = list( classes )
+					clsnames.sort()
+					clsnames.reverse()
+					for clsname in clsnames:
+						if part.startswith(clsname+'('):
+							part = part.replace(clsname+'(', clsname+'_new(')
+							break
+					newln.append(part)
+			s = ' '.join(newln)
+			ln = ('\t'*indent) + s
 
 		if s.startswith('##'):
 			ln = ln.replace('##', '//')
 			out.append(ln)
-
+		elif user_pythonic and s.startswith("#"):
+			## note user can not directly use macro syntax
+			pass
+		elif user_pythonic and s.startswith("global "):
+			## currently not used in low level pythonic++ (used to implement the VM)
+			func_globals = [gbl.strip() for gbl in s.split('global ')[-1].split(',')]
+			pass
+		elif user_pythonic and s.startswith("raise "):
+			## currently not used in low level pythonic++ (used to implement the VM)
+			if 'NotImplementedError' in s:
+				## forced to be forward declared and defined later, using virt_func_dispatch
+				indent = previ
+			else:
+				err = s.split()[-1]
+				out.append('throw "%s";' %err )
 		elif user_pythonic and indent==1 and not ln.startswith(' ') and is_untyped_global_var(s):
-			ctype, cname, cval = guess_type_of_var(s)
+			ctype, cname, cval = guess_type_of_var(s, classes=classes)
 			## check if ctype needs to be a const or a define, if used in a switch/case or an array decl size
 			requires_const = False
 			requires_define = False
@@ -597,6 +733,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			pass
 		elif s == '@static':
 			pass
+		elif s.startswith('@unwrap('):
+			pass
 		elif s == '@constexpr':
 			out.append('constexpr')
 		elif s in ('@javascript', '@js'):
@@ -675,15 +813,20 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					base_classes.append(base_class)
 				if 'tp_obj' in base_classes:
 					tp_obj_subclass = True
-			classes[ class_name ] = {}  ## methods
+			classes[ class_name ] = {'methods':{}, 'vmethods':{}, 'members':{}, 'bases':base_classes, 'id':len(classes)+1}
 			if len(base_classes):
 				out.append( 'class %s: public %s {' %(class_name, ','.join(base_classes)))
+			elif user_pythonic:
+				out.append( 'class %s: public tp_obj {' % class_name )
 			else:
 				out.append( 'class %s {' %class_name)
 			out.append( '	public:')
 
 		elif s.startswith('def '):
+			func_indent = indent
 			in_func = True
+			func_locals = {}
+			func_globals = []
 			is_forward_decl = False
 			if s.endswith(';'):
 				is_forward_decl = True
@@ -706,16 +849,48 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				elif b.startswith('~') and a == b[1:]:
 					is_destructor = True
 
+			if next_line and 'raise NotImplementedError' in next_line and in_class:
+				is_virt = True
+				is_forward_decl = True
+				assert s.endswith(':')
+				s = s[:-1] + ';'
+				in_func = False
+				func_indent = 0
+				if class_name not in virt_func_dispatch:
+					virt_func_dispatch[class_name] = {}
+				virt_func_dispatch[class_name][func_name] = {'args':[], 'code':[]}
+			else:
+				is_virt = False
+
 			is_scram = False
 			unscram_name = None
+			is_init  = False
+			
+			if in_class and user_pythonic and not func_name.startswith('__'):
+				if class_name != 'tp_obj':
+					for base in classes[class_name]['bases']:
+						if base == 'tp_obj':
+							continue
+						if func_name in classes[base]['vmethods']:
+							is_virt = True
+							break
+						for base2 in classes[base]['bases']:
+							if base2 == 'tp_obj':
+								continue
+							if func_name in classes[base2]['vmethods']:
+								is_virt = True
+								break
 
 			if func_name == '__init__':
 				assert in_class or in_struct
+				is_init = True
 				if in_struct:
 					func_name = struct_stack[-1][0]
 					struct_name = func_name
 				else:
 					func_name = class_name
+				if user_pythonic:
+					func_name += '__init__'
 			elif not in_class and func_name in functions and 'scramble' in functions[func_name]:
 				is_scram = True
 				unscram_name = func_name
@@ -732,6 +907,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				returns = 'tp_obj'
 			elif 'operator' in func_name or is_constructor or is_destructor:
 				returns = ''
+			elif user_pythonic:
+				returns = 'tp_obj'
 			else:
 				returns = 'void'
 
@@ -754,7 +931,20 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				if not arg:
 					continue
 
-				if in_class and tp_obj_subclass:
+				if in_class and user_pythonic:
+					if i==0:
+						assert arg == 'self'
+					else:
+						if ' ' in arg:
+							args.append(arg)
+						elif is_virt:
+							args.append('tp_obj '+arg)
+						else:
+							auto_templates.append(arg)
+							arg = 'T_%s %s' % (len(auto_templates)-1, arg)
+							args.append(arg)
+
+				elif in_class and tp_obj_subclass:
 					if i==0:
 						assert arg == 'self'
 						if func_name == class_name:
@@ -766,7 +956,9 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 							args.append(arg)
 						else:
 							args.append('tp_obj ' +arg)
-							if func_name == class_name:
+							## rule: `__init__(self, names...)` where names must be the member names,
+							## not used by higher level user pythonic AOT scripts.
+							if func_name == class_name and not user_pythonic:
 								out.append('		tp_obj %s;' %arg)
 
 				elif prevs.startswith('@module'):
@@ -882,6 +1074,18 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				exopts = ' const '
 			if prevs == '@static':
 				returns = 'static ' + returns
+			auto_unwrap = {}
+			if prevs.startswith('@unwrap('):
+				for part in prevs.strip()[len('@unwrap(') : -1].split(','):
+					assert '=' in part
+					a,b = part.split('=')
+					a = a.strip()
+					b = b.strip()
+					auto_unwrap[ a ] = b
+
+			if is_virt:
+				assert not auto_templates
+				#returns = 'virtual ' + returns
 
 			if in_class:
 				func = '\t' * indent
@@ -893,10 +1097,21 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				func += 'virtual %s() override {' %func_name
 
 			elif is_forward_decl:
-				if in_class and func_name == class_name:
-					func += '%s(%s) %s;' %(func_name, rawargs, exopts)
+				if user_pythonic:
+					if in_class and is_virt:
+						func += '%s %s(%s) %s;' %(returns, func_name, ','.join(args), exopts)
+						virt_func_dispatch[class_name][func_name]['args'] = args
+						virt_func_dispatch[class_name][func_name]['code'].extend([
+							'%s %s::%s(%s) %s{' %(returns, class_name, func_name, ','.join(args), exopts),
+							'	switch (this->pointer.classid) {',
+						])
+					else:
+						raise RuntimeError("TODO user pythonic forward declared function")
 				else:
-					func += '%s %s(%s) %s;' %(returns, func_name, rawargs, exopts)
+					if in_class and func_name == class_name:
+						func += '%s(%s) %s;' %(func_name, rawargs, exopts)
+					else:
+						func += '%s %s(%s) %s;' %(returns, func_name, rawargs, exopts)
 			elif mode=='js':
 				func += '%s=function(%s){' %(func_name, ','.join(args))
 				if 'js_funcs' in info:
@@ -911,9 +1126,69 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			else:
 				if in_class and func_name == class_name:
 					func += '%s(%s) %s{' %(func_name, ','.join(args), exopts)
+				elif in_class and is_init and user_pythonic:
+					func += '%s %s(%s) %s{' %(returns, func_name, ','.join(args), exopts)
+					if auto_templates:
+						class_con.append('template<' + ','.join( ['typename T_%s' %i for i in range(len(auto_templates))] ) + '>')
+						class_new.append('template<' + ','.join( ['typename T_%s' %i for i in range(len(auto_templates))] ) + '>')
+
+					class_con.extend([
+						'%s(%s) %s{' % (class_name, ','.join(args), exopts),
+						'	print("new class %s");' %class_name,
+						'	this->type.type_id = TP_POINTER;',
+						'	this->pointer.classid  = %s;' %classes[class_name]['id'] ,
+						'	this->pointer.val  = (void*)this;',
+						'	print(this);',
+						'	this->%s__init__(%s);' % (class_name, ','.join(auto_templates)),
+						'}'
+					])
+					class_new.extend([
+						'%s %s_new(%s) {' % (class_name, class_name, ','.join(args)),
+						'	%s* obj = new %s(%s);' % (class_name, class_name, ','.join(auto_templates)),
+						'	obj->pointer.val = (void*)obj;',
+						'	return *obj;',
+						'}'
+					])
+
+					if len(args):
+						## also generate default constructor
+						class_con.extend([
+							'%s() %s{' % (class_name, exopts),
+							'	this->type.type_id = TP_POINTER;',
+							'	this->pointer.val  = (void*)this;',
+							'}'
+						])
+					## generate extra helpers ##
+					if False:
+						class_con.extend([
+							'%s operator= (tp_obj ob){' % class_name,
+							'	print("= op");',
+							'	if (ob.type.type_id == TP_NONE)',
+							'		this->pointer.val = NULL;',
+							'	else throw "operator error `=`";',
+							'	return *this;',
+							'}'
+						])
+					## a different return type is not allowed
+					##class_con.extend([
+					##	'virtual %s get(){' % class_name,
+					##	'	return *(%s*)this->pointer.val;' %class_name,
+					##	'}'
+					##])
+
 				else:
 					func += '%s %s(%s) %s{' %(returns, func_name, ','.join(args), exopts)
-					if prevs.startswith( ('@export', '@extern') ):
+					if user_pythonic and in_class and is_virt:
+						for vclass in virt_func_dispatch:
+							if func_name in virt_func_dispatch[vclass]:
+								vinfo = virt_func_dispatch[vclass][func_name]
+								vargs = [varg.split()[-1] for varg in vinfo['args']]
+								vinfo['code'].extend([
+									'		case %s: {' %classes[class_name]['id'],
+									'			return ((%s*)this->pointer.val)->%s(%s);' %(class_name, func_name, ','.join(vargs)),
+									'		} break;'
+								])
+					elif prevs.startswith( ('@export', '@extern') ):
 						sig = 'extern %s %s(%s) %s;' %(returns, func_name, ','.join(args), exopts)
 						assert sig not in extern_funcs
 						extern_funcs.append(sig)
@@ -930,20 +1205,25 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 
 				out.extend(tpargs)
+				
+			if in_class and user_pythonic and is_init:
+				pass
 
-			if in_class and func_name==class_name and tp_obj_subclass:
+			elif in_class and func_name==class_name and tp_obj_subclass:
 				out.append('			this->type.type_id = TP_OBJECT;')
 				out.append('			this->dict.val = tpd_dict_new(tp);')
 				out.append('			this->obj.info->meta = tp_None;')
 				## generate lambda wrappers
 				for methname in classes[ class_name ]:
-					methargs = classes[ class_name ][methname]
+					methargs = classes[ class_name ]['methods'][methname]
 					margs =  ','.join( ['TP_OBJ()' for ma in methargs] )
 					wrapper = '			std::function<tp_obj(tp_vm*)> __%s_wrapper = [=](tp_vm *tp){return this->%s(%s);};' %(methname, methname, margs)
 					out.append(wrapper)
-					out.append('			tp_set(tp, *this, tp_string_atom(tp, "%s"), tp_function(tp, __%s_wrapper));' %(methname, methname))
+					out.append('			tp_set(tp, *this, "%s", tp_function(tp, __%s_wrapper));' %(methname, methname))
 			elif in_class:
-				classes[ class_name ][ func_name ] = args
+				classes[ class_name ]['methods'][ func_name ] = args
+				if is_virt:
+					classes[ class_name ]['vmethods'][ func_name ] = args
 
 		elif s.startswith('switch ') and s.endswith(':'):
 			autobrace += 1
@@ -975,6 +1255,11 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		elif s.startswith('while ') and s.endswith(':'):
 			autobrace += 1
 			w = '\t' * indent
+			if user_pythonic:
+				if ' is not ' in s:
+					s = s.replace(' is not ', ' != ')
+				elif ' is ' in s:
+					s = s.replace(' is ', ' == ')
 			w += 'while(' + s[len('while '):-1] + ') {'
 			out.append(w)
 			draw_type = 'flowchart-preparation'
@@ -1049,6 +1334,13 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				w += '#ifdef ' + s.split('defined(')[-1][:-2]
 				macro_indent.append(indent)
 			else:
+				if user_pythonic:
+					if ' is not ' in s:
+						s = s.replace(' is not ', ' != ')
+					elif ' is ' in s:
+						s = s.replace(' is ', ' == ')
+					if 'self.' in s:
+						s = s.replace('self.', 'this->')
 				if ('==' in s or '!=' in s) and not s.count('('):
 					if ' & ' in s:
 						raise SyntaxError("using the bitwise & operator without wrapping its operands in `()` is invalid\n" + s)
@@ -1103,10 +1395,94 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			w += '{ // new scope'
 			out.append(w)
 
+		elif user_pythonic and in_class and class_indent+1 == indent and ln.count('='):
+			var, val = s.split('=')
+			val = val.strip()
+			var = var.strip()
+			
+			class_members[ var ] = val
+			ln = '//' + ln
+
 		else:
 
-			if in_class and tp_obj_subclass and swap_self_to_this:
-				ln = ln.replace('self.', 'this->')
+			if user_pythonic and ln.count('=')==1 and in_func and not s.startswith( ('self.', 'unwrap(') ):
+				var, val = s.split('=')
+				val = val.strip()
+				var = var.strip()
+				if var.endswith( ('+', '-', '/', '*') ):
+					var = var[:-1].strip()
+
+				if '.' in var:
+					pass
+				elif var not in func_locals and var not in func_globals:
+					func_locals[var] = val
+					ln = 'auto ' + ln
+
+			#if in_class and tp_obj_subclass and swap_self_to_this:
+			if in_class and user_pythonic and swap_self_to_this:
+				if '.__init__(self,' in ln:
+					ln = ln.replace('.__init__(self,', '__init__(')
+				if 'self.' in ln:
+					if ln.count('=')==1:
+						member, val = s.split('=')
+						member = member.strip()
+						val = val.strip()
+						if member.count('.') == 1 and member.startswith('self.'):
+							mtype = 'tp_obj'
+							mname = member.split('.')[-1].strip()
+							if val.startswith('['):
+								mtype = 'std::vector<tp_obj>'
+								class_members[ mname ] = mtype
+								if val.count('*')==1:
+									arrdef, arrmult = val.split('*')
+									arrdef = arrdef.strip()
+									arrmult = arrmult.strip()
+									assert arrdef.count('[')==1 and arrdef.count(']')==1
+									arrdef = arrdef.split('[')[-1].split(']')[0].strip()
+									if arrdef == 'None':
+										rep = '[](){std::vector<tp_obj> _={}; for (int i=0; i<%s; i++){_.push_back(%s);} return _; }();' %(arrmult,arrdef)
+									else:
+										rep = '[](){std::vector<tp_obj> _={}; for (int i=0; i<%s; i++){_.push_back(tp_obj(%s));} return _; }();' %(arrmult,arrdef)
+									ln = ln.replace( val, rep )
+								elif val == '[]':
+									ln = ln.replace('[]', 'std::vector<tp_obj>()')
+							elif val.count('.')==1 and False:  ## not safe
+								valob, valmem = val.split('.')
+								valob = valob.strip()
+								valmem = valmem.strip()
+								hits = []
+								guess_type = None
+								for other_class in classes:
+									if other_class == class_name:
+										continue
+									if valmem.endswith(')'):
+										pass  ## TODO search other class methods, and checking return type
+									else:
+										for other_mem in classes[other_class]['members']:
+											if other_mem==valmem:
+												hits.append(other_class)
+												guess_type = classes[other_class]['members'][valmem]
+								if len(hits) == 1:
+									class_members[ mname ] = guess_type
+								elif len(hits) > 1:
+									raise RuntimeError('can not guess member type `%s` because it is used by multiple classes: %s' %(valmem, ','.join(hits)))
+								else:
+									print('WARNING: can not guess member type of: `%s`' %ln)
+							elif mname in class_members and class_members[mname] != 'tp_obj':
+								#class_members[ mname ] = mtype
+								pass
+							else:
+								class_members[ mname ] = mtype
+
+					ln = ln.replace('self.', 'this->')
+
+				elif 'return self' in ln:
+					ln = ln.replace('return self', 'return *this')
+				elif '=' in ln and ln.split('=')[-1].strip()=='self':
+					ln = ln.replace('self', '*this')
+				elif ',self)' in ln:
+					ln = ln.replace(',self)', ',*this)')
+					
 			ln = auto_semicolon(ln)
 			out.append(ln)
 
@@ -1181,6 +1557,20 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	#elif autofunc:
 	#	out.append('} // autobrace: %s' %previ)
 
+
+	if virt_func_dispatch:
+		for vclass in virt_func_dispatch:
+			for vmeth in virt_func_dispatch[vclass]:
+				vinfo = virt_func_dispatch[vclass][vmeth]
+				vinfo['code'].extend([
+					'		default:',
+					'			std::cout << "virtual method dispatch error, class-id = " << this->pointer.classid << std::endl;',
+					'			throw "virtual method dispatch error";',
+					'	}; // end of switch',
+					'}  // end of virtual method dispatch'				
+				])
+				out.extend( vinfo['code'] )
+
 	if mods:
 		## generate module_init
 		mod_init = 'module_init'
@@ -1210,6 +1600,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		for i,modname in enumerate(mods):
 			m = 'mod%s' %i
 			out.append('	tp_obj %s = %s(tp, tp_string_atom(tp, "%s"),tp_None, tp_string_atom(tp, "<c++>"));' %(m, tp_import, modname))
+			#out.append('	tp_obj %s = %s(tp, "%s", "<c++>");' %(m, tp_import, modname))
 			for func in mods[modname]:
 				if type(func) is dict:
 					scram = func['scram']

@@ -995,6 +995,11 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 
 ## tp_obj methods
 
+def tp_obj::operator=(int n) ->tp_obj:
+	this->type.type_id = TP_NUMBER
+	this->number.val = n
+	return *this
+
 @const
 def tp_obj::operator==(const char* s) ->bool:
 	if this->type.type_id==TP_STRING_TINY:
@@ -1011,10 +1016,16 @@ def tp_obj::operator==(const char* s) ->bool:
 
 @const
 def tp_obj::operator==(const tp_obj other) ->bool:
-	if isstring(this->type.type_id):
-		print("string==string")
-		print(*this)
-		print(other)
+	if other.type.type_id==TP_NONE:
+		if this->type.type_id==TP_NONE:
+			return true
+		elif this->type.type_id == TP_POINTER:
+			if this->pointer.val == NULL:
+				return true
+		return false
+	elif this->type.type_id==TP_POINTER and other.type.type_id==TP_POINTER:
+		return this->pointer.val == other.pointer.val
+	elif isstring(this->type.type_id):
 		if not isstring(other.type.type_id):
 			return false
 		return std::string(*this) == std::string(other)
@@ -1024,6 +1035,21 @@ def tp_obj::operator==(const tp_obj other) ->bool:
 		return this->number.val == other.number.val
 	else:
 		throw "TODO == op for some object type"
+
+@const
+def tp_obj::operator bool():
+	if this->type.type_id == TP_NONE:
+		return false
+	elif this->type.type_id == TP_POINTER:
+		if this->pointer.val == NULL:
+			return false
+		else:
+			return true
+	elif this->number.val == 0.0:
+		return false
+	else:
+		return true
+
 
 @const
 def tp_obj::operator int():
