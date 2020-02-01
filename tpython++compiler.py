@@ -567,28 +567,55 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			for part in s.split():
 				if part.count('.')==1 and not part.startswith( ('self.', '(self.') ):
 					a,b = part.split('.')
+					aorig = a
 					if a in auto_unwrap:
 						a = 'unwrap(%s,%s)' %(auto_unwrap[a], a)
-					elif is_virt:
+					#elif is_virt:
+					elif in_func:
 						hits = []
 						for clsname in classes:
 							if b.split('[')[0] in classes[clsname]['members']:
-								#if is_virt:
 								hits.append(clsname)
-								a = a + ('.unwrap<%s>()' %clsname)
-								#else:
-								#	## TODO, normally this is not required
-								#	a = '(*((%s)%s.pointer.val))' %(clsname, a)
-								#break
+								## https://stackoverflow.com/questions/3786360/confusing-template-error
+								##a = a + ('.template unwrap<%s>()' %clsname)
+								a = a + ('.template unwrap<%s>()' %clsname)
 							elif '(' in b:
 								if b.split('(')[0] in classes[clsname]['methods']:
 									hits.append(clsname)
-									a = a + ('.unwrap<%s>()' %clsname)
-									#break
-						#if not hits and '(' not in a and a not in classes:
-						#	raise RuntimeError(ln)		
-						if len(hits) > 1:
+									a = a + ('.template unwrap<%s>()' %clsname)
+						if not hits and in_class:
+							## checks own class members
+							if b.split('[')[0] in class_members:
+								hits.append(class_name)
+								a = a + ('.template unwrap<%s>()' %class_name)
+							elif '(' in b:
+								if b.split('(')[0] in class_members:
+									hits.append(class_name)
+									a = a + ('.template unwrap<%s>()' %class_name)
+
+						if not hits and '(' not in a and a not in classes:
+							print('parse error')
+							print(s)
+							print(part)
+							print(class_members)
+							raise RuntimeError("unable to find the class type from member or method use on variable: `%s`" %a)		
+						elif len(hits) > 1:
 							raise SyntaxError('can not auto unwrap a pointer because multiple classes have the same named members or methods: %s line: `%s`' %(str(hits), s))
+						elif len(hits) == 1:
+							## not very safe or required to remove *most* of the need for pythonic users to manually use @unwrap
+							if aorig.startswith('('):
+								aorig = aorig[1:]
+							if aorig not in auto_unwrap:
+								if '(' in aorig or ')' in aorig:
+									#raise SyntaxError(part)
+									print('WARN: parser choked on `%s` from line: `%s` ' % (aorig, s) )
+								else:
+									# the problem with this magic is that a base class with the member could have been picked first
+									# then later when the variable is used again, its auto_unwrapp'ed as the base class, 
+									# and not the required subclass type.
+									#auto_unwrap[aorig] = hits[0]
+									pass
+
 					if a != part.split('.')[0]:
 						newln.append('%s->%s' %(a,b))
 					else:
@@ -1691,9 +1718,12 @@ def metapy2tinypypp( source ):
 	thread = None
 	cpy = None
 	cpp = []
+	aot = []
 	js = []
 	in_cpp = False
 	in_js = False
+	in_aot = False
+
 	for ln in source.splitlines():
 		if u'┃' in ln:
 			assert ln.count(u'┃')==1
@@ -1707,6 +1737,10 @@ def metapy2tinypypp( source ):
 		elif ln.startswith('with c++:'):
 			cpp = []
 			in_cpp = True
+		elif ln.lower().startswith( ('# aot begin', '#aot begin') ):
+			in_aot = True
+		elif ln.lower().startswith( ('# aot end', '#aot end') ):
+			in_aot = False
 		elif ln.startswith('with python:'):
 			cpy = []
 		elif ln.startswith('with thread:'):
@@ -1717,6 +1751,11 @@ def metapy2tinypypp( source ):
 				in_js = False
 			else:
 				js.append(ln)
+		elif in_aot:
+			if ln.strip():
+				if ln.lower().startswith( ('# aot export', '#aot export') ):
+					ln = '@module(__aot_builtin_module__)'
+				aot.append('\t' + ln)
 		elif in_cpp:
 			if not ln.strip():
 				in_cpp = False
@@ -1739,6 +1778,9 @@ def metapy2tinypypp( source ):
 			right_side = []
 		else:
 			shared.append(ln)
+
+	if aot:
+		shared.insert(0, 'from __aot_builtin_module__ import *')
 
 	scripts = []
 	if len(thread_local):
@@ -1807,8 +1849,8 @@ def metapy2tinypypp( source ):
 
 		script = '\n'.join(shared)
 		scripts.append(script)
-
-	cpp = '\n'.join(cpp)
+		
+	cpp = '\n'.join(cpp + aot)
 	return scripts, cpp
 
 def walk_path(path, res):

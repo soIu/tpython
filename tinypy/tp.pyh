@@ -278,9 +278,9 @@ class tp_obj:
 	@const
 	def operator& (int n) ->int:
 		return (int)this🠊number.val & n
-	##@const
-	##def operator > (int n) ->bool:
-	##	return this🠊number.val > n
+	@const
+	def operator > (int n) ->bool:
+		return this🠊number.val > n
 	@const
 	def operator > (tp_obj ob) ->bool:
 		return this🠊number.val > ob.number.val
