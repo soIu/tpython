@@ -901,8 +901,10 @@ def tp_data(TP, int magic, void *v)->tp_obj;
 
 def tp_len(TP,tp_obj self)->tp_obj;
 
+def tp_list()->tp_obj;
+def tp_list(TP)->tp_obj;
 def tp_list_t(TP)->tp_obj;
-#define tp_list tp_list_t
+##define tp_list tp_list_t
 
 def tp_list_nt(TP)->tp_obj;
 def tpd_list_append(TP,tpd_list *self, tp_obj v);

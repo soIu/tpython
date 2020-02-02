@@ -32,6 +32,10 @@ def tpd_list_new(TP) -> tpd_list* :
 	##self->alloc = 8
 	return self
 
+def tpd_list_new() -> tpd_list* :
+	tpd_list *self = (tpd_list*) tp_malloc(NULL, sizeof(tpd_list))
+	return self
+
 def tpd_list_free(TP, tpd_list *self):
 	tp_free(tp, self->items)
 	tp_free(tp, self)

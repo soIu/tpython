@@ -166,6 +166,9 @@ def guess_type_of_var(s, classes=None, global_auto_unwrap={}):
 		ctype = 'tp_obj' #'bool'
 	elif val == 'None':
 		ctype = 'tp_obj'
+	elif val.startswith('['):
+		ctype = 'std::vector<tp_obj>'
+		#not safe yet#ctype = 'tp_obj'
 	elif classes:
 		for classname in classes:
 			if classname in val:
@@ -173,8 +176,12 @@ def guess_type_of_var(s, classes=None, global_auto_unwrap={}):
 				ctype = 'tp_obj'
 				global_auto_unwrap[ decl ] = classname
 				break
+
 	if val.startswith('ord(') and val.endswith(')'):
 		ctype = 'int'
+	elif val.endswith(')') and '(' in val:
+		ctype = 'tp_obj'
+
 	if ctype:
 		if decl not in __guesses:
 			__guesses[decl] = ctype
@@ -607,11 +614,16 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 									a = a + ('.template unwrap<%s>()' %class_name)
 
 						if not hits and '(' not in a and a not in classes:
-							print('parse error')
-							print(s)
-							print(part)
-							print(class_members)
-							raise RuntimeError("unable to find the class type from member or method use on variable: `%s`" %a)		
+							if b.startswith('append('):
+								## tp_obj base class contains an append method
+								pass
+							else:
+								print('parse error')
+								print(b)
+								print(s)
+								print(part)
+								print(class_members)
+								raise RuntimeError("unable to find the class type from member or method use on variable: `%s`" %a)		
 						elif len(hits) > 1:
 							raise SyntaxError('can not auto unwrap a pointer because multiple classes have the same named members or methods: %s line: `%s`' %(str(hits), s))
 						elif len(hits) == 1:
@@ -1500,6 +1512,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 							mname = member.split('.')[-1].strip()
 							if val.startswith('['):
 								mtype = 'std::vector<tp_obj>'
+								#mtype = 'tp_obj' # crashes
 								class_members[ mname ] = mtype
 								if val.count('*')==1:
 									arrdef, arrmult = val.split('*')
@@ -1507,6 +1520,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 									arrmult = arrmult.strip()
 									assert arrdef.count('[')==1 and arrdef.count(']')==1
 									arrdef = arrdef.split('[')[-1].split(']')[0].strip()
+									#not safe yet TODO#rep = '[](){tp_obj _=tp_list(); for (int i=0; i<%s; i++){_.append(%s);} return _; }();' %(arrmult,arrdef)
 									if arrdef == 'None':
 										rep = '[](){std::vector<tp_obj> _={}; for (int i=0; i<%s; i++){_.push_back(%s);} return _; }();' %(arrmult,arrdef)
 									else:
@@ -1514,6 +1528,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 									ln = ln.replace( val, rep )
 								elif val == '[]':
 									ln = ln.replace('[]', 'std::vector<tp_obj>()')
+									#not safe yet#ln = ln.replace('[]', 'tp_list()')
 							elif val.count('.')==1 and False:  ## not safe
 								valob, valmem = val.split('.')
 								valob = valob.strip()
@@ -1758,6 +1773,7 @@ def metapy2tinypypp( source ):
 			in_cpp = True
 		elif ln.lower().startswith( ('# aot begin', '#aot begin') ):
 			in_aot = True
+			aot_all = False
 		elif ln.lower().startswith( ('# aot end', '#aot end') ):
 			in_aot = False
 		elif ln.lower().startswith( 'main()' ) and aot_all:

@@ -18,9 +18,9 @@ try running the commands below, and then rebuild.
 
 '''
 
-def pakoify(js):
-	assert "'tpython++.wasm'" in js
-	js = js.replace("'tpython++.wasm'", "'tpython++.wasm.gz'")
+def pakoify(js, exe='tpython++'):
+	assert exe in js
+	js = js.replace("'%s.wasm'" %exe, "'%s.wasm.gz'" %exe)
 	#assert js.count('(xhr.response)')==2
 	#js = js.replace('(xhr.response)')
 	assert js.count('return WebAssembly.instantiate(binary, info);') == 1
@@ -154,7 +154,7 @@ def gen_interpreter(stage=None):
 	#print(cmd)
 	subprocess.check_call(cmd)
 
-def rebuild(stage=None):
+def rebuild(stage=None, exe_name='tpython++'):
 	os.system('rm -f tinypy/__user_bytecode__.gen.h')
 	os.system('rm -f tinypy/__user_pythonic__.gen.h')
 	os.system('rm -f tinypy/__user_pythonic__.pyh')
@@ -165,7 +165,7 @@ def rebuild(stage=None):
 	gen_interpreter_codes( randomize='--secure' in sys.argv)
 
 	mode = 'linux'
-	exe = 'tpython++'
+	exe = exe_name
 	exeopts = ''
 	defs = ''
 	mods = ''
@@ -232,6 +232,8 @@ def rebuild(stage=None):
 				cmd.append('--debug')
 			if '--aot' in sys.argv:
 				cmd.append('--aot-all')
+				if '--wasm' in sys.argv or '--html' in sys.argv:
+					exe = os.path.split(arg)[-1]
 			subprocess.check_call(cmd)
 			os.system('cp -v /tmp/embedded_bytecode.gen.h ./tinypy/__user_bytecode__.gen.h')
 			if os.path.isfile('./tinypy/__user_pythonic__.pyh'):
@@ -520,27 +522,34 @@ def rebuild(stage=None):
 			subprocess.check_call(['./tpython++'])
 			subprocess.check_call(['gprof','-p','-b', 'tpython++', 'gmon.out'])
 
+	########### post build processing ###########
+
 	if mode == 'wasm':
 		pakopath = os.path.expanduser('~/pako/dist/pako_inflate.min.js')
 		pako = ''
+		if exe.endswith('.html'):
+			exe = exe.split('.html')[0]
+		elif exe.endswith('.js'):
+			exe = exe.split('.js')[0]
+
 		if os.path.isfile(pakopath):
 			pako = open(pakopath).read()
-			subprocess.check_call(['gzip', '--force', './tpython++.wasm'])
+			subprocess.check_call(['gzip', '--force', './%s.wasm' %exe])
 		else:
 			print(PAKO_MISSING)
 
 		if os.path.isfile('/tmp/tpython_preload_libs.js'):
 			a = open('/tmp/tpython_preload_libs.js').read()
-			b = open('./tpython++.js').read()
+			b = open('./%s.js' %exe).read()
 			if pako:
-				c = pako + '\n' + a + '\n' + pakoify(b)
+				c = pako + '\n' + a + '\n' + pakoify(b, exe=exe)
 			else:
 				c = a + '\n' + b
-			open('./tpython++.js', 'wb').write(c.encode('utf-8'))
+			open('./%s.js' %exe, 'wb').write(c.encode('utf-8'))
 		elif pako:
-			b = open('./tpython++.js').read()
-			c = pako + '\n' + pakoify(b)
-			open('./tpython++.js', 'wb').write(c.encode('utf-8'))
+			b = open('./%s.js' %exe ).read()
+			c = pako + '\n' + pakoify(b, exe=exe)
+			open('./%s.js' %exe, 'wb').write(c.encode('utf-8'))
 
 	#####################
 	if mode == 'windows':
