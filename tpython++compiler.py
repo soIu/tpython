@@ -145,6 +145,8 @@ def is_untyped_global_var(s):
 			return True
 	return False
 
+__guesses = {}
+
 def guess_type_of_var(s, classes=None, global_auto_unwrap={}):
 	assert s.count('=') == 1
 	ctype = None
@@ -158,8 +160,12 @@ def guess_type_of_var(s, classes=None, global_auto_unwrap={}):
 		ctype = 'long'
 	elif val.count('"')==2 and decl.count('[')==1 and decl.count(']')==1:
 		ctype = 'char'
+	elif val == "''":
+		ctype = 'char'
 	elif val == 'False' or val == 'True':
 		ctype = 'tp_obj' #'bool'
+	elif val == 'None':
+		ctype = 'tp_obj'
 	elif classes:
 		for classname in classes:
 			if classname in val:
@@ -170,9 +176,16 @@ def guess_type_of_var(s, classes=None, global_auto_unwrap={}):
 	if val.startswith('ord(') and val.endswith(')'):
 		ctype = 'int'
 	if ctype:
+		if decl not in __guesses:
+			__guesses[decl] = ctype
 		return (ctype, decl, val)
+	elif val in __guesses:
+		return (__guesses[val], decl, val)
+
 	print('--------classes----------')
 	print(classes)
+	print('--------prev guesses-----')
+	print(__guesses)
 	raise RuntimeError('can not guess type for: ' + s)
 
 def get_base_members( classes, class_name, base_members={} ):
@@ -1723,6 +1736,12 @@ def metapy2tinypypp( source ):
 	in_cpp = False
 	in_js = False
 	in_aot = False
+	aot_all = False
+	append_next_blank_hack = None
+
+	if '--aot-all' in sys.argv:
+		in_aot = True
+		aot_all = True
 
 	for ln in source.splitlines():
 		if u'┃' in ln:
@@ -1741,6 +1760,8 @@ def metapy2tinypypp( source ):
 			in_aot = True
 		elif ln.lower().startswith( ('# aot end', '#aot end') ):
 			in_aot = False
+		elif ln.lower().startswith( 'main()' ) and aot_all:
+			shared.append('aotpy_main__()')
 		elif ln.startswith('with python:'):
 			cpy = []
 		elif ln.startswith('with thread:'):
@@ -1754,8 +1775,20 @@ def metapy2tinypypp( source ):
 		elif in_aot:
 			if ln.strip():
 				if ln.lower().startswith( ('# aot export', '#aot export') ):
-					ln = '@module(__aot_builtin_module__)'
-				aot.append('\t' + ln)
+					aot.append('@module(__aot_builtin_module__)')
+				elif ln.startswith( 'def main(' ):
+					assert aot_all
+					aot.append('@module(__aot_builtin_module__)')
+					aot.append('\tdef aotpy_main__():')
+					append_next_blank_hack = '\treturn None'
+				elif ln.strip().startswith("print('") and ln.strip().endswith("')"):
+					aot.append( ln.replace("print('", 'print("')[:-2]+'")' )
+				else:
+					aot.append('\t' + ln)
+			elif append_next_blank_hack:
+				aot.append( '\t' + append_next_blank_hack )
+				append_next_blank_hack = None
+
 		elif in_cpp:
 			if not ln.strip():
 				in_cpp = False
@@ -1781,6 +1814,12 @@ def metapy2tinypypp( source ):
 
 	if aot:
 		shared.insert(0, 'from __aot_builtin_module__ import *')
+		print('--------------------------')
+		print(aot)
+
+	print('==============================')
+
+	print(shared)
 
 	scripts = []
 	if len(thread_local):
@@ -2083,7 +2122,7 @@ def main():
 	mode = 'linux'
 
 	for arg in sys.argv[1:]:
-		if arg.endswith( ('.py', '.tinypy') ):
+		if arg.endswith( '.py' ):
 			input_file = arg
 		elif arg.endswith( ('.pyc++', '.pyh') ):
 			input_file = arg
@@ -2135,9 +2174,11 @@ def main():
 			input_file = input_file[ len('tpythonpp/') : ]
 		input_file = os.path.join(thisdir, input_file)
 		assert os.path.isfile(input_file)
-		if input_file.endswith( ('.py', '.tinypy') ):
+		if input_file.endswith( '.py' ):
+			## user level
 			scripts, cpp = metapy2tinypypp( open(input_file, 'rb').read().decode('utf-8') )
 		else:
+			## low level
 			path, name = os.path.split(input_file)
 			if input_file.endswith('.pyh'):
 				print('translate phy file: ', input_file)

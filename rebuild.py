@@ -216,7 +216,7 @@ def rebuild(stage=None):
 	unreal_ver = None
 	unreal_project = os.path.expanduser('~/Documents/Unreal Projects/TPythonPluginTest')
 	for arg in sys.argv[1:]:
-		if arg.endswith( ('.py', '.tinypy') ):
+		if arg.endswith( '.py' ):
 			script = open(arg).read()
 			if 'import sdl' in script:
 				use_sdl = True
@@ -230,6 +230,8 @@ def rebuild(stage=None):
 			]
 			if '--debug' in sys.argv:
 				cmd.append('--debug')
+			if '--aot' in sys.argv:
+				cmd.append('--aot-all')
 			subprocess.check_call(cmd)
 			os.system('cp -v /tmp/embedded_bytecode.gen.h ./tinypy/__user_bytecode__.gen.h')
 			if os.path.isfile('./tinypy/__user_pythonic__.pyh'):
