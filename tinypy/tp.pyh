@@ -39,7 +39,6 @@ if defined(MINIUNREAL):
 	import "Internationalization/Text.h"
 	import "miniunreal/UObject/Object.h"
 
-
 import <cstddef>
 
 if defined(INCLUDEOS):
@@ -78,6 +77,12 @@ import <stdarg.h>
 import <math.h>
 import <time.h>
 import <float.h>
+
+if defined(USE_ODE):
+	import "ode_common.hpp"
+	import "ode_objects.hpp"
+	import "ode/common.h"
+
 
 ## better performance when the compiler is allowed to making the inline decisions
 ## PGO has no speed up when tp_inline is defined. So here it is defined as nothing.
