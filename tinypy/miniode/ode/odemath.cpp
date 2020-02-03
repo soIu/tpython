@@ -23,6 +23,7 @@
 #include "ode_common.hpp"
 #include "odemath.h"
 
+/*
 #undef dSafeNormalize3
 #undef dSafeNormalize4
 #undef dNormalize3
@@ -30,7 +31,7 @@
 
 #undef dPlaneSpace
 #undef dOrthogonalizeR
-
+*/
 
 int  dSafeNormalize3 (dVector3 a)
 {

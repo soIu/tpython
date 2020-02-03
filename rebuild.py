@@ -163,6 +163,11 @@ def rebuild(stage=None, exe_name='tpython++'):
 	os.system('rm -f tinypy/__user_pythonic__.gen.h')
 	os.system('rm -f tinypy/__user_pythonic__.pyh')
 	os.system('rm -f tinypy/*.gcda')
+
+	if '--ode' in sys.argv:
+		os.system('rm -f tinypy/miniode/ode/*.o')
+		os.system('rm -f tinypy/miniode/ode/joints/*.o')
+	
 	if stage is None or stage < 2:
 		os.system('rm -f /tmp/tinypy.json')
 

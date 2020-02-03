@@ -39,7 +39,6 @@
 
 // miniode quick fixes
 #define dAASSERT(e)
-#define dTHREADING_THREAD_COUNT_UNLIMITED -1
 
 struct dxIThreadingDefaultImplProvider
 {

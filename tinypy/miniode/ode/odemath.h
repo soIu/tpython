@@ -63,6 +63,7 @@ void dxPlaneSpace (const dVector3 n, dVector3 p, dVector3 q);
 bool dxOrthogonalizeR(dMatrix3 m);
 
 // For internal use
+/*
 #define dSafeNormalize3(a) dxSafeNormalize3(a)
 #define dSafeNormalize4(a) dxSafeNormalize4(a)
 #define dNormalize3(a) dxNormalize3(a)
@@ -70,6 +71,6 @@ bool dxOrthogonalizeR(dMatrix3 m);
 
 #define dPlaneSpace(n, p, q) dxPlaneSpace(n, p, q)
 #define dOrthogonalizeR(m) dxOrthogonalizeR(m)
-
+*/
 
 #endif
