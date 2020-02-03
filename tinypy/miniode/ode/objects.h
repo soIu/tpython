@@ -31,7 +31,6 @@
 #include "ode_memory.hpp"
 #include "ode_mass.hpp"
 #include "ode_objects.hpp"
-#include "error.h"
 #include "array.h"
 #include "common.h"
 #include "threading_base.h"

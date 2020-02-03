@@ -30,8 +30,6 @@
 #ifndef _ODE_FASTLDLT_IMPL_H_
 #define _ODE_FASTLDLT_IMPL_H_
 
-
-#include "error.h"
 #include "common.h"
 
 

@@ -177,22 +177,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 	exe = exe_name
 	exeopts = ''
 	defs = ''
-
 	mods = ''
-	if '--ode' in sys.argv:
-		for odefile in os.listdir('./tinypy/miniode/ode'):
-			if odefile.endswith('.cpp'):
-				if odefile=='fastdot.cpp':
-					pass
-				elif odefile.startswith('fast') or odefile in ('resource_control.cpp', 'collision_libccd.cpp'):
-					print('skipping: ', odefile)
-					continue
-				mods += ' miniode/ode/' + odefile
-		for odefile in os.listdir('./tinypy/miniode/ode/joints'):
-			if odefile.endswith('.cpp'):
-				mods += ' miniode/ode/joints/' + odefile
-		defs += ' -DUSE_ODE -DODE_PLATFORM_LINUX -DdTHREADING_INTF_DISABLED'
-
 	opts = ''
 	libs = '-lm -ldl -lpthread'
 
@@ -231,6 +216,21 @@ def rebuild(stage=None, exe_name='tpython++'):
 
 	if '--big-num' in sys.argv:
 		defs += ' -DTP_BIG_NUM'
+
+	if '--ode' in sys.argv:
+		for odefile in os.listdir('./tinypy/miniode/ode'):
+			if odefile.endswith('.cpp'):
+				if odefile=='fastdot.cpp':
+					pass
+				elif odefile.startswith('fast') or odefile in ('resource_control.cpp', 'collision_libccd.cpp'):
+					print('skipping: ', odefile)
+					continue
+				mods += ' miniode/ode/' + odefile
+		for odefile in os.listdir('./tinypy/miniode/ode/joints'):
+			if odefile.endswith('.cpp'):
+				mods += ' miniode/ode/joints/' + odefile
+		defs += ' -DUSE_ODE -DODE_PLATFORM_LINUX -DdTHREADING_INTF_DISABLED'
+
 
 	sdl_inc = ''
 	use_sdl = False
