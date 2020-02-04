@@ -376,6 +376,10 @@ class tp_obj:
 	void append(tp_obj ob);
 	std::vector<tp_obj> as_vector();
 
+## base class for all AOT subclasses ##
+class tpy_subclass( tp_obj ):
+	std::unordered_map<std::string, tp_obj> __methods__
+
 
 /*
 Functions are into several namespaces from lower-level to higher-level:
@@ -963,6 +967,7 @@ def tp_function(TP, tp_obj v(TP))->tp_obj;
 ## note: when this is used from user c++, the lamba must capture by `[=]`
 ## the pointer to self, it is up to the user to delete the pointer later.
 def tp_function(TP, std::function<tp_obj(tp_vm*)>) ->tp_obj;
+def tp_function(std::function<tp_obj(tp_vm*)>) ->tp_obj;
 
 def tp_method(TP, tp_obj self,tp_obj v(TP)) ->tp_obj;
 

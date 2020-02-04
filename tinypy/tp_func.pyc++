@@ -76,6 +76,16 @@ def tp_function(TP, std::function<tp_obj(tp_vm*)> func) ->tp_obj:
 	##tp_track(tp, r)  ## TODO free pointer
 	return r
 
+def tp_function(std::function<tp_obj(tp_vm*)> func) ->tp_obj:
+	tp_obj r = {TP_FUNC};
+	tpd_func *info = (tpd_func*)tp_malloc(NULL, sizeof(tpd_func))
+	info->code = None
+	info->instance = None
+	info->cppfunc = func
+	r.type.magic = TP_FUNC_MAGIC_CPP
+	r.func.info = info
+	return r
+
 
 def tp_method(TP, tp_obj self, std::function<tp_obj(tp_vm*)> func) ->tp_obj:
 	tp_obj r = {TP_FUNC};

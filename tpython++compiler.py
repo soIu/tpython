@@ -201,7 +201,7 @@ def get_base_members( classes, class_name, base_members={} ):
 	#for m in classes[class_name]:
 	base_members.update( classes[class_name]['members'] )
 	for base in classes[class_name]['bases']:
-		if base=='tp_obj':
+		if base in ('tp_obj', 'tpy_subclass'):
 			continue
 		get_base_members( classes, base, base_members )
 
@@ -910,7 +910,9 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				for base_class in s.split('(')[-1].split(')')[0].split(','):
 					base_class=base_class.strip()
 					if base_class == 'object':
-						base_class = 'tp_obj'
+						assert user_pythonic
+						#base_class = 'tp_obj'
+						base_class = 'tpy_subclass'
 					base_classes.append(base_class)
 				if 'tp_obj' in base_classes:
 					tp_obj_subclass = True
@@ -919,7 +921,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			if len(base_classes):
 				out.append( 'class %s: public %s {' %(class_name, ','.join(base_classes)))
 			elif user_pythonic:
-				out.append( 'class %s: public tp_obj {' % class_name )
+				#out.append( 'class %s: public tp_obj {' % class_name )
+				out.append( 'class %s: public tpy_subclass {' % class_name )
 			else:
 				out.append( 'class %s {' %class_name)
 			out.append( '	public:')
@@ -974,19 +977,19 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			is_init  = False
 			
 			if in_class and user_pythonic and not func_name.startswith('__'):
-				if class_name != 'tp_obj':
-					for base in classes[class_name]['bases']:
-						if base == 'tp_obj':
+				#if class_name not in ('tp_obj', 'tpy_subclass'):
+				for base in classes[class_name]['bases']:
+					if base in ('tp_obj', 'tpy_subclass'):
+						continue
+					if func_name in classes[base]['vmethods']:
+						is_virt = True
+						break
+					for base2 in classes[base]['bases']:
+						if base2 == 'tp_obj':
 							continue
-						if func_name in classes[base]['vmethods']:
+						if func_name in classes[base2]['vmethods']:
 							is_virt = True
 							break
-						for base2 in classes[base]['bases']:
-							if base2 == 'tp_obj':
-								continue
-							if func_name in classes[base2]['vmethods']:
-								is_virt = True
-								break
 
 			if func_name == '__init__':
 				assert in_class or in_struct
@@ -1342,9 +1345,18 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				out.extend(tpargs)
 				
 			if in_class and user_pythonic and is_init:
-				pass
+				## generate lambda wrappers
+				for methname in classes[ class_name ]['methods']:
+					if methname.startswith('_'):
+						continue
+					methargs = classes[ class_name ]['methods'][methname]
+					margs =  ','.join( ['TP_OBJ()' for ma in methargs] )
+					wrapper = '			std::function<tp_obj(tp_vm*)> __%s_wrapper = [=](tp_vm *tp){return this->%s(%s);};' %(methname, methname, margs)
+					out.append(wrapper)
+					out.append('			this->__methods__["%s"] = tp_function(__%s_wrapper);' %(methname, methname))
 
 			elif in_class and func_name==class_name and tp_obj_subclass:
+				raise RuntimeError("tp_obj_subclass is DEPRECATED - replaced by higher level AOT")
 				out.append('			this->type.type_id = TP_OBJECT;')
 				out.append('			this->dict.val = tpd_dict_new(tp);')
 				out.append('			this->obj.info->meta = tp_None;')
