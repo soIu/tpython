@@ -81,6 +81,7 @@ import <float.h>
 if defined(USE_ODE):
 	import "ode_common.hpp"
 	import "ode_objects.hpp"
+	import "ode_init.hpp"
 	import "ode/common.h"
 
 
@@ -269,6 +270,12 @@ class tp_obj:
 		struct { TPTypeInfo type; struct UObject *ptr; } uob;
 	};  // end of union
 	tp_obj operator=(int n);
+	def operator=(void* ptr) ->tp_obj:
+		this->type.type_id = TP_POINTER
+		##this->type.magic = TP_POINTER_MAGIC_OPAQUE
+		this->pointer.val = ptr
+		this->pointer.classid = 0
+		return *this
 	bool operator==(const char* s) const;
 	bool operator==(const tp_obj) const;
 	operator std::string() const;
@@ -721,11 +728,11 @@ def tp_get_pointer(int key) -> void*;
 ##	int key = tp_set_pointer(ptr)
 ##	tp_obj num = tp_number( (tp_num)key )
 ##	return num
-##@static
-##def tp_pointer(void *ptr) -> tp_obj:
-##	tp_obj val = {TP_POINTER};
-##	val.pointer.val = ptr
-##	return val
+@static
+def tp_pointer(void *ptr) -> tp_obj:
+	tp_obj val = {TP_POINTER};
+	val.pointer.val = ptr
+	return val
 
 
 ## only used by function call params list for now, not GC tracked ##

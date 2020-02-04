@@ -1,9 +1,27 @@
+__is_ode_init = False
 
 class world( object ):
-	def foo(self):
-		print("OK")
+	#id = dxWorld*
+	def setGravity(self,x,y,z):
+		dWorldSetGravity( unwrap(dxWorld,self.id), x,y,z )
+	def step(self, dt):
+		dWorldStep( unwrap(dxWorld, self.id), dt )
 	def __init__(self):
-		pass
+		global __is_ode_init
+		if not __is_ode_init:
+			print("dInitODE() ...")
+			dInitODE()
+			print("dInitODE() OK")
+			__is_ode_init = True
+		self.id = dWorldCreate()
+	def world_pointer(self) ->dxWorld*:
+		return unwrap(dxWorld, self.id)
+
+class body( object ):
+	def __init__(self, w):
+		self.world   = w
+		ptr = w.world_pointer()
+		self.body_id = dBodyCreate( ptr )
 
 
 

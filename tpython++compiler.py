@@ -179,8 +179,10 @@ def guess_type_of_var(s, classes=None, global_auto_unwrap={}):
 
 	if val.startswith('ord(') and val.endswith(')'):
 		ctype = 'int'
-	elif val.endswith(')') and '(' in val:
+	elif val.endswith(')') and '(' in val:  ## some function call
 		ctype = 'tp_obj'
+	elif val.endswith('*'):  ## some pointer
+		ctype = val
 
 	if ctype:
 		if decl not in __guesses:
@@ -326,6 +328,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	func_indent = -1
 	func_locals = {}
 	func_globals = []
+	func_info = {'name':None, 'args':[], 'returns':None}
 	virt_func_dispatch = {}
 	fodgx = -16
 	fodgy = 0
@@ -344,7 +347,11 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	user_pythonic = file_name.endswith('__user_pythonic__.pyh')
 
 	if user_pythonic:
-		out.append('#define unwrap(T,o) ((T*)o.pointer.val)')
+		#out.append('#define unwrap(T,o) ((T*)o.pointer.val)')
+		out.append('#define unwrap(T,o) static_cast<T*>(o.pointer.val)')
+		# why do these macros sometimes fail with this error?
+		#error: expected ‘>’ before ‘*’ token #define unwrap(T,o) static_cast<T*>(o.pointer.val)
+
 		if tpy_modules_aot:
 			src = []
 			for aotmod in tpy_modules_aot:
@@ -493,8 +500,11 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					#	b += 'return None;}'
 					#else:
 					b += '}' * ((previ - func_indent)-1)
-					b += 'return None;}'
-					b += '// end of function: %s  - %s %s' %(func_name, func_indent, indent)
+					if func_info['returns'] == 'tp_obj':
+						b += 'return None;}'
+					else:
+						b += '}'
+					b += '// end of function: %s ' %func_name
 					in_func = False
 					func_indent = -1
 				else:
@@ -610,12 +620,16 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 							if b.split('[')[0] in classes[clsname]['members']:
 								hits.append(clsname)
 								## https://stackoverflow.com/questions/3786360/confusing-template-error
-								##a = a + ('.template unwrap<%s>()' %clsname)
-								a = a + ('.template unwrap<%s>()' %clsname)
+								a = a + ('.template unwrap<class %s>()' %clsname)
+								## above template workaround is ugly, and sometimes still fails with error: use of ‘this’ in a constant expression,
+								## this happens when the class contains a member with the same name as the class being casted to,
+								## by prefixing `class ` the problem is solved.
+								##a = 'unwrap(%s,%s)' %(clsname, a)
 							elif '(' in b:
 								if b.split('(')[0] in classes[clsname]['methods']:
 									hits.append(clsname)
-									a = a + ('.template unwrap<%s>()' %clsname)
+									a = a + ('.template unwrap<class %s>()' %clsname)
+									#a = 'unwrap(%s,%s)' %(clsname, a)
 						if not hits and in_class:
 							## checks own class members
 							if b.split('[')[0] in class_members:
@@ -629,6 +643,12 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 						if not hits and '(' not in a and a not in classes:
 							if b.startswith('append('):
 								## tp_obj base class contains an append method
+								pass
+							elif b.isdigit():
+								pass
+							elif a.isdigit():
+								pass
+							elif a.startswith('-') and len(a) >= 2 and a[1:].isdigit():
 								pass
 							else:
 								print('parse error')
@@ -695,7 +715,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			else:
 				err = s.split()[-1]
 				out.append('throw "%s";' %err )
-		elif user_pythonic and indent==1 and not ln.startswith(' ') and not s.startswith('@') and is_untyped_global_var(s):
+		#elif user_pythonic and indent==1 and not ln.startswith(' ') and not s.startswith('@') and is_untyped_global_var(s):
+		elif user_pythonic and indent <= 1 and not ln.startswith(' ') and not s.startswith('@') and is_untyped_global_var(s):
 			ctype, cname, cval = guess_type_of_var(s, classes=classes, global_auto_unwrap=global_auto_unwrap)
 			## check if ctype needs to be a const or a define, if used in a switch/case or an array decl size
 			requires_const = False
@@ -907,6 +928,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			in_func = True
 			func_locals = {}
 			func_globals = []
+			func_info = {'name':None, 'args':[], 'returns':None}
 			is_forward_decl = False
 			if s.endswith(';'):
 				is_forward_decl = True
@@ -917,6 +939,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				autofunc += 1
 
 			func_name = s[len('def ') : ].split('(')[0].strip()
+			func_info['name'] = func_name
 			if in_unreal_plugin:
 				assert func_name in ('StartupModule', 'ShutdownModule')
 
@@ -926,10 +949,13 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				a,b = func_name.split('::')
 				if a==b:
 					is_constructor = True
+					func_info['constructor'] = True
 				elif b.startswith('~') and a == b[1:]:
 					is_destructor = True
+					func_info['destructor'] = True
 
 			if next_line and 'raise NotImplementedError' in next_line and in_class:
+				func_info['virt'] = True
 				is_virt = True
 				is_forward_decl = True
 				assert s.endswith(':')
@@ -991,6 +1017,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				returns = 'tp_obj'
 			else:
 				returns = 'void'
+				
+			func_info['returns'] = returns
 
 			if prevs.startswith('@module'):
 				args = ['TP']
@@ -1148,6 +1176,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 			if auto_templates:
 				out.append('template<' + ','.join( ['typename T_%s' %i for i in range(len(auto_templates))] ) + '>')
+
+			func_info['args'] = args
 
 			exopts = ''
 			if prevs == '@const':
