@@ -1093,6 +1093,15 @@ def tp_obj::operator[] (int index) -> tp_obj:
 		return this->lst.val->items[index]
 	elif this->type.type_id==TP_LIST:
 		return this->list.val->items[index]
+	elif this->type.type_id==TP_VEC3:
+		if index==0:
+			return this->__vec3.vec.x
+		elif index==1:
+			return this->__vec3.vec.y
+		elif index==2:
+			return this->__vec3.vec.z
+		else:
+			throw "vec3 invalid index"
 	else:
 		return _tp_get(NULL, *this, tp_number(index), 0)
 

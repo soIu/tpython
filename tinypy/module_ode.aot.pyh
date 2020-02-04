@@ -1,27 +1,45 @@
 __is_ode_init = False
 
 class world( object ):
-	#id = dxWorld*
+	def __wpointer__(self) ->dxWorld*:
+		return unwrap(dxWorld, self.__wptr__)
 	def setGravity(self,x,y,z):
-		dWorldSetGravity( unwrap(dxWorld,self.id), x,y,z )
+		#dWorldSetGravity( unwrap(dxWorld,self.id), x,y,z )
+		dWorldSetGravity( self.__wpointer__(), x,y,z )
 	def step(self, dt):
-		dWorldStep( unwrap(dxWorld, self.id), dt )
+		dWorldStep( unwrap(dxWorld, self.__wptr__), dt )
 	def __init__(self):
 		global __is_ode_init
 		if not __is_ode_init:
-			print("dInitODE() ...")
 			dInitODE()
-			print("dInitODE() OK")
 			__is_ode_init = True
-		self.id = dWorldCreate()
-	def world_pointer(self) ->dxWorld*:
-		return unwrap(dxWorld, self.id)
+		self.__wptr__ = dWorldCreate()
+
+class mass( object ):
+	def __mpointer__(self) ->dMass*:
+		return unwrap(dMass, self.__mptr__)
+	def setSphere(self, density, radius):
+		dMassSetSphere( self.__mpointer__(), density, radius )
+	def __init__(self):
+		self.__mptr__  = new dMass()
 
 class body( object ):
+	def __bpointer__(self) ->dxBody*:
+		return unwrap(dxBody, self.__bptr__)
+	def setMass(self, mass):
+		dBodySetMass( self.__bpointer__(), mass.__mpointer__() )
+	def setPosition(self, x,y,z):
+		dBodySetPosition( self.__bpointer__(), x,y,z )
+	def addForce(self, x,y,z):
+		dBodyAddForce( self.__bpointer__(), x,y,z )
+	def addForce(self, vec):
+		dBodyAddForce( self.__bpointer__(), vec[0], vec[1], vec[2] )
+	def getPosition(self):
+		p = dBodyGetPosition( self.__bpointer__() )
+		return vec3(p[0], p[1], p[2])
 	def __init__(self, w):
-		self.world   = w
-		ptr = w.world_pointer()
-		self.body_id = dBodyCreate( ptr )
+		self.__bptr__ = dBodyCreate( w.__wpointer__() )
+
 
 
 

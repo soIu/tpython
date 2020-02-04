@@ -14,9 +14,10 @@ if defined(__EMSCRIPTEN_major__):
 if defined(USE_EMBEDDED_BYTECODE):
 	import "__user_bytecode__.gen.h"
 
+import "blendot/vector2.h"
+import "blendot/vector3.h"
+
 if defined(BLENDOT_TYPES):
-	import "blendot/vector2.h"
-	import "blendot/vector3.h"
 	import "blendot/quat.h"
 	import "blendot/color.h"
 	import "blendot/rect2.h"
@@ -80,8 +81,9 @@ import <float.h>
 
 if defined(USE_ODE):
 	import "ode_common.hpp"
-	import "ode_objects.hpp"
 	import "ode_init.hpp"
+	import "ode_objects.hpp"
+	import "ode_mass.hpp"
 	import "ode/common.h"
 
 
@@ -251,9 +253,9 @@ class tp_obj:
 	struct { TPTypeInfo type; struct tpd_string *info; } string;
 	struct { TPTypeInfo type; const char * val; } atomstr;
 	struct { TPTypeInfo type; char val[12];} str;
+	struct { TPTypeInfo type; struct Vector2 vec; } vec2;
+	struct { TPTypeInfo type; struct Vector3 vec; } __vec3;
 	if defined(BLENDOT_TYPES):
-		struct { TPTypeInfo type; struct Vector2 vec; } vec2;
-		struct { TPTypeInfo type; struct Vector3 vec; } vec3;
 		struct { TPTypeInfo type; struct Quat *q; } quat;
 		struct { TPTypeInfo type; struct Color *c; } color;
 		struct { TPTypeInfo type; struct Rect2 *r; } rect;
@@ -290,6 +292,12 @@ class tp_obj:
 	@const
 	def operator& (int n) ->int:
 		return (int)this🠊number.val & n
+	@const
+	def operator < (int n) ->bool:
+		return this🠊number.val < n
+	@const
+	def operator < (double n) ->bool:
+		return this🠊number.val < n
 	@const
 	def operator > (int n) ->bool:
 		return this🠊number.val > n
@@ -747,7 +755,7 @@ def tp_tiny_list(TP) -> tp_obj:
 	return val
 #endif
 
-#ifdef BLENDOT_TYPES
+
 @static
 def tp_vec2(double x, double y) -> tp_obj:
 	tp_obj val = {TP_VEC2};
@@ -758,16 +766,36 @@ def tp_vec2(double x, double y) -> tp_obj:
 @static
 def tp_vec3(double x, double y, double z) -> tp_obj:
 	tp_obj val = {TP_VEC3};
-	val.vec3.vec.x = x
-	val.vec3.vec.y = y
-	val.vec3.vec.z = z
+	val.__vec3.vec.x = x
+	val.__vec3.vec.y = y
+	val.__vec3.vec.z = z
 	return val
+
+@static
+def vec3(double x, double y, double z) -> tp_obj:
+	tp_obj val = {TP_VEC3};
+	val.__vec3.vec.x = x
+	val.__vec3.vec.y = y
+	val.__vec3.vec.z = z
+	return val
+
+@static
+def vec3() -> tp_obj:
+	tp_obj val = {TP_VEC3};
+	val.__vec3.vec.x = 0
+	val.__vec3.vec.y = 0
+	val.__vec3.vec.z = 0
+	return val
+
 
 @static
 def tp_vec3(Vector3 v) -> tp_obj:
 	tp_obj val = {TP_VEC3};
-	val.vec3.vec = v
+	val.__vec3.vec = v
 	return val
+
+
+#ifdef BLENDOT_TYPES
 
 @static
 def tp_quat(double x, double y, double z, double w) -> tp_obj:
@@ -1075,7 +1103,6 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 			else:
 				ss << self.number.val; 
 			break;
-		case TP_NONE: ss << "None"; break;
 		case TP_FUNC:
 			if self.type.magic == TP_FUNC_MAGIC_CPP:
 				ss << "function<c++>"
@@ -1151,13 +1178,16 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 		case TP_POINTER:
 			ss << "pointer<" << self.pointer.val << ">"
 			break
-		#ifdef BLENDOT_TYPES
+		case TP_NONE:
+			ss << "None"
+			break
 		case TP_VEC2:
 			ss << "vec2( x=" << self.vec2.vec.x << ", y=" << self.vec2.vec.y << ")"
 			break
 		case TP_VEC3:
-			ss << "vec3( x=" << self.vec3.vec.x << ", y=" << self.vec3.vec.y << ", z=" << self.vec3.vec.z << ")"
+			ss << "vec3( x=" << self.__vec3.vec.x << ", y=" << self.__vec3.vec.y << ", z=" << self.__vec3.vec.z << ")"
 			break
+		#ifdef BLENDOT_TYPES
 		case TP_QUAT:
 			ss << "quat( x=" << self.quat.q🠊x << ", y=" << self.quat.q🠊y << ", z=" << self.quat.q🠊z << ", w=" << self.quat.q🠊w << ")"
 			break
