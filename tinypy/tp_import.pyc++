@@ -5,7 +5,9 @@ def tp_import(TP, const char* name, const char* fname) ->tp_obj:
 	g.type.magic = TP_MODULE_EXTERNAL_MAGIC
 	tp_set(tp, g, tp_string_atom(tp, "__name__"), name)
 	tp_set(tp, g, tp_string_atom(tp, "__file__"), fname)
-	##tp_set(tp, g, tp_string_atom(tp, "__dict__"), g)  ## do not create a cyclic ref which causes debug printing to crash
+	## WARN cyclic ref can causes debug printing to crash!!!
+	## __dict__ is required to support `from x import *`
+	tp_set(tp, g, tp_string_atom(tp, "__dict__"), g)
 	tp_set(tp, tp->modules, name, g)
 	return g
 

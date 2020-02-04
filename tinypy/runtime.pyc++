@@ -185,10 +185,9 @@ def tp_module_vga_init(TP):
 	tp_set(tp, rand, tp_string_atom(tp, "clear"), tp_function(tp, tpy_vga_clear))
 #endif
 
-#ifdef USE_USER_CUSTOM_CPP
-  def module_init(TP);
-  import "__user_pythonic__.gen.h"
-#endif
+if defined(USE_USER_CUSTOM_CPP):
+	def module_init(TP);
+	import "__user_pythonic__.gen.h"
 
 def tp_module_corelib_init(TP):
 	#ifdef DEBUG

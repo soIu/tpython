@@ -695,7 +695,8 @@ def tp_module_builtins_init(TP):
 	int i
 	for (i=0; b[i].s; i++):
 		##tp_set(tp, builtins, tp_string_atom(tp, b[i].s), tp_function(tp,(tp_obj (*)(tp_vm *))b[i].f))
-		tp_set(tp, builtins, tp_string_tiny_atom(b[i].s), tp_function(tp,(tp_obj (*)(tp_vm *))b[i].f))
+		##tp_set(tp, builtins, tp_string_tiny_atom(b[i].s), tp_function(tp,(tp_obj (*)(tp_vm *))b[i].f))
+		tp_set(tp, builtins, b[i].s, tp_function(tp,(tp_obj (*)(tp_vm *))b[i].f))
 	tp_set(tp, builtins, "print", tp_function(tp, tpy_print))
 	tp_set(tp, builtins, "compile", tp_function(tp, tpy_compile))
 	if defined(BLENDOT_TYPES):

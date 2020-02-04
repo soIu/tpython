@@ -437,6 +437,10 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 	elif type == TP_INTERFACE:
 		if tp_vget(tp, self, k, &r, 0):
 			return r
+		elif self.type.magic == TP_MODULE_EXTERNAL_MAGIC:
+			## fallback to slower lookup for external modules,
+			## note if an interface is not a module, then its a class def
+			return tpd_dict_get_by_stdstring(tp, self.dict.val, std::string(k))
 		else:
 			print(DRED, "GET ERROR: on TP_INTERFACE")
 			std::cout << "key=" << k << " hash=" << tp_hash(NULL, k) << std::endl;

@@ -296,7 +296,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 	previ = -1
 	autobrace = 0
 	autofunc = 0
-	mods = {}
+	mods = {'__aot_builtin_module__':[]}
 	modname = None
 	init_list = []
 	in_init_list = False
@@ -358,6 +358,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				src.extend( tpy_modules_aot[aotmod] )
 			src.extend( source )
 			source = src
+			tpy_modules_aot.clear()
 
 	if 'functions' in info:
 		functions = info['functions']
@@ -1270,6 +1271,18 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 						'	return *(tp_obj*)obj;',
 						'}'
 					])
+					## generate tpython interpreter wrapper function ##
+					mods['__aot_builtin_module__'].append([
+						class_name,
+						'__tpy_%s_new' %class_name,
+					])
+					class_new.append('tp_obj __tpy_%s_new(TP) {' % class_name )
+					for arg in auto_templates:
+						class_new.append('	tp_obj %s = TP_OBJ();' % arg )
+					class_new.extend([
+						'	return %s_new(%s);' % (class_name, ','.join(auto_templates)),
+						'}'
+					])
 
 					if len(args):
 						## also generate default constructor
@@ -1277,10 +1290,11 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 							'%s() %s{' % (class_name, exopts),
 							'	this->type.type_id = TP_POINTER;',
 							'	this->pointer.val  = (void*)this;',
+							'	this->pointer.classid  = %s;' %classes[class_name]['id'] ,
 							'}'
 						])
 					## generate extra helpers ##
-					if False:
+					if False:  ## not required
 						class_con.extend([
 							'%s operator= (tp_obj ob){' % class_name,
 							'	print("= op");',
@@ -1697,7 +1711,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				])
 				out.extend( vinfo['code'] )
 
-	if mods:
+	if mods and user_pythonic:
 		## generate module_init
 		mod_init = 'module_init'
 		if functions and 'module_init' in functions:
@@ -1715,13 +1729,16 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			tp_import = bin_scramble('tp_import', functions['tp_import'], mangle_map)
 			tp_set = bin_scramble('tp_set', functions['tp_set'], mangle_map)
 			tp_function = bin_scramble('tp_function', functions['tp_function'], mangle_map)
-		elif functions and 'tp_import' in functions:
-			if 'scramble' in functions['tp_import']:
-				tp_import = functions['tp_import']['scramble']
-			if 'scramble' in functions['tp_set']:
-				tp_set = functions['tp_set']['scramble']
-			if 'scramble' in functions['tp_function']:
-				tp_function = functions['tp_function']['scramble']
+		elif functions:
+			if 'tp_import' in functions:
+				if 'scramble' in functions['tp_import']:
+					tp_import = functions['tp_import']['scramble']
+			if 'tp_set' in functions:
+				if 'scramble' in functions['tp_set']:
+					tp_set = functions['tp_set']['scramble']
+			if 'tp_function' in functions:
+				if 'scramble' in functions['tp_function']:
+					tp_function = functions['tp_function']['scramble']
 
 		for i,modname in enumerate(mods):
 			m = 'mod%s' %i
@@ -1732,8 +1749,13 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					scram = func['scram']
 					unscram = func['unscram']
 					out.append('	%s(tp, %s, tp_string_atom(tp, "%s"), %s(tp, %s));' %(tp_set, m, unscram, tp_function, scram))
+				elif type(func) is list:
+					assert len(func)==2
+					out.append('	%s(tp, %s, "%s", %s(tp, %s));' %(tp_set, m,func[0], tp_function, func[1]))
+				
 				else:
 					out.append('	%s(tp, %s, tp_string_atom(tp, "%s"), %s(tp, %s));' %(tp_set, m,func, tp_function, func))
+
 		out.append('}')
 
 
@@ -1880,6 +1902,15 @@ def metapy2tinypypp( source ):
 		print('============ AOT compile to C++ ==============')
 		print('\n'.join(aot))
 		print('----------------------------------------------')
+	else:
+		has_aot_mods = False
+		for ln in shared:
+			for part in ln.split():
+				if 'world(' in part:
+					has_aot_mods = True
+					break
+		if has_aot_mods:
+			shared.insert(0, 'from __aot_builtin_module__ import *')
 
 	print('============compile to bytecode ==============')
 	print('\n'.join(shared))
@@ -2279,6 +2310,7 @@ def main():
 			tempf = '/tmp/%s_main.py'%name
 			if '--debug' in sys.argv:
 				print(source)
+
 			open(tempf, 'wb').write(source.encode('utf-8'))
 			subprocess.check_call(['./tpc']+exargs+['-o', './%s.bytecode'%name, tempf])
 		else:
@@ -2304,5 +2336,24 @@ def main():
 				p = path.split('/')[-1]
 				open('/tmp/%s.json' %p, 'wb').write( json.dumps(info['obfuscations']).encode('utf-8') )
 
+		## tpy_modules_aot should have been cleared if there was user pythonic,
+		## so in case the user has no pythonic code and modules are used, still need to save the AOT modules here
+		if tpy_modules_aot:
+			aotsrc = []
+			for aotmod in tpy_modules_aot:
+				aotsrc.extend( tpy_modules_aot[aotmod] )
+				
+			print('\n'.join(aotsrc))
+			print('=====================================')
+			cpp = pythonicpp( [], file_name='__user_pythonic__.pyh', swap_self_to_this=True)
+			print(cpp)
+			print('	saving: ', os.path.join(path,'__user_pythonic__.gen.h') )
+			open( os.path.join(path,'__user_pythonic__.gen.h'), 'wb').write(cpp.encode('utf-8'))
+
+
+
 main()
+
+
+
 

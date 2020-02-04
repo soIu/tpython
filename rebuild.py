@@ -163,10 +163,6 @@ def rebuild(stage=None, exe_name='tpython++'):
 	os.system('rm -f tinypy/__user_pythonic__.gen.h')
 	os.system('rm -f tinypy/__user_pythonic__.pyh')
 	os.system('rm -f tinypy/*.gcda')
-
-	if '--ode' in sys.argv:
-		os.system('rm -f tinypy/miniode/ode/*.o')
-		os.system('rm -f tinypy/miniode/ode/joints/*.o')
 	
 	if stage is None or stage < 2:
 		os.system('rm -f /tmp/tinypy.json')
@@ -217,7 +213,10 @@ def rebuild(stage=None, exe_name='tpython++'):
 	if '--big-num' in sys.argv:
 		defs += ' -DTP_BIG_NUM'
 
+	aot_modules = False
+
 	if '--ode' in sys.argv:
+		aot_modules = True
 		for odefile in os.listdir('./tinypy/miniode/ode'):
 			if odefile.endswith('.cpp'):
 				if odefile=='fastdot.cpp':
@@ -230,6 +229,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 			if odefile.endswith('.cpp'):
 				mods += ' miniode/ode/joints/' + odefile
 		defs += ' -DUSE_ODE -DODE_PLATFORM_LINUX -DdTHREADING_INTF_DISABLED'
+		defs += ' -DUSE_USER_CUSTOM_CPP'
 
 
 	sdl_inc = ''
@@ -260,8 +260,9 @@ def rebuild(stage=None, exe_name='tpython++'):
 					exe = os.path.split(arg)[-1]
 			subprocess.check_call(cmd)
 			os.system('cp -v /tmp/embedded_bytecode.gen.h ./tinypy/__user_bytecode__.gen.h')
-			if os.path.isfile('./tinypy/__user_pythonic__.pyh'):
-				defs += ' -DUSE_USER_CUSTOM_CPP'
+			if not aot_modules:
+				if os.path.isfile('./tinypy/__user_pythonic__.pyh'):
+					defs += ' -DUSE_USER_CUSTOM_CPP'
 			break
 		elif arg.endswith( ('.unreal', '.unreal/') ):
 			unreal_plugin = arg
@@ -269,7 +270,8 @@ def rebuild(stage=None, exe_name='tpython++'):
 			if '-DBLENDOT_TYPES' in defs:
 				defs = defs.replace('-DBLENDOT_TYPES', '')
 				mods = ''
-			defs += ' -DUSE_USER_CUSTOM_CPP'
+			if not aot_modules:
+				defs += ' -DUSE_USER_CUSTOM_CPP'
 		elif os.path.isdir(arg):
 			unreal_project = arg
 		elif arg.startswith('--unreal-'):
@@ -607,6 +609,11 @@ def main():
 		os.system('rm -rf tinypy/blendot/scene/main/*.o')
 		os.system('rm -rf tinypy/blendot/scene/resources/*.fodg')
 		os.system('rm -rf tinypy/blendot/scene/resources/*.o')
+
+		if '--ode' in sys.argv:
+			os.system('rm -f tinypy/miniode/ode/*.o')
+			os.system('rm -f tinypy/miniode/ode/joints/*.o')
+
 
 	trans_files = []
 	vis_args = []

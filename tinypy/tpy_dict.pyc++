@@ -1,6 +1,9 @@
 def tpy_dict_merge(TP) -> tp_obj:
+	##print(DRED, "tpy_dict_merge...")
 	tp_obj self = TP_OBJ()
+	##print(self)
 	tp_obj v = TP_OBJ()
+	##print(v)
 	for (int i=0; i<v.dict.val->len; i++):
 		##int n = tpd_dict_next(tp, v.dict.val)
 		if v.dict.val->items[i].used < 1:
