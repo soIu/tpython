@@ -492,9 +492,6 @@ def tpy_list(TP) ->tp_obj:
 	tp_obj ob = TP_OBJ()
 	return tp_list_copy(tp, ob)
 
-
-#ifdef BLENDOT_TYPES
-
 def tpy_vec2(TP) ->tp_obj:
 	tp_obj x = TP_OBJ()
 	tp_obj y = TP_OBJ()
@@ -505,6 +502,9 @@ def tpy_vec3(TP) ->tp_obj:
 	tp_obj y = TP_OBJ()
 	tp_obj z = TP_OBJ()
 	return tp_vec3(x.number.val, y.number.val, z.number.val)
+
+
+#ifdef BLENDOT_TYPES
 
 def tpy_quat(TP) ->tp_obj:
 	tp_obj x = TP_OBJ()
@@ -699,9 +699,9 @@ def tp_module_builtins_init(TP):
 		tp_set(tp, builtins, b[i].s, tp_function(tp,(tp_obj (*)(tp_vm *))b[i].f))
 	tp_set(tp, builtins, "print", tp_function(tp, tpy_print))
 	tp_set(tp, builtins, "compile", tp_function(tp, tpy_compile))
+	tp_set(tp, builtins, "vec2", tp_function(tp, tpy_vec2))
+	tp_set(tp, builtins, "vec3", tp_function(tp, tpy_vec3))
 	if defined(BLENDOT_TYPES):
-		tp_set(tp, builtins, "vec2", tp_function(tp, tpy_vec2))
-		tp_set(tp, builtins, "vec3", tp_function(tp, tpy_vec3))
 		tp_set(tp, builtins, "spatial", tp_function(tp, tpy_spatial_from_pointer))
 	o = tp_interface_t(tp)
 	tp_set(tp, o, tp_string_atom(tp, "__call__"), tp_function(tp, tpy_object_call))

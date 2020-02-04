@@ -30,8 +30,6 @@ class body( object ):
 		dBodySetMass( self.__bpointer__(), mass.__mpointer__() )
 	def setPosition(self, x,y,z):
 		dBodySetPosition( self.__bpointer__(), x,y,z )
-	def addForce(self, x,y,z):
-		dBodyAddForce( self.__bpointer__(), x,y,z )
 	def addForce(self, vec):
 		dBodyAddForce( self.__bpointer__(), vec[0], vec[1], vec[2] )
 	def getPosition(self):
@@ -39,6 +37,8 @@ class body( object ):
 		return vec3(p[0], p[1], p[2])
 	def __init__(self, w):
 		self.__bptr__ = dBodyCreate( w.__wpointer__() )
+	def addForce(self, x,y,z):
+		dBodyAddForce( self.__bpointer__(), x,y,z )
 
 
 
