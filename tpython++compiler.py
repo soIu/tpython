@@ -203,9 +203,16 @@ def get_base_members( classes, class_name, base_members={} ):
 			continue
 		get_base_members( classes, base, base_members )
 
+tpy_modules_aot = {}
+
 def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=False, binary_scramble=False, mangle_map=None, fodg=None, unreal_plugin_name=None, vis_cursor=None, mode='c++' ):
 	if not type(source) is list:
 		source = source.splitlines()
+	print(file_name)
+	if file_name.endswith('.aot.pyh'):
+		tpy_modules_aot[file_name] = source
+		return None
+
 	if type(fodg) is list:
 		fodg.append('<?xml version="1.0" encoding="UTF-8"?>')
 		fodg.append('<office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:meta="urn:oasis:names:tc:opendocument:xmlns:meta:1.0" xmlns:number="urn:oasis:names:tc:opendocument:xmlns:datastyle:1.0" xmlns:presentation="urn:oasis:names:tc:opendocument:xmlns:presentation:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" xmlns:chart="urn:oasis:names:tc:opendocument:xmlns:chart:1.0" xmlns:dr3d="urn:oasis:names:tc:opendocument:xmlns:dr3d:1.0" xmlns:math="http://www.w3.org/1998/Math/MathML" xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0" xmlns:script="urn:oasis:names:tc:opendocument:xmlns:script:1.0" xmlns:config="urn:oasis:names:tc:opendocument:xmlns:config:1.0" xmlns:ooo="http://openoffice.org/2004/office" xmlns:ooow="http://openoffice.org/2004/writer" xmlns:oooc="http://openoffice.org/2004/calc" xmlns:dom="http://www.w3.org/2001/xml-events" xmlns:xforms="http://www.w3.org/2002/xforms" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:smil="urn:oasis:names:tc:opendocument:xmlns:smil-compatible:1.0" xmlns:anim="urn:oasis:names:tc:opendocument:xmlns:animation:1.0" xmlns:rpt="http://openoffice.org/2005/report" xmlns:of="urn:oasis:names:tc:opendocument:xmlns:of:1.2" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:grddl="http://www.w3.org/2003/g/data-view#" xmlns:officeooo="http://openoffice.org/2009/office" xmlns:tableooo="http://openoffice.org/2009/table" xmlns:drawooo="http://openoffice.org/2010/draw" xmlns:calcext="urn:org:documentfoundation:names:experimental:calc:xmlns:calcext:1.0" xmlns:loext="urn:org:documentfoundation:names:experimental:office:xmlns:loext:1.0" xmlns:field="urn:openoffice:names:experimental:ooo-ms-interop:xmlns:field:1.0" xmlns:formx="urn:openoffice:names:experimental:ooxml-odf-interop:xmlns:form:1.0" xmlns:css3t="http://www.w3.org/TR/css3-text/" office:version="1.2" office:mimetype="application/vnd.oasis.opendocument.graphics">')
@@ -338,6 +345,12 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 	if user_pythonic:
 		out.append('#define unwrap(T,o) ((T*)o.pointer.val)')
+		if tpy_modules_aot:
+			src = []
+			for aotmod in tpy_modules_aot:
+				src.extend( tpy_modules_aot[aotmod] )
+			src.extend( source )
+			source = src
 
 	if 'functions' in info:
 		functions = info['functions']
@@ -1292,7 +1305,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				out.append('			this->dict.val = tpd_dict_new(tp);')
 				out.append('			this->obj.info->meta = tp_None;')
 				## generate lambda wrappers
-				for methname in classes[ class_name ]:
+				for methname in classes[ class_name ]['methods']:
 					methargs = classes[ class_name ]['methods'][methname]
 					margs =  ','.join( ['TP_OBJ()' for ma in methargs] )
 					wrapper = '			std::function<tp_obj(tp_vm*)> __%s_wrapper = [=](tp_vm *tp){return this->%s(%s);};' %(methname, methname, margs)
@@ -1753,10 +1766,14 @@ def metapy2tinypypp( source ):
 	in_aot = False
 	aot_all = False
 	append_next_blank_hack = None
-
+	
 	if '--aot-all' in sys.argv:
 		in_aot = True
 		aot_all = True
+
+	#if tpy_modules_aot:
+	#	for aotmod in tpy_modules_aot:
+	#		aot.extend(tpy_modules_aot[aotmod])
 
 	for ln in source.splitlines():
 		if u'┃' in ln:
@@ -1830,12 +1847,16 @@ def metapy2tinypypp( source ):
 
 	if aot:
 		shared.insert(0, 'from __aot_builtin_module__ import *')
-		print('--------------------------')
-		print(aot)
+		print('============ AOT compile to C++ ==============')
+		print('\n'.join(aot))
+		print('----------------------------------------------')
 
-	print('==============================')
+	print('============compile to bytecode ==============')
+	print('\n'.join(shared))
+	print('----------------------------------------------')
 
-	print(shared)
+	if aot and len(shared)==1:
+		raise SyntaxError('bytecode is blank, did you forget to define and call `main()` at the end of the script?')
 
 	scripts = []
 	if len(thread_local):
@@ -1910,7 +1931,9 @@ def metapy2tinypypp( source ):
 
 def walk_path(path, res):
 	for file in os.listdir(path):
-		if file.endswith(('.pyc++', '.pyh')):
+		if file.endswith(('.aot.pyc++', '.aot.pyh')):
+			res.insert(0, [path,file])
+		elif file.endswith(('.pyc++', '.pyh')):
 			res.append([path,file])
 		elif os.path.isdir(os.path.join(path,file)):
 			if file == 'blendot':
@@ -1931,6 +1954,7 @@ def pythonicpp_translate( path, file=None, secure=False, secure_binary=False, ma
 		files.append([path,file])
 	else:
 		walk_path(path, files)
+
 	unreal_plugin_name=None
 	if unreal:
 		unreal_plugin_name = path.split('/')[-1].split('.')[0]
@@ -1983,6 +2007,7 @@ def pythonicpp_translate( path, file=None, secure=False, secure_binary=False, ma
 
 	## final pass apply scrambling
 	for path, file in files:
+		print('	' + file)
 		#if not unreal_plugin_name:
 		if path.endswith( ('.unreal', '.unreal/') ):
 			unreal_plugin_name = os.path.split(path.split('.')[0])[-1]
@@ -2067,7 +2092,9 @@ def pythonicpp_translate( path, file=None, secure=False, secure_binary=False, ma
 				swap_self_to_this=file=='__user_pythonic__.pyh',
 				file_name = os.path.join(path,file)
 			)
-			if unreal:
+			if cpp is None:
+				assert file.endswith('.aot.pyh')
+			elif unreal:
 				assert unreal_plugin_name
 				if file == 'PrivatePCH.pyh':
 					upath = os.path.join(unreal_project, 'Plugins/%s/Source/%s/Private/' %(unreal_plugin_name, unreal_plugin_name) )
