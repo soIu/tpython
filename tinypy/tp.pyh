@@ -85,8 +85,12 @@ if defined(USE_ODE):
 	import "ode_objects.hpp"
 	import "ode_mass.hpp"
 	import "ode_rotation.hpp"
+	import "ode_collision_space.hpp"
+	import "ode_collision.hpp"
+	import "ode_contact.hpp"
 	import "ode/common.h"
 	import "ode/objects.h"
+	import "ode/collision_kernel.h"
 
 
 ## better performance when the compiler is allowed to making the inline decisions

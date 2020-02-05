@@ -355,7 +355,10 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		if tpy_modules_aot:
 			src = []
 			for aotmod in tpy_modules_aot:
-				src.extend( tpy_modules_aot[aotmod] )
+				#src.extend( tpy_modules_aot[aotmod] )
+				for ln in tpy_modules_aot[aotmod]:
+					src.append('\t' + ln)
+
 			src.extend( source )
 			source = src
 			tpy_modules_aot.clear()
@@ -650,6 +653,9 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 							elif a.isdigit():
 								pass
 							elif a.startswith('-') and len(a) >= 2 and a[1:].isdigit():
+								pass
+							elif a.startswith('&'):
+								## lower level pythonic++ must sometimes be used in AOT code
 								pass
 							else:
 								print('parse error')
@@ -1275,17 +1281,18 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 						'}'
 					])
 					## generate tpython interpreter wrapper function ##
-					mods['__aot_builtin_module__'].append([
-						class_name,
-						'__tpy_%s_new' %class_name,
-					])
-					class_new.append('tp_obj __tpy_%s_new(TP) {' % class_name )
-					for arg in auto_templates:
-						class_new.append('	tp_obj %s = TP_OBJ();' % arg )
-					class_new.extend([
-						'	return %s_new(%s);' % (class_name, ','.join(auto_templates)),
-						'}'
-					])
+					if not class_name.startswith('_'):
+						mods['__aot_builtin_module__'].append([
+							class_name,
+							'__tpy_%s_new' %class_name,
+						])
+						class_new.append('tp_obj __tpy_%s_new(TP) {' % class_name )
+						for arg in auto_templates:
+							class_new.append('	tp_obj %s = TP_OBJ();' % arg )
+						class_new.extend([
+							'	return %s_new(%s);' % (class_name, ','.join(auto_templates)),
+							'}'
+						])
 
 					if len(args):
 						## also generate default constructor
@@ -1553,7 +1560,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 		else:
 
-			if user_pythonic and ln.count('=')==1 and in_func and not s.startswith( ('self.', 'unwrap(', 'print(') ):
+			if user_pythonic and ln.count('=')==1 and in_func and not s.startswith( ('self.', 'unwrap(', 'print(', 'const ') ):
 				var, val = s.split('=')
 				val = val.strip()
 				var = var.strip()

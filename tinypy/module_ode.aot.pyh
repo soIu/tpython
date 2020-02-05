@@ -1,4 +1,31 @@
 __is_ode_init = False
+static dWorldID __world__
+static bool __has_contacts__ = false
+static dJointGroupID __contactgroup__
+
+@static
+def __nearCallback(void* ptr, dxGeom* o1, dxGeom* o2) ->void:
+	global __has_contacts__
+	print("nearCallback...")
+	print(o1)
+	print(o2)
+	#b1 = dGeomGetBody(o1)  ## wants an int id
+	#b2 = dGeomGetBody(o2)
+	b1 = o1->body
+	b2 = o2->body
+	const int N = 10
+	dContact cons[N]
+	for i in range(N):
+		cons[i].surface.mode = dContactSoftCFM | dContactApprox1
+		cons[i].surface.mu   = 0.5
+		cons[i].surface.soft_cfm = 0.01
+	hits = dCollide(o1, o2, N, &cons[0].geom, sizeof(dContact))
+	if hits > 0:
+		__has_contacts__ = true
+		for i in range( hits ):
+			coj = dJointCreateContact(__world__, __contactgroup__, cons+i)
+			dJointAttach(coj, b1, b2)
+
 
 class world( object ):
 	def __wpointer__(self) ->dxWorld*:
@@ -8,11 +35,15 @@ class world( object ):
 	def step(self, dt):
 		dWorldStep( unwrap(dxWorld, self.__wptr__), dt )
 	def __init__(self):
-		global __is_ode_init
+		global __is_ode_init, __world__
 		if not __is_ode_init:
 			dInitODE()
 			__is_ode_init = True
-		self.__wptr__ = dWorldCreate()
+			__world__ = dWorldCreate()
+			self.__wptr__ = __world__
+			__contactgroup__ = dJointGroupCreate(0)
+		else:
+			print("only a single ODE world is allowed for now")
 
 class mass( object ):
 	def __mpointer__(self) ->dMass*:
@@ -74,6 +105,45 @@ class body( object ):
 		return vec3(p[0], p[1], p[2])
 	def __init__(self, w):
 		self.__bptr__ = dBodyCreate( w.__wpointer__() )
+
+
+class space( object ):
+	def __spointer__(self) ->dxSpace*:
+		return unwrap(dxSpace, self.__sptr__)
+	def releaseContactJoints(self):
+		global __has_contacts__
+		if __has_contacts__:
+			dJointGroupEmpty(__contactgroup__)
+			__has_contacts__ = false
+	def spaceCollide(self):
+		self.releaseContactJoints()
+		dSpaceCollide( self.__spointer__(), 0, &__nearCallback)
+	def __init__(self):
+		self.__sptr__ = dSimpleSpaceCreate(0)
+
+
+class __ode_geom_base__( object ):
+	def __gpointer__(self) ->dxGeom*:
+		return unwrap(dxGeom, self.__gptr__)
+	def setBody(self, b):
+		dGeomSetBody( self.__gpointer__(), b.__bpointer__())
+	def __init__(self):
+		self.__gptr__ = None
+
+
+class geomPlane( __ode_geom_base__ ):
+	def __init__(self, sp, nor, dist):
+		self.__gptr__ = dCreatePlane( sp.__spointer__(), nor[0], nor[1], nor[2], dist)
+
+class geomBox( __ode_geom_base__ ):
+	def __init__(self, sp, bx):
+		self.__gptr__ = dCreateBox( sp.__spointer__(), bx[0], bx[1], bx[2])
+
+
+
+
+
+
 
 
 
