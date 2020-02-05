@@ -16,9 +16,9 @@ if defined(USE_EMBEDDED_BYTECODE):
 
 import "blendot/vector2.h"
 import "blendot/vector3.h"
+import "blendot/quat.h"
 
 if defined(BLENDOT_TYPES):
-	import "blendot/quat.h"
 	import "blendot/color.h"
 	import "blendot/rect2.h"
 	import "blendot/face3.h"
@@ -249,14 +249,13 @@ class tp_obj:
 	struct { TPTypeInfo type; struct tpd_dict *val; } dict;
 	struct { TPTypeInfo type; struct tpd_dict *val; } object;
 	struct { TPTypeInfo type; struct tpd_dict *val; } interface;
-	##struct { TPTypeInfo type; struct tpd_string *info; const char * val;} string;
 	struct { TPTypeInfo type; struct tpd_string *info; } string;
 	struct { TPTypeInfo type; const char * val; } atomstr;
 	struct { TPTypeInfo type; char val[12];} str;
 	struct { TPTypeInfo type; struct Vector2 vec; } vec2;
 	struct { TPTypeInfo type; struct Vector3 vec; } __vec3;
+	struct { TPTypeInfo type; struct Quat q; } __quat;
 	if defined(BLENDOT_TYPES):
-		struct { TPTypeInfo type; struct Quat *q; } quat;
 		struct { TPTypeInfo type; struct Color *c; } color;
 		struct { TPTypeInfo type; struct Rect2 *r; } rect;
 		struct { TPTypeInfo type; struct Face3 *t; } tri;
@@ -798,9 +797,17 @@ def tp_vec3(Vector3 v) -> tp_obj:
 	val.__vec3.vec = v
 	return val
 
+@static
+def quat(double x, double y, double z, double w) -> tp_obj:
+	tp_obj val = {TP_QUAT};
+	val.__quat.q.x = x
+	val.__quat.q.y = y
+	val.__quat.q.z = z
+	val.__quat.q.w = w
+	return val
+
 
 #ifdef BLENDOT_TYPES
-
 @static
 def tp_quat(double x, double y, double z, double w) -> tp_obj:
 	tp_obj val = {TP_QUAT};
@@ -809,6 +816,7 @@ def tp_quat(double x, double y, double z, double w) -> tp_obj:
 	val.quat.q🠊z = z
 	val.quat.q🠊w = w
 	return val
+
 
 @static
 def tp_color(double r, double g, double b, double a) -> tp_obj:
@@ -1192,10 +1200,10 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 		case TP_VEC3:
 			ss << "vec3( x=" << self.__vec3.vec.x << ", y=" << self.__vec3.vec.y << ", z=" << self.__vec3.vec.z << ")"
 			break
-		#ifdef BLENDOT_TYPES
 		case TP_QUAT:
-			ss << "quat( x=" << self.quat.q🠊x << ", y=" << self.quat.q🠊y << ", z=" << self.quat.q🠊z << ", w=" << self.quat.q🠊w << ")"
+			ss << "quat( x=" << self.__quat.q.x << ", y=" << self.__quat.q.y << ", z=" << self.__quat.q.z << ", w=" << self.__quat.q.w << ")"
 			break
+		#ifdef BLENDOT_TYPES
 		case TP_COLOR:
 			ss << "color( red=" << self.color.c🠊r << ", green=" << self.color.c🠊g << ", blue=" << self.color.c🠊b << ", alpha=" << self.color.c🠊a << ")"
 			break

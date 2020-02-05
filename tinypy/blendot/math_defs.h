@@ -106,10 +106,10 @@ enum Corner {
   * in contrast to integer numbers. Precision can be controlled with the
   * presence or absence of the REAL_T_IS_DOUBLE define.
   */
-#ifdef REAL_T_IS_DOUBLE
-typedef double real_t;
-#else
+//#ifdef REAL_T_IS_DOUBLE
+//typedef double real_t;
+//#else
 typedef float real_t;
-#endif
+//#endif
 
 #endif // MATH_DEFS_H

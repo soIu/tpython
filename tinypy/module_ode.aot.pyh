@@ -3,9 +3,8 @@ __is_ode_init = False
 class world( object ):
 	def __wpointer__(self) ->dxWorld*:
 		return unwrap(dxWorld, self.__wptr__)
-	def setGravity(self,x,y,z):
-		#dWorldSetGravity( unwrap(dxWorld,self.id), x,y,z )
-		dWorldSetGravity( self.__wpointer__(), x,y,z )
+	def setGravity(self, v):
+		dWorldSetGravity( self.__wpointer__(), v[0], v[1], v[2] )
 	def step(self, dt):
 		dWorldStep( unwrap(dxWorld, self.__wptr__), dt )
 	def __init__(self):
@@ -28,17 +27,18 @@ class body( object ):
 		return unwrap(dxBody, self.__bptr__)
 	def setMass(self, mass):
 		dBodySetMass( self.__bpointer__(), mass.__mpointer__() )
-	def setPosition(self, x,y,z):
-		dBodySetPosition( self.__bpointer__(), x,y,z )
+	def setPosition(self, v):
+		dBodySetPosition( self.__bpointer__(), v[0],v[1],v[2] )
 	def addForce(self, vec):
 		dBodyAddForce( self.__bpointer__(), vec[0], vec[1], vec[2] )
 	def getPosition(self):
 		p = dBodyGetPosition( self.__bpointer__() )
 		return vec3(p[0], p[1], p[2])
+	def getRotation(self):
+		p = dBodyGetQuaternion( self.__bpointer__() )
+		return quat(p[0], p[1], p[2], p[3])
 	def __init__(self, w):
 		self.__bptr__ = dBodyCreate( w.__wpointer__() )
-	def addForce(self, x,y,z):
-		dBodyAddForce( self.__bpointer__(), x,y,z )
 
 
 

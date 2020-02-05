@@ -37,10 +37,19 @@
 #include "math_defs.h"
 #include "math_funcs.h"
 #include "ustring.h"
+#include "../umHalf.h"
+
+#define QUAT16BIT
 
 struct Quat {
-//public:
-	real_t x, y, z, w;
+	#ifdef QUAT16BIT
+		float16 x;
+		float16 y;
+		float16 z;
+		float16 w;
+	#else
+		real_t x, y, z, w;
+	#endif
 
 	_FORCE_INLINE_ real_t length_squared() const;
 	real_t length() const;
@@ -64,7 +73,7 @@ struct Quat {
 
 	void set_axis_angle(const Vector3 &axis, const real_t &angle);
 	_FORCE_INLINE_ void get_axis_angle(Vector3 &r_axis, real_t &r_angle) const {
-		r_angle = 2 * Math::acos(w);
+		r_angle = 2 * Math::acos( (float)w );
 		real_t r = ((real_t)1) / Math::sqrt(1 - w * w);
 		r_axis.x = x * r;
 		r_axis.y = y * r;
@@ -111,12 +120,21 @@ struct Quat {
 		z = p_z;
 		w = p_w;
 	}
+	#ifdef QUAT16BIT
+	inline Quat(real_t p_x, real_t p_y, real_t p_z, real_t p_w) {
+			x=p_x;
+			y=p_y;
+			z=p_z;
+			w=p_w;
+	}
+	#else
 	inline Quat(real_t p_x, real_t p_y, real_t p_z, real_t p_w) :
 			x(p_x),
 			y(p_y),
 			z(p_z),
 			w(p_w) {
 	}
+	#endif
 	Quat(const Vector3 &axis, const real_t &angle) { set_axis_angle(axis, angle); }
 
 	Quat(const Vector3 &euler) { set_euler(euler); }
@@ -146,10 +164,10 @@ struct Quat {
 		real_t d = v0.dot(v1);
 
 		if (d < -1.0 + CMP_EPSILON) {
-			x = 0;
-			y = 1;
-			z = 0;
-			w = 0;
+			x = 0.0;
+			y = 1.0;
+			z = 0.0;
+			w = 0.0;
 		} else {
 
 			real_t s = Math::sqrt((1.0 + d) * 2.0);
@@ -161,12 +179,21 @@ struct Quat {
 			w = s * 0.5;
 		}
 	}
-	inline Quat() :
-			x(0),
-			y(0),
-			z(0),
-			w(1) {
+	#ifdef QUAT16BIT
+	inline Quat() {
+			x = 0.0;
+			y = 0.0;
+			z = 0.0;
+			w = 1.0;
 	}
+	#else
+	inline Quat() :
+			x(0.0),
+			y(0.0),
+			z(0.0),
+			w(1.0) {
+	}
+	#endif
 };
 
 real_t Quat::dot(const Quat &q) const {
