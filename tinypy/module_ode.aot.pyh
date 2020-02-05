@@ -31,12 +31,40 @@ class body( object ):
 		dBodySetPosition( self.__bpointer__(), v[0],v[1],v[2] )
 	def addForce(self, vec):
 		dBodyAddForce( self.__bpointer__(), vec[0], vec[1], vec[2] )
+	def addRelForce(self, vec):
+		dBodyAddRelForce( self.__bpointer__(), vec[0], vec[1], vec[2] )
+	def addTorque(self, vec):
+		dBodyAddTorque( self.__bpointer__(), vec[0], vec[1], vec[2] )
+	def addRelTorque(self, vec):
+		dBodyAddRelTorque( self.__bpointer__(), vec[0], vec[1], vec[2] )
 	def getPosition(self):
+		print(self.__bpointer__())
 		p = dBodyGetPosition( self.__bpointer__() )
 		return vec3(p[0], p[1], p[2])
 	def getRotation(self):
+		print(self.__bpointer__())
+		ptr = self.__bpointer__()
+		std::cout << "RAW: " << ptr->q[0] << ',' << ptr->q[1] << ','<< ptr->q[2] << ','<< ptr->q[3] << std::endl;
 		p = dBodyGetQuaternion( self.__bpointer__() )
-		return quat(p[0], p[1], p[2], p[3])
+		x = p[1]
+		y = p[2]
+		z = p[3]
+		w = p[0]
+		#print(x)
+		#print(y)
+		#print(z)
+		#print(w)
+		#return quat(p[1], p[2], p[3], p[0])
+		return quat(x,y,z, w)
+		#dQuaternion q
+		#dBodyCopyQuaternion( self.__bpointer__(), q )		
+		#return quat(q[1], q[2], q[3], q[0])
+	def getLinearVel(self):
+		p = dBodyGetLinearVel( self.__bpointer__() )
+		return vec3(p[0], p[1], p[2])
+	def getAngularVel(self):
+		p = dBodyGetAngularVel( self.__bpointer__() )
+		return vec3(p[0], p[1], p[2])
 	def __init__(self, w):
 		self.__bptr__ = dBodyCreate( w.__wpointer__() )
 

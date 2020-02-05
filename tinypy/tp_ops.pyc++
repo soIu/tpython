@@ -454,6 +454,9 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			print(DRED, "GET ERROR: on TP_INTERFACE")
 			std::cout << "key=" << k << " hash=" << tp_hash(NULL, k) << std::endl;
 	elif type == TP_POINTER:
+		if defined(DEBUG):
+			print(DRED, "get from pointer->__methods__")
+			print( std::string(k) )
 		return static_cast<tpy_subclass*>(self.pointer.val)->__methods__[ std::string(k) ]
 	elif k.type.type_id == TP_LIST:
 		## deal with list / string keys on any unknown types - TODO check how this is used
@@ -1077,7 +1080,8 @@ def tp_obj::operator float():
 @const
 def tp_obj::operator std::string():
 	if this->type.type_id == TP_STRING_TINY:
-		return std::string( (const char*)&this->str.val, len(this->str.val) )
+		##return std::string( (const char*)&this->str.val, len(this->str.val) )
+		return std::string( (const char*)&this->str.val, tp_string_tiny_len(*this) )
 	else:
 		return std::string( tp_string_getptr(*this) )
 
@@ -1115,6 +1119,17 @@ def tp_obj::operator[] (int index) -> tp_obj:
 			return this->__vec3.vec.y
 		elif index==2:
 			return this->__vec3.vec.z
+		else:
+			throw "vec3 invalid index"
+	elif this->type.type_id==TP_QUAT:
+		if index==0:
+			return (double)this->__quat.q.x
+		elif index==1:
+			return (double)this->__quat.q.y
+		elif index==2:
+			return (double)this->__quat.q.z
+		elif index==3:
+			return (double)this->__quat.q.w
 		else:
 			throw "vec3 invalid index"
 	else:

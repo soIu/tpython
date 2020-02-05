@@ -503,15 +503,15 @@ def tpy_vec3(TP) ->tp_obj:
 	tp_obj z = TP_OBJ()
 	return tp_vec3(x.number.val, y.number.val, z.number.val)
 
-
-#ifdef BLENDOT_TYPES
-
 def tpy_quat(TP) ->tp_obj:
 	tp_obj x = TP_OBJ()
 	tp_obj y = TP_OBJ()
 	tp_obj z = TP_OBJ()
 	tp_obj w = TP_OBJ()
 	return tp_quat(x.number.val, y.number.val, z.number.val, w.number.val)
+
+
+#ifdef BLENDOT_TYPES
 
 def tpy_color(TP) ->tp_obj:
 	tp_obj r = TP_OBJ()
@@ -676,7 +676,6 @@ def tp_module_builtins_init(TP):
 	{"evaljs", tpy_eval_js},
 	{"javascript", tpy_eval_js_returns},
 	#ifdef BLENDOT_TYPES
-	{"quat", tpy_quat},
 	{"color", tpy_color},
 	{"rect", tpy_rect},
 	{"tri", tpy_tri},
@@ -701,6 +700,7 @@ def tp_module_builtins_init(TP):
 	tp_set(tp, builtins, "compile", tp_function(tp, tpy_compile))
 	tp_set(tp, builtins, "vec2", tp_function(tp, tpy_vec2))
 	tp_set(tp, builtins, "vec3", tp_function(tp, tpy_vec3))
+	tp_set(tp, builtins, "quat", tp_function(tp, tpy_quat))
 	if defined(BLENDOT_TYPES):
 		tp_set(tp, builtins, "spatial", tp_function(tp, tpy_spatial_from_pointer))
 	o = tp_interface_t(tp)

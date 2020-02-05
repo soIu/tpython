@@ -85,6 +85,7 @@ if defined(USE_ODE):
 	import "ode_objects.hpp"
 	import "ode_mass.hpp"
 	import "ode/common.h"
+	import "ode/objects.h"
 
 
 ## better performance when the compiler is allowed to making the inline decisions
@@ -800,6 +801,16 @@ def tp_vec3(Vector3 v) -> tp_obj:
 @static
 def quat(double x, double y, double z, double w) -> tp_obj:
 	tp_obj val = {TP_QUAT};
+	std::cout << "	tp_quat(" << x << ',' << y << ',' << z << ',' << w << std::endl;
+	val.__quat.q.x = x
+	val.__quat.q.y = y
+	val.__quat.q.z = z
+	val.__quat.q.w = w
+	return val
+
+@static
+def tp_quat(double x, double y, double z, double w) -> tp_obj:
+	tp_obj val = {TP_QUAT};
 	val.__quat.q.x = x
 	val.__quat.q.y = y
 	val.__quat.q.z = z
@@ -808,15 +819,6 @@ def quat(double x, double y, double z, double w) -> tp_obj:
 
 
 #ifdef BLENDOT_TYPES
-@static
-def tp_quat(double x, double y, double z, double w) -> tp_obj:
-	tp_obj val = {TP_QUAT};
-	val.quat.q🠊x = x
-	val.quat.q🠊y = y
-	val.quat.q🠊z = z
-	val.quat.q🠊w = w
-	return val
-
 
 @static
 def tp_color(double r, double g, double b, double a) -> tp_obj:

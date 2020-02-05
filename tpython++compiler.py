@@ -1351,7 +1351,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 						continue
 					methargs = classes[ class_name ]['methods'][methname]
 					margs =  ','.join( ['TP_OBJ()' for ma in methargs] )
-					wrapper = '			std::function<tp_obj(tp_vm*)> __%s_wrapper = [=](tp_vm *tp){return this->%s(%s);};' %(methname, methname, margs)
+					#wrapper = '			std::function<tp_obj(tp_vm*)> __%s_wrapper = [=](tp_vm *tp){return this->%s(%s);};' %(methname, methname, margs)
+					wrapper = '			std::function<tp_obj(tp_vm*)> __%s_wrapper = [this](tp_vm *tp){return this->%s(%s);};' %(methname, methname, margs)
 					out.append(wrapper)
 					out.append('			this->__methods__["%s"] = tp_function(__%s_wrapper);' %(methname, methname))
 
@@ -1879,7 +1880,7 @@ def metapy2tinypypp( source ):
 					aot.append('\tdef aotpy_main__():')
 					append_next_blank_hack = '\treturn None'
 				elif ln.strip().startswith("print('") and ln.strip().endswith("')"):
-					aot.append( ln.replace("print('", 'print("')[:-2]+'")' )
+					aot.append( '\t' + ln.replace("print('", 'print("')[:-2]+'")' )
 				else:
 					aot.append('\t' + ln)
 			elif append_next_blank_hack:
