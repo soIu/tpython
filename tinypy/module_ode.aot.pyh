@@ -41,22 +41,30 @@ class body( object ):
 		print(self.__bpointer__())
 		p = dBodyGetPosition( self.__bpointer__() )
 		return vec3(p[0], p[1], p[2])
+	def setRotation(self, qd):
+		dQuaternion q
+		q[0] = qd[3]
+		q[1] = qd[0]
+		q[2] = qd[1]
+		q[3] = qd[2]
+		#dBodySetQuaternion( self.__bpointer__(), q )
+		dMatrix3 r
+		dRfromQ( r, q )
+		dBodySetRotation( self.__bpointer__(), r )
 	def getRotation(self):
-		print(self.__bpointer__())
-		ptr = self.__bpointer__()
-		std::cout << "RAW: " << ptr->q[0] << ',' << ptr->q[1] << ','<< ptr->q[2] << ','<< ptr->q[3] << std::endl;
-		p = dBodyGetQuaternion( self.__bpointer__() )
+		#print(self.__bpointer__())
+		#ptr = self.__bpointer__()
+		#std::cout << "RAW: " << ptr->q[0] << ',' << ptr->q[1] << ','<< ptr->q[2] << ','<< ptr->q[3] << std::endl;
+		#p = dBodyGetQuaternion( self.__bpointer__() )
+		# note dQfromR is declared in ode_rotation.hpp
+		volatile dQuaternion p
+		dQfromR( (float*)p, dBodyGetRotation( self.__bpointer__() ) )
 		x = p[1]
 		y = p[2]
 		z = p[3]
 		w = p[0]
-		#print(x)
-		#print(y)
-		#print(z)
-		#print(w)
 		#return quat(p[1], p[2], p[3], p[0])
 		return quat(x,y,z, w)
-		#dQuaternion q
 		#dBodyCopyQuaternion( self.__bpointer__(), q )		
 		#return quat(q[1], q[2], q[3], q[0])
 	def getLinearVel(self):

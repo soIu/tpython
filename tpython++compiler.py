@@ -1562,6 +1562,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 				if '.' in var:
 					pass
+				elif '[' in var:
+					pass
 				elif var not in func_locals and var not in func_globals:
 					func_locals[var] = val
 					ln = 'auto ' + ln
