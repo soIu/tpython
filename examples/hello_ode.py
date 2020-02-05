@@ -9,9 +9,10 @@ def test():
 	b.setPosition( vec3(0,2,0) )
 	b.addForce( vec3(0, 200, 0) )
 	b.addTorque( vec3(10,0,0) )
+	b.setRotation( quat(0.5, 0.5, 0, 0) )
 	time = 0.0
 	dt = 0.04
-	while time < 2.0:
+	while time < 0.5:
 		print('simulating....')
 		w.step(dt)
 		v = b.getPosition()
@@ -28,8 +29,7 @@ def test():
 		avel = b.getAngularVel()
 		print( avel )
 		time += dt
-	q2 = quat(1,2,3,4)
-	print(q2)
+
 
 def main():
 	test()

@@ -216,6 +216,8 @@ def rebuild(stage=None, exe_name='tpython++'):
 	aot_modules = False
 
 	if '--ode' in sys.argv:
+		if '--clang' not in sys.argv:
+			raise RuntimeError("miniode only works with clang!")
 		aot_modules = True
 		for odefile in os.listdir('./tinypy/miniode/ode'):
 			if odefile.endswith('.cpp'):

@@ -38,7 +38,6 @@ class body( object ):
 	def addRelTorque(self, vec):
 		dBodyAddRelTorque( self.__bpointer__(), vec[0], vec[1], vec[2] )
 	def getPosition(self):
-		print(self.__bpointer__())
 		p = dBodyGetPosition( self.__bpointer__() )
 		return vec3(p[0], p[1], p[2])
 	def setRotation(self, qd):
@@ -57,8 +56,8 @@ class body( object ):
 		#std::cout << "RAW: " << ptr->q[0] << ',' << ptr->q[1] << ','<< ptr->q[2] << ','<< ptr->q[3] << std::endl;
 		#p = dBodyGetQuaternion( self.__bpointer__() )
 		# note dQfromR is declared in ode_rotation.hpp
-		volatile dQuaternion p
-		dQfromR( (float*)p, dBodyGetRotation( self.__bpointer__() ) )
+		dQuaternion p
+		dQfromR( p, dBodyGetRotation( self.__bpointer__() ) )
 		x = p[1]
 		y = p[2]
 		z = p[3]
