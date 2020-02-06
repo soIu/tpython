@@ -424,19 +424,17 @@ def tpy_import(TP) ->tp_obj:
 	return tp_None
 
 
-def tpy_exec(TP) ->tp_obj:
-	tp_obj code = TP_OBJ()
-	##tp_obj globals = TP_OBJ()
-	tp_obj r = tp_None
-	return tp_exec(tp, code)
-
-
-def tpy_eval(TP) ->tp_obj:
-	tp_obj text = TP_STR()
-	##tp_obj globals = TP_TYPE(TP_DICT)
-	tp_obj code = tp_compile(tp, text, tp_string_atom(tp, "<eval>"))
-	tp_exec(tp, code)
-	return tp->last_result
+##def tpy_exec(TP) ->tp_obj:
+##	tp_obj code = TP_OBJ()
+##	##tp_obj globals = TP_OBJ()
+##	tp_obj r = tp_None
+##	return tp_exec(tp, code)
+##def tpy_eval(TP) ->tp_obj:
+##	tp_obj text = TP_STR()
+##	##tp_obj globals = TP_TYPE(TP_DICT)
+##	tp_obj code = tp_compile(tp, text, tp_string_atom(tp, "<eval>"))
+##	tp_exec(tp, code)
+##	return tp->last_result
 
 
 #ifdef TINY_LIST_PARAMS
@@ -473,10 +471,10 @@ def tpy_repr(TP) ->tp_obj:
 	return tp_repr(tp, v)
 
 
-def tpy_compile(TP) ->tp_obj:
-	tp_obj text = TP_OBJ()
-	tp_obj fname = TP_OBJ()
-	return tp_compile(tp, text, fname)
+##def tpy_compile(TP) ->tp_obj:
+##	tp_obj text = TP_OBJ()
+##	tp_obj fname = TP_OBJ()
+##	return tp_compile(tp, text, fname)
 
 
 def tpy_module(TP) ->tp_obj:
@@ -601,6 +599,11 @@ def tpy_eval_js(TP) ->tp_obj:
 def tpy_eval_js_returns(TP) ->tp_obj:
 	tp_obj code = TP_OBJ()
 	tp_obj rtype = TP_OBJ()
+	if defined(DEBUG):
+		print("tpy_eval_js_returns....")
+		print("-------------------------")
+		print(code)
+		print(rtype)
 	if rtype == "void":
 		__eval_js(std::string(code).c_str())
 		return None
@@ -610,12 +613,15 @@ def tpy_eval_js_returns(TP) ->tp_obj:
 		return tp_number(emscripten_run_script_int(std::string(code).c_str()))
 	elif rtype == "string":
 		return tp_string_from_stdstring(tp, std::string(emscripten_run_script_string(std::string(code).c_str())) )
+	else:
+		print("error in tpy_eval_js_returns")
+		throw "error in tpy_eval_js_returns"
 
 
 #else
 
 def tpy_eval_js(TP) ->tp_obj:
-	throw "eval_js can only be used when compiled using the option --wasm or --html"
+	throw "evaljs can only be used when compiled using the option --wasm or --html"
 
 def tpy_eval_js_returns(TP) ->tp_obj:
 	throw "javascript can only be used when compiled using the option --wasm or --html"
@@ -656,8 +662,8 @@ def tp_module_builtins_init(TP):
 	{"fpack",tpy_fpack},
 	{"funpack", tpy_funpack},
 	{"abs",tpy_abs},
-	{"eval",tpy_eval},
-	{"exec",tpy_exec},
+	##{"eval",tpy_eval},
+	##{"exec",tpy_exec},
 	{"number",tpy_float},
 	{"int",tpy_int},
 	{"bool", tpy_bool},
@@ -697,7 +703,7 @@ def tp_module_builtins_init(TP):
 		##tp_set(tp, builtins, tp_string_tiny_atom(b[i].s), tp_function(tp,(tp_obj (*)(tp_vm *))b[i].f))
 		tp_set(tp, builtins, b[i].s, tp_function(tp,(tp_obj (*)(tp_vm *))b[i].f))
 	tp_set(tp, builtins, "print", tp_function(tp, tpy_print))
-	tp_set(tp, builtins, "compile", tp_function(tp, tpy_compile))
+	##tp_set(tp, builtins, "compile", tp_function(tp, tpy_compile))
 	tp_set(tp, builtins, "vec2", tp_function(tp, tpy_vec2))
 	tp_set(tp, builtins, "vec3", tp_function(tp, tpy_vec3))
 	tp_set(tp, builtins, "vec4", tp_function(tp, tpy_quat))

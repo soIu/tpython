@@ -1042,6 +1042,9 @@ enum DebugColors:
 
 @static
 def print(DebugColors clr, const char *s):
+	#ifdef __EMSCRIPTEN_major__
+	  std::cout << s << std::endl;
+	#else
 	switch clr:
 		case DRED:
 			std::cout << cRed << s
@@ -1077,7 +1080,7 @@ def print(DebugColors clr, const char *s):
 			std::cout << s
 			break
 	std::cout << cNone << std::endl;
-
+	#endif
 
 @static
 def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:

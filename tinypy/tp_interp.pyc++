@@ -13,17 +13,18 @@ def tp_ez_call(TP, const char *mod, const char *func, tp_obj params) ->tp_obj:
 ## Function: tp_compile
 ## Compile some tinypy code.
 ## TODO this must call out to CPython in a subprocess
-def tp_compile(TP, tp_obj text, tp_obj fname) ->tp_obj:
-	return tp_ez_call(tp, "tinypy.compiler.py2bc", "compile", tp_params_v2(tp, text, fname))
+##def tp_compile(TP, tp_obj text, tp_obj fname) ->tp_obj:
+##	return tp_ez_call(tp, "tinypy.compiler.py2bc", "compile", tp_params_v2(tp, text, fname))
 
+#ifndef __EMSCRIPTEN_major__
 
 def tp_args(TP, int argc, char *argv[]) ->tp_obj:
 	tp_obj self = tp_list_t(tp)
 	int i
 	for (i=1; i<argc; i++):
-		tpd_list_append(tp, self.list.val, tp_string_atom(tp, argv[i]))
+		##tpd_list_append(tp, self.list.val, tp_string_atom(tp, argv[i]))
+		self.append( argv[i] )
 	return self
-
 
 def tp_module_sys_init(TP, int argc, char * argv[]):
 	tp_obj sys = tp_dict_t(tp)
@@ -33,6 +34,7 @@ def tp_module_sys_init(TP, int argc, char * argv[]):
 	tp_set(tp, sys, tp_string_atom(tp, "argv"), args)
 	tp_set(tp, tp->modules, tp_string_atom(tp, "sys"), sys)
 
+#endif
 
 ## Function: tp_init
 ## Initializes a new virtual machine.
@@ -43,7 +45,8 @@ def tp_module_sys_init(TP, int argc, char * argv[]):
 def tp_init(int argc, char *argv[]) -> tp_vm*:
 	tp_vm *tp = tp_create_vm()
 	tp_module_builtins_init(tp)
-	tp_module_sys_init(tp, argc, argv)
+	if not defined(__EMSCRIPTEN_major__):
+		tp_module_sys_init(tp, argc, argv)
 	tp_module_corelib_init(tp)
 	##tp_module_compiler_init(tp)
 	return tp

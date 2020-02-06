@@ -1978,15 +1978,19 @@ def metapy2tinypypp( source ):
 								if len(jsig['args']):
 									rargs = ['%s'] * len(jsig['args'])
 									rargs = ','.join(rargs)
-									ln = ln.replace(jsfunc+'(', 'javascript("'+jsfunc+'('+rargs+')" % (') + ', returns="%s")'%jsig['returns']
+									## note: tiny_list params no longer support keyword args
+									#ln = ln.replace(jsfunc+'(', 'javascript("'+jsfunc+'('+rargs+')" % (') + ', returns="%s")'%jsig['returns']
+									ln = ln.replace(jsfunc+'(', 'javascript("'+jsfunc+'('+rargs+')" % (') + ', "%s")'%jsig['returns']
 								else:
-									ln = ln.replace(jsfunc+'()', 'javascript("'+jsfunc+'()"') + ', returns="%s")'%jsig['returns']
+									## note: tiny_list params no longer support keyword args
+									#ln = ln.replace(jsfunc+'()', 'javascript("'+jsfunc+'()"') + ', returns="%s")'%jsig['returns']
+									ln = ln.replace(jsfunc+'()', 'javascript("'+jsfunc+'()"') + ', "%s")'%jsig['returns']
 							else:
 								raise SyntaxError('unable to auto-wrap javascript function')
 							break
 					new_shared.append(ln)
 				shared = new_shared
-				shared = ['eval_js("""', js, '""")'] + shared
+				shared = ['evaljs("""', js, '""")'] + shared
 
 				if cpp:
 					new_cpp = []
@@ -2013,10 +2017,10 @@ def metapy2tinypypp( source ):
 						new_cpp.append(ln)
 					cpp = new_cpp
 			else:
-				shared = ['eval_js("""', js, '""")'] + shared
+				shared = ['evaljs("""', js, '""")'] + shared
 
 			if info['js_header']:
-				##shared = ['eval_js("""'] + info['js_header'] + ['""")'] + shared  ## makes bytecode too big
+				##shared = ['evaljs("""'] + info['js_header'] + ['""")'] + shared  ## makes bytecode too big
 				dat = '\n'.join(info['js_header'])
 				open('/tmp/tpython_preload_libs.js', 'wb').write(dat.encode('utf-8'))
 

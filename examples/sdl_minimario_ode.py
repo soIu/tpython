@@ -53,7 +53,7 @@ def main():
 						jumping += 70; jumping += 10 * abs(mx); mx *= 4
 				elif e.key in (20,41):  return
 		if jumping < 1:
-			if abs(mx) >= 2: running = True
+			if abs(B.getLinearVel()[0]) >= 50: running = True
 		B.addForce( vec3(mx*5, -jumping*0.5, 0) )	
 		sp.spaceCollide(); wo.step(0.2)
 		if direction == 1:

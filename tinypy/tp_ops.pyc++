@@ -640,8 +640,11 @@ def tp_set(TP,tp_obj self, tp_obj k, tp_obj v) -> tp_obj:
 			throw "vec4/quat type missing member"
 		return self
 	##tp_raise(,tp_string_atom(tp, "(tp_set) TypeError: object does not support item assignment"));
+	print("======================================")
 	print(self)
-	print("object type_id = ", self.type.type_id)
+	print("self object type_id = ", self.type.type_id)
+	print(k)
+	print("TypeError in tp_ops.cpp:tp_set object does not support item assignment")
 	throw "TypeError in tp_ops.cpp:tp_set object does not support item assignment"
 
 

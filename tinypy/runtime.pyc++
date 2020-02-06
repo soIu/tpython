@@ -12,6 +12,8 @@ if defined(USE_SDL):
 
 std::mt19937 *__rand_engine = NULL;
 
+#ifndef __EMSCRIPTEN_major__
+
 def tp_save(TP, const char * fname, tp_obj v):
 	FILE *f
 	f = fopen(fname,"wb")
@@ -95,6 +97,8 @@ def tp_module_os_init(TP):
 	tp_set(tp, os, tp_string_atom(tp, "system"), tp_function(tp, tpy_system));
 	tp_set(tp, os, tp_string_atom(tp, "mtime"), tp_function(tp, tpy_mtime));
 	tp_set(tp, os, tp_string_atom(tp, "save"), tp_function(tp, tpy_save));
+
+#endif
 
 // CPython integration //
 #ifdef USE_PYTHON
@@ -193,7 +197,9 @@ def tp_module_corelib_init(TP):
 	#ifdef DEBUG
 	  std::cout << "runtime.cpp:tp_module_corelib_init" << std::endl
 	#endif
-	tp_module_os_init(tp)
+	#ifndef __EMSCRIPTEN_major__
+	  tp_module_os_init(tp)
+	#endif
 	tp_module_random_init(tp)
 	#ifdef USE_PYTHON
 	  tp_module_cpython_init(tp)
@@ -227,6 +233,8 @@ def tpython_run(const char *bytecode, int bc_len):
 		std::cout << "Runtime Exception: " << str << std::endl;
 	tp_deinit(tp)
 
+#ifndef __EMSCRIPTEN_major__
+
 @export.C
 def tpython_run_file(const char *filename):
 	std::fstream* f
@@ -236,5 +244,7 @@ def tpython_run_file(const char *filename):
 	f->close()
 	std::string dat = c.str()
 	tpython_run(dat.c_str(), dat.size())
+
+#endif
 
 

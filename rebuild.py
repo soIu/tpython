@@ -217,7 +217,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 
 	if '--ode' in sys.argv:
 		if '--clang' not in sys.argv:
-			if '--dev' in sys.argv:
+			if '--dev' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv:
 				pass
 			else:
 				raise RuntimeError("miniode only works with clang!")
@@ -324,7 +324,13 @@ def rebuild(stage=None, exe_name='tpython++'):
 		libs = ''
 		#opts += ' -O3 -fno-rtti -s FILESYSTEM=0 -s DISABLE_EXCEPTION_CATCHING=0'
 		## note: blendot types require rtti (run time type info)
-		opts += ' -Os -s FILESYSTEM=0 -s DISABLE_EXCEPTION_CATCHING=0'
+		opts += ' -Os '
+		if '--debug' in sys.argv:
+			#exeopts += ' -s DISABLE_EXCEPTION_CATCHING=2 -s FILESYSTEM=0'  ## something requires fs
+			exeopts += ' -s DISABLE_EXCEPTION_CATCHING=2'
+		else:
+			#exeopts += ' -s FILESYSTEM=0'
+			pass
 
 		if '--closure' in sys.argv:
 			opts += ' --closure 1'
