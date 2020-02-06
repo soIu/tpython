@@ -11,9 +11,12 @@ def test():
 	w.setGravity( vec3(0,-9.81,0) )
 	floor = geomPlane(s, vec3(0,1,0), -200)
 	print('floor:', floor)
+	leftwall = geomPlane(s, vec3(1,0,0), 0)
+	rightwall = geomPlane(s, vec3(-1,0,0), -800)
 	b = body( w )
 	m = mass()
-	m.setSphere( 2500.0, 0.05 )
+	#m.setSphere( 2500.0, 0.05 )  ## so heavy that default contact joints will fail
+	m.setSphere( 0.5, 2.5 )
 	b.setMass( m )
 	geo = geomBox(s, vec3(5,5,5) )
 	print('box:', geo)
@@ -30,12 +33,16 @@ def test():
 					b.addForce( vec3(-50,0,0) )
 				elif e.key == 79:  ## right key
 					b.addForce( vec3(50,0,0) )
+				elif e.key == 81: ## down key
+					b.addForce( vec3(0,-20,0) )
+			elif e.type == "KEYUP":
+				if e.key == 82: ## up key
+					b.addForce( vec3(0,10,0) )
+				elif e.key == 44:    ## space key
+					b.addForce( vec3(0,100,0) )
 		s.spaceCollide()
 		w.step(dt)
-		#s.releaseContactJoints()
 		v = b.getPosition()
-		#if v[1] < -200:
-		#	b.addForce( vec3(0,200,0) )
 		x = v[0]
 		y = v[1]
 		sdl.draw([x,-y, 10,10], [255,0,0] )

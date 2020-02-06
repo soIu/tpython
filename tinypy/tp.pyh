@@ -91,6 +91,9 @@ if defined(USE_ODE):
 	import "ode/common.h"
 	import "ode/objects.h"
 	import "ode/collision_kernel.h"
+	import "ode/collision_std.h"
+	import "ode/joints/joint.h"
+	import "ode/joints/contact.h"
 
 
 ## better performance when the compiler is allowed to making the inline decisions

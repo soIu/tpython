@@ -1,18 +1,85 @@
 __is_ode_init = False
 static dWorldID __world__
-static bool __has_contacts__ = false
-static dJointGroupID __contactgroup__
+static std::vector<dxJoint*> __contact_joints__
+
+############################## from ode.cpp ####################################
+
+
+#void addObjectToList (dObject *obj, dObject **first)
+#{
+#	obj->next = *first;
+#	obj->tome = first;
+#	if (*first) (*first)->tome = &obj->next;
+#	(*first) = obj;
+#}
+
+
+# remove the object from the linked list
+@static
+def __removeObjectFromList(dObject *obj) ->void:
+	if (obj->next) obj->next->tome = obj->tome;
+	*(obj->tome) = obj->next;
+	# safeguard
+	obj->next = NULL;
+	obj->tome = NULL;
+
+
+# remove the joint from neighbour lists of all connected bodies
+@static
+def __removeJointReferencesFromAttachedBodies(dxJoint *j) ->void:
+	for (int i=0; i<2; i++):
+		dxBody *body = j->node[i].body;
+		if body:
+			dxJointNode *n = body->firstjoint;
+			dxJointNode *last = NULL;
+			while n:
+				if n->joint == j:
+					if (last) last->next = n->next;
+					else body->firstjoint = n->next;
+					break;
+				last = n;
+				n = n->next;
+	j->node[0].body = NULL;
+	j->node[0].next = NULL;
+	j->node[1].body = NULL;
+	j->node[1].next = NULL;
+
+
+@static
+def __FinalizeAndDestroyJointInstance(dxJoint *j, bool delete_it) ->void:
+	# if any group joints have their world pointer set to 0, their world was
+	# previously destroyed. no special handling is required for these joints.
+	if j->world != NULL:
+		__removeJointReferencesFromAttachedBodies(j)
+		__removeObjectFromList(j)
+		j->world->nj--
+	if delete_it:
+		delete j
+	else:
+		j->~dxJoint()
+
+################################################################################
+
+@static
+def __delete_contact_joints() ->void:
+	if __contact_joints__.size():
+		for i in range( __contact_joints__.size() ):
+			joint = __contact_joints__[i]
+			__FinalizeAndDestroyJointInstance(joint, true)
+		__contact_joints__.clear()
 
 @static
 def __nearCallback(void* ptr, dxGeom* o1, dxGeom* o2) ->void:
-	global __has_contacts__
-	print("nearCallback...")
-	print(o1)
-	print(o2)
-	#b1 = dGeomGetBody(o1)  ## wants an int id
-	#b2 = dGeomGetBody(o2)
+	if defined(DEBUG):
+		print("=======nearCallback geoms:")
+		print(o1)
+		print(o2)
 	b1 = o1->body
 	b2 = o2->body
+	if defined(DEBUG):
+		print("=======nearCallback bodies:")
+		print(b1)
+		print(b2)
 	const int N = 10
 	dContact cons[N]
 	for i in range(N):
@@ -21,10 +88,17 @@ def __nearCallback(void* ptr, dxGeom* o1, dxGeom* o2) ->void:
 		cons[i].surface.soft_cfm = 0.01
 	hits = dCollide(o1, o2, N, &cons[0].geom, sizeof(dContact))
 	if hits > 0:
-		__has_contacts__ = true
 		for i in range( hits ):
-			coj = dJointCreateContact(__world__, __contactgroup__, cons+i)
+			#coj = dJointCreateContact(__world__, __contactgroup__, cons+i)
+			## createJoint is just a template function defined in ode.cpp
+			#coj = (dxJointContact *)createJoint<dxJointContact>(__world__,NULL);
+			coj = new dxJointContact(__world__)
+			coj->contact = *(cons+i);
+			if defined(DEBUG):
+				print("=======nearCallback contact joint:")
+				print(coj)
 			dJointAttach(coj, b1, b2)
+			__contact_joints__.push_back(coj)
 
 
 class world( object ):
@@ -41,7 +115,6 @@ class world( object ):
 			__is_ode_init = True
 			__world__ = dWorldCreate()
 			self.__wptr__ = __world__
-			__contactgroup__ = dJointGroupCreate(0)
 		else:
 			print("only a single ODE world is allowed for now")
 
@@ -110,13 +183,8 @@ class body( object ):
 class space( object ):
 	def __spointer__(self) ->dxSpace*:
 		return unwrap(dxSpace, self.__sptr__)
-	def releaseContactJoints(self):
-		global __has_contacts__
-		if __has_contacts__:
-			dJointGroupEmpty(__contactgroup__)
-			__has_contacts__ = false
 	def spaceCollide(self):
-		self.releaseContactJoints()
+		__delete_contact_joints()
 		dSpaceCollide( self.__spointer__(), 0, &__nearCallback)
 	def __init__(self):
 		self.__sptr__ = dSimpleSpaceCreate(0)

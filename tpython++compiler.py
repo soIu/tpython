@@ -644,9 +644,12 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 									hits.append(class_name)
 									a = a + ('.template unwrap<%s>()' %class_name)
 
-						if not hits and '(' not in a and a not in classes:
+						if not hits and '(' not in a and a not in classes and '->' not in a:
 							if b.startswith('append('):
 								## tp_obj base class contains an append method
+								pass
+							elif b.startswith( ('size(', 'clear(', 'push_back(') ):
+								## std::vector, std::string, and other c++11 containers
 								pass
 							elif b.isdigit():
 								pass
@@ -1560,20 +1563,31 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 		else:
 
-			if user_pythonic and ln.count('=')==1 and in_func and not s.startswith( ('self.', 'unwrap(', 'print(', 'const ') ):
-				var, val = s.split('=')
-				val = val.strip()
-				var = var.strip()
-				if var.endswith( ('+', '-', '/', '*') ):
-					var = var[:-1].strip()
+			if user_pythonic and ln.count('=')==1 and in_func and not s.startswith( ('self.', 'unwrap(', 'print(') ):
+				if s.startswith('if ') and s.endswith(';'):
+					## c++ style if statement
+					pass
+				else:
+					var, val = s.split('=')
+					val = val.strip()
+					var = var.strip()
+					if var.endswith( ('+', '-', '/', '*') ):
+						var = var[:-1].strip()
 
-				if '.' in var:
-					pass
-				elif '[' in var:
-					pass
-				elif var not in func_locals and var not in func_globals:
-					func_locals[var] = val
-					ln = 'auto ' + ln
+					if ' ' in var:
+						print(ln)
+						cpptype = var.split()[ : -1]
+						var = var.split()[-1]
+						if var.startswith('*'):
+							cpptype.append('*')
+							var = var[1:]
+						assert var not in func_locals
+						func_locals[ var ] = cpptype
+					elif '.' in var or '->' in var or '[' in var:
+						pass
+					elif var not in func_locals and var not in func_globals:
+						func_locals[var] = val
+						ln = 'auto ' + ln
 
 			#if in_class and tp_obj_subclass and swap_self_to_this:
 			if in_class and user_pythonic and swap_self_to_this:
