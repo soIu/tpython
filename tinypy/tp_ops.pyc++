@@ -248,6 +248,34 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 				print("------------------------")
 				print(k)
 				throw "invalid string method"
+	elif type == TP_VEC2:
+		if k == "x":
+			return tp_number(self.__vec2.vec.x)
+		elif k == "y":
+			return tp_number(self.__vec2.vec.y)
+		#ifdef BLENDOT_TYPES
+		elif k == "angle":
+			auto fn = def[=](tp_vm *t):
+				return tp_number(self.__vec2.vec.angle())
+			return tp_function(tp, fn)
+		elif k == "aspect":
+			auto fn = def[=](tp_vm *t):
+				return tp_number(self.__vec2.vec.aspect())
+			return tp_function(tp, fn)
+		elif k == "length":
+			auto fn = def[=](tp_vm *t):
+				return tp_number(self.__vec2.vec.length())
+			return tp_function(tp, fn)
+		elif k == "normalized":
+			## note, do not need to create a new tp_vec2 because this is already a copy
+			auto fn = def[=](tp_vm *t):
+				auto v = self
+				v.__vec2.vec.normalize()
+				return v
+			return tp_function(tp, fn)
+		#endif
+		else:
+			throw "vector2 missing member"
 	elif type == TP_VEC3:
 		if k.type.type_id == TP_NUMBER:
 			if k.number.val == 0:
@@ -269,7 +297,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 				return tp_number(self.__vec3.vec.length())
 			return tp_function(tp, fn)
 		elif k == "normalized":
-			## note, do not need to create a new tp_vec2 because this is already a copy
+			## note, do not need to create a new tp_vec3 because this is already a copy
 			auto fn = def[=](tp_vm *t):
 				auto v = self
 				v.__vec3.vec.normalize()
@@ -277,55 +305,31 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			return tp_function(tp, fn)
 		else:
 			throw "vector3 missing member"
-	#ifdef BLENDOT_TYPES
-	if type == TP_VEC2:
-		if k == "x":
-			return tp_number(self.vec2.vec.x)
-		elif k == "y":
-			return tp_number(self.vec2.vec.y)
-		elif k == "angle":
-			auto fn = def[=](tp_vm *t):
-				return tp_number(self.vec2.vec.angle())
-			return tp_function(tp, fn)
-		elif k == "aspect":
-			auto fn = def[=](tp_vm *t):
-				return tp_number(self.vec2.vec.aspect())
-			return tp_function(tp, fn)
-		elif k == "length":
-			auto fn = def[=](tp_vm *t):
-				return tp_number(self.vec2.vec.length())
-			return tp_function(tp, fn)
-		elif k == "normalized":
-			## note, do not need to create a new tp_vec2 because this is already a copy
-			auto fn = def[=](tp_vm *t):
-				auto v = self
-				v.vec2.vec.normalize()
-				return v
-			return tp_function(tp, fn)
-		else:
-			throw "vector2 missing member"
 	elif type == TP_QUAT:
 		if k == "x":
-			return tp_number(self.quat.q🠊x)
+			return tp_number(self.__quat.q.x)
 		elif k == "y":
-			return tp_number(self.quat.q🠊y)
+			return tp_number(self.__quat.q.y)
 		elif k == "z":
-			return tp_number(self.quat.q🠊z)
+			return tp_number(self.__quat.q.z)
 		elif k == "w":
-			return tp_number(self.quat.q🠊w)
+			return tp_number(self.__quat.q.w)
+		#ifdef BLENDOT_TYPES
 		elif k == "length":
 			auto fn = def[=](tp_vm *t):
-				return tp_number(self.quat.q🠊length())
+				return tp_number(self.__quat.q.length())
 			return tp_function(tp, fn)
 		elif k == "normalized":
 			## note, do not need to create a new tp_vec2 because this is already a copy
 			auto fn = def[=](tp_vm *t):
 				auto v = self
-				v.quat.q🠊normalize()
+				v.__quat.q.normalize()
 				return v
 			return tp_function(tp, fn)
+		#endif
 		else:
-			throw "quat missing member"
+			throw "vec4/quat missing member"
+	#ifdef BLENDOT_TYPES
 	elif type == TP_COLOR:
 		if k == "r":
 			return tp_number(self.color.c🠊r)
@@ -543,37 +547,7 @@ def tp_iget(TP,tp_obj *r, tp_obj self, tp_obj k) ->int:
 def tp_set(TP,tp_obj self, tp_obj k, tp_obj v) -> tp_obj:
 	int type = self.type.type_id
 	#ifdef BLENDOT_TYPES
-	if type == TP_VEC2:
-		if k == "x":
-			self.vec2.vec.x = v.number.val
-		elif k == "y":
-			self.vec2.vec.y = v.number.val
-		else:
-			throw "vector2 type missing member"
-		return self
-	elif type == TP_VEC3:
-		if k == "x":
-			self.vec3.vec.x = v.number.val
-		elif k == "y":
-			self.vec3.vec.y = v.number.val
-		elif k == "z":
-			self.vec3.vec.z = v.number.val
-		else:
-			throw "vector3 type missing member"
-		return self
-	elif type == TP_QUAT:
-		if k == "x":
-			self.quat.q🠊x = v.number.val
-		elif k == "y":
-			self.quat.q🠊y = v.number.val
-		elif k == "z":
-			self.quat.q🠊z = v.number.val
-		elif k == "w":
-			self.quat.q🠊w = v.number.val
-		else:
-			throw "quat type missing member"
-		return self
-	elif type == TP_COLOR:
+	if type == TP_COLOR:
 		if k == "r":
 			self.color.c🠊r = v.number.val
 		elif k == "g":
@@ -635,6 +609,36 @@ def tp_set(TP,tp_obj self, tp_obj k, tp_obj v) -> tp_obj:
 		##TP_META_END
 		tp_dict_set(tp, self, k, v)
 		return self
+	elif type == TP_VEC2:
+		if k == "x":
+			self.__vec2.vec.x = v.number.val
+		elif k == "y":
+			self.__vec2.vec.y = v.number.val
+		else:
+			throw "vector2 type missing member"
+		return self
+	elif type == TP_VEC3:
+		if k == "x":
+			self.__vec3.vec.x = v.number.val
+		elif k == "y":
+			self.__vec3.vec.y = v.number.val
+		elif k == "z":
+			self.__vec3.vec.z = v.number.val
+		else:
+			throw "vector3 type missing member"
+		return self
+	elif type == TP_QUAT:
+		if k == "x":
+			self.__quat.q.x = v.number.val
+		elif k == "y":
+			self.__quat.q.y = v.number.val
+		elif k == "z":
+			self.__quat.q.z = v.number.val
+		elif k == "w":
+			self.__quat.q.w = v.number.val
+		else:
+			throw "vec4/quat type missing member"
+		return self
 	##tp_raise(,tp_string_atom(tp, "(tp_set) TypeError: object does not support item assignment"));
 	print(self)
 	print("object type_id = ", self.type.type_id)
@@ -672,15 +676,15 @@ def tp_add(TP, tp_obj a, tp_obj b) -> tp_obj:
 		return tp_string_add(tp, a, b)
 	elif a.type.type_id == TP_LIST && a.type.type_id == b.type.type_id:
 		return tp_list_add(tp, a, b)
-	#ifdef BLENDOT_TYPES
 	elif a.type.type_id == TP_VEC2 && a.type.type_id == b.type.type_id:
 		## a is already a copy
-		a.vec2.vec = a.vec2.vec + b.vec2.vec
+		a.__vec2.vec = a.__vec2.vec + b.__vec2.vec
 		return a
 	elif a.type.type_id == TP_VEC3 && a.type.type_id == b.type.type_id:
 		## a is already a copy
-		a.vec3.vec = a.vec3.vec + b.vec3.vec
+		a.__vec3.vec = a.__vec3.vec + b.__vec3.vec
 		return a
+	#ifdef BLENDOT_TYPES
 	elif a.type.type_id == TP_QUAT && a.type.type_id == b.type.type_id:
 		## a is already a copy
 		##TODO fixme##a.quat.q = &((*a.quat.q) + (*b.quat.q))
@@ -1112,6 +1116,13 @@ def tp_obj::operator[] (int index) -> tp_obj:
 		return this->lst.val->items[index]
 	elif this->type.type_id==TP_LIST:
 		return this->list.val->items[index]
+	elif this->type.type_id==TP_VEC2:
+		if index==0:
+			return this->__vec2.vec.x
+		elif index==1:
+			return this->__vec2.vec.y
+		else:
+			throw "vec2 invalid index"
 	elif this->type.type_id==TP_VEC3:
 		if index==0:
 			return this->__vec3.vec.x

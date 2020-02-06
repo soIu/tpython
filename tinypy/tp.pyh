@@ -261,7 +261,7 @@ class tp_obj:
 	struct { TPTypeInfo type; struct tpd_string *info; } string;
 	struct { TPTypeInfo type; const char * val; } atomstr;
 	struct { TPTypeInfo type; char val[12];} str;
-	struct { TPTypeInfo type; struct Vector2 vec; } vec2;
+	struct { TPTypeInfo type; struct Vector2 vec; } __vec2;
 	struct { TPTypeInfo type; struct Vector3 vec; } __vec3;
 	struct { TPTypeInfo type; struct Quat q; } __quat;
 	if defined(BLENDOT_TYPES):
@@ -771,8 +771,8 @@ def tp_tiny_list(TP) -> tp_obj:
 @static
 def tp_vec2(double x, double y) -> tp_obj:
 	tp_obj val = {TP_VEC2};
-	val.vec2.vec.x = x
-	val.vec2.vec.y = y
+	val.__vec2.vec.x = x
+	val.__vec2.vec.y = y
 	return val
 
 @static
@@ -1205,7 +1205,7 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 			ss << "None"
 			break
 		case TP_VEC2:
-			ss << "vec2( x=" << self.vec2.vec.x << ", y=" << self.vec2.vec.y << ")"
+			ss << "vec2( x=" << self.__vec2.vec.x << ", y=" << self.__vec2.vec.y << ")"
 			break
 		case TP_VEC3:
 			ss << "vec3( x=" << self.__vec3.vec.x << ", y=" << self.__vec3.vec.y << ", z=" << self.__vec3.vec.z << ")"

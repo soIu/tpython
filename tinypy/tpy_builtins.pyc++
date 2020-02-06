@@ -700,6 +700,7 @@ def tp_module_builtins_init(TP):
 	tp_set(tp, builtins, "compile", tp_function(tp, tpy_compile))
 	tp_set(tp, builtins, "vec2", tp_function(tp, tpy_vec2))
 	tp_set(tp, builtins, "vec3", tp_function(tp, tpy_vec3))
+	tp_set(tp, builtins, "vec4", tp_function(tp, tpy_quat))
 	tp_set(tp, builtins, "quat", tp_function(tp, tpy_quat))
 	if defined(BLENDOT_TYPES):
 		tp_set(tp, builtins, "spatial", tp_function(tp, tpy_spatial_from_pointer))

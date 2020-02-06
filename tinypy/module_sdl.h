@@ -18,10 +18,10 @@ tp_obj _sdl_quit(TP) {
 }
 
 tp_obj _sdl_display_clear(TP) {
-	tp_obj clr = TP_TYPE(TP_LIST);
-	int r = tp_get(tp,clr,tp_number(0)).number.val;
-	int g = tp_get(tp,clr,tp_number(1)).number.val;
-	int b = tp_get(tp,clr,tp_number(2)).number.val;
+	tp_obj clr = TP_OBJ();
+	int r = clr[0].number.val;
+	int g = clr[1].number.val;
+	int b = clr[2].number.val;
 	//SDL_SetRenderDrawColor(_sdl_renderer, r, g, b, 255);
 	//SDL_RenderClear(_sdl_renderer);
 	SDL_Rect rect;
@@ -55,9 +55,7 @@ Uint32 _sdl_list_to_color(TP,tp_obj clr,SDL_Surface *s) {
 
 
 tp_obj _sdl_create_window(TP) {
-	print("create sdl window...");
 	tp_obj sz = TP_OBJ();
-	print(sz);
 	int w = sz[0];
 	int h = sz[1];
 	_sdl_width = w;
@@ -89,7 +87,10 @@ tp_obj _sdl_draw(TP) {
 	//r.y = tp_get(tp,pos,tp_number(1)).number.val;
 	r.x = pos[0].number.val;
 	r.y = pos[1].number.val;
-	if (tp_len(tp,pos).number.val == 4) {
+	if (pos.type.type_id==TP_QUAT) {
+		r.w = pos[2].number.val;
+		r.h = pos[3].number.val;	
+	} else if (tp_len(tp,pos).number.val == 4) {
 		r.w = tp_get(tp,pos,tp_number(2)).number.val;
 		r.h = tp_get(tp,pos,tp_number(3)).number.val;
 	} else {
