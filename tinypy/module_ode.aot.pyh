@@ -84,8 +84,8 @@ def __nearCallback(void* ptr, dxGeom* o1, dxGeom* o2) ->void:
 	dContact cons[N]
 	for i in range(N):
 		cons[i].surface.mode = dContactSoftCFM | dContactApprox1
-		cons[i].surface.mu   = 0.5
-		cons[i].surface.soft_cfm = 0.01
+		cons[i].surface.mu   = 0.9
+		cons[i].surface.soft_cfm = 0.2
 	hits = dCollide(o1, o2, N, &cons[0].geom, sizeof(dContact))
 	if hits > 0:
 		for i in range( hits ):
@@ -114,6 +114,7 @@ class world( object ):
 			dInitODE()
 			__is_ode_init = True
 			__world__ = dWorldCreate()
+			#dWorldSetGravity( __world__, g[0],g[1],g[2] )
 			self.__wptr__ = __world__
 		else:
 			print("only a single ODE world is allowed for now")
@@ -124,7 +125,9 @@ class mass( object ):
 	def setSphere(self, density, radius):
 		dMassSetSphere( self.__mpointer__(), density, radius )
 	def __init__(self):
-		self.__mptr__  = new dMass()
+		ptr = new dMass()
+		#dMassSetSphere( ptr, density, radius )
+		self.__mptr__  = ptr
 
 class body( object ):
 	def __bpointer__(self) ->dxBody*:
@@ -177,7 +180,12 @@ class body( object ):
 		p = dBodyGetAngularVel( self.__bpointer__() )
 		return vec3(p[0], p[1], p[2])
 	def __init__(self, w):
-		self.__bptr__ = dBodyCreate( w.__wpointer__() )
+		b = dBodyCreate( w.__wpointer__() )
+		## bodies already have some default mass set by ODE
+		#m = dMass()
+		#dMassSetSphere( &m, 0.25, 1.0 )
+		#dBodySetMass( b, &m )
+		self.__bptr__ = b
 
 
 class space( object ):
