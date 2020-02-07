@@ -651,6 +651,7 @@ def tp_set(TP,tp_obj self, tp_obj k, tp_obj v) -> tp_obj:
 ## used by modules, strings are not interned with 8bit hashes even though v is required to be a tiny string ##
 def tp_set(TP,tp_obj self, tp_obj k, const char* v) -> tp_obj:
 	if strlen(v) > 12:
+		print("tp_set(obj, key, string) - string is more than 12 bytes")
 		throw "tp_set(obj, key, string) - string is more than 12 bytes"
 	## need to check here if v has already been 8bit hashed? because some modules may use internal names
 	return tp_set(tp, self, k, tp_string_tiny(v))
@@ -659,14 +660,17 @@ def tp_set(TP,tp_obj self, tp_obj k, const char* v) -> tp_obj:
 ## used by modules, strings are not interned with 8bit hashes even though k is required to be a tiny string ##
 def tp_set(TP,tp_obj self, const char* k, tp_obj v) -> tp_obj:
 	if strlen(k) > 12:
+		print("tp_set(obj, string key, value) - string key is more than 12 bytes")
 		throw "tp_set(obj, string key, value) - string key is more than 12 bytes"
 	## need to check here if v has already been 8bit hashed? because some modules may use internal names
 	return tp_set(tp, self, tp_string_tiny(k), v)
 
 def tp_set(TP,tp_obj self, const char* k, const char* v) -> tp_obj:
 	if strlen(k) > 12:
+		print("tp_set(obj, string key, string value) - string key is more than 12 bytes")
 		throw "tp_set(obj, string key, string value) - string key is more than 12 bytes"
 	if strlen(v) > 12:
+		print("tp_set(obj, string key, string value) - string value is more than 12 bytes")
 		throw "tp_set(obj, string key, string value) - string value is more than 12 bytes"
 	return tp_set(tp, self, tp_string_tiny(k), tp_string_tiny(v) )
 

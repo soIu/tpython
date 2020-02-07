@@ -1,7 +1,13 @@
-#include <SDL2/SDL.h>
+// note: SDL1 works better with Emscripten, so SDL2 is deprecated
 
-static SDL_Window *_sdl_window = NULL;
-//SDL_Renderer *_sdl_renderer = NULL;  // SDL_Renderer can not be used with SDL_GetWindowSurface
+#ifdef USE_SDL2_DEPRECATED
+	#include <SDL2/SDL.h>
+	static SDL_Window *_sdl_window = NULL;
+	//SDL_Renderer *_sdl_renderer = NULL;  // SDL_Renderer can not be used with SDL_GetWindowSurface
+#else
+	#include <SDL/SDL.h>
+#endif
+
 static SDL_Surface *_sdl_window_surf = NULL;
 static int _sdl_width = 0;
 static int _sdl_height = 0;
@@ -18,6 +24,7 @@ tp_obj _sdl_quit(TP) {
 }
 
 tp_obj _sdl_display_clear(TP) {
+	//print("sdl.clearing...");
 	tp_obj clr = TP_OBJ();
 	int r = clr[0].number.val;
 	int g = clr[1].number.val;
@@ -29,14 +36,30 @@ tp_obj _sdl_display_clear(TP) {
 	rect.y = 0;
 	rect.w = _sdl_width;
 	rect.h = _sdl_height;
+	//auto surf = SDL_GetVideoSurface();
+	//SDL_LockSurface(_sdl_window_surf);
+
 	Uint32 c = SDL_MapRGB(_sdl_window_surf->format,r,g,b);
 	SDL_FillRect(_sdl_window_surf, &rect, c);
+	//Uint32 c = SDL_MapRGB(surf->format,r,g,b);
+	//SDL_FillRect(surf, &rect, c);
+
+	//SDL_UnlockSurface(_sdl_window_surf);
+
 	return tp_None;
 }
 
 tp_obj _sdl_display_flip(TP) {
+	#ifdef USE_SDL2_DEPRECATED
 	//SDL_RenderPresent(_sdl_renderer);
 	SDL_UpdateWindowSurface(_sdl_window);
+	#else
+	// https://wiki.libsdl.org/SDL_BlitSurface
+	//SDL_BlitSurface( _sdl_window_surf, NULL, SDL_GetVideoSurface(), NULL);
+	//SDL_Flip( SDL_GetVideoSurface() );
+	//SDL_Flip( _sdl_window_surf );
+	SDL_UpdateRect(_sdl_window_surf, 0,0,0,0);
+	#endif
 	return tp_None;
 }
 tp_obj _sdl_delay(TP) {
@@ -55,11 +78,13 @@ Uint32 _sdl_list_to_color(TP,tp_obj clr,SDL_Surface *s) {
 
 
 tp_obj _sdl_create_window(TP) {
+	print("sdl_create_window....");
 	tp_obj sz = TP_OBJ();
 	int w = sz[0];
 	int h = sz[1];
 	_sdl_width = w;
 	_sdl_height = h;
+	#ifdef USE_SDL2_DEPRECATED
 	_sdl_window = SDL_CreateWindow(
 		"TPython", 
 		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
@@ -67,27 +92,40 @@ tp_obj _sdl_create_window(TP) {
 	);
 	if (_sdl_window == NULL)
 		throw "SDL ERROR: could not create sdl window";
-
 	//_sdl_renderer = SDL_CreateRenderer(_sdl_window, -1, 0);
 	//if (!_sdl_window_surf)
 	//	throw "WARN: could not get sdl surface from window";
-
 	_sdl_window_surf = SDL_GetWindowSurface(_sdl_window);
-	if (!_sdl_window_surf)
+	#else
+	_sdl_window_surf = SDL_SetVideoMode( w, h, 32, SDL_SWSURFACE );
+	//if (! SDL_SetVideoMode( w, h, 32, SDL_ANYFORMAT ) ) {
+	//	print("SDL failed to set the video mode");
+	//	throw "SDL failed to set the video mode";
+	//}
+	//_sdl_window_surf = SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0);
+	#endif
+
+	if (!_sdl_window_surf) {
+		print("SDL ERROR: could not get sdl surface from window");
 		throw "SDL ERROR: could not get sdl surface from window";
+	} else {
+		print(_sdl_window_surf);
+	}
 
 	return tp_None;
 }
 
 tp_obj _sdl_draw(TP) {
+	//print("sdl.draw...");
 	tp_obj pos = TP_OBJ();
 	tp_obj clr = TP_OBJ();
 	SDL_Rect r;
-	//r.x = tp_get(tp,pos,tp_number(0)).number.val;
-	//r.y = tp_get(tp,pos,tp_number(1)).number.val;
 	r.x = pos[0].number.val;
 	r.y = pos[1].number.val;
-	if (pos.type.type_id==TP_QUAT) {
+	if (pos.type.type_id==TP_VEC2) {
+		r.w = 1;
+		r.h = 1;
+	} else if (pos.type.type_id==TP_QUAT) {
 		r.w = pos[2].number.val;
 		r.h = pos[3].number.val;	
 	} else if (tp_len(tp,pos).number.val == 4) {
@@ -97,8 +135,13 @@ tp_obj _sdl_draw(TP) {
 		r.w = 1;
 		r.h = 1;
 	}
+	//SDL_LockSurface(_sdl_window_surf);
+
 	Uint32 c = _sdl_list_to_color(tp, clr, _sdl_window_surf);
 	SDL_FillRect(_sdl_window_surf, &r, c);
+
+	//SDL_UnlockSurface(_sdl_window_surf);
+
 	return tp_None;
 }
 

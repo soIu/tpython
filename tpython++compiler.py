@@ -713,8 +713,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		elif user_pythonic and s.startswith("#"):
 			## note user can not directly use macro syntax
 			pass
-		elif user_pythonic and s.startswith("global "):
-			## currently not used in low level pythonic++ (used to implement the VM)
+		elif s.startswith("global "):
+			## using the global keyword in low level pythonic++ (used to implement the VM) is just for clarity, local vars are not auto prefixed, it is done manually ##
 			func_globals = [gbl.strip() for gbl in s.split('global ')[-1].split(',')]
 			pass
 		elif user_pythonic and s.startswith("raise "):
@@ -1858,7 +1858,7 @@ def metapy2tinypypp( source ):
 	if '--aot-all' in sys.argv:
 		in_aot = True
 		aot_all = True
-
+		
 	#if tpy_modules_aot:
 	#	for aotmod in tpy_modules_aot:
 	#		aot.extend(tpy_modules_aot[aotmod])
@@ -1935,9 +1935,10 @@ def metapy2tinypypp( source ):
 
 	if aot:
 		shared.insert(0, 'from __aot_builtin_module__ import *')
-		print('============ AOT compile to C++ ==============')
-		print('\n'.join(aot))
-		print('----------------------------------------------')
+		if '--debug' in sys.argv:
+			print('============ AOT compile to C++ ==============')
+			print('\n'.join(aot))
+			print('----------------------------------------------')
 	else:
 		has_aot_mods = False
 		for ln in shared:
@@ -1948,9 +1949,28 @@ def metapy2tinypypp( source ):
 		if has_aot_mods:
 			shared.insert(0, 'from __aot_builtin_module__ import *')
 
+	if '--wasm' in sys.argv:
+		## special case to transform the first `while True: myfunc()` into a call to emscripten_set_main_loop
+		## http://main.lv/writeup/web_assembly_sdl_example.md
+		newshared = []
+		hits = 0
+		for ln in shared:
+			s = ln.strip()
+			if s.startswith('while True:') and s.count('(')==1 and s.count(')'):
+				assert s.endswith(')')
+				assert hits == 0
+				#TODO also assert that the function takes no args
+				func_name = s.split(':')[-1].split('(')[0].strip()
+				ln = '\t' * ln.split(':')[0].count('\t')
+				ln += 'em_set_main( %s )' %func_name
+				hits += 1
+			newshared.append(ln)
+		shared = newshared
+
 	print('============compile to bytecode ==============')
 	print('\n'.join(shared))
 	print('----------------------------------------------')
+	#raise RuntimeError('\n'.join(shared))
 
 	if aot and len(shared)==1:
 		raise SyntaxError('bytecode is blank, did you forget to define and call `main()` at the end of the script?')

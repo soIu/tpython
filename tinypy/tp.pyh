@@ -103,11 +103,13 @@ define(tp_inline)
 
 ## FIXME: increased so that gc doesnt get called while running tp_str()
 if defined(INCLUDEOS):
-	//#define TP_GCMAX 16384
 	define(TP_GCMAX=262144)
 else:
-	define(TP_GCMAX=524288)
-
+	if defined(__EMSCRIPTEN_major__):
+		define(TP_GCMAX=16384)
+	else:
+		define(TP_GCMAX=524288)
+	###########################
 
 ##define(TP_REGS=16384)
 define(TP_REGS=512)
@@ -953,13 +955,13 @@ def tp_import_from_buffer_with_filename(TP, const char * fname, const char * nam
 def tp_import_from_buffer(TP, const char * name, unsigned char *codes, int len)->tp_obj;
 
 
-def tp_ez_call(TP, const char *mod, const char *func, tp_obj params)->tp_obj;
-def tp_eval_from_cstr(TP, const char *text, tp_obj globals)->tp_obj;
+##def tp_ez_call(TP, const char *mod, const char *func, tp_obj params)->tp_obj;
+##def tp_eval_from_cstr(TP, const char *text, tp_obj globals)->tp_obj;
 def tp_exec(TP, tp_obj code)->tp_obj;
 def tp_compile(TP, tp_obj text, tp_obj fname)->tp_obj;
 
-def tp_data_t(TP, int magic, void *v)->tp_obj;
-def tp_data(TP, int magic, void *v)->tp_obj;
+##def tp_data_t(TP, int magic, void *v)->tp_obj;
+##def tp_data(TP, int magic, void *v)->tp_obj;
 
 def tp_len(TP,tp_obj self)->tp_obj;
 

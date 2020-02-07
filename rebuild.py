@@ -174,12 +174,13 @@ def rebuild(stage=None, exe_name='tpython++'):
 	exeopts = ''
 	defs = ''
 	mods = ''
-	opts = ''
+	opts = '-Wcast-align'
 	libs = '-lm -ldl -lpthread'
 
 	C  = 'gcc'
 	CC = 'c++'
 	if '--clang' in sys.argv:
+		opts += ' -Wover-aligned'
 		CC = 'clang++-6.0'
 		C  = 'clang-6.0'
 		clang_path = os.path.expanduser('~/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-16.04')
@@ -263,6 +264,9 @@ def rebuild(stage=None, exe_name='tpython++'):
 				cmd.append('--aot-all')
 				if '--wasm' in sys.argv or '--html' in sys.argv:
 					exe = os.path.split(arg)[-1]
+			if '--wasm' in sys.argv or '--html' in sys.argv:
+				cmd.append('--wasm')
+
 			subprocess.check_call(cmd)
 			os.system('cp -v /tmp/embedded_bytecode.gen.h ./tinypy/__user_bytecode__.gen.h')
 			if not aot_modules:
@@ -327,18 +331,21 @@ def rebuild(stage=None, exe_name='tpython++'):
 		opts += ' -Os '
 		if '--debug' in sys.argv:
 			#exeopts += ' -s DISABLE_EXCEPTION_CATCHING=2 -s FILESYSTEM=0'  ## something requires fs
-			exeopts += ' -s DISABLE_EXCEPTION_CATCHING=2'
+			#exeopts += ' -s DISABLE_EXCEPTION_CATCHING=2 -s SAFE_HEAP=1 -s WARN_UNALIGNED=1'  ## no need for SAFE_HEAP with wasm, because it can do unaligned casts?
+			exeopts += ' -s DISABLE_EXCEPTION_CATCHING=2 -s WARN_UNALIGNED=1'
 		else:
-			#exeopts += ' -s FILESYSTEM=0'
-			pass
+			#exeopts += ' -s WARN_UNALIGNED=1 -s ALLOW_MEMORY_GROWTH=1'  ## allowing memory growth will freeze on startup with SDL
+			exeopts += ' -s WARN_UNALIGNED=1'
 
 		if '--closure' in sys.argv:
-			opts += ' --closure 1'
+			exeopts += ' --closure 1'
 
 		if '--sdl' in sys.argv or use_sdl:  ## this is also required just at the linker stage
-			opts += ' -s USE_SDL=2'
-			if '--sdl-image' in sys.argv:
-				opts += """ -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]'"""
+			## SDL1 is better
+			#exeopts += ' -s USE_SDL=2'
+			#if '--sdl-image' in sys.argv:
+			#	exeopts += """ -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]'"""
+			pass
 		if '--html' in sys.argv:
 			exe += '.html'
 		else:
@@ -424,14 +431,15 @@ def rebuild(stage=None, exe_name='tpython++'):
 		defs += ' -DUSE_SDL'        # from runtime.cpp, module_sdl.h will be included
 		if mode == 'wasm':
 			#exeopts += """ -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]' -s TOTAL_MEMORY=33554432"""
-			exeopts += ' -s USE_SDL=2'
-			if '--sdl-image' in sys.argv:
-				exeopts += """ -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]'"""
+			#exeopts += ' -s USE_SDL=2'
+			#if '--sdl-image' in sys.argv:
+			#	exeopts += """ -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]'"""
 			if '--allow-memory-growth' in sys.argv:
 				exeopts += ' -s ALLOW_MEMORY_GROWTH=1'
 		else:
-			sdl_inc = '-I/usr/local/include'
-			libs += ' -lSDL2'
+			#sdl_inc = '-I/usr/local/include'
+			#libs += ' -lSDL2'
+			libs += ' -lSDL'
 
 	if unreal_plugin:
 		if not os.path.isdir(unreal_project):
@@ -604,7 +612,7 @@ def main():
 	if os.path.isfile('/tmp/tpython_preload_libs.js'):
 		os.system('rm -rf /tmp/tpython_preload_libs.js')
 
-	if '--clean' in sys.argv:
+	if '--clean' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv:
 		os.system('rm -rf tinypy/*.fodg')
 		os.system('rm -rf tinypy/blendot/*.fodg')
 		os.system('rm -rf tinypy/blendot/*.o')

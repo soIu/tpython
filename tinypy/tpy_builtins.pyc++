@@ -2,6 +2,34 @@
 ## Python2 builtins - TODO support all, or raise an error that it is not supported
 ## 'abs', 'all', 'any', 'apply', 'basestring', 'bin', 'bool', 'buffer', 'bytearray', 'bytes', 'callable', 'chr', 'classmethod', 'cmp', 'coerce', 'compile', 'complex', 'copyright', 'credits', 'delattr', 'dict', 'dir', 'divmod', 'enumerate', 'eval', 'execfile', 'exit', 'file', 'filter', 'float', 'format', 'frozenset', 'getattr', 'globals', 'hasattr', 'hash', 'help', 'hex', 'id', 'input', 'int', 'intern', 'isinstance', 'issubclass', 'iter', 'len', 'license', 'list', 'locals', 'long', 'map', 'max', 'memoryview', 'min', 'next', 'object', 'oct', 'open', 'ord', 'pow', 'print', 'property', 'quit', 'range', 'raw_input', 'reduce', 'reload', 'repr', 'reversed', 'round', 'set', 'setattr', 'slice', 'sorted', 'staticmethod', 'str', 'sum', 'super', 'tuple', 'type', 'unichr', 'unicode', 'vars', 'xrange', 'zip'
 
+#ifdef __EMSCRIPTEN_major__
+static tp_obj __em_main_func__
+static tp_vm* __em_tp__ = NULL
+
+@export.C
+def __em_main_loop__():
+	if defined(DEBUG):
+		print("TICK")
+		print(__em_main_func__)
+	##tp_exec(__em_tp__ , __em_main_func__ )
+	tp_obj r = tp_None
+	tp_enter_frame(__em_tp__, __em_main_func__, &r)
+	tp_run_frame(__em_tp__)
+
+def tpy_emscripten_set_main_loop(TP) ->tp_obj:
+	global __em_main_func__, __em_tp__
+	tp_obj func = TP_OBJ()
+	print("tpy_emscripten_set_main_loop")
+	print(func)
+	## TODO ensure that this is a bytecode function
+	__em_main_func__ = func.func.info->code
+	__em_tp__ = tp
+	emscripten_set_main_loop(__em_main_loop__, -1, 1)
+	return None
+
+#endif
+
+
 def tpy_print(TP) ->tp_obj;
 
 def tpy_bind(TP) ->tp_obj:
@@ -708,6 +736,8 @@ def tp_module_builtins_init(TP):
 	tp_set(tp, builtins, "vec3", tp_function(tp, tpy_vec3))
 	tp_set(tp, builtins, "vec4", tp_function(tp, tpy_quat))
 	tp_set(tp, builtins, "quat", tp_function(tp, tpy_quat))
+	if defined(__EMSCRIPTEN_major__):
+		tp_set(tp, builtins, "em_set_main", tp_function(tp, tpy_emscripten_set_main_loop))
 	if defined(BLENDOT_TYPES):
 		tp_set(tp, builtins, "spatial", tp_function(tp, tpy_spatial_from_pointer))
 	o = tp_interface_t(tp)

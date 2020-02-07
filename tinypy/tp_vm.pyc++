@@ -44,7 +44,8 @@ def tp_create_vm(void) -> tp_vm*:
 	##tp_set(tp, tp->root, tp_None, tp->_string_meta);
 	tp->regs = tp->_regs.list.val->items
 	tp->last_result = tp_None
-	tp_full(tp)
+	## why was hassey doing a gc collect here?
+	##tp_full(tp)
 	return tp
 
 def tp_enter_frame(TP, tp_obj code, tp_obj * ret_dest):
@@ -825,8 +826,9 @@ def tp_exec(TP, tp_obj code) ->tp_obj:
 	tp_run_frame(tp)
 	return r
 
-def tp_eval_from_cstr(TP, const char *text, tp_obj globals) ->tp_obj:
-	tp_obj code = tp_compile(tp, tp_string_atom(tp, text), tp_string_atom(tp, "<eval>"))
-	tp_exec(tp,code)
-	return tp->last_result
+##def tp_eval_from_cstr(TP, const char *text, tp_obj globals) ->tp_obj:
+##	tp_obj code = tp_compile(tp, tp_string_atom(tp, text), tp_string_atom(tp, "<eval>"))
+##	tp_exec(tp,code)
+##	return tp->last_result
+
 
