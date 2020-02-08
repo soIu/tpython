@@ -23,6 +23,20 @@ tp_obj _sdl_quit(TP) {
 	return tp_None;
 }
 
+tp_obj _sdl_display_flip(TP) {
+	#ifdef USE_SDL2_DEPRECATED
+	//SDL_RenderPresent(_sdl_renderer);
+	SDL_UpdateWindowSurface(_sdl_window);
+	#else
+	// https://wiki.libsdl.org/SDL_BlitSurface
+	//SDL_BlitSurface( _sdl_window_surf, NULL, SDL_GetVideoSurface(), NULL);
+	//SDL_UpdateRect(_sdl_window_surf, 0,0,0,0);
+	SDL_Flip( SDL_GetVideoSurface() );
+	//SDL_Flip( _sdl_window_surf );
+	#endif
+	return tp_None;
+}
+
 tp_obj _sdl_display_clear(TP) {
 	//print("sdl.clearing...");
 	tp_obj clr = TP_OBJ();
@@ -36,35 +50,25 @@ tp_obj _sdl_display_clear(TP) {
 	rect.y = 0;
 	rect.w = _sdl_width;
 	rect.h = _sdl_height;
-	//auto surf = SDL_GetVideoSurface();
-	//SDL_LockSurface(_sdl_window_surf);
 
 	Uint32 c = SDL_MapRGB(_sdl_window_surf->format,r,g,b);
 	SDL_FillRect(_sdl_window_surf, &rect, c);
-	//Uint32 c = SDL_MapRGB(surf->format,r,g,b);
-	//SDL_FillRect(surf, &rect, c);
-
-	//SDL_UnlockSurface(_sdl_window_surf);
-
-	return tp_None;
-}
-
-tp_obj _sdl_display_flip(TP) {
-	#ifdef USE_SDL2_DEPRECATED
-	//SDL_RenderPresent(_sdl_renderer);
-	SDL_UpdateWindowSurface(_sdl_window);
-	#else
-	// https://wiki.libsdl.org/SDL_BlitSurface
+	//SDL_UpdateRect(_sdl_window_surf, 0,0,0,0);
 	//SDL_BlitSurface( _sdl_window_surf, NULL, SDL_GetVideoSurface(), NULL);
-	//SDL_Flip( SDL_GetVideoSurface() );
-	//SDL_Flip( _sdl_window_surf );
-	SDL_UpdateRect(_sdl_window_surf, 0,0,0,0);
-	#endif
+
 	return tp_None;
 }
+
+
+
 tp_obj _sdl_delay(TP) {
 	tp_obj ms = TP_TYPE(TP_NUMBER);
-	SDL_Delay((int)ms.number.val );
+	#ifdef __EMSCRIPTEN_major__
+		//int loops = ms.number.val;
+		//for (int i=0; i < loops*1000; i++) {}
+	#else
+		SDL_Delay((int)ms.number.val );
+	#endif
 	return tp_None;
 }
 
@@ -97,8 +101,9 @@ tp_obj _sdl_create_window(TP) {
 	//	throw "WARN: could not get sdl surface from window";
 	_sdl_window_surf = SDL_GetWindowSurface(_sdl_window);
 	#else
+	//_sdl_window_surf = SDL_SetVideoMode( w, h, 32, SDL_DOUBLEBUF );
 	_sdl_window_surf = SDL_SetVideoMode( w, h, 32, SDL_SWSURFACE );
-	//if (! SDL_SetVideoMode( w, h, 32, SDL_ANYFORMAT ) ) {
+	//if (! SDL_SetVideoMode( w, h, 32, SDL_DOUBLEBUF ) ) {
 	//	print("SDL failed to set the video mode");
 	//	throw "SDL failed to set the video mode";
 	//}
@@ -139,6 +144,9 @@ tp_obj _sdl_draw(TP) {
 
 	Uint32 c = _sdl_list_to_color(tp, clr, _sdl_window_surf);
 	SDL_FillRect(_sdl_window_surf, &r, c);
+	//SDL_UpdateRect(_sdl_window_surf, 0,0,0,0); // flickers
+	//SDL_UpdateRect(_sdl_window_surf, r.x, r.y, r.w, r.h);  // still flickers
+	//SDL_BlitSurface( _sdl_window_surf, NULL, SDL_GetVideoSurface(), NULL);
 
 	//SDL_UnlockSurface(_sdl_window_surf);
 

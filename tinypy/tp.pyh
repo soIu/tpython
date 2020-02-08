@@ -191,6 +191,11 @@ enum TPModuleMagic:
 	TP_MODULE_INTERNAL = 0,
 	TP_MODULE_EXTERNAL_MAGIC = 1,
 
+enum TPGCMagic:
+	TP_GC_MAGIC = 0,
+	TP_SKIP_GC_MAGIC = 1,
+
+
 if defined(TP_BIG_NUM):
 	import <quadmath.h>
 	##typedef long double tp_num;
@@ -1091,7 +1096,7 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 	switch type:
 		case TP_STRING_TINY:
 			if quote_strings:
-				ss << "\"" << std::string(self.str.val, len(self.str.val)) << "\"";
+				ss << "`" << std::string(self.str.val, len(self.str.val)) << "`";
 			else:
 				ss << std::string(self.str.val, len(self.str.val))
 			break

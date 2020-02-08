@@ -11,9 +11,10 @@ def tp_grey(TP, tp_obj v):
 	  std::cout << "tp_gc.cpp tp_grey" << std::endl;
 	#endif
 	if v.type.type_id < TP_GC_TRACKED:
-		## TODO this should print a warning
+		##print("GC SKIPPING:")
+		##print(v)
 		return
-	if v.type.type_id == TP_STRING:
+	elif v.type.type_id == TP_STRING:
 		## TODO the v.string.info pointer still needs to be freed for both extern and string views
 		## note should copy the bytes from the code object, because it gets freed later.
 		## TODO string literals should not be using extern or view at all.
@@ -21,6 +22,12 @@ def tp_grey(TP, tp_obj v):
 			return
 		elif v.type.magic == TP_STRING_VIEW:
 			return
+	elif v.type.type_id == TP_LIST and v.type.magic == TP_SKIP_GC_MAGIC:
+		## global lists are not tracked
+		return
+	elif v.type.type_id == TP_DICT and v.type.magic == TP_SKIP_GC_MAGIC:
+		## global dicts are not tracked
+		return
 	if ((!v.gc.gci) || *v.gc.gci) { return; }
 	## this unsafe union hackery is probably what crashes tpd_dict when its struct order is changed
 	*v.gc.gci = 1;
@@ -36,19 +43,31 @@ def tp_follow(TP,tp_obj v):
 	##if type == TP_STRING && v.type.magic == TP_STRING_VIEW:
 	##	tp_grey(tp, v.string.info->base)
 	if type == TP_LIST:
-		int n
-		for (n=0; n<v.list.val->len; n++):
-			tp_grey(tp,v.list.val->items[n])
-	if type == TP_DICT:
-		int i
-		for (i=0; i<v.dict.val->len; i++):
-			##int n = tpd_dict_next(tp,v.dict.val)
-			if v.dict.val->items[i].used < 1:
-				continue
-			tp_grey(tp,v.dict.val->items[i].key)
-			tp_grey(tp,v.dict.val->items[i].val)
-	if type >= TP_HAS_META:
-		tp_grey(tp, v.obj.info->meta)
+		if v.type.magic == TP_SKIP_GC_MAGIC:
+			##throw "LIST SKIP GC"
+			pass
+		else:
+			int n
+			for (n=0; n<v.list.val->len; n++):
+				tp_grey(tp,v.list.val->items[n])
+	elif type == TP_DICT:
+		if v.type.magic == TP_SKIP_GC_MAGIC:
+			##throw "DICT SKIP GC"
+			pass
+		else:
+			int i
+			for (i=0; i<v.dict.val->len; i++):
+				##int n = tpd_dict_next(tp,v.dict.val)
+				if v.dict.val->items[i].used < 1:
+					continue
+				if defined(DEBUG_GC):
+					print("GC DICT ITEMS:")
+					print(v.dict.val->items[i].key)
+					print(v.dict.val->items[i].val)
+				tp_grey(tp,v.dict.val->items[i].key)
+				tp_grey(tp,v.dict.val->items[i].val)
+	##if type >= TP_HAS_META:  ## meta should never be deleted
+	##	tp_grey(tp, v.obj.info->meta)
 	##if type == TP_FUNC:
 	##	tp_grey(tp,v.func.info->instance)
 	##	tp_grey(tp,v.func.info->globals)
@@ -82,23 +101,24 @@ def tp_gc_deinit(TP):
 
 
 def tp_delete(TP, tp_obj v):
-	#if DEBUG > 3
-	  std::cout << "tp_gc.cpp tp_delete" << std::endl;
-	#endif
+	if defined(DEBUG_GC):
+		std::cout << "tp_gc.cpp tp_delete" << std::endl;
 	int type = v.type.type_id
 	if type == TP_LIST:
-		#if DEBUG > 3
-		  std::cout << "  GC FREE LIST" << std::endl;
-		#endif
-		tpd_list_free(tp, v.list.val)
+		if defined(DEBUG_GC):
+			std::cout << "  GC FREE LIST" << std::endl;
+			print(v)
+		if v.type.magic != TP_SKIP_GC_MAGIC:
+			tpd_list_free(tp, v.list.val)
 		return;
 	elif type == TP_DICT || type == TP_INTERFACE || type == TP_OBJECT:
-		if defined(DEBUG):
+		if defined(DEBUG_GC):
 			print(DPURPLE, "  GC FREE DICT/INTERFACE/OBJECT")
-		tpd_dict_free(tp, v.dict.val)
+		if v.type.magic != TP_SKIP_GC_MAGIC:
+			tpd_dict_free(tp, v.dict.val)
 		return
 	elif type == TP_STRING:
-		#ifdef DEBUG
+		#ifdef DEBUG_GC
 		if v.type.magic == TP_STRING_NONE:
 			std::cout << "  GC FREE STRING NONE" << std::endl;
 			tp_free(tp, v.string.info->s)

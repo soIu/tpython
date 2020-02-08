@@ -335,6 +335,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 			exeopts += ' -s DISABLE_EXCEPTION_CATCHING=2 -s WARN_UNALIGNED=1'
 		else:
 			#exeopts += ' -s WARN_UNALIGNED=1 -s ALLOW_MEMORY_GROWTH=1'  ## allowing memory growth will freeze on startup with SDL
+			#exeopts += ' -s WARN_UNALIGNED=1 -s ASYNCIFY' ## asyncify is deprecated, and makes the binary 50% larger anyways
 			exeopts += ' -s WARN_UNALIGNED=1'
 
 		if '--closure' in sys.argv:

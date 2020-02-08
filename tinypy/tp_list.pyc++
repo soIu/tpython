@@ -24,6 +24,14 @@ def tp_list_from_items(TP, int n, tp_obj *argv) ->tp_obj:
 		tpd_list_append(tp, r.list.val, argv[i])
 	return r
 
+def tp_list_from_items_nt(TP, int n, tp_obj *argv) ->tp_obj:
+	tp_obj r = tp_list_nt(tp)
+	r.type.magic = TP_SKIP_GC_MAGIC
+	tpd_list_realloc(tp, r.list.val,n)
+	for (int i=0; i<n; i++):
+		tpd_list_append(tp, r.list.val, argv[i])
+	return r
+
 
 ## C API for lists
 def tp_list_copy(TP, tp_obj rr) ->tp_obj:

@@ -26,7 +26,10 @@ def tp_create_vm(void) -> tp_vm*:
 	for (i=0; i<TP_REGS; i++) { tp_set(tp, tp->_regs, tp_None, tp_None); }
 	##tp->modules = tp_dict_t(tp)
 	tp->modules = tp_interface_t(tp)
-	tp->globals = tp_dict_t(tp)
+	##tp->globals = tp_dict_t(tp)
+	## globals are not GC tracked
+	tp->globals = tp_dict_nt(tp)
+	tp->globals.type.magic = TP_SKIP_GC_MAGIC
 	tp->_params = tp_list_t(tp)
 	if defined(TINY_LIST_PARAMS):
 		tp->params  = tp_tiny_list(tp)
@@ -452,13 +455,18 @@ def tp_step(TP) ->int:
 						RA = tp_get(tp,tp->builtins,RB); GA;
 					break
 				case 156:
-					if defined(DEBUG):
-						print("Global256 Set")
+					##if defined(DEBUG):
+					print("Global256 Set")
+					print(RB)
+					## its too late to set the magic here, because its already been added to the gc list and self.type.magic is on the stack, gc has an older copy
+					if RB.type.type_id == TP_LIST:
+						RB.type.magic = TP_SKIP_GC_MAGIC
 					__globals256__[ VA ] = RB
 					break
 				case 157:
 					if defined(DEBUG):
 						print("Global256 Get")
+						print(__globals256__[ VB ])
 					RA = __globals256__[ VB ]
 					break
 				case TP_IGSET:
@@ -609,8 +617,18 @@ def tp_step(TP) ->int:
 						std::cout << "new interface with name = " << RB << std::endl;
 					RA = tp_interface_with_name(tp, RB)
 					break;
-				case TP_IDICT: RA = tp_dict_from_items(tp, VC/2, &RB); break;
-				case TP_ILIST: RA = tp_list_from_items(tp, VC, &RB); break;
+				case 150:
+					RA = tp_dict_from_items_nt(tp, VC/2, &RB)
+					break
+				case TP_IDICT:
+					RA = tp_dict_from_items(tp, VC/2, &RB)
+					break
+				case 151:
+					RA = tp_list_from_items_nt(tp, VC, &RB)
+					break
+				case TP_ILIST:
+					RA = tp_list_from_items(tp, VC, &RB)
+					break
 				case TP_IPARAMS:
 					if defined(DEBUG) or defined(DEBUG_CALLS):
 						print("	PARAMS: result - RA = ", RA)

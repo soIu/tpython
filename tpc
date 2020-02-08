@@ -564,8 +564,21 @@ def do_set_ctx(k,v):
 				free_tmp(b)
 			elif len(D.stack)==1 and len(D.globals256)<256:
 				D.globals256.append(k.val)
-				#print("New Global256: ", k.val, " index=", D.globals256.index(k.val), ' stack-level=', len(D.stack))
-				b = do(v)
+				print("New Global256: ", k.val, " index=", D.globals256.index(k.val), ' stack-level=', len(D.stack))
+				print(v)
+				print(v.type)
+				print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+				if v.type=='dict':
+					## global dicts are not garbage collected
+					b = do_dict(v, is_global=True)
+				elif v.type=='list':
+					## global lists are not garbage collected
+					b = do_list(v, is_global=True)
+				elif v.type=='comp':
+					## global lists are not garbage collected
+					b = do_comp(v, is_global=True)
+				else:
+					b = do(v)
 				code(156, D.globals256.index(k.val), b )
 				free_tmp(b)
 			else:
@@ -1295,10 +1308,13 @@ def do_for(tok):
 	free_tmp(itr) #REG
 	free_tmp(i)
 
-def do_comp(t,r=None):
+def do_comp(t,r=None, is_global=False):
 	name = 'comp:'+get_tag()
 	r = do_local(Token(t.pos,'name',name))
-	code(LIST,r,0,0)
+	if is_global:
+		code(151,r,0,0)
+	else:
+		code(LIST,r,0,0)
 	key = Token(t.pos,'get',None,[
 			Token(t.pos,'reg',r),
 			Token(t.pos,'symbol','None')])
@@ -1404,14 +1420,20 @@ def do_raise(t):
 def do_statements(t):
 	for tt in t.items: free_tmp(do(tt))
 
-def do_list(t,r=None):
+def do_list(t,r=None, is_global=False):
 	r = get_tmp(r)
-	manage_seq(LIST,r,t.items)
+	if is_global:
+		manage_seq(151,r,t.items)
+	else:
+		manage_seq(LIST,r,t.items)
 	return r
 
-def do_dict(t,r=None):
+def do_dict(t,r=None, is_global=False):
 	r = get_tmp(r)
-	manage_seq(DICT,r,t.items)
+	if is_global:
+		manage_seq(150,r,t.items)
+	else:
+		manage_seq(DICT,r,t.items)
 	return r
 
 def do_get(t,r=None):
