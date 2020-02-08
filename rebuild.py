@@ -217,11 +217,13 @@ def rebuild(stage=None, exe_name='tpython++'):
 	aot_modules = False
 
 	if '--ode' in sys.argv:
-		if '--clang' not in sys.argv:
-			if '--dev' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv:
-				pass
-			else:
-				raise RuntimeError("miniode only works with clang!")
+		if '--clang' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv:
+			print("WARN: miniode is not yet fully supported by clang")
+			print("https://bitbucket.org/odedevs/ode/issues/66/different-behavior-with-clang-vs-gcc")
+		elif '--aot' not in sys.argv:
+			print("WARN: miniode is not yet fully supported by GCC when compiled without AOT")
+			print("body.getRotation() is known to return invalid values")
+			print("the workaround is to rebuild with --aot, and make your script fully AOT compatible")
 		aot_modules = True
 		for odefile in os.listdir('./tinypy/miniode/ode'):
 			if odefile.endswith('.cpp'):
