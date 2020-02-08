@@ -84,8 +84,15 @@ def __nearCallback(void* ptr, dxGeom* o1, dxGeom* o2) ->void:
 	dContact cons[N]
 	for i in range(N):
 		cons[i].surface.mode = dContactSoftCFM | dContactApprox1
+		## TODO options for bounce and other surface modes
+		#cons[i].surface.mode = dContactSoftCFM | dContactBounce | dContactSoftERP | dContactMu2 | dContactRolling
+		#cons[i].surface.mode = dContactSoftCFM | dContactSoftERP | dContactMu2 | dContactRolling
+		cons[i].surface.soft_erp   = 0.9
 		cons[i].surface.mu   = 0.9
-		cons[i].surface.soft_cfm = 0.2
+		cons[i].surface.bounce   = 0.01
+		cons[i].surface.bounce_vel   = 0.05
+		##cons[i].surface.soft_cfm = 0.2
+		cons[i].surface.soft_cfm = 0.1
 	hits = dCollide(o1, o2, N, &cons[0].geom, sizeof(dContact))
 	if hits > 0:
 		for i in range( hits ):
@@ -115,6 +122,7 @@ class world( object ):
 			__is_ode_init = True
 			__world__ = dWorldCreate()
 			#dWorldSetGravity( __world__, g[0],g[1],g[2] )
+			dWorldSetContactMaxCorrectingVel(__world__, 2000.0)
 			self.__wptr__ = __world__
 		else:
 			print("only a single ODE world is allowed for now")
@@ -146,6 +154,8 @@ class body( object ):
 		dBodyAddRelTorque( self.__bpointer__(), vec[0], vec[1], vec[2] )
 	def getPosition(self):
 		p = dBodyGetPosition( self.__bpointer__() )
+		if std::isnan(p[0]):
+			raise RuntimeError("body.getPosition NAN error")
 		return vec3(p[0], p[1], p[2])
 	def setRotation(self, qd):
 		dQuaternion q
@@ -185,6 +195,9 @@ class body( object ):
 		#m = dMass()
 		#dMassSetSphere( &m, 0.25, 1.0 )
 		#dBodySetMass( b, &m )
+		## linear damping, angular damping
+		dBodySetDamping(b, 0.1, 0.1)
+		dBodySetMaxAngularSpeed(b, 100)
 		self.__bptr__ = b
 
 

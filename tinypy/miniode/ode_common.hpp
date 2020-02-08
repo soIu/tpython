@@ -51,8 +51,9 @@ extern "C" {
 
 
 /* floating point data type, vector, matrix and quaternion types */
-
-typedef float dReal;
+// note: dReal can not be a float, because that will quickly lead to NAN's in position
+// ODE only works properly with dReal as a double
+typedef double dReal;
 
 /* Detect if we've got both trimesh engines enabled. */
 #if dTRIMESH_ENABLED

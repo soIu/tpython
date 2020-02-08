@@ -55,6 +55,13 @@ def tp_dict_from_items(TP, int n, tp_obj * argv) ->tp_obj:
 		tp_set(tp, r, argv[i*2], argv[i*2+1])
 	return r
 
+def tp_dict_from_items_nt(TP, int n, tp_obj * argv) ->tp_obj:
+	tp_obj r = tp_dict_nt(tp)
+	r.type.magic = TP_SKIP_GC_MAGIC
+	for (int i=0; i<n; i++):
+		tp_set(tp, r, argv[i*2], argv[i*2+1])
+	return r
+
 
 def tp_interface_from_items(TP, int n, tp_obj * argv) ->tp_obj:
 	tp_obj r = tp_interface_t(tp)

@@ -723,8 +723,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				## forced to be forward declared and defined later, using virt_func_dispatch
 				indent = previ
 			else:
-				err = s.split()[-1]
-				out.append('throw "%s";' %err )
+				err = s.split('raise ')[-1]
+				out.append('throw "%s";' % err.replace('"', "`"))
 		#elif user_pythonic and indent==1 and not ln.startswith(' ') and not s.startswith('@') and is_untyped_global_var(s):
 		elif user_pythonic and indent <= 1 and not ln.startswith(' ') and not s.startswith('@') and is_untyped_global_var(s):
 			ctype, cname, cval = guess_type_of_var(s, classes=classes, global_auto_unwrap=global_auto_unwrap)

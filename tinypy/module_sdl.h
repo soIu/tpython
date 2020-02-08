@@ -65,7 +65,8 @@ tp_obj _sdl_delay(TP) {
 	tp_obj ms = TP_TYPE(TP_NUMBER);
 	#ifdef __EMSCRIPTEN_major__
 		//int loops = ms.number.val;
-		//for (int i=0; i < loops*1000; i++) {}
+		//volatile int n = 0;
+		//for (int i=0; i < loops*1000; i++) {n+=i;}
 	#else
 		SDL_Delay((int)ms.number.val );
 	#endif

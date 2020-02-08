@@ -35,8 +35,10 @@
 
 
 //#include "precision.h"
-#define dSINGLE 1
-
+//#define dSINGLE 1
+// note: dReal is defined in ode_common.hpp
+// note: ODE only works properly with dReal as a double. float will break collison callbacks!
+#define dDOUBLE
 
 #if defined(ODE_DLL) || defined(ODE_LIB)
 #define __ODE__
