@@ -1,0 +1,111 @@
+import <SDL/SDL.h>
+
+static SDL_Surface *_sdl_window_surf = NULL;
+static int _sdl_width = 0;
+static int _sdl_height = 0;
+
+class sdlwrapper(object):
+	def initialize(self):
+		if SDL_Init(SDL_INIT_VIDEO) < 0:
+			print("WARN: could not init sdl video")
+	def quit(self):
+		SDL_Quit()
+	def flip(self):
+		SDL_Flip( SDL_GetVideoSurface() )
+	def clear(self, clr):
+		int r = clr[0].number.val
+		int g = clr[1].number.val
+		int b = clr[2].number.val
+		SDL_Rect rect
+		rect.x = 0;
+		rect.y = 0;
+		rect.w = _sdl_width;
+		rect.h = _sdl_height;
+		Uint32 c = SDL_MapRGB(_sdl_window_surf->format,r,g,b)
+		SDL_FillRect(_sdl_window_surf, &rect, c)
+	def delay(self, ms):
+		if defined(__EMSCRIPTEN_major__):
+			pass
+		else:
+			SDL_Delay( (int)ms )
+		##################################
+	def window(self, sz):
+		global _sdl_width, _sdl_height, _sdl_window_surf
+		print("sdl_create_window....")
+		int w = sz[0]
+		int h = sz[1]
+		_sdl_width = w
+		_sdl_height = h
+		_sdl_window_surf = SDL_SetVideoMode( w, h, 32, SDL_SWSURFACE )
+		if not _sdl_window_surf:
+			print("SDL ERROR: could not get sdl surface from window")
+			raise RuntimeError("SDL ERROR: could not get sdl surface from window")
+	def draw(self, pos, clr):
+		SDL_Rect r;
+		r.x = pos[0].number.val;
+		r.y = pos[1].number.val;
+		if pos.type.type_id==TP_VEC2:
+			r.w = 1;
+			r.h = 1;
+		elif pos.type.type_id==TP_QUAT:
+			r.w = pos[2].number.val;
+			r.h = pos[3].number.val;
+		elif len(pos) == 4:
+			r.w = pos[2].number.val;
+			r.h = pos[3].number.val;
+		else:
+			r.w = 1;
+			r.h = 1;
+		int red = clr[0];
+		int gre = clr[1];
+		int blu = clr[2];
+		Uint32 c = SDL_MapRGB(_sdl_window_surf->format,red,gre,blu)
+		SDL_FillRect(_sdl_window_surf, &r, c)
+	def poll(self):
+		SDL_Event e;
+		#tp_obj r = tp_list(tp);
+		tp_obj r = tp_tiny_list()
+		int num_events = 0
+		while SDL_PollEvent(&e) and num_events < TINY_LIST_MAX_SIZE:
+			tp_obj d = tp_extern_interface()
+			#tp_set(tp,d, "type", tp_number(e.type));
+			#d.set("type", tp_number(e.type))
+			d.set("type", "SOME_EVENT")
+			switch e.type:
+				case SDL_KEYDOWN:
+					d.set("type", "KEYDOWN");
+					d.set("key",  tp_number(e.key.keysym.scancode));
+					d.set("sym",  tp_number(e.key.keysym.sym));
+					d.set("mod",  tp_number(e.key.keysym.mod));
+					break;
+				case SDL_KEYUP:
+					d.set("type", "KEYUP");
+					d.set("key",  tp_number(e.key.keysym.scancode));
+					d.set("sym",  tp_number(e.key.keysym.sym));
+					d.set("mod",  tp_number(e.key.keysym.mod));
+					break;
+				case SDL_MOUSEMOTION:
+					d.set("type", "MOUSE");
+					d.set("x",  tp_number(e.motion.x));
+					d.set("y",  tp_number(e.motion.y));
+					d.set("rx", tp_number(e.motion.xrel));
+					d.set("ry", tp_number(e.motion.yrel));
+					d.set("state", tp_number(e.motion.state));
+					break;
+				case SDL_MOUSEBUTTONDOWN:
+					pass
+				case SDL_MOUSEBUTTONUP:
+					d.set("type", "CLICK");
+					d.set("x", tp_number(e.button.x));
+					d.set("y", tp_number(e.button.y));
+					d.set("button", tp_number(e.button.button));
+					break;
+			if d["type"] == "SOME_EVENT":
+				pass
+			else:
+				r.lst.val->append( d )
+				num_events ++
+		return r
+	def __init__(self):
+		pass
+

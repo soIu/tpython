@@ -64,6 +64,10 @@ def tpd_dict_new(TP) -> tpd_dict* :
 	tpd_dict *self = (tpd_dict*) tp_malloc(tp, sizeof(tpd_dict))
 	return self
 
+def tpd_dict_new() -> tpd_dict* :
+	tpd_dict *self = (tpd_dict*) tp_malloc(NULL, sizeof(tpd_dict))
+	return self
+
 
 def tpd_dict_hashsetx(TP, tpd_dict * self, int hash, tp_obj k, tp_obj v):
 	if defined(DEBUG):

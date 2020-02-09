@@ -26,6 +26,13 @@ def tp_extern_interface(TP) ->tp_obj:
 	r.type.magic = TP_MODULE_EXTERNAL_MAGIC
 	return r
 
+def tp_extern_interface() ->tp_obj:
+	tp_obj r = {TP_INTERFACE};
+	r.dict.val = tpd_dict_new()
+	r.obj.info->meta = tp_None
+	r.type.magic = TP_MODULE_EXTERNAL_MAGIC
+	return r
+
 
 def tp_interface_nt(TP) ->tp_obj:
 	tp_obj r = {TP_INTERFACE};

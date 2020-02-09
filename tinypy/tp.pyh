@@ -235,8 +235,18 @@ else:
 
 
 struct tp_vm;
+// TODO this temp iterator should be thread local, or some other better workaround
+class tp_obj;
+static std::vector<tp_obj> __temp_iterator__
+
 
 class tp_obj:
+	using iterator = std::vector<tp_obj>::iterator;
+	using const_iterator = std::vector<tp_obj>::const_iterator;
+	iterator begin() { __temp_iterator__=this->as_vector(); return __temp_iterator__.begin(); }
+	//const_iterator begin() const { __temp_iterator__=as_vector(); return __temp_iterator__.begin(); }
+	iterator end() { return __temp_iterator__.end(); }
+	//const_iterator end() const { return __temp_iterator__.end(); }
 	tp_obj(){};
 	tp_obj(TPTypeID t){ type.type_id=t; };
 	tp_obj(int num){ type.type_id=TP_NUMBER; this->number.val=num; };
@@ -303,6 +313,7 @@ class tp_obj:
 	operator char() const;
 	operator uint8_t() const;
 	tp_obj operator[] (int index);
+	tp_obj operator[] (const char*);
 	operator long unsigned int() const {return (long unsigned int)this->number.val;};
 	@const
 	def operator& (int n) ->int:
@@ -390,6 +401,8 @@ class tp_obj:
 	void append(int n);
 	void append(tp_obj ob);
 	std::vector<tp_obj> as_vector();
+	def set(const char*, tp_obj) ->tp_obj;
+	def set(const char*, const char*) ->tp_obj;
 
 ## base class for all AOT subclasses ##
 class tpy_subclass( tp_obj ):
@@ -772,11 +785,28 @@ def tp_tiny_list(TP) -> tp_obj:
 	val.lst.val->end = 0
 	val.lst.val->index = 0
 	return val
+
+@static
+def tp_tiny_list() -> tp_obj:
+	tp_obj val = {TP_LIST_TINY};
+	val.lst.val = (tpd_tiny_list*)tp_malloc(NULL, sizeof(tpd_tiny_list))
+	val.lst.val->start = 0
+	val.lst.val->end = 0
+	val.lst.val->index = 0
+	return val
+
 #endif
 
 
 @static
 def tp_vec2(double x, double y) -> tp_obj:
+	tp_obj val = {TP_VEC2};
+	val.__vec2.vec.x = x
+	val.__vec2.vec.y = y
+	return val
+
+@static
+def vec2(double x, double y) -> tp_obj:
 	tp_obj val = {TP_VEC2};
 	val.__vec2.vec.x = x
 	val.__vec2.vec.y = y
@@ -825,6 +855,15 @@ def quat(double x, double y, double z, double w) -> tp_obj:
 
 @static
 def tp_quat(double x, double y, double z, double w) -> tp_obj:
+	tp_obj val = {TP_QUAT};
+	val.__quat.q.x = x
+	val.__quat.q.y = y
+	val.__quat.q.z = z
+	val.__quat.q.w = w
+	return val
+
+@static
+def vec4(double x, double y, double z, double w) -> tp_obj:
 	tp_obj val = {TP_QUAT};
 	val.__quat.q.x = x
 	val.__quat.q.y = y
@@ -1306,6 +1345,7 @@ def tp_set_by_char(TP, tp_obj d, char c, tp_obj v);
 def tp_set(TP, tp_obj d, const char* s, tp_obj v) ->tp_obj;
 def tp_set(TP, tp_obj d, const char* s, const char* v) ->tp_obj;
 def tp_extern_interface(TP) ->tp_obj;
+def tp_extern_interface() ->tp_obj;
 
 ## python-style print helper funcs ##
 

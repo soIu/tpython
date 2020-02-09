@@ -202,7 +202,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 		defs = '-DBLENDOT_TYPES'
 		mods = BlendotTypesFiles
 
-	if '--std-malloc' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv or '--includeos' in sys.argv:
+	if '--std-malloc' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv or '--includeos' in sys.argv or '--aot' in sys.argv:
 		mkfile = Makefile
 	else:
 		defs += ' -DUSE_RPMALLOC '
@@ -431,7 +431,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 
 	if '--sdl' in sys.argv or use_sdl:
 		#mods += ' module_sdl.cpp'  # the entire sdl module is actually just in module_sdl.h
-		defs += ' -DUSE_SDL'        # from runtime.cpp, module_sdl.h will be included
+		#defs += ' -DUSE_SDL'        # from runtime.cpp, module_sdl.h will be included  DEPRECATED, replaced by module_sdl.aot.pyh
 		if mode == 'wasm':
 			#exeopts += """ -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]' -s TOTAL_MEMORY=33554432"""
 			#exeopts += ' -s USE_SDL=2'

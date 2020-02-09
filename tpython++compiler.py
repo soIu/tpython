@@ -609,14 +609,15 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			auto_unwrap = {}
 			auto_unwrap.update(global_auto_unwrap)
 
-		if user_pythonic and not s.startswith('#'):
+		if user_pythonic and not s.startswith('#') and not s.endswith(";"):
 			newln = []
 			for part in s.split():
 				if part.count('.')==1 and not part.startswith( ('self.', '(self.') ):
 					a,b = part.split('.')
 					aorig = a
 					if a in auto_unwrap:
-						a = 'unwrap(%s,%s)' %(auto_unwrap[a], a)
+						if auto_unwrap[a] != "__EXTERNAL_OBJECT__":
+							a = 'unwrap(%s,%s)' %(auto_unwrap[a], a)
 					#elif is_virt:
 					elif in_func:
 						hits = []
@@ -645,8 +646,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 									a = a + ('.template unwrap<%s>()' %class_name)
 
 						if not hits and '(' not in a and a not in classes and '->' not in a:
-							if b.startswith('append('):
-								## tp_obj base class contains an append method
+							if b.startswith( ('set(','append(') ):
+								## tp_obj base class contains a set and append methods
 								pass
 							elif b.startswith( ('size(', 'clear(', 'push_back(') ):
 								## std::vector, std::string, and other c++11 containers
@@ -659,6 +660,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 								pass
 							elif a.startswith('&'):
 								## lower level pythonic++ must sometimes be used in AOT code
+								pass
+							elif s.startswith('switch '):
 								pass
 							else:
 								print('parse error')
@@ -1437,7 +1440,11 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					else:
 						w += 'for (int %s=0; %s<%s; %s++){' %(iter_name, iter_name, iter_to, iter_name)
 				else:
-					raise RuntimeError("TODO translate python interator style to c++11 for iter loop")
+					iter_name = s.split(' in ')[0].split()[-1]
+					auto_unwrap[ iter_name ] = "__EXTERNAL_OBJECT__"
+					iterable = s.split(' in ')[-1][:-1]
+					w += 'for (auto %s: %s){' %(iter_name, iterable)
+					##raise RuntimeError("TODO translate python interator style to c++11 for iter loop\n%s" %w)
 			else:  ## c++ style
 				loop = s[len('for '):-1]
 				if not loop.startswith('('):
@@ -1904,8 +1911,10 @@ def metapy2tinypypp( source ):
 					append_next_blank_hack = '\treturn None'
 				elif ln.strip().startswith("print('") and ln.strip().endswith("')"):
 					aot.append( '\t' + ln.replace("print('", 'print("')[:-2]+'")' )
+				elif ln.strip() == 'import sdl':
+					aot.append('\t' + "sdl = sdlwrapper()")
 				else:
-					aot.append('\t' + ln)
+					aot.append('\t' + ln.split('#')[0])
 			elif append_next_blank_hack:
 				aot.append( '\t' + append_next_blank_hack )
 				append_next_blank_hack = None

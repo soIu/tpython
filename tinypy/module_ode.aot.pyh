@@ -66,7 +66,7 @@ def __delete_contact_joints() ->void:
 		for i in range( __contact_joints__.size() ):
 			joint = __contact_joints__[i]
 			__FinalizeAndDestroyJointInstance(joint, true)
-		__contact_joints__.clear()
+		__contact_joints__.clear();
 
 @static
 def __nearCallback(void* ptr, dxGeom* o1, dxGeom* o2) ->void:

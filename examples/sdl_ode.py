@@ -17,13 +17,13 @@ def test():
 	time = 0.0
 	dt = 0.3
 	while True:
-		sdl.clear( [0,0,0] )
+		sdl.clear( vec3(0,0,0) )
 		for e in sdl.poll():
-			if e.type == "KEYDOWN":
-				print('key:', e.key)
-				if e.key == 80:    ## left key
+			if e["type"] == "KEYDOWN":
+				print("key:", e["key"])
+				if e["key"] == 80 or e["key"] == 113:    ## left key
 					b.addForce( vec3(-50,0,0) )
-				elif e.key == 79:  ## right key
+				elif e["key"] == 79 or e["key"] == 114:  ## right key
 					b.addForce( vec3(50,0,0) )
 		w.step(dt)
 		v = b.getPosition()
@@ -31,15 +31,15 @@ def test():
 			b.addForce( vec3(0,200,0) )
 		x = v[0]
 		y = v[1]
-		sdl.draw([x,-y, 10,10], [255,0,0] )
-		sdl.draw([0,220, SW,10], [5,200,0] )
+		sdl.draw( vec4(x,-int(y), 10,10), vec3(255,0,0) )
+		sdl.draw( vec4(0,220, SW,10), vec3(5,200,0) )
 		sdl.flip()
 		time += dt
 		sdl.delay(30)
 
 def main():
 	sdl.initialize()
-	sdl.window( (SW,SH) )
+	sdl.window( vec2(SW,SH) )
 	test()
 
 main()
