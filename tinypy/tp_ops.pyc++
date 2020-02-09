@@ -22,6 +22,12 @@ def len(tp_obj self) ->int:
 		return (int)(self.list.val->len)
 	elif type == TP_LIST_TINY:
 		return (int)(self.lst.val->len())
+	elif type == TP_VEC2:
+		return 2
+	elif type == TP_VEC3:
+		return 3
+	elif type == TP_QUAT:
+		return 4
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_len) TypeError: len() of unsized object"));
 	throw "TypeError in tp_ops.cpp:len invalid object type to use the len function with"
 
@@ -132,7 +138,9 @@ def tp_iter(TP,tp_obj self, tp_obj k) ->tp_obj:
 	int type = self.type.type_id
 	if type == TP_LIST or type == TP_STRING or type==TP_STRING_ATOMIC:
 		return tp_get(tp,self,k)
-	if type == TP_DICT && k.type.type_id == TP_NUMBER:
+	elif type == TP_LIST_TINY:
+		return self.lst.val->items[ (int)k ]
+	elif type == TP_DICT && k.type.type_id == TP_NUMBER:
 		throw "TODO iter over dict"
 		## the iter counter should be put on tp, instead of the dict itself,
 		## because each thread had its own tp_vm, having the counter on it is ok.
@@ -745,6 +753,8 @@ def tp_len(TP,tp_obj self) -> tp_obj:
 		return tp_number(self.dict.val->len)
 	elif type == TP_LIST:
 		return tp_number(self.list.val->len)
+	elif type == TP_LIST_TINY:
+		return tp_number(self.lst.val->len() )
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_len) TypeError: len() of unsized object"));
 	throw "TypeError in tp_ops.cpp:tp_len invalid object type to use the len function with"
 
@@ -1109,6 +1119,17 @@ def tp_obj::operator char():
 def tp_obj::operator uint8_t():
 	return (uint8_t)(*tp_string_getptr(*this))
 
+def tp_obj::set( const char* s, tp_obj ob) ->tp_obj:
+	tp_set(NULL, *this, s, ob )
+	return None
+
+def tp_obj::set( const char* s, const char* val) ->tp_obj:
+	tp_set(NULL, *this, s, val )
+	return None
+
+def tp_obj::operator[] (const char* s) -> tp_obj:
+	return tpd_dict_get_by_stdstring(NULL, this->dict.val, std::string(s))
+
 
 def tp_obj::operator[] (int index) -> tp_obj:
 	if this->type.type_id==TP_STRING_TINY:
@@ -1177,11 +1198,15 @@ def tp_obj::append(tp_obj ob):
 	tpd_list_append(NULL, this->list.val, ob)
 
 def tp_obj::as_vector() -> std::vector<tp_obj>:
-	if this->type.type_id != TP_LIST:
-		throw "as_vector can only be used on a list type"
 	std::vector<tp_obj> r;
-	for (int i=0; i < this->list.val->len; i++ ):
-		r.push_back( this->list.val->items[i] )
+	if this🠊type.type_id == TP_LIST:
+		for (int i=0; i < this🠊list.val🠊len; i++ ):
+			r.push_back( this🠊list.val🠊items[i] )
+	elif this🠊type.type_id == TP_LIST_TINY:
+		for (int i=this🠊lst.val🠊start; i<this🠊lst.val🠊end; i++):
+			r.push_back( this🠊lst.val🠊items[i] )
+	else:
+		throw "tp_obj::as_vector can only be used on a list and dict types"
 	return r
 
 

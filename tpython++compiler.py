@@ -1861,6 +1861,7 @@ def metapy2tinypypp( source ):
 	in_aot = False
 	aot_all = False
 	append_next_blank_hack = None
+	has_aot_mods = False
 	
 	if '--aot-all' in sys.argv:
 		in_aot = True
@@ -1874,6 +1875,9 @@ def metapy2tinypypp( source ):
 		if u'┃' in ln:
 			assert ln.count(u'┃')==1
 			a,b = ln.split(u'┃')
+			if a.strip() == 'import sdl':
+				a = 'sdl = sdlwrapper()'
+				has_aot_mods = True
 			shared.append(a)
 			right_side.append(b)
 		elif ln.startswith('with javascript:'):
@@ -1940,6 +1944,9 @@ def metapy2tinypypp( source ):
 			shared.extend( right_side )
 			right_side = []
 		else:
+			if ln.strip() == 'import sdl':
+				ln = 'sdl = sdlwrapper()'
+				has_aot_mods = True
 			shared.append(ln)
 
 	if aot:
@@ -1949,7 +1956,6 @@ def metapy2tinypypp( source ):
 			print('\n'.join(aot))
 			print('----------------------------------------------')
 	else:
-		has_aot_mods = False
 		for ln in shared:
 			for part in ln.split():
 				if 'world(' in part:
