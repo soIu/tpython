@@ -215,8 +215,14 @@ def rebuild(stage=None, exe_name='tpython++'):
 		defs += ' -DTP_BIG_NUM'
 
 	aot_modules = False
+	sdl_inc = ''
+	use_sdl = False
 
-	if '--ode' in sys.argv:
+	if '--no-aot-modules' in sys.argv:
+		pass
+	else:
+		## by default, always link with SDL and ODE
+		use_sdl = True
 		if '--clang' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv:
 			print("WARN: miniode is not yet fully supported by clang")
 			print("https://bitbucket.org/odedevs/ode/issues/66/different-behavior-with-clang-vs-gcc")
@@ -240,8 +246,6 @@ def rebuild(stage=None, exe_name='tpython++'):
 		defs += ' -DUSE_USER_CUSTOM_CPP'
 
 
-	sdl_inc = ''
-	use_sdl = False
 	embed_bytecode = False
 	miniunreal = False
 	unreal_plugin = None
@@ -252,6 +256,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 			script = open(arg).read()
 			if 'import sdl' in script:
 				use_sdl = True
+				aot_modules = True
 			embed_bytecode = True
 			defs += ' -DUSE_EMBEDDED_BYTECODE'
 			cmd = [

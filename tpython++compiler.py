@@ -183,6 +183,8 @@ def guess_type_of_var(s, classes=None, global_auto_unwrap={}):
 		ctype = 'tp_obj'
 	elif val.endswith('*'):  ## some pointer
 		ctype = val
+	elif val.startswith('{') and val.endswith('}'):
+		ctype = 'tp_obj'
 
 	if ctype:
 		if decl not in __guesses:
@@ -734,20 +736,21 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			## check if ctype needs to be a const or a define, if used in a switch/case or an array decl size
 			requires_const = False
 			requires_define = False
-			for line in source:
-				if cname in line and 'case ' in line and ':' in line:
-					#requires_const = True  ## a const is vaild for use in a switch/case, but a define is better
-					requires_define = True
-				if cname in line and '[' in line and ']' in line:
-					if cname in line.split('[')[-1].split(']')[0]:
-						## just because its in brackes it is not for sure that's its an array decl size
-						if '=' in line:
-							pass
-						elif '&'+cname in line.split():
-							pass
-						else:
-							requires_define = True
-							break
+			if ctype != 'tp_obj':
+				for line in source:
+					if cname in line and 'case ' in line and ':' in line:
+						#requires_const = True  ## a const is vaild for use in a switch/case, but a define is better
+						requires_define = True
+					if cname in line and '[' in line and ']' in line:
+						if cname in line.split('[')[-1].split(']')[0]:
+							## just because its in brackes it is not for sure that's its an array decl size
+							if '=' in line:
+								pass
+							elif '&'+cname in line.split():
+								pass
+							else:
+								requires_define = True
+								break
 			if requires_define:
 				out.append('#define ' + cname + ' ' + cval)
 			else:
@@ -1363,9 +1366,16 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					if methname.startswith('_'):
 						continue
 					methargs = classes[ class_name ]['methods'][methname]
-					margs =  ','.join( ['TP_OBJ()' for ma in methargs] )
-					#wrapper = '			std::function<tp_obj(tp_vm*)> __%s_wrapper = [=](tp_vm *tp){return this->%s(%s);};' %(methname, methname, margs)
-					wrapper = '			std::function<tp_obj(tp_vm*)> __%s_wrapper = [this](tp_vm *tp){return this->%s(%s);};' %(methname, methname, margs)
+					#margs =  ','.join( ['TP_OBJ()' for ma in methargs] )  ## this was incorrect, because then this macro unfolds in reverse order
+					#wrapper = '			std::function<tp_obj(tp_vm*)> __%s_wrapper = [this](tp_vm *tp){return this->%s(%s);};' %(methname, methname, margs)
+					uargs = []
+					margs = []
+					for i in range(len(methargs)):
+						uargs.append('tp_obj _%s = TP_OBJ()' % i)
+						margs.append('_%s' %i)
+					uargs = ';'.join(uargs)
+					margs = ','.join(margs)
+					wrapper = '			std::function<tp_obj(tp_vm*)> __%s_wrapper = [this](tp_vm *tp){%s; return this->%s(%s);};' %(methname, uargs, methname, margs)
 					out.append(wrapper)
 					out.append('			this->__methods__["%s"] = tp_function(__%s_wrapper);' %(methname, methname))
 
@@ -1588,6 +1598,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 						if var.startswith('*'):
 							cpptype.append('*')
 							var = var[1:]
+						print('	var = ', var)
+						print(' cpptype = ', cpptype)
 						assert var not in func_locals
 						func_locals[ var ] = cpptype
 					elif '.' in var or '->' in var or '[' in var:

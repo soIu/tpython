@@ -1,8 +1,9 @@
 import <SDL/SDL.h>
-
 static SDL_Surface *_sdl_window_surf = NULL;
 static int _sdl_width = 0;
 static int _sdl_height = 0;
+
+##define(DEBUG_SDL=1)
 
 class sdlwrapper(object):
 	def initialize(self):
@@ -41,6 +42,9 @@ class sdlwrapper(object):
 			print("SDL ERROR: could not get sdl surface from window")
 			raise RuntimeError("SDL ERROR: could not get sdl surface from window")
 	def draw(self, pos, clr):
+		if defined(DEBUG_SDL):
+			print(pos)
+			print(clr)
 		SDL_Rect r;
 		r.x = pos[0].number.val;
 		r.y = pos[1].number.val;
@@ -56,9 +60,12 @@ class sdlwrapper(object):
 		else:
 			r.w = 1;
 			r.h = 1;
-		int red = clr[0];
-		int gre = clr[1];
-		int blu = clr[2];
+		int red = clr[0].number.val;
+		int gre = clr[1].number.val;
+		int blu = clr[2].number.val;
+		if defined(DEBUG_SDL):
+			std::cout << "	rect(" << r.x << "," << r.y << "," << r.w << "," << r.h << ")" << std::endl;
+			std::cout << "	color(" << red << "," << gre << "," << blu << ")" << std::endl;
 		Uint32 c = SDL_MapRGB(_sdl_window_surf->format,red,gre,blu)
 		SDL_FillRect(_sdl_window_surf, &r, c)
 	def poll(self):
