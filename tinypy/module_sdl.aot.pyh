@@ -74,27 +74,36 @@ class sdlwrapper(object):
 	def poll(self):
 		SDL_Event e;
 		#tp_obj r = tp_list(tp);
-		tp_obj r = tp_tiny_list()
-		int num_events = 0
+		#tp_obj r = tp_tiny_list()
+		self._events.lst.val->clear()
+		tp_obj r = self._events
+		int num_events = -1
+		tp_obj d
 		while SDL_PollEvent(&e) and num_events+1 < TINY_LIST_MAX_SIZE:
-			tp_obj d = tp_extern_interface()
+			#tp_obj d = tp_extern_interface()
 			#tp_set(tp,d, "type", tp_number(e.type));
 			#d.set("type", tp_number(e.type))
-			d.set("type", "SOME_EVENT")
+			#d.set("type", "SOME_EVENT")
 			switch e.type:
 				case SDL_KEYDOWN:
+					r.lst.val->end ++
+					d = r.lst.val->items[++num_events]
 					d.set("type", "KEYDOWN");
 					d.set("key",  tp_number(e.key.keysym.scancode));
 					d.set("sym",  tp_number(e.key.keysym.sym));
 					d.set("mod",  tp_number(e.key.keysym.mod));
 					break;
 				case SDL_KEYUP:
+					r.lst.val->end ++
+					d = r.lst.val->items[++num_events]
 					d.set("type", "KEYUP");
 					d.set("key",  tp_number(e.key.keysym.scancode));
 					d.set("sym",  tp_number(e.key.keysym.sym));
 					d.set("mod",  tp_number(e.key.keysym.mod));
 					break;
 				case SDL_MOUSEMOTION:
+					r.lst.val->end ++
+					d = r.lst.val->items[++num_events]
 					d.set("type", "MOUSE");
 					d.set("x",  tp_number(e.motion.x));
 					d.set("y",  tp_number(e.motion.y));
@@ -105,17 +114,19 @@ class sdlwrapper(object):
 				case SDL_MOUSEBUTTONDOWN:
 					pass
 				case SDL_MOUSEBUTTONUP:
+					r.lst.val->end ++
+					d = r.lst.val->items[++num_events]
 					d.set("type", "CLICK");
 					d.set("x", tp_number(e.button.x));
 					d.set("y", tp_number(e.button.y));
 					d.set("button", tp_number(e.button.button));
 					break;
-			if d["type"] == "SOME_EVENT":
-				pass
-			else:
-				r.lst.val->append( d )
-				num_events ++
 		return r
 	def __init__(self):
-		pass
+		##self._events = [tp_extern_interface()] * TINY_LIST_MAX_SIZE
+		self._events = tp_tiny_list()
+		for i in range(TINY_LIST_MAX_SIZE-1):
+			self._events.lst.val->append(tp_extern_interface())
+
+
 

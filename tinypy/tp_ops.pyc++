@@ -29,7 +29,7 @@ def len(tp_obj self) ->int:
 	elif type == TP_QUAT:
 		return 4
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_len) TypeError: len() of unsized object"));
-	throw "TypeError in tp_ops.cpp:len invalid object type to use the len function with"
+	raise "TypeError in tp_ops.cpp:len invalid object type to use the len function with"
 
 def len(const tp_obj *self) ->int:
 	return len(*self)
@@ -82,6 +82,7 @@ def tp_true(TP,tp_obj v) ->int:
 ## Function: tp_has
 ## Checks if an object contains a key.
 ## Returns tp_True if self[k] exists, tp_False otherwise.
+
 def tp_has(TP,tp_obj self, tp_obj k) ->tp_obj:
 	int type = self.type.type_id
 	if type == TP_DICT or type == TP_INTERFACE:
@@ -92,8 +93,15 @@ def tp_has(TP,tp_obj self, tp_obj k) ->tp_obj:
 		return tp_number(tp_str_index(self,k)!=-1)
 	elif type == TP_LIST:
 		return tp_number(tpd_list_find(tp, self.list.val, k, tp_cmp)!=-1)
-	##tp_raise(tp_None,tp_string_atom(tp, "(tp_has) TypeError: iterable argument required"));
-	throw "TypeError in tp_ops.cpp:tp_has iterable argument required"
+	elif type == TP_SET:
+		if self.uset.val->contains(k):
+			return tp_number(1)
+		else:
+			return tp_number(0)
+	print("======tp_has=======")
+	print(self)
+	print(k)
+	raise "TypeError in tp_ops.cpp:tp_has iterable argument required"
 
 
 ## Function: tp_del
@@ -111,7 +119,7 @@ def tp_del(TP, tp_obj self, tp_obj k):
 		tp_dict_del(tp, self, k)
 		return
 	##tp_raise(,tp_string_atom(tp, "(tp_del) TypeError: object does not support item deletion"));
-	throw "TypeError in tp_ops.cpp:tp_del object does not support item deletion"
+	raise "TypeError in tp_ops.cpp:tp_del object does not support item deletion"
 
 
 ## Function: tp_iter
@@ -141,12 +149,12 @@ def tp_iter(TP,tp_obj self, tp_obj k) ->tp_obj:
 	elif type == TP_LIST_TINY:
 		return self.lst.val->items[ (int)k ]
 	elif type == TP_DICT && k.type.type_id == TP_NUMBER:
-		throw "TODO iter over dict"
+		raise "TODO iter over dict"
 		## the iter counter should be put on tp, instead of the dict itself,
 		## because each thread had its own tp_vm, having the counter on it is ok.
 		##return self.dict.val->items[tpd_dict_next(tp,self.dict.val)].key
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_iter) TypeError: iteration over non-sequence"));
-	throw "TypeError in tp_ops.cpp:tp_iter iteration over a non-sequence";
+	raise "TypeError in tp_ops.cpp:tp_iter iteration over a non-sequence";
 
 ## Function: tp_get
 ## Attribute lookup.
@@ -220,7 +228,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 				print(self)
 				print("invalid list method - key:")
 				print(k)
-				throw "invalid list method"
+				raise "invalid list method"
 		elif k.type.type_id == TP_NONE:
 			if defined(DEBUG):
 				std::cout << cRed << "list.pop(None)" << cNone << std::endl;
@@ -255,7 +263,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			else:
 				print("------------------------")
 				print(k)
-				throw "invalid string method"
+				raise "invalid string method"
 	elif type == TP_VEC2:
 		if k == "x":
 			return tp_number(self.__vec2.vec.x)
@@ -283,7 +291,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			return tp_function(tp, fn)
 		#endif
 		else:
-			throw "vector2 missing member"
+			raise "vector2 missing member"
 	elif type == TP_VEC3:
 		if k.type.type_id == TP_NUMBER:
 			if k.number.val == 0:
@@ -293,7 +301,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			elif k.number.val == 2:
 				return tp_number(self.__vec3.vec.z)
 			else:
-				throw "vec3 error - invalid index"
+				raise "vec3 error - invalid index"
 		elif k == "x":
 			return tp_number(self.__vec3.vec.x)
 		elif k == "y":
@@ -312,7 +320,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 				return v
 			return tp_function(tp, fn)
 		else:
-			throw "vector3 missing member"
+			raise "vector3 missing member"
 	elif type == TP_QUAT:
 		if k == "x":
 			return tp_number(self.__quat.q.x)
@@ -336,7 +344,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			return tp_function(tp, fn)
 		#endif
 		else:
-			throw "vec4/quat missing member"
+			raise "vec4/quat missing member"
 	#ifdef BLENDOT_TYPES
 	elif type == TP_COLOR:
 		if k == "r":
@@ -356,7 +364,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 				return v
 			return tp_function(tp, fn)
 		else:
-			throw "color missing member"
+			raise "color missing member"
 	elif type == TP_RECT:
 		if k == "x":
 			return tp_number(self.rect.r🠊position.x)
@@ -371,7 +379,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 				return tp_number(self.rect.r🠊get_area())
 			return tp_function(tp, fn)
 		else:
-			throw "rect missing member"
+			raise "rect missing member"
 	elif type == TP_TRI:
 		if k == "a":
 			return tp_vec3(self.tri.t🠊vertex[0])
@@ -380,7 +388,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 		elif k == "c":
 			return tp_vec3(self.tri.t🠊vertex[2])
 		else:
-			throw "tri missing member"
+			raise "tri missing member"
 	elif type == TP_PLANE:
 		if k == "normal":
 			return tp_vec3(self.plane.p🠊normal)
@@ -392,7 +400,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 				return tp_number(self.plane.p🠊distance_to(point.vec3.vec))
 			return tp_function(tp, fn)
 		else:
-			throw "plane missing member"
+			raise "plane missing member"
 	elif type == TP_AABB:
 		if k == "position":
 			return tp_vec3(self.aabb.a🠊position)
@@ -406,7 +414,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 				return a
 			return tp_function(tp, fn)
 		else:
-			throw "aabb missing member"
+			raise "aabb missing member"
 	elif type == TP_SPATIAL:
 		if k == "position":
 			return tp_vec3(self.spatial.ptr🠊get_translation())
@@ -433,7 +441,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 				return self
 			return tp_function(tp, fn)
 		else:
-			throw "spatial missing member"
+			raise "spatial missing member"
 	#endif
 	if type >= TP_HAS_META:
 		if type == TP_DICT:
@@ -482,7 +490,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			a = 0
 		else:
 			//tp_raise(tp_None,tp_string_atom(tp, "(tp_get) TypeError: indices must be numbers")); 
-			throw "TypeError in tp_ops.cpp:_tp_get indices must be a number"
+			raise "TypeError in tp_ops.cpp:_tp_get indices must be a number"
 		tmp = tp_get(tp,k,tp_number(1))
 		if tmp.type.type_id == TP_NUMBER:
 			b = tmp.number.val
@@ -490,7 +498,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			b = l
 		else:
 			//tp_raise(tp_None,tp_string_atom(tp, "(tp_get) TypeError: indices must be numbers")); 
-			throw "TypeError in tp_ops.cpp:_tp_get indices must be a number"
+			raise "TypeError in tp_ops.cpp:_tp_get indices must be a number"
 		a = _tp_max(0,(a<0?l+a:a))
 		b = _tp_min(l,(b<0?l+b:b))
 		if type == TP_LIST:
@@ -502,7 +510,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 	##	return tp_copy(tp, self)
 	std::cout << cRed << "GET ERROR: self = " << cNone << self << std::endl;
 	std::cout << cRed << "GET ERROR: key =" << cNone << k << cBlue << " hash=" << tp_hash(tp,k) << cNone << std::endl;
-	throw "GET ERROR - in tp_ops.cpp - unexpected type or invalid key/index"
+	raise "GET ERROR - in tp_ops.cpp - unexpected type or invalid key/index"
 
 ## function: tp_copy
 def tp_copy(TP, tp_obj self) -> tp_obj:
@@ -522,7 +530,7 @@ def tp_copy(TP, tp_obj self) -> tp_obj:
 	elif type == TP_DICT || type == TP_INTERFACE || type == TP_OBJECT:
 		return tp_dict_copy(tp, self)
 	//tp_raise(tp_None, tp_string_atom(tp, "(tp_copy) TypeError: object does not support copy"));
-	throw "TypeError in tp_ops.cpp:tp_copy object does not support copy"
+	raise "TypeError in tp_ops.cpp:tp_copy object does not support copy"
 
 
 
@@ -565,7 +573,7 @@ def tp_set(TP,tp_obj self, tp_obj k, tp_obj v) -> tp_obj:
 		elif k == "a":
 			self.color.c🠊a = v.number.val
 		else:
-			throw "color type missing member"
+			raise "color type missing member"
 		return self
 	elif type == TP_RECT:
 		if k == "x":
@@ -577,7 +585,7 @@ def tp_set(TP,tp_obj self, tp_obj k, tp_obj v) -> tp_obj:
 		elif k == "height":
 			self.rect.r🠊size.y = v.number.val
 		else:
-			throw "rect type missing member"
+			raise "rect type missing member"
 		return self
 	elif type == TP_TRI:
 		if k == "a":
@@ -587,7 +595,7 @@ def tp_set(TP,tp_obj self, tp_obj k, tp_obj v) -> tp_obj:
 		elif k == "c":
 			self.tri.t🠊vertex[2] = v.vec3.vec
 		else:
-			throw "tri type missing member"
+			raise "tri type missing member"
 		return self
 	#endif
 	if type == TP_DICT:
@@ -623,7 +631,7 @@ def tp_set(TP,tp_obj self, tp_obj k, tp_obj v) -> tp_obj:
 		elif k == "y":
 			self.__vec2.vec.y = v.number.val
 		else:
-			throw "vector2 type missing member"
+			raise "vector2 type missing member"
 		return self
 	elif type == TP_VEC3:
 		if k == "x":
@@ -633,7 +641,7 @@ def tp_set(TP,tp_obj self, tp_obj k, tp_obj v) -> tp_obj:
 		elif k == "z":
 			self.__vec3.vec.z = v.number.val
 		else:
-			throw "vector3 type missing member"
+			raise "vector3 type missing member"
 		return self
 	elif type == TP_QUAT:
 		if k == "x":
@@ -645,7 +653,7 @@ def tp_set(TP,tp_obj self, tp_obj k, tp_obj v) -> tp_obj:
 		elif k == "w":
 			self.__quat.q.w = v.number.val
 		else:
-			throw "vec4/quat type missing member"
+			raise "vec4/quat type missing member"
 		return self
 	##tp_raise(,tp_string_atom(tp, "(tp_set) TypeError: object does not support item assignment"));
 	print("======================================")
@@ -653,14 +661,14 @@ def tp_set(TP,tp_obj self, tp_obj k, tp_obj v) -> tp_obj:
 	print("self object type_id = ", self.type.type_id)
 	print(k)
 	print("TypeError in tp_ops.cpp:tp_set object does not support item assignment")
-	throw "TypeError in tp_ops.cpp:tp_set object does not support item assignment"
+	raise "TypeError in tp_ops.cpp:tp_set object does not support item assignment"
 
 
 ## used by modules, strings are not interned with 8bit hashes even though v is required to be a tiny string ##
 def tp_set(TP,tp_obj self, tp_obj k, const char* v) -> tp_obj:
 	if strlen(v) > 12:
 		print("tp_set(obj, key, string) - string is more than 12 bytes")
-		throw "tp_set(obj, key, string) - string is more than 12 bytes"
+		raise "tp_set(obj, key, string) - string is more than 12 bytes"
 	## need to check here if v has already been 8bit hashed? because some modules may use internal names
 	return tp_set(tp, self, k, tp_string_tiny(v))
 
@@ -669,17 +677,17 @@ def tp_set(TP,tp_obj self, tp_obj k, const char* v) -> tp_obj:
 def tp_set(TP,tp_obj self, const char* k, tp_obj v) -> tp_obj:
 	if strlen(k) > 12:
 		print("tp_set(obj, string key, value) - string key is more than 12 bytes")
-		throw "tp_set(obj, string key, value) - string key is more than 12 bytes"
+		raise "tp_set(obj, string key, value) - string key is more than 12 bytes"
 	## need to check here if v has already been 8bit hashed? because some modules may use internal names
 	return tp_set(tp, self, tp_string_tiny(k), v)
 
 def tp_set(TP,tp_obj self, const char* k, const char* v) -> tp_obj:
 	if strlen(k) > 12:
 		print("tp_set(obj, string key, string value) - string key is more than 12 bytes")
-		throw "tp_set(obj, string key, string value) - string key is more than 12 bytes"
+		raise "tp_set(obj, string key, string value) - string key is more than 12 bytes"
 	if strlen(v) > 12:
 		print("tp_set(obj, string key, string value) - string value is more than 12 bytes")
-		throw "tp_set(obj, string key, string value) - string value is more than 12 bytes"
+		raise "tp_set(obj, string key, string value) - string value is more than 12 bytes"
 	return tp_set(tp, self, tp_string_tiny(k), tp_string_tiny(v) )
 
 
@@ -710,7 +718,7 @@ def tp_add(TP, tp_obj a, tp_obj b) -> tp_obj:
 	print(a.type.type_id)
 	print("operand B::type_id ")
 	print(b.type.type_id)
-	throw "TypeError in tp_ops.cpp:tp_add invalid object type to use the add operator with"
+	raise "TypeError in tp_ops.cpp:tp_add invalid object type to use the add operator with"
 
 
 def tp_mul(TP,tp_obj a, tp_obj b) -> tp_obj:
@@ -735,7 +743,7 @@ def tp_mul(TP,tp_obj a, tp_obj b) -> tp_obj:
 		return a
 	#endif
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_mul) TypeError: ?"));
-	throw "TypeError in tp_ops.cpp:tp_mul invalid object type to use the multiply operator with"
+	raise "TypeError in tp_ops.cpp:tp_mul invalid object type to use the multiply operator with"
 
 
 ## Function: tp_len
@@ -756,7 +764,7 @@ def tp_len(TP,tp_obj self) -> tp_obj:
 	elif type == TP_LIST_TINY:
 		return tp_number(self.lst.val->len() )
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_len) TypeError: len() of unsized object"));
-	throw "TypeError in tp_ops.cpp:tp_len invalid object type to use the len function with"
+	raise "TypeError in tp_ops.cpp:tp_len invalid object type to use the len function with"
 
 
 def tp_cmp(TP, tp_obj a, tp_obj b) ->int:
@@ -782,7 +790,7 @@ def tp_cmp(TP, tp_obj a, tp_obj b) ->int:
 		case TP_FUNC: return a.func.info - b.func.info;
 		##case TP_DATA: return (char*)a.data.val - (char*)b.data.val;
 	//tp_raise(0,tp_string_atom(tp, "(tp_cmp) TypeError: ?"));
-	throw "TypeError in tp_ops.cpp:tp_cmp invalid object type to compare for equality"
+	raise "TypeError in tp_ops.cpp:tp_cmp invalid object type to compare for equality"
 
 
 
@@ -803,7 +811,7 @@ def tp_mod(TP, tp_obj a, tp_obj b) -> tp_obj:
 					break
 				if b.type.type_id == TP_LIST:
 					if i >= b.list.val->len:
-						throw "string format error - replacement marks `%s` is greater than items from list"
+						raise "string format error - replacement marks `%s` is greater than items from list"
 					out += tp_as_string(tp, b.list.val->items[i], false)
 				else:
 					out += tp_as_string(tp, b, false)
@@ -821,7 +829,7 @@ def tp_mod(TP, tp_obj a, tp_obj b) -> tp_obj:
 					break
 				if b.type.type_id == TP_LIST:
 					if i >= b.list.val->len:
-						throw "string format error - replacement marks `%s` is greater than items from list"
+						raise "string format error - replacement marks `%s` is greater than items from list"
 					out += tp_as_string(tp, b.list.val->items[i], false)
 				else:
 					out += tp_as_string(tp, b, false)
@@ -829,7 +837,7 @@ def tp_mod(TP, tp_obj a, tp_obj b) -> tp_obj:
 			return tp_string_from_stdstring(tp, out )
 			break
 	//tp_raise(tp_None, tp_string_atom(tp, "(tp_mod) TypeError: ?"));
-	throw "TypeError in tp_ops.cpp:tp_mod invalid object type to use modulus operator with"
+	raise "TypeError in tp_ops.cpp:tp_mod invalid object type to use modulus operator with"
 
 
 
@@ -838,14 +846,14 @@ def tp_bitwise_and(TP,tp_obj _a,tp_obj _b) ->tp_obj:
 		tp_num a = _a.number.val
 		tp_num b = _b.number.val
 		return tp_number( (int)(((long)a) & ((long)b)) )
-	throw "TypeError: operand type `bitwise and` requires numbers"
+	raise "TypeError: operand type `bitwise and` requires numbers"
 
 def tp_bitwise_or(TP,tp_obj _a,tp_obj _b) ->tp_obj:
 	if _a.type.type_id == TP_NUMBER && _a.type.type_id == _b.type.type_id:
 		tp_num a = _a.number.val
 		tp_num b = _b.number.val
 		return tp_number( ((long)a) | ((long)b) )
-	throw "TypeError: operand type `bitwise or` requires numbers"
+	raise "TypeError: operand type `bitwise or` requires numbers"
 
 
 def tp_bitwise_xor(TP,tp_obj _a,tp_obj _b) ->tp_obj:
@@ -853,7 +861,7 @@ def tp_bitwise_xor(TP,tp_obj _a,tp_obj _b) ->tp_obj:
 		tp_num a = _a.number.val
 		tp_num b = _b.number.val
 		return tp_number( ((long)a) ^ ((long)b) )
-	throw "TypeError: operand type `bitwise xor` requires numbers"
+	raise "TypeError: operand type `bitwise xor` requires numbers"
 
 
 def tp_lsh(TP,tp_obj _a,tp_obj _b) ->tp_obj:
@@ -861,20 +869,20 @@ def tp_lsh(TP,tp_obj _a,tp_obj _b) ->tp_obj:
 		tp_num a = _a.number.val
 		tp_num b = _b.number.val
 		return tp_number( ((long)a) << ((long)b) )
-	throw "TypeError: operand type `bitwise left shift` requires numbers"
+	raise "TypeError: operand type `bitwise left shift` requires numbers"
 
 def tp_rsh(TP,tp_obj _a,tp_obj _b) ->tp_obj:
 	if _a.type.type_id == TP_NUMBER && _a.type.type_id == _b.type.type_id:
 		tp_num a = _a.number.val
 		tp_num b = _b.number.val
 		return tp_number( ((long)a) >> ((long)b) )
-	throw "TypeError: operand type `bitwise right shift` requires numbers"
+	raise "TypeError: operand type `bitwise right shift` requires numbers"
 
 
 def tp_sub(TP,tp_obj a, tp_obj b) ->tp_obj:
 	if a.type.type_id == TP_NUMBER && a.type.type_id == b.type.type_id:
 		return tp_number( a.number.val - b.number.val )
-	throw "TypeError: operand type `-` requires numbers"
+	raise "TypeError: operand type `-` requires numbers"
 
 def tp_div(TP,tp_obj a, tp_obj b) ->tp_obj:
 	if a.type.type_id == TP_NUMBER && a.type.type_id == b.type.type_id:
@@ -882,19 +890,19 @@ def tp_div(TP,tp_obj a, tp_obj b) ->tp_obj:
 	else:
 		print(a)
 		print(b)
-	throw "TypeError: operand type `/` requires numbers"
+	raise "TypeError: operand type `/` requires numbers"
 
 def tp_pow(TP,tp_obj a,tp_obj b) ->tp_obj:
 	if a.type.type_id == TP_NUMBER && a.type.type_id == b.type.type_id:
 		return tp_number( pow(a.number.val, b.number.val) )
-	throw "TypeError: operand type `**` requires numbers"
+	raise "TypeError: operand type `**` requires numbers"
 
 
 def tp_bitwise_not(TP, tp_obj a) ->tp_obj:
 	if a.type.type_id == TP_NUMBER:
 		return tp_number(~(long)a.number.val)
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_bitwise_not) TypeError: unsupported operand type"));
-	throw "TypeError tp_ops.cpp:tp_bitwise_not unsupported operand type"
+	raise "TypeError tp_ops.cpp:tp_bitwise_not unsupported operand type"
 
 
 ## Function: tp_call
@@ -1029,7 +1037,7 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 	print(" in rare cases this error can happen when TP_GCMAX or TP_REGS is not set high enough")
 	print(" or when an interface is missing the meta function __new__")
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_call) TypeError: object is not callable"));
-	throw "TypeError tp_ops.cpp:tp_call object is not callable"
+	raise "TypeError tp_ops.cpp:tp_call object is not callable"
 
 
 ## tp_obj methods
@@ -1073,7 +1081,7 @@ def tp_obj::operator==(const tp_obj other) ->bool:
 			return false
 		return this->number.val == other.number.val
 	else:
-		throw "TODO == op for some object type"
+		raise "TODO == op for some object type"
 
 @const
 def tp_obj::operator bool():
@@ -1150,7 +1158,7 @@ def tp_obj::operator[] (int index) -> tp_obj:
 		elif index==1:
 			return this->__vec2.vec.y
 		else:
-			throw "vec2 invalid index"
+			raise "vec2 invalid index"
 	elif this->type.type_id==TP_VEC3:
 		if index==0:
 			return this->__vec3.vec.x
@@ -1159,7 +1167,7 @@ def tp_obj::operator[] (int index) -> tp_obj:
 		elif index==2:
 			return this->__vec3.vec.z
 		else:
-			throw "vec3 invalid index"
+			raise "vec3 invalid index"
 	elif this->type.type_id==TP_QUAT:
 		if index==0:
 			return (double)this->__quat.q.x
@@ -1170,7 +1178,7 @@ def tp_obj::operator[] (int index) -> tp_obj:
 		elif index==3:
 			return (double)this->__quat.q.w
 		else:
-			throw "vec3 invalid index"
+			raise "vec3 invalid index"
 	else:
 		return _tp_get(NULL, *this, tp_number(index), 0)
 
@@ -1206,7 +1214,7 @@ def tp_obj::as_vector() -> std::vector<tp_obj>:
 		for (int i=this🠊lst.val🠊start; i<this🠊lst.val🠊end; i++):
 			r.push_back( this🠊lst.val🠊items[i] )
 	else:
-		throw "tp_obj::as_vector can only be used on a list and dict types"
+		raise "tp_obj::as_vector can only be used on a list and dict types"
 	return r
 
 

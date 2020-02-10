@@ -1,9 +1,18 @@
 import sdl
 import random
-Mario = ['     RRRRR      ','    RRRRRRRRR   ','    HHH--X-     ','   H-H---X---   ','   H-HH---0---- ','   HH----00000  ','     --------   ','  RRRRBBRRR     ','--RRRRBBBRRRR---','--- RRBYBBBBRR--','-- BBBBBBBBBB   ','  BBBBBBBBBBBB  ',' BBBBB    BBBB  ','HHBBB      BBB  ','HHHH       HHHH ',' HHHHH     HHHHH' ]
 
+crouch_skip  = set([12,13])
+legs_indices = set([10,11,12,13,14,15])
+
+Mario = ['     RRRRR      ','    RRRRRRRRR   ','    HHH--X-     ','   H-H---X---   ','   H-HH---0---- ','   HH----00000  ','     --------   ','  RRRRBBRRR     ','--RRRRBBBRRRR---','--- RRBYBBBBRR--','-- BBBBBBBBBB   ','  BBBBBBBBBBBB  ',' BBBBB    BBBB  ','HHBBB      BBB  ','HHHH       HHHH ',' HHHHH     HHHHH' ]
+## note: there is a bug with global list comps and emscripten, (desktop with gcc is OK)
+## when MarioReversed is created it bleeds some of the strings into the tpvm registers,
+## this invalid data is then passed to the set constructor, which will then crash.
+## the workaround is to make the crouch_skip set before making MarioReversed
 MarioReversed = [ s.reverse() for s in Mario ]
+
 MarioPal = { 'R':vec3(255,0,0), 'H':vec3(80,50,5), '-':vec3(160,150,100), 'B':vec3(0,0,255), 'Y':vec3(255,255,0), '0':vec3(5,5,5) }
+
 
 def draw_mario(vec, mario, crouching, running, blink ):
 	ox = vec[0]
@@ -17,9 +26,11 @@ def draw_mario(vec, mario, crouching, running, blink ):
 		flip_legs = True
 	for ln in mario:
 		Y += 1
-		if crouching == True and Y in set([12,13]):
+		##if crouching == True and Y in set([12,13]):
+		if crouching == True and Y in crouch_skip:
 			continue
-		if flip_legs == True and Y in set([10,11,12,13,14,15]):
+		##if flip_legs == True and Y in set([10,11,12,13,14,15]):
+		if flip_legs == True and Y in legs_indices:
 			ln = ln.reverse()
 		y += 4
 		x = ox

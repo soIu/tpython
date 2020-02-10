@@ -217,6 +217,9 @@ def rebuild(stage=None, exe_name='tpython++'):
 	if '--big-num' in sys.argv:
 		defs += ' -DTP_BIG_NUM'
 
+	if '--debug-gc' in sys.argv:
+		defs += ' -DDEBUG_GC'
+
 	aot_modules = False
 	sdl_inc = ''
 	use_sdl = False

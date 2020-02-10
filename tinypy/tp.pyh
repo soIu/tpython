@@ -60,6 +60,7 @@ import <functional>
 import <algorithm>
 import <map>
 import <unordered_map>
+import <unordered_set>
 import <string>
 ##import <string_view>  ## missing in older clangs
 import <iostream>
@@ -106,7 +107,8 @@ if defined(INCLUDEOS):
 	define(TP_GCMAX=262144)
 else:
 	if defined(__EMSCRIPTEN_major__):
-		define(TP_GCMAX=16384)
+		##define(TP_GCMAX=16384)
+		define(TP_GCMAX=524288)
 	else:
 		define(TP_GCMAX=524288)
 	###########################
@@ -144,6 +146,7 @@ enum TPTypeID:
 	TP_MESH    = 15,
 	TP_MESHI   = 16,
 	TP_UOBJECT   = 20,
+	TP_SET   = 25,
 	TP_POINTER   = 26,
 	TP_LIST_TINY = 27,
 	TP_INTERFACE = 28,
@@ -235,6 +238,7 @@ else:
 
 
 struct tp_vm;
+
 // TODO this temp iterator should be thread local, or some other better workaround
 class tp_obj;
 static std::vector<tp_obj> __temp_iterator__
@@ -259,6 +263,7 @@ class tp_obj:
 	##	return *this
 	union {
 	TPTypeInfo type;
+	struct { TPTypeInfo type; struct uset_wrapper *val; } uset;
 	struct { TPTypeInfo type; uint8_t classid; void* val; } pointer;
 	struct { TPTypeInfo type; int * gci; } gc;
 	struct { TPTypeInfo type; tp_num val; } number;
@@ -409,6 +414,7 @@ class tpy_subclass( tp_obj ):
 	std::unordered_map<std::string, tp_obj> __methods__
 
 
+
 /*
 Functions are into several namespaces from lower-level to higher-level:
 
@@ -467,12 +473,12 @@ struct tpd_tiny_list:
 		items[0] = ob
 		end ++
 		if end >= TINY_LIST_MAX_SIZE:
-			throw "tiny list error - max size reached"
+			raise "tiny list error - max size reached"
 	def append(tp_obj ob):
 		items[ end ] = ob
 		end ++
 		if end >= TINY_LIST_MAX_SIZE:
-			throw "tiny list error - max size reached"
+			raise "tiny list error - max size reached"
 	def pop_back() ->tp_obj:
 		return items[ end-- ]
 	def pop_front() ->tp_obj:
@@ -753,6 +759,50 @@ def tp_integer(int v) -> tp_obj:
 	tp_obj val = {TP_INTEGER};
 	val.integer.val = v
 	return val
+
+## TPY Sets ##
+
+struct uset_wrapper:
+	std::unordered_set<float> numset;
+	std::unordered_set<std::string> strset;
+	def add( float n ):
+		this->numset.insert( n )
+	def add( std::string s ):
+		this->strset.insert( s )
+	def contains( tp_obj k ) -> bool:
+		if k.type.type_id == TP_NUMBER:
+			if this->numset.count( (float)k.number.val ) > 0:
+				return true
+			else:
+				return false
+		elif k.type.type_id == TP_STRING or k.type.type_id == TP_STRING_TINY:
+			if this->strset.count( std::string(k) ) > 0:
+				return true
+			else:
+				return false
+		else:
+			raise "invalid type to check for in set"
+
+@static
+def tp_uset(tp_obj lst) ->tp_obj:
+	##std::cout << "making new set..." << std::endl;
+	##std::cout << lst << std::endl;
+	tp_obj s = {TP_SET};
+	s.uset.val = new uset_wrapper()
+	if lst.type.type_id == TP_LIST:
+		for item in lst:
+			##std::cout << "	" << item << std::endl;
+			if item.type.type_id == TP_NUMBER:
+				s.uset.val->add( (float)item.number.val )
+			elif item.type.type_id == TP_STRING or item.type.type_id == TP_STRING_TINY:
+				s.uset.val->add( std::string(item) )
+			else:
+				raise "invalid value type for set"
+	else:
+		std::cout << lst << std::endl;
+		raise "invalid type given for set constructor"
+	return s
+
 
 ## TPY POINTERS ##
 
@@ -1245,6 +1295,14 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 				elif self.interface.val🠊items[i].val.type.type_id==TP_NUMBER:
 					ss << "::" << self.interface.val🠊items[i].val.number.val
 				ss << ", "
+			ss << "}"
+			break
+		case TP_SET:
+			ss << "set{"
+			for item in self.uset.val->numset:
+				ss << item << ","
+			for item in self.uset.val->strset:
+				ss << item << ","
 			ss << "}"
 			break
 		case TP_POINTER:

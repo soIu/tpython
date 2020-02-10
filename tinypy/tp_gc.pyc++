@@ -103,6 +103,7 @@ def tp_gc_deinit(TP):
 def tp_delete(TP, tp_obj v):
 	if defined(DEBUG_GC):
 		std::cout << "tp_gc.cpp tp_delete" << std::endl;
+		print(v)
 	int type = v.type.type_id
 	if type == TP_LIST:
 		if defined(DEBUG_GC):
@@ -134,14 +135,13 @@ def tp_delete(TP, tp_obj v):
 	##	tp_free(tp, v.data.info)
 	##	return
 	elif type == TP_FUNC:
-		#if DEBUG > 3
-		  std::cout << "  GC FREE FUNC" << std::endl;
-		#endif
+		if defined(DEBUG_GC):
+			std::cout << "  GC FREE FUNC" << std::endl;
 		tp_free(tp, v.func.info)
 		return
 	//tp_raise(, tp_string_atom(tp, "(tp_delete) TypeError: ?"));
 	std::cout << "ERROR: bad type to free: " << type << std::endl;
-	throw "ERROR in tp_gc.cpp:tp_delete unable to free unexpected type!"
+	raise "ERROR in tp_gc.cpp:tp_delete unable to free unexpected type!"
 
 
 def tp_collect(TP):
@@ -167,9 +167,8 @@ def _tp_gcinc(TP):
 
 
 def tp_full(TP):
-	#ifdef DEBUG
-	  std::cout << "tp_gc.cpp tp_full" << std::endl;
-	#endif
+	if defined(DEBUG_GC):
+		std::cout << "tp_gc.cpp tp_full" << std::endl;
 	while tp->grey->len:
 		_tp_gcinc(tp)
 	tp_collect(tp)

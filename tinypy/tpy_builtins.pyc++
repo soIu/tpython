@@ -37,6 +37,10 @@ def tpy_bind(TP) ->tp_obj:
 	tp_obj self = TP_OBJ()
 	return tp_bind(tp, r, self)
 
+def tpy_set(TP) ->tp_obj:
+	tp_obj lst = TP_OBJ()
+	return tp_uset(lst)
+
 def tpy_divmod(TP) ->tp_obj:
 	tp_num x = TP_OBJ().number.val
 	tp_num y = TP_OBJ().number.val
@@ -47,9 +51,9 @@ def tpy_divmod(TP) ->tp_obj:
 	else:
 		tp_num m = fmod(x,y)
 	if std::isinf(d) or std::isinf(m):
-		throw "math number overflow error in divmod - infinite"
+		raise "math number overflow error in divmod - infinite"
 	if std::isnan(d) or std::isnan(m):
-		throw "math number overflow error in divmod - nan"
+		raise "math number overflow error in divmod - nan"
 	r.lst.val->append( tp_number(d) )
 	r.lst.val->append( tp_number(m) )
 	return r
@@ -106,7 +110,7 @@ def tpy_getattr(TP)->tp_obj:
 	tp_obj ob = TP_OBJ()
 	tp_obj name = TP_OBJ()
 	if not isstring(name.type.type_id):
-		throw "ERROR: getattr - name is not a string"
+		raise "ERROR: getattr - name is not a string"
 	return tp_get(tp, ob, name)
 
 def tpy_setattr(TP)->tp_obj:
@@ -114,7 +118,7 @@ def tpy_setattr(TP)->tp_obj:
 	tp_obj name = TP_OBJ()
 	tp_obj value = TP_OBJ()
 	if not isstring(name.type.type_id):
-		throw "ERROR: setattr - name is not a string"
+		raise "ERROR: setattr - name is not a string"
 	return tp_set(tp, ob, name, value)
 
 def tpy_dir(TP) ->tp_obj:
@@ -176,7 +180,7 @@ def tpy_hasattr(TP) ->tp_obj:
 	tp_obj names = tpy_dir(tp)
 	tp_obj attrname = TP_OBJ()
 	if not isstring(attrname.type.type_id):
-		throw "ERROR: hasattr attr name is not a string"
+		raise "ERROR: hasattr attr name is not a string"
 	for i in range(len(names)):
 		if names[i] == attrname:
 			return tp_number(1)
@@ -315,7 +319,7 @@ def tpy_round(TP) ->tp_obj:
 def tpy_setmeta(TP) ->tp_obj:
 	tp_obj self = TP_OBJ()
 	if self.type.type_id < TP_HAS_META:
-		throw "tp_check_type TypeError: type does not support meta."
+		raise "tp_check_type TypeError: type does not support meta."
 	tp_obj meta = TP_TYPE(TP_INTERFACE)
 	self.obj.info->meta = meta
 	return tp_None
@@ -324,7 +328,7 @@ def tpy_setmeta(TP) ->tp_obj:
 def tpy_getmeta(TP) ->tp_obj:
 	tp_obj self = TP_OBJ()
 	if self.type.type_id < TP_HAS_META:
-		throw "tp_check_type TypeError: type does not support meta."
+		raise "tp_check_type TypeError: type does not support meta."
 	return self.obj.info->meta
 
 ## Function: tp_object
@@ -642,17 +646,16 @@ def tpy_eval_js_returns(TP) ->tp_obj:
 	elif rtype == "string":
 		return tp_string_from_stdstring(tp, std::string(emscripten_run_script_string(std::string(code).c_str())) )
 	else:
-		print("error in tpy_eval_js_returns")
-		throw "error in tpy_eval_js_returns"
+		raise "error in tpy_eval_js_returns"
 
 
 #else
 
 def tpy_eval_js(TP) ->tp_obj:
-	throw "evaljs can only be used when compiled using the option --wasm or --html"
+	raise "evaljs can only be used when compiled using the option --wasm or --html"
 
 def tpy_eval_js_returns(TP) ->tp_obj:
-	throw "javascript can only be used when compiled using the option --wasm or --html"
+	raise "javascript can only be used when compiled using the option --wasm or --html"
 
 #endif
 
@@ -667,6 +670,7 @@ def tp_module_builtins_init(TP):
 	tp_obj o
 	//struct {const char *s;void *f;} b[] = {
 	struct {const char *s; tp_func_pointer f;} b[] = {
+	{"set", tpy_set},
 	{"divmod", tpy_divmod},
 	{"sizeof", tpy_sizeof},
 	{"any", tpy_any},

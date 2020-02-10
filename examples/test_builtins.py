@@ -148,6 +148,17 @@ def test_vecs():
 
 test_vecs()
 
+def test_sets():
+	print('testing sets')
+	s = set([1,2,3, "foo"])
+	print(s)
+	assert 1 in s
+	assert 99 not in s
+	assert "foo" in s
+	assert "bar" not in s
+
+test_sets()
+
 print("OK")
 
 

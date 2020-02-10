@@ -59,9 +59,9 @@ def tp_enter_frame(TP, tp_obj code, tp_obj * ret_dest):
 	##    tp_raise(,tp_string_atom(tp, "(tp_frame) RuntimeError: stack overflow"));
 	##}
 	if f.regs+(256+TP_REGS_EXTRA) >= tp->regs+TP_REGS:
-		throw "StackOverflowError in tp_vm.cpp:tp_enter_frame (f.regs+(256+TP_REGS_EXTRA) >= tp->regs+TP_REGS)"
+		raise "StackOverflowError in tp_vm.cpp:tp_enter_frame (f.regs+(256+TP_REGS_EXTRA) >= tp->regs+TP_REGS)"
 	if tp->cur >= TP_FRAMES-1:
-		throw "StackOverflowError in tp_vm.cpp:tp_enter_frame (tp->cur >= TP_FRAMES-1)"
+		raise "StackOverflowError in tp_vm.cpp:tp_enter_frame (tp->cur >= TP_FRAMES-1)"
 	tp->cur += 1
 	tp->frames[tp->cur] = f
 
@@ -543,7 +543,7 @@ def tp_step(TP) ->int:
 					if RB.type.type_id==TP_OBJECT:
 						if tp_vget(tp, RB, RC, &RA, 1)==0:
 							print(RC)
-							throw "error getting member of object"
+							raise "error getting member of object"
 					elif RB.type.type_id==TP_INTERFACE and RB.type.magic == TP_MODULE_EXTERNAL_MAGIC:
 						## external modules, like `sdl`, do not use interned tiny strings, so must lookup by slower key==key checking instead of hash
 						RA = tpd_dict_get_by_stdstring(tp, RB.dict.val, std::string(RC))
@@ -640,10 +640,10 @@ def tp_step(TP) ->int:
 					if defined(TINY_LIST_PARAMS):
 						if RB.lst.val->next(&RA) == false:
 							print(RB)
-							throw "params list iter error"
+							raise "params list iter error"
 						##################################
 					else:
-						throw "TINY_LIST_PARAMS is not enabled"						
+						raise "TINY_LIST_PARAMS is not enabled"						
 					break;
 				case TP_ILEN:
 					RA = tp_len(tp,RB); break;
@@ -774,7 +774,7 @@ def tp_step(TP) ->int:
 								tp_enter_frame(tp, __init__.func.info->code, &dest)
 							else:
 								print(__globals256__[ VB ])
-								throw "error calling a base class `__init__` constructor"
+								raise "error calling a base class `__init__` constructor"
 						for i in range(e.i-200):
 							tp->frames[tp->cur].regs[i] = regs[ VC + i ]
 						tp_run_frame(tp)

@@ -746,14 +746,21 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			## using the global keyword in low level pythonic++ (used to implement the VM) is just for clarity, local vars are not auto prefixed, it is done manually ##
 			func_globals = [gbl.strip() for gbl in s.split('global ')[-1].split(',')]
 			pass
-		elif user_pythonic and s.startswith("raise "):
-			## currently not used in low level pythonic++ (used to implement the VM)
-			if 'NotImplementedError' in s:
-				## forced to be forward declared and defined later, using virt_func_dispatch
-				indent = previ
+		elif s.startswith("raise "):
+			if user_pythonic:
+				## currently not used in low level pythonic++ (used to implement the VM)
+				if 'NotImplementedError' in s:
+					## forced to be forward declared and defined later, using virt_func_dispatch
+					indent = previ
+				else:
+					err = s.split('raise ')[-1]
+					err = err.replace('"', "`")
+					out.append('print("%s"); throw "%s";' %(err, err))
 			else:
+				## low level pythonic++ (VM level)
 				err = s.split('raise ')[-1]
-				out.append('throw "%s";' % err.replace('"', "`"))
+				err = err.replace('"', "`")
+				out.append('std::cout << "%s" << std::endl; throw "%s";' %(err, err))
 		#elif user_pythonic and indent==1 and not ln.startswith(' ') and not s.startswith('@') and is_untyped_global_var(s):
 		elif user_pythonic and indent <= 1 and not ln.startswith(' ') and not s.startswith('@') and is_untyped_global_var(s):
 			ctype, cname, cval = guess_type_of_var(s, classes=classes, global_auto_unwrap=global_auto_unwrap)
