@@ -12,6 +12,7 @@ class sdlwrapper(object):
 	def quit(self):
 		SDL_Quit()
 	def flip(self):
+		##SDL_UpdateRect(_sdl_window_surf, 0,0,0,0);
 		SDL_Flip( SDL_GetVideoSurface() )
 	def clear(self, clr):
 		int r = clr[0].number.val
@@ -28,7 +29,9 @@ class sdlwrapper(object):
 		if defined(__EMSCRIPTEN_major__):
 			pass
 		else:
-			SDL_Delay( (int)ms )
+			int d = ms.number.val
+			##print("delay: ", d)
+			SDL_Delay( d )
 		##################################
 	def window(self, sz):
 		global _sdl_width, _sdl_height, _sdl_window_surf

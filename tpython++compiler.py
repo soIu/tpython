@@ -185,6 +185,18 @@ def guess_type_of_var(s, classes=None, global_auto_unwrap={}):
 		ctype = val
 	elif val.startswith('{') and val.endswith('}'):
 		ctype = 'tp_obj'
+		mapargs = []
+		for part in val[1:-1].split():
+			print(part)
+			assert ':' in part
+			if part.endswith(','):
+				part = part[:-1]
+			key,val = part.split(':')
+			if key.startswith("'"):
+				assert key.endswith("'")
+				key = key.replace("'", '"')
+			mapargs.append( '{%s,%s}' % (key,val))
+		val = 'std::unordered_map<std::string,tp_obj>{%s}' % ','.join(mapargs)
 
 	if ctype:
 		if decl not in __guesses:
@@ -611,9 +623,21 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			auto_unwrap = {}
 			auto_unwrap.update(global_auto_unwrap)
 
+		## early stage preprocessing for user pythonic (AOT) ##
 		if user_pythonic and not s.startswith('#') and not s.endswith(";"):
 			newln = []
 			for part in s.split():
+				if part.startswith('set(['):
+					if part.endswith('])'):
+						sitems = []
+						for sitem in part[ len('set([') : -2 ].split(','):
+							sitems.append(sitem)
+						part = 'tp_obj(std::set<tp_obj>{%s})' % ','.join(sitems)
+					elif part.endswith(']):'):
+						sitems = []
+						for sitem in part[ len('set([') : -3 ].split(','):
+							sitems.append(sitem)
+						part = 'tp_obj(std::set<tp_obj>{%s})' % ','.join(sitems)
 				if part.count('.')==1 and not part.startswith( ('self.', '(self.') ):
 					a,b = part.split('.')
 					aorig = a
@@ -756,7 +780,12 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			else:
 				if requires_const:
 					ctype = 'const ' + ctype
-				out.append(ctype + ' ' + s + ';')
+				#out.append(ctype + ' ' + s + ';')
+				if '=' in ln:
+					out.append('%s %s=%s;' %(ctype, cname, cval))
+				else:
+					raise RuntimeError(ln)
+					out.append('%s %s %s;' %(ctype, cname, cval))
 		elif s.startswith('unreal.blueprint') and s.endswith(':'):
 			in_blueprint = True
 			blueprint_name = s.split('(')[-1].split(')')[0].strip()
@@ -1887,9 +1916,10 @@ def metapy2tinypypp( source ):
 		if u'┃' in ln:
 			assert ln.count(u'┃')==1
 			a,b = ln.split(u'┃')
-			if a.strip() == 'import sdl':
-				a = 'sdl = sdlwrapper()'
-				has_aot_mods = True
+			if '--sdl-deprecated' not in sys.argv:
+				if a.strip() == 'import sdl':
+					a = 'sdl = sdlwrapper()'
+					has_aot_mods = True
 			shared.append(a)
 			right_side.append(b)
 		elif ln.startswith('with javascript:'):
@@ -1929,6 +1959,8 @@ def metapy2tinypypp( source ):
 					aot.append( '\t' + ln.replace("print('", 'print("')[:-2]+'")' )
 				elif ln.strip() == 'import sdl':
 					aot.append('\t' + "sdl = sdlwrapper()")
+				elif ln.strip() == 'import random':
+					pass
 				else:
 					aot.append('\t' + ln.split('#')[0])
 			elif append_next_blank_hack:
@@ -1956,9 +1988,10 @@ def metapy2tinypypp( source ):
 			shared.extend( right_side )
 			right_side = []
 		else:
-			if ln.strip() == 'import sdl':
-				ln = 'sdl = sdlwrapper()'
-				has_aot_mods = True
+			if '--sdl-deprecated' not in sys.argv:
+				if ln.strip() == 'import sdl':
+					ln = 'sdl = sdlwrapper()'
+					has_aot_mods = True
 			shared.append(ln)
 
 	if aot:
@@ -2080,7 +2113,10 @@ def metapy2tinypypp( source ):
 def walk_path(path, res):
 	for file in os.listdir(path):
 		if file.endswith(('.aot.pyc++', '.aot.pyh')):
-			res.insert(0, [path,file])
+			if '--sdl-deprecated' in sys.argv and file.endswith('module_sdl.aot.pyh'):
+				pass
+			else:
+				res.insert(0, [path,file])
 		elif file.endswith(('.pyc++', '.pyh')):
 			res.append([path,file])
 		elif os.path.isdir(os.path.join(path,file)):

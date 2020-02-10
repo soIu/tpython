@@ -141,6 +141,8 @@ def gen_interpreter(stage=None):
 		'./tpython++compiler.py', 
 		'./tinypy'
 	]
+	if '--sdl-deprecated' in sys.argv:
+		cmd.append('--sdl-deprecated')
 	if '--blendot' in sys.argv:
 		cmd.append('--blendot')
 	if '--debug' in sys.argv:
@@ -202,11 +204,12 @@ def rebuild(stage=None, exe_name='tpython++'):
 		defs = '-DBLENDOT_TYPES'
 		mods = BlendotTypesFiles
 
-	if '--std-malloc' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv or '--includeos' in sys.argv or '--aot' in sys.argv or '--ode' in sys.argv:
-		mkfile = Makefile
-	else:
+	if '--rpmalloc' in sys.argv:
+		print("WARN: rpmalloc is not fully compatible with SDL and AOT modules")
 		defs += ' -DUSE_RPMALLOC '
 		mkfile = MakefileWithRPMalloc.replace('<C>', C)
+	else:
+		mkfile = Makefile
 
 	if '--profile-hashing' in sys.argv:
 		defs += ' -DPROFILE_HASHING '
@@ -273,6 +276,8 @@ def rebuild(stage=None, exe_name='tpython++'):
 					exe = os.path.split(arg)[-1]
 			if '--wasm' in sys.argv or '--html' in sys.argv:
 				cmd.append('--wasm')
+			if '--sdl-deprecated' in sys.argv:
+				cmd.append('--sdl-deprecated')
 
 			subprocess.check_call(cmd)
 			os.system('cp -v /tmp/embedded_bytecode.gen.h ./tinypy/__user_bytecode__.gen.h')
@@ -436,7 +441,8 @@ def rebuild(stage=None, exe_name='tpython++'):
 
 	if '--sdl' in sys.argv or use_sdl:
 		#mods += ' module_sdl.cpp'  # the entire sdl module is actually just in module_sdl.h
-		#defs += ' -DUSE_SDL'        # from runtime.cpp, module_sdl.h will be included  DEPRECATED, replaced by module_sdl.aot.pyh
+		if '--sdl-deprecated' in sys.argv:
+			defs += ' -DUSE_SDL'        # from runtime.cpp, module_sdl.h will be included  DEPRECATED, replaced by module_sdl.aot.pyh
 		if mode == 'wasm':
 			#exeopts += """ -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]' -s TOTAL_MEMORY=33554432"""
 			#exeopts += ' -s USE_SDL=2'
