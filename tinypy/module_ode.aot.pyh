@@ -229,8 +229,14 @@ class geomBox( __ode_geom_base__ ):
 		self.__gptr__ = dCreateBox( sp.__spointer__(), bx[0], bx[1], bx[2])
 
 
-
-
+class fixedJoint(object):
+	def __init__(self, wo, bo, cfm):
+		## note second arg is the optional joint group
+		jId = dJointCreateFixed( wo.__wpointer__(), NULL)
+		##joint = (dxJointFixed*) jId;
+		dJointAttach(jId, bo.__bpointer__(), NULL)
+		dJointSetFixed(jId)
+		((dxJointFixed*)jId)->cfm = cfm.number.val
 
 
 

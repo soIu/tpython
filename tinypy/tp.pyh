@@ -95,6 +95,7 @@ if defined(USE_ODE):
 	import "ode/collision_std.h"
 	import "ode/joints/joint.h"
 	import "ode/joints/contact.h"
+	import "ode/joints/fixed.h"
 
 
 ## better performance when the compiler is allowed to making the inline decisions

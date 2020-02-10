@@ -13,9 +13,70 @@ MarioReversed = [ s.reverse() for s in Mario ]
 
 MarioPal = { 'R':vec3(255,0,0), 'H':vec3(80,50,5), '-':vec3(160,150,100), 'B':vec3(0,0,255), 'Y':vec3(255,255,0), '0':vec3(5,5,5) }
 
+Background = [
+'        GG      ',
+'      GGGGGG    ',
+'    GGGGGGGGGG  ',
+]
+
+Bricks = [
+'  GG               ',
+'           G  G    ',
+'        GGG        ',
+]
+
+BrickBodies = []
+
+def make_bricks(wo, sp):
+	y = -140
+	for ln in Bricks:
+		x = 100
+		y += 32
+		for c in ln:
+			x += 32
+			if c == ' ':
+				continue
+			else:
+				brick = body(wo)
+				brick.setPosition( vec3(x,y,0) )
+				ma = mass()
+				ma.setSphere( 0.25, 1.0 )
+				brick.setMass( ma )
+				geo = geomBox(sp, vec3(32,32,32) )
+				geo.setBody(brick)
+				joint = fixedJoint(wo, brick, 0.8)
+				BrickBodies.append(brick)
+
+def draw_bricks():
+	for brick in BrickBodies:
+		pos = brick.getPosition()
+		#print(pos)
+		sdl.draw( vec4(pos[0], -(pos[1]+12), 32, 32), vec3(200,50,0) )
+		sdl.draw( vec4(pos[0], -(pos[1]+14), 32, 8), vec3(220,80,0) )
+
+def draw_background():
+	sdl.clear( vec3(130,130,255) )
+	sdl.draw( vec4(0, 210, 720, 50), vec3(80,50, 10) )
+	sdl.draw( vec4(0, 208, 720, 4), vec3(100,70, 20) )
+
+def draw_trees():
+	x = 0
+	y = 0
+	for ln in Background:
+		x = 0
+		y += 8
+		for c in ln:
+			x += 8
+			if c == ' ':
+				continue
+			else:
+				sdl.draw( vec4(x, y, 8, 8), vec3(20,200,0) )
+
+
+		
 
 def draw_mario(vec, mario, crouching, running, blink ):
-	ox = vec[0]
+	ox = vec[0] -32
 	oy = -(vec[1]+32)
 	y = oy
 	Y = 0
@@ -98,9 +159,7 @@ def iterate():
 					state['jumping'] += 10 * abs(state['mx'])
 					state['mx'] *= 3
 	#print(state)
-	sdl.clear( vec3(130,130,255) )
-	sdl.draw( vec4(0, 210, 720, 50), vec3(80,50, 10) )
-	sdl.draw( vec4(0, 208, 720, 4), vec3(100,70, 20) )
+	draw_background()
 	state['X'] += state['mx']
 	if state['jumping'] < 1:
 		if abs( B.getLinearVel()[0] ) >= 50:
@@ -108,16 +167,29 @@ def iterate():
 	B.addForce( vec3(state['mx']*20.0, -state['jumping'] * 5, 0) )	
 	sp.spaceCollide()
 	wo.step( 0.2 )
+	## force mario and bricks Z to zero each frame
+	pos = B.getPosition()
+	print(pos)
+	#pos.z = 0   ## this will cause back slide on -x
+	#B.setPosition( pos )
+	B.addForce( vec3(0,0, -(pos.z*2.5) ) )
+	for brick in BrickBodies:
+		pos = brick.getPosition()
+		#print(pos)
+		#pos.z = 0
+		#brick.setPosition( pos )
 	if state['direction'] == 1:
 		draw_mario( B.getPosition(), Mario, state['crouch'], running, random.random()>0.9 )
 	else:
 		draw_mario( B.getPosition(), MarioReversed, state['crouch'], running, random.random()>0.9 )
+	draw_bricks()
 	sdl.flip()
 	sdl.delay(30)  ## this will do nothing in html
 
 def main():
 	sdl.initialize()
 	sdl.window( vec2(720, 240) )
+	make_bricks( wo, sp )
 	while True: iterate()
 
 main()
