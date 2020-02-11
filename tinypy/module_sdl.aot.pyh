@@ -29,9 +29,7 @@ class sdlwrapper(object):
 		if defined(__EMSCRIPTEN_major__):
 			pass
 		else:
-			int d = ms.number.val
-			##print("delay: ", d)
-			SDL_Delay( d )
+			SDL_Delay( int(ms) )
 		##################################
 	def window(self, sz):
 		global _sdl_width, _sdl_height, _sdl_window_surf

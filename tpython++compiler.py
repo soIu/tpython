@@ -694,7 +694,11 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 								print(b)
 								print(s)
 								print(part)
+								print('=======this class members:')
 								print(class_members)
+								for cls in classes:
+									print(cls)
+									print(classes[cls])
 								raise RuntimeError("unable to find the class type from member or method use on variable: `%s`" %a)		
 						elif len(hits) > 1:
 							raise SyntaxError('can not auto unwrap a pointer because multiple classes have the same named members or methods: %s line: `%s`' %(str(hits), s))
@@ -1036,7 +1040,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 						is_virt = True
 						break
 					for base2 in classes[base]['bases']:
-						if base2 == 'tp_obj':
+						if base2 in ('tp_obj', 'tpy_subclass'):
 							continue
 						if func_name in classes[base2]['vmethods']:
 							is_virt = True
@@ -1627,7 +1631,9 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					if var.endswith( ('+', '-', '/', '*') ):
 						var = var[:-1].strip()
 
-					if ' ' in var:
+					if '.template unwrap<' in var:
+						pass
+					elif ' ' in var:
 						print(ln)
 						cpptype = var.split()[ : -1]
 						var = var.split()[-1]
@@ -1842,10 +1848,16 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					out.append('	%s(tp, %s, tp_string_atom(tp, "%s"), %s(tp, %s));' %(tp_set, m, unscram, tp_function, scram))
 				elif type(func) is list:
 					assert len(func)==2
-					out.append('	%s(tp, %s, "%s", %s(tp, %s));' %(tp_set, m,func[0], tp_function, func[1]))
+					if len(func[0]) > 12:
+						print("WARN: class name is too long to expose to the tpy interpreter, not binding wrapper to class: " + func[0])
+					else:
+						out.append('	%s(tp, %s, "%s", %s(tp, %s));' %(tp_set, m,func[0], tp_function, func[1]))
 				
 				else:
-					out.append('	%s(tp, %s, tp_string_atom(tp, "%s"), %s(tp, %s));' %(tp_set, m,func, tp_function, func))
+					if len(func) > 12:
+						print("WARN: function name is too long to expose to the tpy interpreter, not binding wrapper for function: " + func)
+					else:
+						out.append('	%s(tp, %s, tp_string_atom(tp, "%s"), %s(tp, %s));' %(tp_set, m,func, tp_function, func))
 
 		out.append('}')
 

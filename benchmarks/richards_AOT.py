@@ -94,25 +94,19 @@ class TaskState(object):
 		self.tskwaiting = False
 		self.tskholding = False
 		return self
-	# waiting with packet
 	def waitPacket(self):
 		self.pktpending = True
 		self.tskwaiting = True
 		self.tskholding = False
 		return self
-	# is packet pending
 	def isPending(self):
 		return self.pktpending
-	# is task waiting
 	def isTskWait(self):
 		return self.tskwaiting
-	# is task holding
 	def isTskHold(self):
 		return self.tskholding
-	# task holding or waiting
 	def isHoldWait(self):
 		return self.tskholding or ((not self.pktpending) and self.tskwaiting)
-	# is waiting with packet
 	def isWaitPkt(self):
 		return self.pktpending and self.tskwaiting and not self.tskholding
 
@@ -315,7 +309,7 @@ class Richards(object):
 		return True
 
 #AOT export
-def run_richards_bench(loops):
+def run_richards(loops):
 	print("enter richards...")
 	r = Richards()
 	result = r.run(loops)
@@ -329,6 +323,6 @@ def run_richards_bench(loops):
 def main():
 	print('enter main...')
 	iterations = 24
-	run_richards_bench(iterations)
+	run_richards(iterations)
 
 main()

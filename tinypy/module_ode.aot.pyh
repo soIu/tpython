@@ -262,7 +262,7 @@ class fixedJoint(object):
 		##joint = (dxJointFixed*) jId;
 		dJointAttach(jId, bo.__bpointer__(), NULL)
 		dJointSetFixed(jId)
-		((dxJointFixed*)jId)->cfm = cfm.number.val
+		((dxJointFixed*)jId)->cfm = cfm
 
 
 

@@ -392,6 +392,11 @@ class tp_obj:
 		val.number.val = this🠊number.val * first.number.val
 		return val
 	@const
+	def operator* (double n) ->tp_obj:
+		tp_obj val = {TP_NUMBER};
+		val.number.val = this🠊number.val * n
+		return val
+	@const
 	def operator/ (const tp_obj & first) ->tp_obj:
 		tp_obj val = {TP_NUMBER};
 		val.number.val = this🠊number.val / first.number.val
