@@ -8,6 +8,26 @@ os.chdir(workspace_dir)
 ## Ubuntu Notes:
 ## sudo apt-get install g++-arm-linux-gnueabi gcc-arm-linux-gnueabi binutils-arm-linux-gnueabi
 
+## https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent
+SIMPLE_JS_EDITOR = '''
+<script>
+function tpy_recompile() {
+	var pre = document.getElementById("TPY_SRC");
+	//kills new lines from br nodes//var src = pre.textContent;
+	var src = pre.innerHTML;
+	console.log(src);
+	var oReq = new XMLHttpRequest();
+	//oReq.addEventListener("load", reqListener);
+	oReq.open("GET", "/recompile?" + btoa(src));
+	oReq.send();
+}
+</script>
+<hr/>
+<button onclick="javascript:tpy_recompile()">compile</button>
+<a href="/">reload</a>
+
+'''
+
 PAKO_MISSING = '''
 
 WARN: Could not find the pako source folder in your home directory,
@@ -251,7 +271,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 		defs += ' -DUSE_ODE -DODE_PLATFORM_LINUX -DdTHREADING_INTF_DISABLED'
 		defs += ' -DUSE_USER_CUSTOM_CPP'
 
-
+	script = None
 	embed_bytecode = False
 	miniunreal = False
 	unreal_plugin = None
@@ -591,6 +611,23 @@ def rebuild(stage=None, exe_name='tpython++'):
 		pako = ''
 		if exe.endswith('.html'):
 			exe = exe.split('.html')[0]
+
+		## insert user source code into html file ##
+		if script:
+			html = open('./%s.html' %exe, 'rb').read().decode('utf-8')
+			assert '</body>' in html
+			script = script.replace("<", "&lt;").replace(">", "&gt;")
+			html = html.replace('</body>', SIMPLE_JS_EDITOR + '<hr/><pre contenteditable="true" id="TPY_SRC">%s</pre></body>' %script)
+			open('./%s.html' %exe, 'wb').write( html.encode('utf-8') )
+
+			js = open('./%s.js' %exe, 'rb').read().decode('utf-8')
+			assert "var Module = typeof Module !== 'undefined' ? Module : {};" in js
+			js = js.replace(
+				"var Module = typeof Module !== 'undefined' ? Module : {};",
+				"var Module = typeof Module !== 'undefined' ? Module : {};\nModule['doNotCaptureKeyboard']=true;"
+			
+			)
+			js = open('./%s.js' %exe, 'wb').write( js.encode('utf-8') )
 		elif exe.endswith('.js'):
 			exe = exe.split('.js')[0]
 
@@ -612,7 +649,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 			b = open('./%s.js' %exe ).read()
 			c = pako + '\n' + pakoify(b, exe=exe)
 			open('./%s.js' %exe, 'wb').write(c.encode('utf-8'))
-
+			
 	#####################
 	if mode == 'windows':
 		for dll in ['libstdc++-6.dll','libgcc_s_seh-1.dll', 'libwinpthread-1.dll']:

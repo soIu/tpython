@@ -137,7 +137,7 @@ B.setMass( m )
 geo = geomBox(sp, vec3(64,64,64) )
 geo.setBody(B)
 
-state = {'X':0, 'mx':0, 'my':0, 'jumping':0, 'direction':1, 'crouch':False}
+state = {'pressed':False, 'mx':0, 'my':0, 'jumping':0, 'direction':1, 'crouch':False}
 
 def iterate():
 	running = False
@@ -153,12 +153,11 @@ def iterate():
 			if e["key"] == 113 or e["key"]==80:    ## left key
 				state['direction'] = -1
 				state['mx'] -= 8
-				state['X'] -= 8
 				if state['mx'] < -16:
 					state['mx'] = -16
 			elif e["key"] == 114 or e["key"]==79:  ## right key
 				state['direction'] = 1
-				state['mx'] += 8; state['X'] += 8
+				state['mx'] += 8
 				if state['mx'] > 16:
 					state['mx'] = 16
 			elif e["key"] == 116 or e["key"]==81: ## key down
@@ -174,9 +173,16 @@ def iterate():
 					state['jumping'] += 70
 					state['jumping'] += 10 * abs(state['mx'])
 					state['mx'] *= 3
+		elif e["type"] == "PRESS":
+			state["pressed"] = True
+		elif e["type"] == "CLICK":
+			state["pressed"] = False
+		elif e["type"] == "MOUSE" and state["pressed"]:
+			state["mx"] += e["rx"] * 0.1
+			if e["ry"] < 0:
+				B.addForce( vec3(0, -e["ry"]*5, 0) )
 	#print(state)
 	draw_background()
-	state['X'] += state['mx']
 	if state['jumping'] < 1:
 		if abs( B.getLinearVel()[0] ) >= 50:
 			running = True

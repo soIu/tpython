@@ -112,7 +112,13 @@ class sdlwrapper(object):
 					d.set("state", tp_number(e.motion.state));
 					break;
 				case SDL_MOUSEBUTTONDOWN:
-					pass
+					r.lst.val->end ++
+					d = r.lst.val->items[++num_events]
+					d.set("type", "PRESS");
+					d.set("x", tp_number(e.button.x));
+					d.set("y", tp_number(e.button.y));
+					d.set("button", tp_number(e.button.button));
+					break;
 				case SDL_MOUSEBUTTONUP:
 					r.lst.val->end ++
 					d = r.lst.val->items[++num_events]
