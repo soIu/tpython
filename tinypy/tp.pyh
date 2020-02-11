@@ -302,6 +302,7 @@ class tp_obj:
 	if defined(UNREAL_TYPES):
 		struct { TPTypeInfo type; struct UObject *ptr; } uob;
 	};  // end of union
+	tp_obj operator() (std::vector<tp_obj> args);
 	tp_obj operator=(int n);
 	def operator=(void* ptr) ->tp_obj:
 		this->type.type_id = TP_POINTER
@@ -609,6 +610,9 @@ struct tp_vm:
 	tpd_list *black
 	int steps
 
+## this should be thread local
+## for now this is just used by the tp_obj functor
+static tp_vm *__tpvm_global__ = NULL
 
 define(TP=tp_vm *tp)
 

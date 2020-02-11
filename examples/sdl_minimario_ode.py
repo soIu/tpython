@@ -20,18 +20,20 @@ Background = [
 ]
 
 Bricks = [
-'  GG               ',
-'           G  G    ',
-'        GGG        ',
+'            BBBBB  ',
+'  BB       B       ',
+'          BB       ',
+'        BBB        ',
+'     BB            ',
 ]
 
 BrickBodies = []
 
 def make_bricks(wo, sp):
-	y = -140
+	y = -40
 	for ln in Bricks:
 		x = 100
-		y += 32
+		y -= 32
 		for c in ln:
 			x += 32
 			if c == ' ':
@@ -44,7 +46,7 @@ def make_bricks(wo, sp):
 				brick.setMass( ma )
 				geo = geomBox(sp, vec3(32,32,32) )
 				geo.setBody(brick)
-				joint = fixedJoint(wo, brick, 0.8)
+				joint = fixedJoint(wo, brick, 0.05)
 				BrickBodies.append(brick)
 
 def draw_bricks():
@@ -56,8 +58,8 @@ def draw_bricks():
 
 def draw_background():
 	sdl.clear( vec3(130,130,255) )
-	sdl.draw( vec4(0, 210, 720, 50), vec3(80,50, 10) )
-	sdl.draw( vec4(0, 208, 720, 4), vec3(100,70, 20) )
+	sdl.draw( vec4(0, 310, 720, 50), vec3(80,50, 10) )
+	sdl.draw( vec4(0, 308, 720, 4), vec3(100,70, 20) )
 
 def draw_trees():
 	x = 0
@@ -107,14 +109,28 @@ def draw_mario(vec, mario, crouching, running, blink ):
 			else:
 				sdl.draw( vec4(x, y, 4, 4), MarioPal[ c ] )
 
+## note that this callback is called from the ODE AOT/C++ module,
+## so arguments are always passed as a list, which you must manually unpack.
+def on_collision( args ):
+	m = args[0]
+	b = args[1]
+	mpos = m.getPosition()
+	bpos = b.getPosition()
+	if mpos.y+32 < bpos.y:
+		#print('mario is under brick')
+		b.getJoint().breakJoint()
+	else:
+		#print('mario is over brick')
+		pass
 
 wo = world()
 wo.setGravity( vec3(0,-9.81*4,0) )
 sp = space()
-floor = geomPlane(sp, vec3(0,1,0), -200)
+floor = geomPlane(sp, vec3(0,1,0), -300)
 leftwall = geomPlane(sp, vec3(1,0,0), 0)
 rightwall = geomPlane(sp, vec3(-1,0,0), -720)
 B = body( wo )
+B.setCollisionCallback( on_collision )
 m = mass()
 m.setSphere( 0.25, 1.0 )
 B.setMass( m )
@@ -167,17 +183,12 @@ def iterate():
 	B.addForce( vec3(state['mx']*20.0, -state['jumping'] * 5, 0) )	
 	sp.spaceCollide()
 	wo.step( 0.2 )
-	## force mario and bricks Z to zero each frame
+	## pull mario and bricks to zero on Z
 	pos = B.getPosition()
-	print(pos)
-	#pos.z = 0   ## this will cause back slide on -x
-	#B.setPosition( pos )
 	B.addForce( vec3(0,0, -(pos.z*2.5) ) )
 	for brick in BrickBodies:
 		pos = brick.getPosition()
-		#print(pos)
-		#pos.z = 0
-		#brick.setPosition( pos )
+		brick.addForce( vec3(0,0, -(pos.z*2.5)) )
 	if state['direction'] == 1:
 		draw_mario( B.getPosition(), Mario, state['crouch'], running, random.random()>0.9 )
 	else:
@@ -188,7 +199,7 @@ def iterate():
 
 def main():
 	sdl.initialize()
-	sdl.window( vec2(720, 240) )
+	sdl.window( vec2(720, 340) )
 	make_bricks( wo, sp )
 	while True: iterate()
 

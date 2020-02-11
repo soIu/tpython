@@ -1042,6 +1042,16 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 
 ## tp_obj methods
 
+def tp_obj::operator() (std::vector<tp_obj> args) ->tp_obj:
+	##print("calling tp_obj functor")
+	__tpvm_global__->params.lst.val->clear()
+	##print("args cleared OK")
+	for arg in args:
+		__tpvm_global__->params.lst.val->append(arg)
+	##print("args set OK")
+	return tp_call(__tpvm_global__, *this, __tpvm_global__->params)
+
+
 def tp_obj::operator=(int n) ->tp_obj:
 	this->type.type_id = TP_NUMBER
 	this->number.val = n

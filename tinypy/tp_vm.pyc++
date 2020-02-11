@@ -13,6 +13,7 @@ def tp_default_echo(const char* string, int length):
 def tp_create_vm(void) -> tp_vm*:
 	int i
 	tp_vm *tp = (tp_vm*)calloc(sizeof(tp_vm),1)
+	__tpvm_global__ = tp
 	tp->cur = 0
 	tp->jmp = 0
 	tp->ex = tp_None
