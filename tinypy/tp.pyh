@@ -421,6 +421,8 @@ class tp_obj:
 	def set(const char*, const char*) ->tp_obj;
 	tp_obj( const char *);
 	def reverse() ->tp_obj;
+	def contains(int n) ->bool;
+	friend bool operator>> (int n, tp_obj self) { return self.contains(n);}
 
 ## base class for all AOT subclasses ##
 class tpy_subclass( tp_obj ):
@@ -826,6 +828,13 @@ def tp_uset(tp_obj lst) ->tp_obj:
 		raise "invalid type given for set constructor"
 	return s
 
+class __is_in__:
+	int num;
+	tp_obj ob;
+	friend __is_in__ operator>> (long n, __is_in__ self) { self.num = n; return self;}
+	def operator< (tp_obj o) ->bool:
+		this->ob = o
+		return true
 
 ## TPY POINTERS ##
 

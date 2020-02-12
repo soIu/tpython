@@ -171,6 +171,7 @@ class body( object ):
 		self.__bptr__ = b
 		self.__ccb__  = None
 		self.__joint__ = None
+		self.__ccbcpp__ = NULL
 
 @static
 def __nearCallback(void* ptr, dxGeom* o1, dxGeom* o2) ->void:

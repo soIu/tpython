@@ -508,6 +508,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 	##elif k.type.type_id == TP_STRING:
 	##	## this is not correct, unknowntype.foo should not return unknowntype
 	##	return tp_copy(tp, self)
+	std::cout << cRed << "GET ERROR: type = " << cNone << self.type.type_id << std::endl;
 	std::cout << cRed << "GET ERROR: self = " << cNone << self << std::endl;
 	std::cout << cRed << "GET ERROR: key =" << cNone << k << cBlue << " hash=" << tp_hash(tp,k) << cNone << std::endl;
 	raise "GET ERROR - in tp_ops.cpp - unexpected type or invalid key/index"
@@ -1041,7 +1042,11 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 	raise "TypeError tp_ops.cpp:tp_call object is not callable"
 
 
-## tp_obj methods
+## tp_obj methods ##
+
+def tp_obj::tp_obj( const char* s ):
+	*this = tp_string_from_stdstring(NULL, s )
+	this->type.type_id = TP_STRING
 
 def tp_obj::operator() (std::vector<tp_obj> args) ->tp_obj:
 	##print("calling tp_obj functor")
@@ -1189,14 +1194,27 @@ def tp_obj::operator[] (int index) -> tp_obj:
 		elif index==3:
 			return (double)this->__quat.q.w
 		else:
-			raise "vec3 invalid index"
+			raise "vec4/quat invalid index"
 	else:
+		##raise "tp_obj::operator[] error: unknown type"
 		return _tp_get(NULL, *this, tp_number(index), 0)
 
 
 def operator << (std::ostream &out, const tp_obj &self) -> std::ostream &:
 	out << tp_as_string(NULL, self)
 	return out
+
+def tp_obj::reverse() ->tp_obj:
+	##TODO
+	return *this
+
+def tp_obj::contains(int n) ->bool:
+	if this->type.type_id == TP_SET:
+		if this->uset.val->numset.count( (float)n ) > 0:
+			return true
+		else:
+			return false
+	raise "invalid self type for tp_obj::contains"
 
 
 def tp_obj::append(const char *s):
@@ -1224,7 +1242,12 @@ def tp_obj::as_vector() -> std::vector<tp_obj>:
 	elif this🠊type.type_id == TP_LIST_TINY:
 		for (int i=this🠊lst.val🠊start; i<this🠊lst.val🠊end; i++):
 			r.push_back( this🠊lst.val🠊items[i] )
+	elif this🠊type.type_id == TP_STRING:
+		std::string str = std::string(*this)
+		for (const char c: str):
+			r.push_back( tp_string_tiny(c) )
 	else:
+		print( *this )
 		raise "tp_obj::as_vector can only be used on a list and dict types"
 	return r
 

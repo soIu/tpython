@@ -169,8 +169,9 @@ def guess_type_of_var(s, classes=None, global_auto_unwrap={}):
 	elif val == 'None':
 		ctype = 'tp_obj'
 	elif val.startswith('['):
+		is_all_strings = True
 		ctype = 'std::vector<tp_obj>'
-		#not safe yet#ctype = 'tp_obj'
+		#not safe yet#ctype = 'tp_obj' - nested iteration is not yet supported
 		assert val.endswith(']')
 		if decl not in __global_vecs:
 			__global_vecs.add( decl )
@@ -184,8 +185,9 @@ def guess_type_of_var(s, classes=None, global_auto_unwrap={}):
 					vecargs.append( sv[::-1] )
 			else:
 				raise SyntaxError("invalid list comp at global level: " + s)
+		elif ',' not in val:
+			is_all_strings = False
 		else:
-			is_all_strings = True
 			for part in val.split(','):  ## this breaks with strings that have `,` in them
 				part = part.strip()
 				if not part:
@@ -201,9 +203,14 @@ def guess_type_of_var(s, classes=None, global_auto_unwrap={}):
 				vecargs.append( part )
 			if is_all_strings:
 				__global_string_vecs[ decl ] = vecargs
-		val = 'std::vector<tp_obj>({%s})' % ','.join(vecargs)
+		if is_all_strings:
+			ctype = 'std::vector<std::string>'
+			val = 'std::vector<std::string>({\n%s})' % ',\n'.join(vecargs)
+		else:
+			val = 'std::vector<tp_obj>({%s})' % ','.join(vecargs)
 	elif val.startswith('{') and val.endswith('}'):
 		#ctype = 'tp_obj'
+		is_all_chars = True
 		ctype = 'std::unordered_map<std::string,tp_obj>'
 		mapargs = []
 		for part in val[1:-1].split():
@@ -214,9 +221,17 @@ def guess_type_of_var(s, classes=None, global_auto_unwrap={}):
 			key,val = part.split(':')
 			if key.startswith("'"):
 				assert key.endswith("'")
-				key = key.replace("'", '"')
+				if len(key) > 3:
+					key = key.replace("'", '"')
+					is_all_chars = False
+			else:
+				is_all_chars = False
 			mapargs.append( '{%s,%s}' % (key,val))
-		val = 'std::unordered_map<std::string,tp_obj>{%s}' % ','.join(mapargs)
+		if is_all_chars:
+			ctype = 'std::unordered_map<char,tp_obj>'
+			val = 'std::unordered_map<char,tp_obj>{%s}' % ','.join(mapargs)
+		else:
+			val = 'std::unordered_map<std::string,tp_obj>{%s}' % ','.join(mapargs)
 		
 	elif classes:
 		for classname in classes:
@@ -401,7 +416,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		out.append('#define unwrap(T,o) static_cast<class T*>(o.pointer.val)')
 		# why do these macros sometimes fail with this error?
 		#error: expected ‘>’ before ‘*’ token #define unwrap(T,o) static_cast<T*>(o.pointer.val)
-		##out.append('#define in >>')  ## this hack will not work
+		#out.append('#define in >>__is_in__()<')
+		out.append('#define in >>')
 
 		if tpy_modules_aot:
 			src = []
@@ -935,6 +951,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			pass
 		elif s.startswith('@unwrap('):
 			pass
+		elif s.startswith('@typedef('):
+			pass
 		elif s == '@constexpr':
 			out.append('constexpr')
 		elif s in ('@javascript', '@js'):
@@ -1138,6 +1156,20 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			arg_types = []
 			func_post = []
 			auto_templates = []
+			user_typedefs = {}
+			if prevs.startswith('@typedef('):
+				for part in prevs.strip()[len('@typedef(') : -1].split(','):
+					assert '=' in part
+					a,b = part.split('=')
+					a = a.strip()
+					b = b.strip()
+					if b.startswith("'") and b.endswith("'"):
+						b = b[1:-1]
+					elif b.startswith('"') and b.endswith('"'):
+						b = b[1:-1]
+					user_typedefs[ a ] = b
+
+
 			for i, arg in enumerate(rawargs.split(',')):
 				arg = arg.strip()
 				if not arg:
@@ -1210,8 +1242,11 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					elif ' ' not in arg and arg != 'TP' and arg != 'void' and arg != '...' and arg != 'VARIANT_ARG_DECLARE':
 						## clang can not use auto for func params :(
 						if user_pythonic:
-							auto_templates.append(arg)
-							arg = 'T_%s %s' % (len(auto_templates)-1, arg)
+							if arg in user_typedefs:
+								arg = '%s %s' %( user_typedefs[arg], arg)
+							else:
+								auto_templates.append(arg)
+								arg = 'T_%s %s' % (len(auto_templates)-1, arg)
 						else:
 							arg = 'auto ' + arg
 							arg_types.append('auto')
@@ -1914,8 +1949,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		out.append('}')
 
 	## this hack will not work
-	##if user_pythonic:
-	##	out.append('#undef in')
+	if user_pythonic:
+		out.append('#undef in')
 
 
 	if unreal_plugin_cpp:
