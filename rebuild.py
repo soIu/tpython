@@ -269,7 +269,10 @@ def rebuild(stage=None, exe_name='tpython++'):
 			if odefile.endswith('.cpp'):
 				mods += ' miniode/ode/joints/' + odefile
 		defs += ' -DUSE_ODE -DODE_PLATFORM_LINUX -DdTHREADING_INTF_DISABLED'
-		defs += ' -DUSE_USER_CUSTOM_CPP'
+		if '--aot-pure' in sys.argv:
+			defs += ' -DPURE_AOT'
+		else:
+			defs += ' -DUSE_USER_CUSTOM_CPP'
 
 	script = None
 	embed_bytecode = False
@@ -295,6 +298,8 @@ def rebuild(stage=None, exe_name='tpython++'):
 				cmd.append('--debug')
 			if '--aot' in sys.argv:
 				cmd.append('--aot-all')
+				if '--aot-pure' in sys.argv:
+					cmd.append('--aot-pure')
 				if '--wasm' in sys.argv or '--html' in sys.argv:
 					exe = os.path.split(arg)[-1]
 			if '--wasm' in sys.argv or '--html' in sys.argv:
@@ -666,7 +671,8 @@ def main():
 	if os.path.isfile('/tmp/tpython_preload_libs.js'):
 		os.system('rm -rf /tmp/tpython_preload_libs.js')
 
-	if '--clean' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv:
+	#if '--clean' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv:
+	if '--clean' in sys.argv:
 		os.system('rm -rf tinypy/*.fodg')
 		os.system('rm -rf tinypy/blendot/*.fodg')
 		os.system('rm -rf tinypy/blendot/*.o')

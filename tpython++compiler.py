@@ -2011,13 +2011,17 @@ def metapy2tinypypp( source ):
 	in_js = False
 	in_aot = False
 	aot_all = False
+	aot_pure = False
 	append_next_blank_hack = None
 	has_aot_mods = False
 	
 	if '--aot-all' in sys.argv:
 		in_aot = True
 		aot_all = True
-		
+	if '--aot-pure' in sys.argv:
+		## compiles without the tpy interpreter
+		aot_pure = True
+
 	#if tpy_modules_aot:
 	#	for aotmod in tpy_modules_aot:
 	#		aot.extend(tpy_modules_aot[aotmod])
@@ -2062,10 +2066,13 @@ def metapy2tinypypp( source ):
 				if ln.lower().startswith( ('# aot export', '#aot export') ):
 					aot.append('@module(__aot_builtin_module__)')
 				elif ln.startswith( 'def main(' ):
-					assert aot_all
-					aot.append('@module(__aot_builtin_module__)')
-					aot.append('\tdef aotpy_main__():')
-					append_next_blank_hack = '\treturn None'
+					if aot_pure:
+						aot.append('\tdef __aot_user_main__() ->void:')
+					else:
+						assert aot_all
+						aot.append('@module(__aot_builtin_module__)')
+						aot.append('\tdef aotpy_main__():')
+						append_next_blank_hack = '\treturn None'
 				elif ln.strip().startswith("print('") and ln.strip().endswith("')"):
 					aot.append( '\t' + ln.replace("print('", 'print("')[:-2]+'")' )
 				elif ln.strip() == 'import sdl':
@@ -2073,10 +2080,23 @@ def metapy2tinypypp( source ):
 				elif ln.strip() == 'import random':
 					has_rand = True
 				elif s.startswith('while True:') and s.count('(')==1 and s.count(')'):
-					aot.append('\t'+ ln.replace('while True:', 'while(true){') + ';};')
+
+					if '--wasm' in sys.argv:
+						## special case to transform the first `while True: myfunc()` into a call to emscripten_set_main_loop
+						## http://main.lv/writeup/web_assembly_sdl_example.md
+						assert s.endswith(')')
+						func_name = s.split(':')[-1].split('(')[0].strip()
+						ln = '\t' * ln.split(':')[0].count('\t')
+						ln += 'emscripten_set_main_loop( %s, 0, 1 )' %func_name
+						aot.append('\t' + ln )
+					else:
+						aot.append('\t'+ ln.replace('while True:', 'while(true){') + ';};')
+
 				else:
 					if 'random.random()' in ln:
-						ln = ln.replace('random.random()', 'random()')
+						ln = ln.replace('random.random()', 'tpyrand()')
+					if ' abs(' in ln:
+						ln = ln.replace(' abs(', ' std::abs(')
 					aot.append('\t' + ln.split('#')[0])
 			elif append_next_blank_hack:
 				aot.append( '\t' + append_next_blank_hack )
@@ -2107,7 +2127,14 @@ def metapy2tinypypp( source ):
 				if ln.strip() == 'import sdl':
 					ln = 'sdl = sdlwrapper()'
 					has_aot_mods = True
-			shared.append(ln)
+			if ln.strip().startswith('@'):
+				## tpy interpreted scripts do not use decorator syntax YET
+				pass
+			elif ln.startswith('def ') and ln.endswith(':') and '->' in ln:
+				## tpy interpreted scripts do not use return type syntax
+				shared.append( ln.split('->')[0] + ':' )
+			else:
+				shared.append(ln)
 
 	if aot:
 		shared.insert(0, 'from __aot_builtin_module__ import *')

@@ -99,7 +99,7 @@ sp = space()
 B = body( wo )
 state = {'pressed':False, 'mx':0, 'my':0, 'jumping':0, 'direction':1, 'crouch':False}
 
-def iterate():
+def iterate() ->void:
 	running = False
 	state["jumping"] *= 0.7
 	if state["jumping"] >= 4:

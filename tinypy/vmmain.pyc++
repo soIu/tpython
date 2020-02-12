@@ -133,7 +133,44 @@ def compile_and_run_py_file(std::string filename):
 	tp_deinit(tp)
 #endif
 
+@static
+def __tpy_main__(int argc, char *argv[]):
+	#ifdef USE_EMBEDDED_BYTECODE
+	  run_vm_embedded(argc, argv);
+	#else
+	if argc==1:
+		std::cout << "Error: no bytecode or py file provided" << std::endl;
+	elif argc==2:
+		std::string f = std::string(argv[1])
+		if defined(DEBUG):
+			print( f )
+		if f.size() > 3:
+			if f.substr( f.size()-3, f.size() ) == std::string(".py"):
+				#ifdef USE_PYTHON
+				compile_and_run_py_file(f)
+				#else
+				print("Error: tpython must be built with CPython to compile py files to bytecode")
+				#endif
+				return 0
+		run_vm(argc, argv, 1)
+	elif argc==3:
+		std::thread t1( [=]{run_vm(argc, argv, 1);} );
+		std::thread t2( [=]{run_vm(argc, argv, 2);} );
+		t1.join();
+		t2.join();
+	else:
+		std::cout << "TODO: more than two threads it not yet supported" << std::endl;
+	#endif
 
+#ifdef PURE_AOT
+
+import "__user_pythonic__.gen.h"
+
+@static
+def __aot_main__(int argc, char *argv[]):
+	__aot_user_main__()
+
+#endif
 
 #ifdef INCLUDEOS
 def Service::start():
@@ -163,32 +200,10 @@ def main(int argc,  char *argv[]) -> int:
 	if defined(USE_PYTHON):
 		Py_SetStandardStreamEncoding("utf-8", "surrogateescape");
 		Py_Initialize();
-	#ifdef USE_EMBEDDED_BYTECODE
-	  run_vm_embedded(argc, argv);
-	#else
-	if argc==1:
-		std::cout << "Error: no bytecode or py file provided" << std::endl;
-	elif argc==2:
-		std::string f = std::string(argv[1])
-		if defined(DEBUG):
-			print( f )
-		if f.size() > 3:
-			if f.substr( f.size()-3, f.size() ) == std::string(".py"):
-				#ifdef USE_PYTHON
-				compile_and_run_py_file(f)
-				#else
-				print("Error: tpython must be built with CPython to compile py files to bytecode")
-				#endif
-				return 0
-		run_vm(argc, argv, 1)
-	elif argc==3:
-		std::thread t1( [=]{run_vm(argc, argv, 1);} );
-		std::thread t2( [=]{run_vm(argc, argv, 2);} );
-		t1.join();
-		t2.join();
+	if defined(PURE_AOT):
+		__aot_main__(argc, argv)
 	else:
-		std::cout << "TODO: more than two threads it not yet supported" << std::endl;
-	#endif
+		__tpy_main__(argc, argv)
 	if defined(DEBUG):
 		std::cout << "tpython interpreter exit" << std::endl;
 		std::cout << "sizeof tp_vm = " << sizeof(tp_vm) << std::endl;

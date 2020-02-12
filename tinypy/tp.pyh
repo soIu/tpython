@@ -1509,6 +1509,15 @@ def __init_libself__():
 def chr(int n) ->unsigned char;
 def ord(char c) ->int;
 
+@static
+def tpyrand() ->double:
+	double r = static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX)
+	return r
+
+@static
+def tpyuniform(double low, double hi) ->double:
+	double r = low + static_cast<double>(std::rand()) / (static_cast<double>(RAND_MAX/(hi-low)));
+	return r
 
 @static
 def __split_string__(std::string text, std::string delims) -> std::vector<std::string>:
