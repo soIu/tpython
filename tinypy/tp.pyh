@@ -58,13 +58,16 @@ else:
 
 import <functional>
 import <algorithm>
-import <map>
+##import <map>
 import <unordered_map>
 import <unordered_set>
 import <string>
 ##import <string_view>  ## missing in older clangs
-import <iostream>
-import <sstream>
+
+if not defined(SUPER_TINY):
+	import <iostream>
+	import <sstream>
+
 import <cstring>
 import <vector>
 import <sys/stat.h>
@@ -72,7 +75,7 @@ import <sys/stat.h>
 if not defined(__USE_ISOC99):
 	define(__USE_ISOC99)
 
-import <stdio.h>
+##import <stdio.h>
 import <stdlib.h>
 import <string.h>
 import <stdarg.h>
@@ -409,8 +412,9 @@ class tp_obj:
 		tp_obj val = {TP_NUMBER};
 		val.number.val = this🠊number.val / n
 		return val
-	##bool operator >> (int& n, tp_obj& self);
+	#ifndef SUPER_TINY
 	friend std::ostream & operator << (std::ostream &out, const tp_obj &self);
+	#endif
 	void append(const char *s);
 	void append(std::string s);
 	void append(double n);
@@ -651,9 +655,17 @@ else:
 	define( tp_realloc(TP,x,y) realloc(x,y) )
 	define( tp_free(TP,x) free(x) )
 
-
+#ifdef PURE_AOT
+@static
+def tp_track(TP, tp_obj o)->tp_obj:
+	return o
+@static
+def tp_grey(TP, tp_obj o):
+	pass
+#else
 def tp_track(TP, tp_obj)->tp_obj;
 def tp_grey(TP,tp_obj);
+#endif
 
 /* __func__ __VA_ARGS__ __FILE__ __LINE__ */
 
@@ -667,7 +679,9 @@ def tp_grey(TP,tp_obj);
 @static
 def _tp_raise(TP, tp_obj e):
 	std::cout << "tp_vm.cpp _tp_raise (RAISE RUNTIME ERROR)" << std::endl
+	#ifndef SUPER_TINY
 	std::cout << "  error message: " << e << std::endl
+	#endif
 	throw "RuntimeError"
 
 
@@ -830,7 +844,7 @@ def tp_uset(tp_obj lst) ->tp_obj:
 			else:
 				raise "invalid value type for set"
 	else:
-		std::cout << lst << std::endl;
+		##std::cout << lst << std::endl;
 		raise "invalid type given for set constructor"
 	return s
 
@@ -1150,6 +1164,17 @@ def len(const char* s) ->int;
 def isstring(tp_obj ob)->bool;
 def isstring(TPTypeID id)->bool;
 
+def tp_get_by_char(TP, tp_obj d, char c)->tp_obj;
+def tp_set_by_char(TP, tp_obj d, char c, tp_obj v);
+def tp_set(TP, tp_obj d, const char* s, tp_obj v) ->tp_obj;
+def tp_set(TP, tp_obj d, const char* s, const char* v) ->tp_obj;
+def tp_extern_interface(TP) ->tp_obj;
+def tp_extern_interface() ->tp_obj;
+
+#ifdef SUPER_TINY
+#define print(...)
+#else
+
 static std::string cNone   = "\033[00m"
 static std::string cRed    ="\033[01;31m"
 static std::string cGreen  ="\033[01;32m"
@@ -1435,14 +1460,6 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 			ss << "<unknown type>"
 	return ss.str()
 
-
-def tp_get_by_char(TP, tp_obj d, char c)->tp_obj;
-def tp_set_by_char(TP, tp_obj d, char c, tp_obj v);
-def tp_set(TP, tp_obj d, const char* s, tp_obj v) ->tp_obj;
-def tp_set(TP, tp_obj d, const char* s, const char* v) ->tp_obj;
-def tp_extern_interface(TP) ->tp_obj;
-def tp_extern_interface() ->tp_obj;
-
 ## python-style print helper funcs ##
 
 @static
@@ -1499,6 +1516,10 @@ def print(std::vector<std::vector<int>> v):
 		std::cout << "\t"
 		print(v[i])
 	std::cout << "]" << std::endl;
+
+## end of SUPER_TINY
+#endif
+
 
 #ifndef INCLUDEOS
 #ifndef __MINGW64__

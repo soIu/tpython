@@ -6,23 +6,29 @@ tp_obj tp_None = {TP_NONE};
 import "tpd_list.gen.cpp"
 import "tpd_dict.gen.cpp"
 
-import "tp_echo.gen.cpp"
-import "tp_param.gen.cpp"
+if not defined(PURE_AOT):
+	import "tp_echo.gen.cpp"
+	import "tp_param.gen.cpp"
+	import "tp_gc.gen.cpp"
 
-import "tp_gc.gen.cpp"
 import "tp_hash.gen.cpp"
 import "tp_list.gen.cpp"
 import "tp_dict.gen.cpp"
 import "tp_string.gen.cpp"
 
 import "tp_meta.gen.cpp"
-import "tp_frame.gen.cpp"
-import "tp_data.gen.cpp"
+
+if not defined(PURE_AOT):
+	import "tp_frame.gen.cpp"
+	import "tp_data.gen.cpp"
+
 import "tp_func.gen.cpp"
-import "tp_repr.gen.cpp"
-import "tpy_string.gen.cpp"
-import "tpy_dict.gen.cpp"
-import "tpy_list.gen.cpp"
+
+if not defined(PURE_AOT):
+	import "tp_repr.gen.cpp"
+	import "tpy_string.gen.cpp"
+	import "tpy_dict.gen.cpp"
+	import "tpy_list.gen.cpp"
 
 if not defined(PURE_AOT):
 	import "tp_vm.gen.cpp"

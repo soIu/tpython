@@ -10,9 +10,12 @@ import <stdio.h>
 import <signal.h>
 import <stdlib.h>
 import <unistd.h>
+
+#ifndef SUPER_TINY
 import <iostream>
 import <fstream>
 import <sstream>
+#endif
 
 if defined(PROFILE_HASHING):
 	def print_hash_stats();
@@ -21,7 +24,6 @@ if defined(PROFILE_HASHING):
 	#ifndef __EMSCRIPTEN_major__
 	#ifndef INCLUDEOS
 		#include <execinfo.h>
-
 		// https://gist.github.com/fmela/591333
 		#include <dlfcn.h>    // for dladdr
 		#include <cxxabi.h>   // for __cxa_demangle

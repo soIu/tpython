@@ -239,6 +239,10 @@ def rebuild(stage=None, exe_name='tpython++'):
 
 	if '--debug-gc' in sys.argv:
 		defs += ' -DDEBUG_GC'
+		
+	if '--super-tiny' in sys.argv:
+		defs += ' -DSUPER_TINY'
+	
 
 	aot_modules = False
 	sdl_inc = ''
@@ -376,7 +380,9 @@ def rebuild(stage=None, exe_name='tpython++'):
 		else:
 			#exeopts += ' -s WARN_UNALIGNED=1 -s ALLOW_MEMORY_GROWTH=1'  ## allowing memory growth will freeze on startup with SDL
 			#exeopts += ' -s WARN_UNALIGNED=1 -s ASYNCIFY' ## asyncify is deprecated, and makes the binary 50% larger anyways
-			exeopts += ' -s WARN_UNALIGNED=1'
+			exeopts += ' -s WARN_UNALIGNED=1'			
+			if '--super-tiny' in sys.argv:
+				exeopts += ' -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s FILESYSTEM=0'
 
 		if '--closure' in sys.argv:
 			exeopts += ' --closure 1'

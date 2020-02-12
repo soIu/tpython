@@ -63,6 +63,10 @@ def isstring(TPTypeID t)->bool:
 	else:
 		return false
 
+
+#ifndef SUPER_TINY
+
+
 ## Function: tp_true
 ## Check the truth value of an object
 ## Returns false if v is a numeric object with a value of exactly 0, v is of
@@ -906,6 +910,8 @@ def tp_bitwise_not(TP, tp_obj a) ->tp_obj:
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_bitwise_not) TypeError: unsupported operand type"));
 	raise "TypeError tp_ops.cpp:tp_bitwise_not unsupported operand type"
 
+## end of SUPER_TINY
+#endif
 
 ## Function: tp_call
 ## Calls a tinypy function.
@@ -1199,13 +1205,17 @@ def tp_obj::operator[] (int index) -> tp_obj:
 		else:
 			raise "vec4/quat invalid index"
 	else:
-		##raise "tp_obj::operator[] error: unknown type"
+		#ifdef SUPER_TINY
+		raise "tp_obj::operator[] error: unknown type"
+		#else
 		return _tp_get(NULL, *this, tp_number(index), 0)
+		#endif
 
-
+#ifndef SUPER_TINY
 def operator << (std::ostream &out, const tp_obj &self) -> std::ostream &:
 	out << tp_as_string(NULL, self)
 	return out
+#endif
 
 def tp_obj::reverse() ->tp_obj:
 	##TODO
