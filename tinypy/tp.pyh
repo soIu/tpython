@@ -663,7 +663,13 @@ def tp_grey(TP,tp_obj);
  * This macro will return from the current function returning "r". The
  * remaining parameters are used to format the exception message.
  */
-def _tp_raise(TP,tp_obj);
+##def _tp_raise(TP,tp_obj);
+@static
+def _tp_raise(TP, tp_obj e):
+	std::cout << "tp_vm.cpp _tp_raise (RAISE RUNTIME ERROR)" << std::endl
+	std::cout << "  error message: " << e << std::endl
+	throw "RuntimeError"
+
 
 #define tp_raise(r, obj) { \
 	_tp_raise(tp, obj); \

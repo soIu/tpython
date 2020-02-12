@@ -921,6 +921,8 @@ def tp_bitwise_not(TP, tp_obj a) ->tp_obj:
 ## This will look for a global function named "foo", then call it with a single
 ## positional parameter containing the string "hello".
 
+#ifndef PURE_AOT
+
 def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 	if defined(DEBUG) or defined(DEBUG_CALLS):
 		print("----------tp_call-----------")
@@ -1041,6 +1043,7 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_call) TypeError: object is not callable"));
 	raise "TypeError tp_ops.cpp:tp_call object is not callable"
 
+#endif
 
 ## tp_obj methods ##
 
@@ -1049,14 +1052,14 @@ def tp_obj::tp_obj( const char* s ):
 	this->type.type_id = TP_STRING
 
 def tp_obj::operator() (std::vector<tp_obj> args) ->tp_obj:
-	##print("calling tp_obj functor")
+	#ifdef PURE_AOT
+	raise "can not call bytecode functions in pure AOT mode"
+	#else
 	__tpvm_global__->params.lst.val->clear()
-	##print("args cleared OK")
 	for arg in args:
 		__tpvm_global__->params.lst.val->append(arg)
-	##print("args set OK")
 	return tp_call(__tpvm_global__, *this, __tpvm_global__->params)
-
+	#endif
 
 def tp_obj::operator=(int n) ->tp_obj:
 	this->type.type_id = TP_NUMBER

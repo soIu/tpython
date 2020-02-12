@@ -76,11 +76,6 @@ def tp_enter_frame(TP, tp_obj code, tp_obj * ret_dest):
 ##	tp->frames[tp->cur] = f
 
 
-def _tp_raise(TP, tp_obj e):
-	print("tp_vm.cpp _tp_raise (RAISE RUNTIME ERROR)")
-	std::cout << "  error message: " << e << std::endl
-	throw "RuntimeError"
-
 def tp_print_stack(TP):
 	int i
 	tp->echo("\n", -1)

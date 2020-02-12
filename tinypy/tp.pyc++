@@ -23,18 +23,18 @@ import "tp_repr.gen.cpp"
 import "tpy_string.gen.cpp"
 import "tpy_dict.gen.cpp"
 import "tpy_list.gen.cpp"
-import "tp_vm.gen.cpp"
+
+if not defined(PURE_AOT):
+	import "tp_vm.gen.cpp"
 
 /* FIXME: after string / dict gets a meta, register these methods
  * to the meta in tpy_builtin
  * and tp_ops above tpy **/
-import "tp_ops.gen.cpp" 
-import "tp_import.gen.cpp"
-import "tp_interp.gen.cpp"
+import "tp_ops.gen.cpp"
 
-#ifdef TP_SANDBOX
-import "interp/sandbox.cpp"
-#endif
+if not defined(PURE_AOT):
+	import "tp_import.gen.cpp"
+	import "tp_interp.gen.cpp"
+	import "tpy_builtins.gen.cpp"
 
 
-import "tpy_builtins.gen.cpp"
