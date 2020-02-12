@@ -396,6 +396,9 @@ class tp_obj:
 		tp_obj val = {TP_NUMBER};
 		val.number.val = this🠊number.val * n
 		return val
+	def operator*= (double n) ->tp_obj:
+		this🠊number.val *= n
+		return *this
 	@const
 	def operator/ (const tp_obj & first) ->tp_obj:
 		tp_obj val = {TP_NUMBER};
@@ -406,6 +409,7 @@ class tp_obj:
 		tp_obj val = {TP_NUMBER};
 		val.number.val = this🠊number.val / n
 		return val
+	##bool operator >> (int& n, tp_obj& self);
 	friend std::ostream & operator << (std::ostream &out, const tp_obj &self);
 	void append(const char *s);
 	void append(std::string s);
@@ -415,6 +419,8 @@ class tp_obj:
 	std::vector<tp_obj> as_vector();
 	def set(const char*, tp_obj) ->tp_obj;
 	def set(const char*, const char*) ->tp_obj;
+	tp_obj( const char *);
+	def reverse() ->tp_obj;
 
 ## base class for all AOT subclasses ##
 class tpy_subclass( tp_obj ):
@@ -792,6 +798,13 @@ struct uset_wrapper:
 				return false
 		else:
 			raise "invalid type to check for in set"
+
+@static
+def tp_uset( std::unordered_set<float> stdset) ->tp_obj:
+	tp_obj s = {TP_SET};
+	s.uset.val = new uset_wrapper()
+	s.uset.val->numset = stdset
+	return s
 
 @static
 def tp_uset(tp_obj lst) ->tp_obj:

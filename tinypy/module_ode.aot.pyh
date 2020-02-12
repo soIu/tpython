@@ -99,6 +99,7 @@ class mass( object ):
 		self.__mptr__  = ptr
 
 class body( object ):
+	__ccbcpp__ = tp_obj(*)(std::vector<tp_obj>)
 	def __bpointer__(self) ->dxBody*:
 		return unwrap(dxBody, self.__bptr__)
 	def setMass(self, mass):
@@ -152,6 +153,8 @@ class body( object ):
 		return vec3(p[0], p[1], p[2])
 	def setCollisionCallback(self, cb):
 		self.__ccb__ = cb
+	def setCollisionCallback(self, tp_obj (*cb)(std::vector<tp_obj>)):
+		self.__ccbcpp__ = cb
 	def getJoint(self):
 		##print("calling getJoint...")
 		return self.__joint__
@@ -202,11 +205,14 @@ def __nearCallback(void* ptr, dxGeom* o1, dxGeom* o2) ->void:
 			bo1 = (body*)b1->userdata
 		if b2 and b2->userdata:
 			bo2 = (body*)b2->userdata
-		if bo1 and bo1->__ccb__:
-			if bo2:
+		if bo1 and bo2:
+			if bo1->__ccbcpp__:
+				bo1->__ccbcpp__( std::vector<tp_obj>{ *(tp_obj*)bo1, *(tp_obj*)bo2 } )
+			elif bo1->__ccb__:
 				bo1->__ccb__( std::vector<tp_obj>{ *(tp_obj*)bo1, *(tp_obj*)bo2 } )
-		if bo2 and bo2->__ccb__:
-			if bo1:
+			if bo2->__ccbcpp__:
+				bo2->__ccbcpp__( std::vector<tp_obj>{ *(tp_obj*)bo2, *(tp_obj*)bo1 } )
+			elif bo2->__ccb__:
 				bo2->__ccb__( std::vector<tp_obj>{ *(tp_obj*)bo2, *(tp_obj*)bo1 } )
 		for i in range( hits ):
 			#coj = dJointCreateContact(__world__, __contactgroup__, cons+i)

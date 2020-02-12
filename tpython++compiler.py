@@ -146,6 +146,8 @@ def is_untyped_global_var(s):
 	return False
 
 __guesses = {}
+__global_string_vecs = {}
+__global_vecs = set()
 
 def guess_type_of_var(s, classes=None, global_auto_unwrap={}):
 	assert s.count('=') == 1
@@ -169,22 +171,40 @@ def guess_type_of_var(s, classes=None, global_auto_unwrap={}):
 	elif val.startswith('['):
 		ctype = 'std::vector<tp_obj>'
 		#not safe yet#ctype = 'tp_obj'
-	elif classes:
-		for classname in classes:
-			if classname in val:
-				#ctype = classname
-				ctype = 'tp_obj'
-				global_auto_unwrap[ decl ] = classname
-				break
-
-	if val.startswith('ord(') and val.endswith(')'):
-		ctype = 'int'
-	elif val.endswith(')') and '(' in val:  ## some function call
-		ctype = 'tp_obj'
-	elif val.endswith('*'):  ## some pointer
-		ctype = val
+		assert val.endswith(']')
+		if decl not in __global_vecs:
+			__global_vecs.add( decl )
+		val = val[1:-1].strip()
+		vecargs = []
+		if ',' not in val and ' for ' in val and ' in ' in val:
+			forval = val.split()[-1]
+			## special case for reversed strings ##
+			if '.reverse()' in val and forval in __global_string_vecs:
+				for sv in __global_string_vecs[ forval ]:
+					vecargs.append( sv[::-1] )
+			else:
+				raise SyntaxError("invalid list comp at global level: " + s)
+		else:
+			is_all_strings = True
+			for part in val.split(','):  ## this breaks with strings that have `,` in them
+				part = part.strip()
+				if not part:
+					continue
+				if part.startswith("'"):
+					assert part.endswith("'")
+					part = part.replace("'", '"')
+					#part = 'tp_obj(' + part + ')'
+				elif part.startswith('"'):
+					assert part.endswith('"')
+				else:
+					is_all_strings = False
+				vecargs.append( part )
+			if is_all_strings:
+				__global_string_vecs[ decl ] = vecargs
+		val = 'std::vector<tp_obj>({%s})' % ','.join(vecargs)
 	elif val.startswith('{') and val.endswith('}'):
-		ctype = 'tp_obj'
+		#ctype = 'tp_obj'
+		ctype = 'std::unordered_map<std::string,tp_obj>'
 		mapargs = []
 		for part in val[1:-1].split():
 			print(part)
@@ -197,6 +217,22 @@ def guess_type_of_var(s, classes=None, global_auto_unwrap={}):
 				key = key.replace("'", '"')
 			mapargs.append( '{%s,%s}' % (key,val))
 		val = 'std::unordered_map<std::string,tp_obj>{%s}' % ','.join(mapargs)
+		
+	elif classes:
+		for classname in classes:
+			if classname in val:
+				#ctype = classname
+				ctype = 'tp_obj'
+				global_auto_unwrap[ decl ] = classname
+				break
+
+	if ctype is None:
+		if val.startswith('ord(') and val.endswith(')'):
+			ctype = 'int'
+		elif val.endswith(')') and '(' in val:  ## some function call
+			ctype = 'tp_obj'
+		elif val.endswith('*'):  ## some pointer
+			ctype = val
 
 	if ctype:
 		if decl not in __guesses:
@@ -362,9 +398,10 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 	if user_pythonic:
 		#out.append('#define unwrap(T,o) ((T*)o.pointer.val)')
-		out.append('#define unwrap(T,o) static_cast<T*>(o.pointer.val)')
+		out.append('#define unwrap(T,o) static_cast<class T*>(o.pointer.val)')
 		# why do these macros sometimes fail with this error?
 		#error: expected ‘>’ before ‘*’ token #define unwrap(T,o) static_cast<T*>(o.pointer.val)
+		##out.append('#define in >>')  ## this hack will not work
 
 		if tpy_modules_aot:
 			src = []
@@ -632,18 +669,23 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 						sitems = []
 						for sitem in part[ len('set([') : -2 ].split(','):
 							sitems.append(sitem)
-						part = 'tp_obj(std::set<tp_obj>{%s})' % ','.join(sitems)
+						part = 'tp_uset(std::unordered_set<float>{%s})' % ','.join(sitems)
 					elif part.endswith(']):'):
 						sitems = []
 						for sitem in part[ len('set([') : -3 ].split(','):
 							sitems.append(sitem)
-						part = 'tp_obj(std::set<tp_obj>{%s})' % ','.join(sitems)
+						part = 'tp_uset(std::unordered_set<float>{%s})' % ','.join(sitems)
 				if part.count('.')==1 and not part.startswith( ('self.', '(self.') ):
 					a,b = part.split('.')
 					aorig = a
+
+
 					if a in auto_unwrap:
 						if auto_unwrap[a] != "__EXTERNAL_OBJECT__":
-							a = 'unwrap(%s,%s)' %(auto_unwrap[a], a)
+							##error: expected unqualified-id before ‘static_cast’
+							##a = 'unwrap(%s,%s)' %(auto_unwrap[a], a)
+							a = a + ('.template unwrap<class %s>()' %auto_unwrap[a])
+
 					#elif is_virt:
 					elif in_func:
 						hits = []
@@ -674,7 +716,10 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 						if not hits and '(' not in a and a not in classes and '->' not in a:
 							if b.startswith( ('set(','append(') ):
 								## tp_obj base class contains a set and append methods
-								pass
+								if a in __global_vecs:
+									part = part.replace('append(', 'push_back(')
+								else:
+									pass
 							elif b.startswith( ('size(', 'clear(', 'push_back(') ):
 								## std::vector, std::string, and other c++11 containers
 								pass
@@ -1491,8 +1536,11 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 						w += 'for (int %s=0; %s<%s; %s++){' %(iter_name, iter_name, iter_to, iter_name)
 				else:
 					iter_name = s.split(' in ')[0].split()[-1]
-					auto_unwrap[ iter_name ] = "__EXTERNAL_OBJECT__"
 					iterable = s.split(' in ')[-1][:-1]
+					## TODO need a better way to deal with looping over std:: standard containers vs interal tpy objects
+					if iterable not in __global_vecs:
+						auto_unwrap[ iter_name ] = "__EXTERNAL_OBJECT__"
+
 					w += 'for (auto %s: %s){' %(iter_name, iterable)
 					##raise RuntimeError("TODO translate python interator style to c++11 for iter loop\n%s" %w)
 			else:  ## c++ style
@@ -1614,8 +1662,12 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			var, val = s.split('=')
 			val = val.strip()
 			var = var.strip()
-			
-			class_members[ var ] = val
+			## function pointers ##
+			if '(*)' in val:
+				val = val.replace('(*)', '(*%s)' %var)
+				class_members[ var ] = val + '; //function pointer'
+			else:
+				class_members[ var ] = val
 			ln = '//' + ln
 
 		else:
@@ -1861,6 +1913,10 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 		out.append('}')
 
+	## this hack will not work
+	##if user_pythonic:
+	##	out.append('#undef in')
+
 
 	if unreal_plugin_cpp:
 		unreal_plugin_cpp.extend(out)
@@ -1967,6 +2023,7 @@ def metapy2tinypypp( source ):
 				js.append(ln)
 		elif in_aot:
 			if ln.strip():
+				s = ln.strip()
 				if ln.lower().startswith( ('# aot export', '#aot export') ):
 					aot.append('@module(__aot_builtin_module__)')
 				elif ln.startswith( 'def main(' ):
@@ -1979,8 +2036,12 @@ def metapy2tinypypp( source ):
 				elif ln.strip() == 'import sdl':
 					aot.append('\t' + "sdl = sdlwrapper()")
 				elif ln.strip() == 'import random':
-					pass
+					has_rand = True
+				elif s.startswith('while True:') and s.count('(')==1 and s.count(')'):
+					aot.append('\t'+ ln.replace('while True:', 'while(true){') + ';};')
 				else:
+					if 'random.random()' in ln:
+						ln = ln.replace('random.random()', 'random()')
 					aot.append('\t' + ln.split('#')[0])
 			elif append_next_blank_hack:
 				aot.append( '\t' + append_next_blank_hack )
