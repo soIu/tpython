@@ -1,8 +1,8 @@
 import "tp.gen.h"
-import <random>
+#ifndef SUPER_TINY
 import <fstream>
 import <sstream>
-
+#endif
 
 if defined(USE_PYTHON):
 	extern "C" int PyRun_SimpleString(const char* script);
@@ -10,6 +10,8 @@ if defined(USE_PYTHON):
 if defined(USE_SDL):
 	import "module_sdl.h"
 
+#ifndef PURE_AOT
+import <random>
 std::mt19937 *__rand_engine = NULL;
 
 #ifndef __EMSCRIPTEN_major__
@@ -98,6 +100,10 @@ def tp_module_os_init(TP):
 	tp_set(tp, os, tp_string_atom(tp, "mtime"), tp_function(tp, tpy_mtime));
 	tp_set(tp, os, tp_string_atom(tp, "save"), tp_function(tp, tpy_save));
 
+## end of EMSCRIPTEN
+#endif
+
+## end of PURE_AOT
 #endif
 
 // CPython integration //
@@ -137,6 +143,7 @@ def tp_module_cpython_init(TP):
 	tp_set(tp, py, tp_string_atom(tp, "run"), tp_function(tp, tpy_cpython_run))
 #endif
 
+#ifndef PURE_AOT
 def tpy_random(TP) ->tp_obj:
 	std::uniform_real_distribution<double> unif(0.0, 1.0);
 	double x = unif(*__rand_engine);
@@ -160,6 +167,8 @@ def tp_module_random_init(TP):
 	tp_set(tp, rand, "random", tp_function(tp, tpy_random))
 	tp_set(tp, rand, "uniform", tp_function(tp, tpy_uniform))
 
+## end of PURE_AOT
+#endif
 
 #ifdef INCLUDEOS_VGA
 TextmodeVGA *__vga__ = NULL
@@ -192,6 +201,8 @@ def tp_module_vga_init(TP):
 if defined(USE_USER_CUSTOM_CPP):
 	def module_init(TP);
 	import "__user_pythonic__.gen.h"
+
+#ifndef PURE_AOT
 
 def tp_module_corelib_init(TP):
 	#ifdef DEBUG
@@ -246,5 +257,9 @@ def tpython_run_file(const char *filename):
 	tpython_run(dat.c_str(), dat.size())
 
 #endif
+
+#end of PURE_AOT
+#endif
+
 
 

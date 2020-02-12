@@ -215,6 +215,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			n = (n<0?l+n:n)
 			return tpd_list_get(tp, self.list.val, n, "tp_get")
 		elif isstring(k):
+			#ifndef PURE_AOT
 			##if tp_vget(tp, self, k, &r, 1):
 			##	return r
 			if k=="append":
@@ -233,6 +234,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 				print("invalid list method - key:")
 				print(k)
 				raise "invalid list method"
+			#endif
 		elif k.type.type_id == TP_NONE:
 			if defined(DEBUG):
 				std::cout << cRed << "list.pop(None)" << cNone << std::endl;
@@ -244,6 +246,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			n = (n<0?l+n:n)
 			if (n >= 0 && n < l) { return tp_string_t_from_const(tp, tp->chars[(unsigned char) tp_string_getptr(self)[n]], 1); }
 		elif isstring(k.type.type_id):
+			#ifndef PURE_AOT
 			if k=="join":
 				return tp_method(tp, self, tpy_str_join)
 			elif k=="split":
@@ -268,6 +271,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 				print("------------------------")
 				print(k)
 				raise "invalid string method"
+			#endif
 	elif type == TP_VEC2:
 		if k == "x":
 			return tp_number(self.__vec2.vec.x)
@@ -1049,6 +1053,7 @@ def tp_call(TP, tp_obj self, tp_obj params) ->tp_obj:
 	//tp_raise(tp_None,tp_string_atom(tp, "(tp_call) TypeError: object is not callable"));
 	raise "TypeError tp_ops.cpp:tp_call object is not callable"
 
+## end of PURE_AOT
 #endif
 
 ## tp_obj methods ##
@@ -1153,11 +1158,19 @@ def tp_obj::operator uint8_t():
 	return (uint8_t)(*tp_string_getptr(*this))
 
 def tp_obj::set( const char* s, tp_obj ob) ->tp_obj:
+	#ifdef SUPER_TINY
+	tp_dict_set(NULL, *this, tp_string_tiny(s), ob)
+	#else
 	tp_set(NULL, *this, s, ob )
+	#endif
 	return None
 
 def tp_obj::set( const char* s, const char* val) ->tp_obj:
+	#ifdef SUPER_TINY
+	tp_dict_set(NULL, *this, tp_string_tiny(s), tp_string_tiny(val))
+	#else
 	tp_set(NULL, *this, s, val )
+	#endif
 	return None
 
 def tp_obj::operator[] (const char* s) -> tp_obj:

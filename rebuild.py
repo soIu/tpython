@@ -161,6 +161,8 @@ def gen_interpreter(stage=None):
 		'./tpython++compiler.py', 
 		'./tinypy'
 	]
+	if '--aot-pure' in sys.argv:
+		cmd.append('--aot-pure')
 	if '--sdl-deprecated' in sys.argv:
 		cmd.append('--sdl-deprecated')
 	if '--blendot' in sys.argv:

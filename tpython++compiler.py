@@ -1895,7 +1895,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				])
 				out.extend( vinfo['code'] )
 
-	if mods and user_pythonic:
+	if mods and user_pythonic and '--aot-pure' not in sys.argv:
 		## generate module_init
 		mod_init = 'module_init'
 		if functions and 'module_init' in functions:

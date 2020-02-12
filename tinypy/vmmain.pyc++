@@ -15,7 +15,6 @@ import <unistd.h>
 import <iostream>
 import <fstream>
 import <sstream>
-#endif
 
 if defined(PROFILE_HASHING):
 	def print_hash_stats();
@@ -64,6 +63,7 @@ if defined(PROFILE_HASHING):
 	#endif
 #endif
 
+
 ## https://stackoverflow.com/questions/77005/how-to-automatically-generate-a-stacktrace-when-my-program-crashes
 def crash_handler(int sig):
 	fprintf(stderr, "Error: signal %d:\n", sig);
@@ -77,6 +77,10 @@ def crash_handler(int sig):
 	#endif
 	exit(1);
 
+## end of SUPER_TINY
+#endif
+
+#ifndef PURE_AOT
 def _tp_import_modules(TP) ->void*;
 
 ## from runtime.pyc++
@@ -117,6 +121,8 @@ void run_vm(int argc, char *argv[], int script_index){
 		crash_handler(-1);
 	tp_deinit(tp);
 #endif
+## end of PURE_AOT
+#endif
 
 #ifdef USE_PYTHON
 def compile_and_run_py_file(std::string filename):
@@ -134,6 +140,17 @@ def compile_and_run_py_file(std::string filename):
 		std::cout << "Runtime Exception: " << str << std::endl;
 	tp_deinit(tp)
 #endif
+
+
+#ifdef PURE_AOT
+
+import "__user_pythonic__.gen.h"
+
+@static
+def __aot_main__(int argc, char *argv[]):
+	__aot_user_main__()
+
+#else
 
 @static
 def __tpy_main__(int argc, char *argv[]):
@@ -164,13 +181,6 @@ def __tpy_main__(int argc, char *argv[]):
 		std::cout << "TODO: more than two threads it not yet supported" << std::endl;
 	#endif
 
-#ifdef PURE_AOT
-
-import "__user_pythonic__.gen.h"
-
-@static
-def __aot_main__(int argc, char *argv[]):
-	__aot_user_main__()
 
 #endif
 
@@ -185,6 +195,7 @@ def Service::start():
 def main(int argc,  char *argv[]) -> int:
 	if defined(DEBUG):
 		std::cout << "starting tpython interpreter..." << std::endl;
+	#ifndef SUPER_TINY
 	#ifndef __EMSCRIPTEN_major__
 	  signal(SIGSEGV, crash_handler); // memory segfault
 	  signal(SIGABRT, crash_handler); // some old places in tinypy code had used `abort()`
@@ -196,6 +207,7 @@ def main(int argc,  char *argv[]) -> int:
 	    #endif
 	    __init_libself__()
 	  #endif
+	#endif
 	#endif
 	if defined(USE_RPMALLOC):
 		rpmalloc_initialize();
