@@ -15,11 +15,15 @@ function tpy_recompile() {
 	var pre = document.getElementById("TPY_SRC");
 	//kills new lines from br nodes//var src = pre.textContent;
 	var src = pre.innerHTML;
-	console.log(src);
 	var oReq = new XMLHttpRequest();
-	//oReq.addEventListener("load", reqListener);
+	oReq.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			document.body.innerHTML = this.responseText;
+		}
+	};
 	oReq.open("GET", "/recompile?" + btoa(src));
 	oReq.send();
+	document.body.innerHTML = "compiling, please wait...";
 }
 </script>
 <hr/>
@@ -307,7 +311,10 @@ def rebuild(stage=None, exe_name='tpython++'):
 				if '--aot-pure' in sys.argv:
 					cmd.append('--aot-pure')
 				if '--wasm' in sys.argv or '--html' in sys.argv:
-					exe = os.path.split(arg)[-1]
+					if '--server' in sys.argv:
+						pass
+					else:
+						exe = os.path.split(arg)[-1]
 			if '--wasm' in sys.argv or '--html' in sys.argv:
 				cmd.append('--wasm')
 			if '--sdl-deprecated' in sys.argv:
@@ -630,7 +637,14 @@ def rebuild(stage=None, exe_name='tpython++'):
 			html = open('./%s.html' %exe, 'rb').read().decode('utf-8')
 			assert '</body>' in html
 			script = script.replace("<", "&lt;").replace(">", "&gt;")
-			html = html.replace('</body>', SIMPLE_JS_EDITOR + '<hr/><pre contenteditable="true" id="TPY_SRC">%s</pre></body>' %script)
+			if os.path.isfile('./tinypy/__user_pythonic__.gen.h'):
+				cpp = open('./tinypy/__user_pythonic__.gen.h', 'rb').read().decode('utf-8')
+				if 'tp_obj sdl=sdlwrapper_new();' in cpp:
+					cpp = cpp.split('tp_obj sdl=sdlwrapper_new();')[-1]
+				cpp = cpp.replace("<", "&lt;").replace(">", "&gt;")
+				html = html.replace('</body>', SIMPLE_JS_EDITOR + '<hr/><pre style="background-color:black;color:green" contenteditable="true" id="TPY_SRC">%s</pre><hr/><pre>%s</pre></body>' %(script, cpp))
+			else:
+				html = html.replace('</body>', SIMPLE_JS_EDITOR + '<hr/><pre contenteditable="true" id="TPY_SRC">%s</pre></body>' %script)
 			open('./%s.html' %exe, 'wb').write( html.encode('utf-8') )
 
 			js = open('./%s.js' %exe, 'rb').read().decode('utf-8')
@@ -696,10 +710,8 @@ def main():
 		os.system('rm -rf tinypy/blendot/scene/main/*.o')
 		os.system('rm -rf tinypy/blendot/scene/resources/*.fodg')
 		os.system('rm -rf tinypy/blendot/scene/resources/*.o')
-
-		if '--ode' in sys.argv:
-			os.system('rm -f tinypy/miniode/ode/*.o')
-			os.system('rm -f tinypy/miniode/ode/joints/*.o')
+		os.system('rm -f tinypy/miniode/ode/*.o')
+		os.system('rm -f tinypy/miniode/ode/joints/*.o')
 
 
 	trans_files = []

@@ -15,11 +15,16 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 			tmpfile = '/tmp/tpy-webserver-user-temp.py'
 			open(tmpfile, 'wb').write(src.encode('utf-8'))
 			try:
-				subprocess.check_call(['./rebuild.py', '--ode', '--html', tmpfile])
-				self.wfile.write(b'COMPILE OK')
+				info = subprocess.check_output(['./rebuild.py', '--ode', '--aot', '--server', '--html', tmpfile])
+				info = info.decode('utf-8')
+				print(info)
+				info = '<a href="/">reload</a><hr/><pre>%s</pre><hr/><a href="/">reload</a>' %info
+				self.wfile.write(info.encode('utf-8'))
+				#subprocess.check_call(['./rebuild.py', '--ode', '--aot', '--server', '--html', tmpfile])
+				#self.wfile.write(b'COMPILE OK')
 			except:
 				print("COMPILE ERROR")
-				self.wfile.write(b'COMPILE ERROR')				
+				self.wfile.write(b'<h1>COMPILE ERROR</h1><a href="/">reload</a>')				
 		elif self.path == '/tpython%2B%2B.js' or self.path == '/tpython++.js':
 			self.wfile.write( open('./tpython++.js','rb').read() )
 		elif self.path == '/tpython%2B%2B.wasm.gz' or self.path == '/tpython++.wasm.gz':

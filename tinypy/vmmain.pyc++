@@ -148,6 +148,7 @@ import "__user_pythonic__.gen.h"
 
 @static
 def __aot_main__(int argc, char *argv[]):
+	std::cout << "__aot_main__" << std::endl
 	__aot_user_main__()
 
 #else
@@ -170,7 +171,7 @@ def __tpy_main__(int argc, char *argv[]):
 				#else
 				print("Error: tpython must be built with CPython to compile py files to bytecode")
 				#endif
-				return 0
+				return
 		run_vm(argc, argv, 1)
 	elif argc==3:
 		std::thread t1( [=]{run_vm(argc, argv, 1);} );

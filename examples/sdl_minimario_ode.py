@@ -4,7 +4,23 @@ import random
 crouch_skip  = set([12,13])
 legs_indices = set([10,11,12,13,14,15])
 
-Mario = ['_____RRRRR______','____RRRRRRRRR___','____HHH--X-_____','___H-H---X---___','___H-HH---0----_','___HH----00000__','_____--------___','__RRRRBBRRR_____','--RRRRBBBRRRR---','---_RRBYBBBBRR--','--_BBBBBBBBBB___','__BBBBBBBBBBBB__','_BBBBB____BBBB__','HHBBB______BBB__','HHHH_______HHHH_','_HHHHH_____HHHHH' ]
+Mario = [
+'_____RRRRR______',
+'____RRRRRRRRR___',
+'____HHH--X-_____',
+'___H-H---X---___',
+'___H-HH---0----_',
+'___HH----00000__',
+'_____--------___',
+'__RRRRBBRRR_____',
+'--RRRRBBBRRRR---',
+'---_RRBYBBBBRR--',
+'--_BBBBBBBBBB___',
+'__BBBBBBBBBBBB__',
+'_BBBBB____BBBB__',
+'HHBBB______BBB__',
+'HHHH_______HHHH_',
+'_HHHHH_____HHHHH' ]
 ## note: there is a bug with global list comps and emscripten, (desktop with gcc is OK)
 ## when MarioReversed is created it bleeds some of the strings into the tpvm registers,
 ## this invalid data is then passed to the set constructor, which will then crash.
@@ -13,7 +29,12 @@ MarioReversed = [ s.reverse() for s in Mario ]
 
 MarioPal = { 'R':vec3(255,0,0), 'H':vec3(80,50,5), '-':vec3(160,150,100), 'B':vec3(0,0,255), 'Y':vec3(255,255,0), '0':vec3(5,5,5) }
 
-Bricks = ['____________BBBBB__','__BB_______B_______','__________BB_______','________BBB________','_____BB____________']
+Bricks = [
+'____________BBBBB__',
+'__BB_______B_______',
+'__________BB_______',
+'________BBB________',
+'_____BB____________']
 
 BrickBodies = []
 
@@ -43,10 +64,35 @@ def draw_bricks():
 		sdl.draw( vec4(pos[0], -float(pos[1]+12), 32, 32), vec3(200,50,0) )
 		sdl.draw( vec4(pos[0], -float(pos[1]+14), 32, 8), vec3(220,80,0) )
 
+Cloud = [
+'_____ww_________',
+'____wwwwww__ww__',
+'__wwwwwwwwwwwwww',
+'wwwwwwwwwwwwww__',
+'__wwwwwwwwww____',
+'____wwww________',
+]
+
+bgstate = {"cloudx":750.0}
+
 def draw_background():
 	sdl.clear( vec3(130,130,255) )
 	sdl.draw( vec4(0, 310, 720, 50), vec3(80,50, 10) )
 	sdl.draw( vec4(0, 308, 720, 4), vec3(100,70, 20) )
+	bgstate["cloudx"] -= 0.15
+	x = bgstate["cloudx"]
+	if x < -300:
+		bgstate["cloudx"] = 800.0
+	y = 0
+	for ln in Cloud:
+		y += 16
+		x = bgstate["cloudx"]
+		for c in ln:
+			x += 16
+			if c == '_':
+				continue
+			else:
+				sdl.draw( vec4(x, y, 16, 16), vec3(255,255,255) )
 
 
 def draw_mario(vec, mario, crouching, running, blink ):
@@ -139,6 +185,10 @@ def iterate() ->void:
 			state["pressed"] = False
 		elif e["type"] == "MOUSE" and state["pressed"]:
 			state["mx"] += e["rx"] * 0.1
+			if e["rx"] < 0:
+				state["direction"] = -1
+			else:
+				state["direction"] = 1
 			if e["ry"] < 0:
 				B.addForce( vec3(0, -float(e["ry"]*5.0), 0) )
 	draw_background()

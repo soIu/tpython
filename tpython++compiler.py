@@ -214,7 +214,7 @@ def guess_type_of_var(s, classes=None, global_auto_unwrap={}):
 		ctype = 'std::unordered_map<std::string,tp_obj>'
 		mapargs = []
 		for part in val[1:-1].split():
-			print(part)
+			#print(part)
 			assert ':' in part
 			if part.endswith(','):
 				part = part[:-1]
@@ -1721,14 +1721,14 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					if '.template unwrap<' in var:
 						pass
 					elif ' ' in var:
-						print(ln)
+						#print(ln)
 						cpptype = var.split()[ : -1]
 						var = var.split()[-1]
 						if var.startswith('*'):
 							cpptype.append('*')
 							var = var[1:]
-						print('	var = ', var)
-						print(' cpptype = ', cpptype)
+						#print('	var = ', var)
+						#print(' cpptype = ', cpptype)
 						assert var not in func_locals
 						func_locals[ var ] = cpptype
 					elif '.' in var or '->' in var or '[' in var:
@@ -2014,6 +2014,7 @@ def metapy2tinypypp( source ):
 	aot_pure = False
 	append_next_blank_hack = None
 	has_aot_mods = False
+	in_condense_list_hack = False
 	
 	if '--aot-all' in sys.argv:
 		in_aot = True
@@ -2097,7 +2098,14 @@ def metapy2tinypypp( source ):
 						ln = ln.replace('random.random()', 'tpyrand()')
 					if ' abs(' in ln:
 						ln = ln.replace(' abs(', ' std::abs(')
-					aot.append('\t' + ln.split('#')[0])
+					if in_condense_list_hack:
+						aot[-1] += ln.split('#')[0]
+						if ln.strip().endswith(']'):
+							in_condense_list_hack = False
+					else:
+						if not ln.startswith('\t') and '=' in ln and ln.endswith('['):
+							in_condense_list_hack = True
+						aot.append('\t' + ln.split('#')[0])
 			elif append_next_blank_hack:
 				aot.append( '\t' + append_next_blank_hack )
 				append_next_blank_hack = None
@@ -2169,9 +2177,10 @@ def metapy2tinypypp( source ):
 			newshared.append(ln)
 		shared = newshared
 
-	print('============compile to bytecode ==============')
-	print('\n'.join(shared))
-	print('----------------------------------------------')
+	if '--debug' in sys.argv:
+		print('============compile to bytecode ==============')
+		print('\n'.join(shared))
+		print('----------------------------------------------')
 	#raise RuntimeError('\n'.join(shared))
 
 	if aot and len(shared)==1:
@@ -2608,10 +2617,10 @@ def main():
 			for aotmod in tpy_modules_aot:
 				aotsrc.extend( tpy_modules_aot[aotmod] )
 				
-			print('\n'.join(aotsrc))
-			print('=====================================')
+			if '--debug' in sys.argv:
+				print('\n'.join(aotsrc))
+				print('=====================================')
 			cpp = pythonicpp( [], file_name='__user_pythonic__.pyh', swap_self_to_this=True)
-			print(cpp)
 			print('	saving: ', os.path.join(path,'__user_pythonic__.gen.h') )
 			open( os.path.join(path,'__user_pythonic__.gen.h'), 'wb').write(cpp.encode('utf-8'))
 

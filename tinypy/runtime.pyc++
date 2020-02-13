@@ -258,7 +258,7 @@ def tpython_run_file(const char *filename):
 
 #endif
 
-#end of PURE_AOT
+##end of PURE_AOT
 #endif
 
 

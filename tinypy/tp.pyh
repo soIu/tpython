@@ -363,7 +363,10 @@ class tp_obj:
 	@const
 	def operator== (long n) ->bool:
 		return this🠊number.val == n
-	def operator+= (int n) ->tp_obj:
+	##def operator+= (int n) ->tp_obj:
+	##	this🠊number.val += n
+	##	return *this
+	def operator+= (double n) ->tp_obj:
 		this🠊number.val += n
 		return *this
 	@const
@@ -381,7 +384,10 @@ class tp_obj:
 		tp_obj val = {TP_NUMBER};
 		val.number.val = this🠊number.val - n
 		return val
-	def operator-= (int n) ->tp_obj:
+	##def operator-= (int n) ->tp_obj:
+	##	this🠊number.val -= n
+	##	return *this
+	def operator-= (double n) ->tp_obj:
 		this🠊number.val -= n
 		return *this
 	@const
