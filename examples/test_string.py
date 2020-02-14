@@ -46,3 +46,27 @@ for c in ln:
 print( a % b )
 print( a %([1,2], {'mykey':'myvalue'}) )
 
+## 4bit strings can be up to 24 chars long, and can only contain: `ABCD!$%&*+-=?@_`
+print('testing 4bit strings')
+e = 'ABCD!$%&*+-=?@____'
+
+print(e)
+assert e[0] == 'A'
+assert e[1] == 'B'
+assert e[2] == 'C'
+assert e[3] == 'D'
+assert e[4] == '!'
+assert e[5] == '$'
+assert e[6] == '%'
+assert e[7] == '&'
+assert e[8] == '*'
+assert e[9] == '+'
+assert e[10] == '-'
+assert e[11] == '='
+assert e[12] == '?'
+assert e[13] == '@'
+assert e[14] == '_'
+
+print("OK")
+
+

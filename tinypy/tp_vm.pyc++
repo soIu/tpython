@@ -397,18 +397,31 @@ def tp_step(TP) ->int:
 					break
 				case TP_ISTRING:
 					## old notes: RA = tp_string_n((*(cur+1)).string.val,UVBC); // from TinyPy - May 13, 2009
-					if defined(DEBUG):
+					if defined(DEBUG_STR):
 						std::cout << "NEW STRING " << cGreen <<  std::string((*(cur+1)).string.val, UVBC) << cNone << " len=" << cBlue << UVBC << cNone << std::endl;
 					##int a = (*(cur+1)).string.val - tp_string_getptr(f->code);
 					##RA = tp_string_view(tp, f->code, a, a+UVBC);
 					## old notes: string_view is NOT broken, but is slightly slower than tp_string_from_const
 					if UVBC <= 12:
+						if defined(DEBUG_STR):
+							print(DBLUE, "new tiny string")
 						## stack allocated string
 						RA = tp_string_tiny( (*(cur+1)).string.val, UVBC )
 						## note: can not use the byte code position for hash cashing
 						##std::cout << RA << " " << tp->cur << " " << (unsigned long)f->cur << std::endl;
+					elif UVBC <= 24 and tp_string_is_4bitsable((*(cur+1)).string.val, UVBC):
+						if defined(DEBUG_STR):
+							print(DYELLOW, "new 4bit string")
+						RA = tp_string_4bit( (*(cur+1)).string.val, UVBC )
+						##print( s4.str4.len() )
+						##print( s4.str4.as_string() )
+						##raise "hit a 4bitsable string"
 					else:
-						RA = tp_string_from_const(tp, (*(cur+1)).string.val, UVBC )
+						if defined(DEBUG_STR):
+							print(DRED,"new big string")
+						##RA = tp_string_from_const(tp, (*(cur+1)).string.val, UVBC )
+						int a = (*(cur+1)).string.val - tp_string_getptr(f->code);
+						RA = tp_string_view(tp, f->code, a, a+UVBC);
 					cur += (UVBC/4)+1
 					break
 				case TP_IMOVE:

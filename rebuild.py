@@ -245,6 +245,12 @@ def rebuild(stage=None, exe_name='tpython++'):
 
 	if '--debug-gc' in sys.argv:
 		defs += ' -DDEBUG_GC'
+
+	if '--debug-sizes' in sys.argv:
+		defs += ' -DDEBUG_SIZES'
+
+	if '--debug-str' in sys.argv:
+		defs += ' -DDEBUG_STR'
 		
 	if '--super-tiny' in sys.argv:
 		defs += ' -DSUPER_TINY'
@@ -647,14 +653,17 @@ def rebuild(stage=None, exe_name='tpython++'):
 				html = html.replace('</body>', SIMPLE_JS_EDITOR + '<hr/><pre contenteditable="true" id="TPY_SRC">%s</pre></body>' %script)
 			open('./%s.html' %exe, 'wb').write( html.encode('utf-8') )
 
-			js = open('./%s.js' %exe, 'rb').read().decode('utf-8')
-			assert "var Module = typeof Module !== 'undefined' ? Module : {};" in js
-			js = js.replace(
-				"var Module = typeof Module !== 'undefined' ? Module : {};",
-				"var Module = typeof Module !== 'undefined' ? Module : {};\nModule['doNotCaptureKeyboard']=true;"
+			if '--keyboard-events' in sys.argv:
+				pass
+			else:
+				js = open('./%s.js' %exe, 'rb').read().decode('utf-8')
+				assert "var Module = typeof Module !== 'undefined' ? Module : {};" in js
+				js = js.replace(
+					"var Module = typeof Module !== 'undefined' ? Module : {};",
+					"var Module = typeof Module !== 'undefined' ? Module : {};\nModule['doNotCaptureKeyboard']=true;"
 			
-			)
-			js = open('./%s.js' %exe, 'wb').write( js.encode('utf-8') )
+				)
+				js = open('./%s.js' %exe, 'wb').write( js.encode('utf-8') )
 		elif exe.endswith('.js'):
 			exe = exe.split('.js')[0]
 

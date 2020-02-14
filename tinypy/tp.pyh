@@ -156,9 +156,10 @@ enum TPTypeID:
 	TP_INTERFACE = 28,
 	TP_FUNC = 29,
 	TP_STRING_ATOMIC=30,
-	TP_STRING_TINY=31
+	TP_STRING_TINY=31,
+	TP_STRING_4BIT=32,
 	## this is not a type, any type >= TP_GC_TRACKED is garbage collected
-	TP_GC_TRACKED = 32,
+	TP_GC_TRACKED = 33,
 	TP_LIST = 34,
 	TP_STRING = 35,
 	## this is not a type, any type >= TP_HAS_META can have a metatype
@@ -247,6 +248,118 @@ struct tp_vm;
 class tp_obj;
 static std::vector<tp_obj> __temp_iterator__
 
+struct __str4bit__:
+	unsigned char a:4
+	unsigned char b:4
+
+
+struct str4bit:
+	TPTypeInfo type;
+	__str4bit__ chunks[12];
+	def encode( char c ) -> char:
+		switch c:
+			case 'A': return 1
+			case 'B': return 2
+			case 'C': return 3
+			case 'D': return 4
+			case '!': return 5
+			case '$': return 6
+			case '%': return 7
+			case '&': return 8
+			case '*': return 9
+			case '+': return 10
+			case '-': return 11
+			case '=': return 12
+			case '?': return 13
+			case '@': return 14
+			case '_': return 15
+		return 0
+	def decode( char c ) -> char:
+		switch c:
+			case 1: return 'A'
+			case 2: return 'B'
+			case 3: return 'C'
+			case 4: return 'D'
+			case 5: return '!'
+			case 6: return '$'
+			case 7: return '%'
+			case 8: return '&'
+			case 9: return '*'
+			case 10: return '+'
+			case 11: return '-'
+			case 12: return '='
+			case 13: return '?'
+			case 14: return '@'
+			case 15: return '_'
+		return 0
+	def set(const char* ptr, int length ):
+		int pidx = -1
+		for i in range(12):
+			pidx ++
+			if pidx < length:
+				this->chunks[i].a = this->encode( ptr[pidx] )
+			else:
+				this->chunks[i].a = 0
+			pidx ++
+			if pidx < length:
+				this->chunks[i].b = this->encode( ptr[pidx] )
+			else:
+				this->chunks[i].b = 0
+	def len() ->int:
+		int length = 0
+		for i in range(12):
+			auto chk = this->chunks[i]
+			if chk.a == 0:
+				break
+			else:
+				length ++
+			if chk.b == 0:
+				break
+			else:
+				length ++
+		return length
+	def as_string() ->std::string:
+		std::string r = ""
+		for i in range(12):
+			auto chk = this->chunks[i]
+			if chk.a == 0:
+				break
+			else:
+				r += this->decode( chk.a )
+			if chk.b == 0:
+				break
+			else:
+				r += this->decode( chk.b )
+		return r
+	def operator[] (int index) ->char:
+		return this->as_string()[index]
+
+
+######## allowed 4bit characters #######
+## ABCD!$%&*+-=?@_
+
+@static
+def tp_string_is_4bitsable( const char* ptr, int length ) ->bool:
+	for i in range(length):
+		switch ptr[i]:
+			case 'A': break
+			case 'B': break
+			case 'C': break
+			case 'D': break
+			case '!': break
+			case '$': break
+			case '%': break
+			case '&': break
+			case '*': break
+			case '+': break
+			case '-': break
+			case '=': break
+			case '?': break
+			case '@': break
+			case '_': break
+			default: return false
+	return true
+
 
 class tp_obj:
 	using iterator = std::vector<tp_obj>::iterator;
@@ -287,6 +400,7 @@ class tp_obj:
 	struct { TPTypeInfo type; struct tpd_string *info; } string;
 	struct { TPTypeInfo type; const char * val; } atomstr;
 	struct { TPTypeInfo type; char val[12];} str;
+	struct str4bit str4;
 	struct { TPTypeInfo type; struct Vector2 vec; } __vec2;
 	struct { TPTypeInfo type; struct Vector3 vec; } __vec3;
 	struct { TPTypeInfo type; struct Quat q; } __quat;
@@ -437,6 +551,7 @@ class tp_obj:
 ## base class for all AOT subclasses ##
 class tpy_subclass( tp_obj ):
 	std::unordered_map<std::string, tp_obj> __methods__
+
 
 
 
@@ -729,6 +844,11 @@ def tp_string_t(TP, int n)->tp_obj;
 ## that needs to be freed by tp_free
 def tp_cstr(TP, tp_obj v) ->char*;
 
+@static
+def tp_string_4bit( const char* ptr, int length ) ->tp_obj:
+	tp_obj val = {TP_STRING_4BIT};
+	val.str4.set( ptr, length )
+	return val
 
 @static
 def tp_check_type(TP, int t, tp_obj v) -> tp_obj:
@@ -1252,6 +1372,12 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 	std::stringstream ss
 	int type = self.type.type_id
 	switch type:
+		case TP_STRING_4BIT:
+			if quote_strings:
+				ss << "``" << self.str4.as_string() << "``";
+			else:
+				ss << self.str4.as_string()
+			break
 		case TP_STRING_TINY:
 			if quote_strings:
 				ss << "`" << std::string(self.str.val, len(self.str.val)) << "`";

@@ -27,6 +27,10 @@ def tpy_str_reverse(TP) ->tp_obj:
 		std::string s = std::string( (const char*)&self.str.val, strlen(self.str.val) )
 		std::reverse(s.begin(), s.end())
 		return tp_string_tiny(s.c_str(), s.size())
+	elif self.type.type_id==TP_STRING_4BIT:
+		std::string s = self.str4.as_string()
+		std::reverse(s.begin(), s.end())
+		return tp_string_4bit(s.c_str(), s.size())
 	else:
 		std::string s = std::string(tp_string_getptr(self), tp_string_len(self) )
 		std::reverse(s.begin(), s.end())

@@ -12,6 +12,8 @@ def len(tp_obj self) ->int:
 	int type = self.type.type_id
 	if type == TP_STRING_TINY:
 		return len(self.str.val)
+	elif type == TP_STRING_4BIT:
+		return self.str4.len()
 	elif type == TP_STRING:
 		return (int)(tp_string_len(self))
 	elif type == TP_STRING_ATOMIC:
@@ -46,6 +48,8 @@ def ord(char c) ->int:
 def isstring(tp_obj ob) ->bool:
 	if ob.type.type_id==TP_STRING_TINY:
 		return true
+	elif ob.type.type_id==TP_STRING_4BIT:
+		return true
 	elif ob.type.type_id == TP_STRING:
 		return true
 	elif ob.type.type_id==TP_STRING_ATOMIC:
@@ -55,6 +59,8 @@ def isstring(tp_obj ob) ->bool:
 
 def isstring(TPTypeID t)->bool:
 	if t == TP_STRING_TINY:
+		return true
+	elif t == TP_STRING_4BIT:
 		return true
 	elif t == TP_STRING:
 		return true
@@ -152,6 +158,8 @@ def tp_iter(TP,tp_obj self, tp_obj k) ->tp_obj:
 		return tp_get(tp,self,k)
 	elif type == TP_LIST_TINY:
 		return self.lst.val->items[ (int)k ]
+	elif type == TP_STRING_4BIT:
+		return tp_string_tiny( self.str4.as_string()[ (int)k ] )
 	elif type == TP_DICT && k.type.type_id == TP_NUMBER:
 		raise "TODO iter over dict"
 		## the iter counter should be put on tp, instead of the dict itself,
@@ -241,10 +249,16 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 			return tpd_list_pop(tp, self.list.val, 0, "tp_get")
 	elif isstring(type):
 		if k.type.type_id == TP_NUMBER:
-			int l = tp_string_len(self)
-			int n = k.number.val
-			n = (n<0?l+n:n)
-			if (n >= 0 && n < l) { return tp_string_t_from_const(tp, tp->chars[(unsigned char) tp_string_getptr(self)[n]], 1); }
+			if type == TP_STRING_4BIT:
+				return tp_string_tiny(self.str4[ (int)k.number.val ])
+			else:
+				int l = tp_string_len(self)
+				int n = k.number.val
+				n = (n<0?l+n:n)
+				## this will crash with tiny strings TODO FIXME
+				## TODO this should return a tiny string, this is where tp->chars which should be DEPRECATED
+				##if (n >= 0 && n < l) { return tp_string_t_from_const(tp, tp->chars[(unsigned char) tp_string_getptr(self)[n]], 1); }
+				return tp_string_tiny( tp_string_getptr(self)[n] )
 		elif isstring(k.type.type_id):
 			#ifndef PURE_AOT
 			if k=="join":
@@ -765,6 +779,8 @@ def tp_len(TP,tp_obj self) -> tp_obj:
 		##note: do not call strlen directly, because it reads until it hits a null byte, but max is 12
 		##return tp_number( strlen(self.str.val) )
 		return tp_number( len(self.str.val) )
+	elif type == TP_STRING_4BIT:
+		return tp_number( self.str4.len() )
 	elif type == TP_STRING:
 		return tp_number(tp_string_len(self))
 	elif type == TP_DICT:

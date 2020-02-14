@@ -196,6 +196,17 @@ def Service::start():
 def main(int argc,  char *argv[]) -> int:
 	if defined(DEBUG):
 		std::cout << "starting tpython interpreter..." << std::endl;
+	if defined(DEBUG_SIZES):
+		std::cout << "tpython interpreter exit" << std::endl;
+		std::cout << "sizeof tp_vm = " << sizeof(tp_vm) << std::endl;
+		std::cout << "sizeof tp_obj = " << sizeof(tp_obj) << std::endl;
+		std::cout << "sizeof TPTypeInfo = " << sizeof(TPTypeInfo) << std::endl;
+		std::cout << "sizeof tpd_frame = " << sizeof(tpd_frame) << std::endl;
+		std::cout << "sizeof tpd_list = " << sizeof(tpd_list) << std::endl;
+		std::cout << "sizeof tpd_dict = " << sizeof(tpd_dict) << std::endl;
+		std::cout << "sizeof tpd_item = " << sizeof(tpd_item) << std::endl;
+		std::cout << "sizeof tpd_string = " << sizeof(tpd_string) << std::endl;
+		std::cout << "sizeof tpd_func = " << sizeof(tpd_func) << std::endl;
 	#ifndef SUPER_TINY
 	#ifndef __EMSCRIPTEN_major__
 	  signal(SIGSEGV, crash_handler); // memory segfault
@@ -219,17 +230,6 @@ def main(int argc,  char *argv[]) -> int:
 		__aot_main__(argc, argv)
 	else:
 		__tpy_main__(argc, argv)
-	if defined(DEBUG):
-		std::cout << "tpython interpreter exit" << std::endl;
-		std::cout << "sizeof tp_vm = " << sizeof(tp_vm) << std::endl;
-		std::cout << "sizeof tp_obj = " << sizeof(tp_obj) << std::endl;
-		std::cout << "sizeof TPTypeInfo = " << sizeof(TPTypeInfo) << std::endl;
-		std::cout << "sizeof tpd_frame = " << sizeof(tpd_frame) << std::endl;
-		std::cout << "sizeof tpd_list = " << sizeof(tpd_list) << std::endl;
-		std::cout << "sizeof tpd_dict = " << sizeof(tpd_dict) << std::endl;
-		std::cout << "sizeof tpd_item = " << sizeof(tpd_item) << std::endl;
-		std::cout << "sizeof tpd_string = " << sizeof(tpd_string) << std::endl;
-		std::cout << "sizeof tpd_func = " << sizeof(tpd_func) << std::endl;
 	if defined(PROFILE_HASHING):
 		print_hash_stats()
 	return 0;
