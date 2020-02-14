@@ -419,7 +419,7 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 		elif k == "distance_to":
 			auto fn = def[=](TP):
 				auto point = TP_OBJ()
-				return tp_number(self.plane.p🠊distance_to(point.vec3.vec))
+				return tp_number(self.plane.p🠊distance_to(point.__vec3.vec))
 			return tp_function(tp, fn)
 		else:
 			raise "plane missing member"
@@ -447,19 +447,19 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 		elif k == "set_position":
 			auto fn = def[=](TP):
 				auto ob = TP_OBJ()
-				self.spatial.ptr🠊set_translation(ob.vec3.vec)
+				self.spatial.ptr🠊set_translation(ob.__vec3.vec)
 				return self
 			return tp_function(tp, fn)
 		elif k == "set_rotation":
 			auto fn = def[=](TP):
 				auto ob = TP_OBJ()
-				self.spatial.ptr🠊set_rotation_degrees(ob.vec3.vec)
+				self.spatial.ptr🠊set_rotation_degrees(ob.__vec3.vec)
 				return self
 			return tp_function(tp, fn)
 		elif k == "set_scale":
 			auto fn = def[=](TP):
 				auto ob = TP_OBJ()
-				self.spatial.ptr🠊set_scale(ob.vec3.vec)
+				self.spatial.ptr🠊set_scale(ob.__vec3.vec)
 				return self
 			return tp_function(tp, fn)
 		else:
@@ -612,11 +612,11 @@ def tp_set(TP,tp_obj self, tp_obj k, tp_obj v) -> tp_obj:
 		return self
 	elif type == TP_TRI:
 		if k == "a":
-			self.tri.t🠊vertex[0] = v.vec3.vec
+			self.tri.t🠊vertex[0] = v.__vec3.vec
 		elif k == "b":
-			self.tri.t🠊vertex[1] = v.vec3.vec
+			self.tri.t🠊vertex[1] = v.__vec3.vec
 		elif k == "c":
-			self.tri.t🠊vertex[2] = v.vec3.vec
+			self.tri.t🠊vertex[2] = v.__vec3.vec
 		else:
 			raise "tri type missing member"
 		return self

@@ -561,29 +561,29 @@ def tpy_tri(TP) ->tp_obj:
 	tp_obj a = TP_OBJ()
 	tp_obj b = TP_OBJ()
 	tp_obj c = TP_OBJ()
-	return tp_tri(a.vec3.vec, b.vec3.vec, c.vec3.vec)
+	return tp_tri(a.__vec3.vec, b.__vec3.vec, c.__vec3.vec)
 
 def tpy_plane(TP) ->tp_obj:
 	tp_obj normal = TP_OBJ()
 	tp_obj length = TP_OBJ()
-	return tp_plane(normal.vec3.vec, length.number.val)
+	return tp_plane(normal.__vec3.vec, length.number.val)
 
 def tpy_aabb(TP) ->tp_obj:
 	tp_obj a = TP_OBJ()
 	tp_obj b = TP_OBJ()
-	return tp_aabb(a.vec3.vec, b.vec3.vec)
+	return tp_aabb(a.__vec3.vec, b.__vec3.vec)
 
 
 def tpy_mat3(TP) ->tp_obj:
 	tp_obj a = TP_OBJ()
 	tp_obj b = TP_OBJ()
 	tp_obj c = TP_OBJ()
-	return tp_mat3(a.vec3.vec, b.vec3.vec, c.vec3.vec)
+	return tp_mat3(a.__vec3.vec, b.__vec3.vec, c.__vec3.vec)
 
 def tpy_trans(TP) ->tp_obj:
 	tp_obj a = TP_OBJ()
 	tp_obj b = TP_OBJ()
-	return tp_trans(a.mat3.m, b.vec3.vec)
+	return tp_trans(a.mat3.m, b.__vec3.vec)
 
 def tpy_rid(TP) ->tp_obj:
 	tp_obj a = TP_OBJ()
@@ -593,7 +593,7 @@ def tpy_spatial_new(TP) ->tp_obj:
 	tp_obj pos = TP_OBJ()
 	tp_obj rot = TP_OBJ()
 	tp_obj scl = TP_OBJ()
-	return tp_spatial(pos.vec3.vec, rot.vec3.vec, scl.vec3.vec)
+	return tp_spatial(pos.__vec3.vec, rot.__vec3.vec, scl.__vec3.vec)
 
 ##def tpy_spatial_from_addr(TP) ->tp_obj:
 ##	tp_obj ptr = TP_OBJ()

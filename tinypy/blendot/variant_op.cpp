@@ -1355,16 +1355,17 @@ void Variant::set_named(const StringName &p_index, const Variant &p_value, bool 
 			if (p_value.type == Variant::INT) {
 				Quat *v = reinterpret_cast<Quat *>(_data._mem);
 				if (p_index == CoreStringNames::singleton->x) {
-					v->x = p_value._data._int;
+					//v->x = p_value._data._int;  // before 16bit quats
+					v->x.set((double)p_value._data._int);
 					valid = true;
 				} else if (p_index == CoreStringNames::singleton->y) {
-					v->y = p_value._data._int;
+					v->y.set((double)p_value._data._int);
 					valid = true;
 				} else if (p_index == CoreStringNames::singleton->z) {
-					v->z = p_value._data._int;
+					v->z.set((double)p_value._data._int);
 					valid = true;
 				} else if (p_index == CoreStringNames::singleton->w) {
-					v->w = p_value._data._int;
+					v->w.set((double)p_value._data._int);
 					valid = true;
 				}
 			} else if (p_value.type == Variant::REAL) {
@@ -1600,13 +1601,13 @@ Variant Variant::get_named(const StringName &p_index, bool *r_valid) const {
 
 			const Quat *v = reinterpret_cast<const Quat *>(_data._mem);
 			if (p_index == CoreStringNames::singleton->x) {
-				return v->x;
+				return (double)v->x;
 			} else if (p_index == CoreStringNames::singleton->y) {
-				return v->y;
+				return (double)v->y;
 			} else if (p_index == CoreStringNames::singleton->z) {
-				return v->z;
+				return (double)v->z;
 			} else if (p_index == CoreStringNames::singleton->w) {
-				return v->w;
+				return (double)v->w;
 			}
 
 		} break; // 10
@@ -1965,19 +1966,20 @@ void Variant::set(const Variant &p_index, const Variant &p_value, bool *r_valid)
 				Quat *v = reinterpret_cast<Quat *>(_data._mem);
 				if (*str == "x") {
 					valid = true;
-					v->x = p_value;
+					//v->x = (double)p_value;
+					v->x.set((double)p_value);
 					return;
 				} else if (*str == "y") {
 					valid = true;
-					v->y = p_value;
+					v->y.set((double)p_value);
 					return;
 				} else if (*str == "z") {
 					valid = true;
-					v->z = p_value;
+					v->z.set((double)p_value);
 					return;
 				} else if (*str == "w") {
 					valid = true;
-					v->w = p_value;
+					v->w.set((double)p_value);
 					return;
 				}
 			}
@@ -2388,16 +2390,16 @@ Variant Variant::get(const Variant &p_index, bool *r_valid) const {
 				const Quat *v = reinterpret_cast<const Quat *>(_data._mem);
 				if (*str == "x") {
 					valid = true;
-					return v->x;
+					return (double)v->x;
 				} else if (*str == "y") {
 					valid = true;
-					return v->y;
+					return (double)v->y;
 				} else if (*str == "z") {
 					valid = true;
-					return v->z;
+					return (double)v->z;
 				} else if (*str == "w") {
 					valid = true;
-					return v->w;
+					return (double)v->w;
 				}
 			}
 
