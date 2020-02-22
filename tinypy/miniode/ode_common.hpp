@@ -55,6 +55,13 @@ extern "C" {
 // ODE only works properly with dReal as a double
 typedef double dReal;
 
+// these are hardcoded to be disabled until miniode supports them
+#define dTHREADING_INTF_DISABLED 1
+#define dTRIMESH_ENABLED 0
+#define dOU_ENABLED 0
+#define dATOMICS_ENABLED 0
+
+
 /* Detect if we've got both trimesh engines enabled. */
 #if dTRIMESH_ENABLED
 #if dTRIMESH_OPCODE && dTRIMESH_GIMPACT

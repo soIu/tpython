@@ -196,6 +196,8 @@ void RayCast::_notification(int p_what) {
 }
 
 void RayCast::_update_raycast_state() {
+#ifdef USE_BULLET
+
 	Ref<World> w3d = get_world();
 	ERR_FAIL_COND(w3d.is_null());
 
@@ -222,6 +224,9 @@ void RayCast::_update_raycast_state() {
 		against = 0;
 		against_shape = 0;
 	}
+#else
+	std::cout << "TODO _update_raycast_state()" << std::endl;
+#endif
 }
 
 void RayCast::force_raycast_update() {

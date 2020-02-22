@@ -279,8 +279,12 @@ void Viewport::_notification(int p_what) {
 				Physics2DServer::get_singleton()->space_set_debug_contacts(find_world_2d()->get_space(), get_tree()->get_collision_debug_contact_count());
 				contact_2d_debug = VisualServer::get_singleton()->canvas_item_create();
 				VisualServer::get_singleton()->canvas_item_set_parent(contact_2d_debug, find_world_2d()->get_canvas());
+
 				//3D
+#ifdef USE_BULLET
 				PhysicsServer::get_singleton()->space_set_debug_contacts(find_world()->get_space(), get_tree()->get_collision_debug_contact_count());
+#endif
+
 				contact_3d_debug_multimesh = VisualServer::get_singleton()->multimesh_create();
 				VisualServer::get_singleton()->multimesh_allocate(contact_3d_debug_multimesh, get_tree()->get_collision_debug_contact_count(), VS::MULTIMESH_TRANSFORM_3D, VS::MULTIMESH_COLOR_8BIT);
 				VisualServer::get_singleton()->multimesh_set_visible_instances(contact_3d_debug_multimesh, 0);
@@ -383,10 +387,12 @@ void Viewport::_notification(int p_what) {
 
 			if (get_tree()->is_debugging_collisions_hint() && contact_3d_debug_multimesh.is_valid()) {
 
+#ifdef USE_BULLET
+
 				Vector<Vector3> points = PhysicsServer::get_singleton()->space_get_contacts(find_world()->get_space());
 				int point_count = PhysicsServer::get_singleton()->space_get_contact_count(find_world()->get_space());
-
 				VS::get_singleton()->multimesh_set_visible_instances(contact_3d_debug_multimesh, point_count);
+#endif
 			}
 
 			if (physics_object_picking && (to_screen_rect == Rect2() || Input::get_singleton()->get_mouse_mode() != Input::MOUSE_MODE_CAPTURED)) {
@@ -396,7 +402,12 @@ void Viewport::_notification(int p_what) {
 				CollisionObject *last_object = NULL;
 				ObjectID last_id = 0;
 #endif
+
+#ifdef USE_BULLET
+
 				PhysicsDirectSpaceState::RayResult result;
+#endif
+
 				Physics2DDirectSpaceState *ss2d = Physics2DServer::get_singleton()->space_get_direct_state(find_world_2d()->get_space());
 
 				if (physics_has_last_mousepos) {
@@ -598,7 +609,10 @@ void Viewport::_notification(int p_what) {
 						if (last_id) {
 							if (ObjectDB::get_instance(last_id) && last_object) {
 								//good, exists
+#ifdef USE_BULLET
 								_collision_object_input_event(last_object, camera, ev, result.position, result.normal, result.shape);
+#endif
+
 								if (last_object->get_capture_input_on_drag() && mb.is_valid() && mb->get_button_index() == 1 && mb->is_pressed()) {
 									physics_object_capture = last_id;
 								}
@@ -611,6 +625,7 @@ void Viewport::_notification(int p_what) {
 							Vector3 from = camera->project_ray_origin(pos);
 							Vector3 dir = camera->project_ray_normal(pos);
 
+							#ifdef USE_BULLET
 							PhysicsDirectSpaceState *space = PhysicsServer::get_singleton()->space_get_direct_state(find_world()->get_space());
 							if (space) {
 
@@ -652,7 +667,7 @@ void Viewport::_notification(int p_what) {
 									physics_object_over = new_collider;
 								}
 							}
-
+							#endif
 							last_pos = pos;
 						}
 					}

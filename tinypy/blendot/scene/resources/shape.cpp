@@ -117,8 +117,9 @@ void Shape::_bind_methods() {
 
 Shape::Shape() :
 		margin(0.04) {
-
+#ifdef USE_BULLET
 	ERR_PRINT("Constructor must not be called!");
+#endif
 }
 
 Shape::Shape(RID p_shape) :
@@ -129,6 +130,8 @@ Shape::Shape(RID p_shape) :
 
 Shape::~Shape() {
 #ifdef BLENDOT
-	PhysicsServer::get_singleton()->free(shape);
+	#ifdef USE_BULLET
+		PhysicsServer::get_singleton()->free(shape);
+	#endif
 #endif
 }

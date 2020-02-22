@@ -82,9 +82,13 @@ void ConvexPolygonShape::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "points"), "set_points", "get_points");
 }
 #ifdef BLENDOT
-ConvexPolygonShape::ConvexPolygonShape() :
-		Shape(PhysicsServer::get_singleton()->shape_create(PhysicsServer::SHAPE_CONVEX_POLYGON)) {
-}
+	#ifdef USE_BULLET
+	ConvexPolygonShape::ConvexPolygonShape() :
+			Shape(PhysicsServer::get_singleton()->shape_create(PhysicsServer::SHAPE_CONVEX_POLYGON)) {
+	}
+	#else
+		ConvexPolygonShape::ConvexPolygonShape() {}	
+	#endif
 #else
 ConvexPolygonShape::ConvexPolygonShape() {}
 #endif

@@ -33,7 +33,11 @@
 
 #include "resource.h"
 #include "scene/resources/environment.h"
-#include "servers/physics_server.h"
+
+#ifdef USE_BULLET
+	#include "servers/physics_server.h"
+#endif
+
 #include "servers/visual_server.h"
 
 class Camera;
@@ -68,7 +72,10 @@ protected:
 	void _update(uint64_t p_frame);
 
 public:
+#ifdef USE_BULLET
 	RID get_space() const;
+#endif
+
 	RID get_scenario() const;
 
 	void set_environment(const Ref<Environment> &p_environment);
@@ -79,7 +86,9 @@ public:
 
 	void get_camera_list(List<Camera *> *r_cameras);
 
+#ifdef USE_BULLET
 	PhysicsDirectSpaceState *get_direct_space_state();
+#endif
 
 	World();
 	~World();

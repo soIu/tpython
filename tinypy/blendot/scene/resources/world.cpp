@@ -258,10 +258,13 @@ void World::_update(uint64_t p_frame) {
 #endif
 }
 
+#ifdef USE_BULLET
 RID World::get_space() const {
-
 	return space;
 }
+#endif
+
+
 RID World::get_scenario() const {
 
 	return scenario;
@@ -295,10 +298,12 @@ Ref<Environment> World::get_fallback_environment() const {
 	return fallback_environment;
 }
 
+#ifdef USE_BULLET
 PhysicsDirectSpaceState *World::get_direct_space_state() {
 
 	return PhysicsServer::get_singleton()->space_get_direct_state(space);
 }
+#endif
 
 void World::get_camera_list(List<Camera *> *r_cameras) {
 
@@ -309,30 +314,38 @@ void World::get_camera_list(List<Camera *> *r_cameras) {
 
 void World::_bind_methods() {
 
-	ClassDB::bind_method(D_METHOD("get_space"), &World::get_space);
 	ClassDB::bind_method(D_METHOD("get_scenario"), &World::get_scenario);
 	ClassDB::bind_method(D_METHOD("set_environment", "env"), &World::set_environment);
 	ClassDB::bind_method(D_METHOD("get_environment"), &World::get_environment);
 	ClassDB::bind_method(D_METHOD("set_fallback_environment", "env"), &World::set_fallback_environment);
 	ClassDB::bind_method(D_METHOD("get_fallback_environment"), &World::get_fallback_environment);
+#ifdef USE_BULLET
+	ClassDB::bind_method(D_METHOD("get_space"), &World::get_space);
 	ClassDB::bind_method(D_METHOD("get_direct_space_state"), &World::get_direct_space_state);
+#endif
+
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "environment", PROPERTY_HINT_RESOURCE_TYPE, "Environment"), "set_environment", "get_environment");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "fallback_environment", PROPERTY_HINT_RESOURCE_TYPE, "Environment"), "set_fallback_environment", "get_fallback_environment");
-	ADD_PROPERTY(PropertyInfo(Variant::_RID, "space", PROPERTY_HINT_NONE, "", 0), "", "get_space");
 	ADD_PROPERTY(PropertyInfo(Variant::_RID, "scenario", PROPERTY_HINT_NONE, "", 0), "", "get_scenario");
+
+#ifdef USE_BULLET
+	ADD_PROPERTY(PropertyInfo(Variant::_RID, "space", PROPERTY_HINT_NONE, "", 0), "", "get_space");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "direct_space_state", PROPERTY_HINT_RESOURCE_TYPE, "PhysicsDirectSpaceState", 0), "", "get_direct_space_state");
+#endif
 }
 
 World::World() {
 
-	space = PhysicsServer::get_singleton()->space_create();
 	scenario = VisualServer::get_singleton()->scenario_create();
 
+#ifdef USE_BULLET
+	space = PhysicsServer::get_singleton()->space_create();
 	PhysicsServer::get_singleton()->space_set_active(space, true);
 	PhysicsServer::get_singleton()->area_set_param(space, PhysicsServer::AREA_PARAM_GRAVITY, GLOBAL_DEF("physics/3d/default_gravity", 9.8));
 	PhysicsServer::get_singleton()->area_set_param(space, PhysicsServer::AREA_PARAM_GRAVITY_VECTOR, GLOBAL_DEF("physics/3d/default_gravity_vector", Vector3(0, -1, 0)));
 	PhysicsServer::get_singleton()->area_set_param(space, PhysicsServer::AREA_PARAM_LINEAR_DAMP, GLOBAL_DEF("physics/3d/default_linear_damp", 0.1));
 	PhysicsServer::get_singleton()->area_set_param(space, PhysicsServer::AREA_PARAM_ANGULAR_DAMP, GLOBAL_DEF("physics/3d/default_angular_damp", 0.1));
+#endif
 
 #ifdef _3D_DISABLED
 	indexer = NULL;
@@ -342,8 +355,9 @@ World::World() {
 }
 
 World::~World() {
-
-	PhysicsServer::get_singleton()->free(space);
+	#ifdef USE_BULLET
+		PhysicsServer::get_singleton()->free(space);
+	#endif
 	VisualServer::get_singleton()->free(scenario);
 
 #ifndef _3D_DISABLED

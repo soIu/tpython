@@ -736,6 +736,8 @@ Transform ClippedCamera::get_camera_transform() const {
 }
 
 void ClippedCamera::_notification(int p_what) {
+#ifdef USE_BULLET
+
 	if (p_what == NOTIFICATION_INTERNAL_PROCESS || p_what == NOTIFICATION_INTERNAL_PHYSICS_PROCESS) {
 
 		Spatial *parent = Object::cast_to<Spatial>(get_parent());
@@ -790,6 +792,7 @@ void ClippedCamera::_notification(int p_what) {
 
 		_update_camera();
 	}
+#endif
 
 	if (p_what == NOTIFICATION_LOCAL_TRANSFORM_CHANGED) {
 		update_gizmo();
@@ -928,10 +931,14 @@ ClippedCamera::ClippedCamera() {
 	collision_mask = 1;
 	set_notify_local_transform(Engine::get_singleton()->is_editor_hint());
 	points.resize(5);
+#ifdef USE_BULLET
 	pyramid_shape = PhysicsServer::get_singleton()->shape_create(PhysicsServer::SHAPE_CONVEX_POLYGON);
+#endif
 	clip_to_areas = false;
 	clip_to_bodies = true;
 }
 ClippedCamera::~ClippedCamera() {
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->free(pyramid_shape);
+#endif
 }

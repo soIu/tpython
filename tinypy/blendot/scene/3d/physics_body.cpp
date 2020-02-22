@@ -60,7 +60,9 @@ float PhysicsBody::get_inverse_mass() const {
 void PhysicsBody::set_collision_layer(uint32_t p_layer) {
 
 	collision_layer = p_layer;
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_set_collision_layer(get_rid(), p_layer);
+#endif
 }
 
 uint32_t PhysicsBody::get_collision_layer() const {
@@ -71,7 +73,9 @@ uint32_t PhysicsBody::get_collision_layer() const {
 void PhysicsBody::set_collision_mask(uint32_t p_mask) {
 
 	collision_mask = p_mask;
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_set_collision_mask(get_rid(), p_mask);
+#endif
 }
 
 uint32_t PhysicsBody::get_collision_mask() const {
@@ -111,8 +115,10 @@ bool PhysicsBody::get_collision_layer_bit(int p_bit) const {
 
 Array PhysicsBody::get_collision_exceptions() {
 	List<RID> exceptions;
-	PhysicsServer::get_singleton()->body_get_collision_exceptions(get_rid(), &exceptions);
 	Array ret;
+#ifdef USE_BULLET
+
+	PhysicsServer::get_singleton()->body_get_collision_exceptions(get_rid(), &exceptions);
 	for (List<RID>::Element *E = exceptions.front(); E; E = E->next()) {
 		RID body = E->get();
 		ObjectID instance_id = PhysicsServer::get_singleton()->body_get_object_instance_id(body);
@@ -120,23 +126,28 @@ Array PhysicsBody::get_collision_exceptions() {
 		PhysicsBody *physics_body = Object::cast_to<PhysicsBody>(obj);
 		ret.append(physics_body);
 	}
+#endif
 	return ret;
 }
 
 void PhysicsBody::add_collision_exception_with(Node *p_node) {
+#ifdef USE_BULLET
 
 	ERR_FAIL_NULL(p_node);
 	CollisionObject *collision_object = Object::cast_to<CollisionObject>(p_node);
 	ERR_FAIL_COND_MSG(!collision_object, "Collision exception only works between two CollisionObject.");
 	PhysicsServer::get_singleton()->body_add_collision_exception(get_rid(), collision_object->get_rid());
+#endif
 }
 
 void PhysicsBody::remove_collision_exception_with(Node *p_node) {
+#ifdef USE_BULLET
 
 	ERR_FAIL_NULL(p_node);
 	CollisionObject *collision_object = Object::cast_to<CollisionObject>(p_node);
 	ERR_FAIL_COND_MSG(!collision_object, "Collision exception only works between two CollisionObject.");
 	PhysicsServer::get_singleton()->body_remove_collision_exception(get_rid(), collision_object->get_rid());
+#endif
 }
 
 void PhysicsBody::_set_layers(uint32_t p_mask) {
@@ -169,6 +180,7 @@ void PhysicsBody::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_layer", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_layer", "get_collision_layer");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_mask", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_mask", "get_collision_mask");
 }
+#ifdef USE_BULLET
 
 PhysicsBody::PhysicsBody(PhysicsServer::BodyMode p_mode) :
 		CollisionObject(PhysicsServer::get_singleton()->body_create(p_mode), false) {
@@ -176,6 +188,14 @@ PhysicsBody::PhysicsBody(PhysicsServer::BodyMode p_mode) :
 	collision_layer = 1;
 	collision_mask = 1;
 }
+#else
+PhysicsBody::PhysicsBody(PhysicsServer::BodyMode p_mode) {
+	collision_layer = 1;
+	collision_mask = 1;
+}
+
+
+#endif
 
 #ifndef DISABLE_DEPRECATED
 void StaticBody::set_friction(real_t p_friction) {
@@ -256,13 +276,17 @@ Ref<PhysicsMaterial> StaticBody::get_physics_material_override() const {
 void StaticBody::set_constant_linear_velocity(const Vector3 &p_vel) {
 
 	constant_linear_velocity = p_vel;
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_set_state(get_rid(), PhysicsServer::BODY_STATE_LINEAR_VELOCITY, constant_linear_velocity);
+#endif
 }
 
 void StaticBody::set_constant_angular_velocity(const Vector3 &p_vel) {
 
 	constant_angular_velocity = p_vel;
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_set_state(get_rid(), PhysicsServer::BODY_STATE_ANGULAR_VELOCITY, constant_angular_velocity);
+#endif
 }
 
 Vector3 StaticBody::get_constant_linear_velocity() const {
@@ -314,6 +338,8 @@ StaticBody::StaticBody() :
 StaticBody::~StaticBody() {}
 
 void StaticBody::_reload_physics_characteristics() {
+#ifdef USE_BULLET
+
 	if (physics_material_override.is_null()) {
 		PhysicsServer::get_singleton()->body_set_param(get_rid(), PhysicsServer::BODY_PARAM_BOUNCE, 0);
 		PhysicsServer::get_singleton()->body_set_param(get_rid(), PhysicsServer::BODY_PARAM_FRICTION, 1);
@@ -321,6 +347,7 @@ void StaticBody::_reload_physics_characteristics() {
 		PhysicsServer::get_singleton()->body_set_param(get_rid(), PhysicsServer::BODY_PARAM_BOUNCE, physics_material_override->computed_bounce());
 		PhysicsServer::get_singleton()->body_set_param(get_rid(), PhysicsServer::BODY_PARAM_FRICTION, physics_material_override->computed_friction());
 	}
+#endif
 }
 
 void RigidBody::_body_enter_tree(ObjectID p_id) {
@@ -566,6 +593,7 @@ void RigidBody::_notification(int p_what) {
 }
 
 void RigidBody::set_mode(Mode p_mode) {
+#ifdef USE_BULLET
 
 	mode = p_mode;
 	switch (p_mode) {
@@ -588,6 +616,8 @@ void RigidBody::set_mode(Mode p_mode) {
 			PhysicsServer::get_singleton()->body_set_mode(get_rid(), PhysicsServer::BODY_MODE_KINEMATIC);
 		} break;
 	}
+#endif
+
 }
 
 RigidBody::Mode RigidBody::get_mode() const {
@@ -601,7 +631,10 @@ void RigidBody::set_mass(real_t p_mass) {
 	mass = p_mass;
 	_change_notify("mass");
 	_change_notify("weight");
+#ifdef USE_BULLET
+
 	PhysicsServer::get_singleton()->body_set_param(get_rid(), PhysicsServer::BODY_PARAM_MASS, mass);
+#endif
 }
 real_t RigidBody::get_mass() const {
 
@@ -690,9 +723,10 @@ Ref<PhysicsMaterial> RigidBody::get_physics_material_override() const {
 }
 
 void RigidBody::set_gravity_scale(real_t p_gravity_scale) {
-
 	gravity_scale = p_gravity_scale;
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_set_param(get_rid(), PhysicsServer::BODY_PARAM_GRAVITY_SCALE, gravity_scale);
+#endif
 }
 real_t RigidBody::get_gravity_scale() const {
 
@@ -703,7 +737,10 @@ void RigidBody::set_linear_damp(real_t p_linear_damp) {
 
 	ERR_FAIL_COND(p_linear_damp < -1);
 	linear_damp = p_linear_damp;
+#ifdef USE_BULLET
+
 	PhysicsServer::get_singleton()->body_set_param(get_rid(), PhysicsServer::BODY_PARAM_LINEAR_DAMP, linear_damp);
+#endif
 }
 real_t RigidBody::get_linear_damp() const {
 
@@ -714,7 +751,9 @@ void RigidBody::set_angular_damp(real_t p_angular_damp) {
 
 	ERR_FAIL_COND(p_angular_damp < -1);
 	angular_damp = p_angular_damp;
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_set_param(get_rid(), PhysicsServer::BODY_PARAM_ANGULAR_DAMP, angular_damp);
+#endif
 }
 real_t RigidBody::get_angular_damp() const {
 
@@ -730,7 +769,9 @@ void RigidBody::set_axis_velocity(const Vector3 &p_axis) {
 	if (state) {
 		set_linear_velocity(v);
 	} else {
+#ifdef USE_BULLET
 		PhysicsServer::get_singleton()->body_set_axis_velocity(get_rid(), p_axis);
+#endif
 		linear_velocity = v;
 	}
 }
@@ -738,10 +779,12 @@ void RigidBody::set_axis_velocity(const Vector3 &p_axis) {
 void RigidBody::set_linear_velocity(const Vector3 &p_velocity) {
 
 	linear_velocity = p_velocity;
+#ifdef USE_BULLET
 	if (state)
 		state->set_linear_velocity(linear_velocity);
 	else
 		PhysicsServer::get_singleton()->body_set_state(get_rid(), PhysicsServer::BODY_STATE_LINEAR_VELOCITY, linear_velocity);
+#endif
 }
 
 Vector3 RigidBody::get_linear_velocity() const {
@@ -752,11 +795,15 @@ Vector3 RigidBody::get_linear_velocity() const {
 void RigidBody::set_angular_velocity(const Vector3 &p_velocity) {
 
 	angular_velocity = p_velocity;
+#ifdef USE_BULLET
+
 	if (state)
 		state->set_angular_velocity(angular_velocity);
 	else
 		PhysicsServer::get_singleton()->body_set_state(get_rid(), PhysicsServer::BODY_STATE_ANGULAR_VELOCITY, angular_velocity);
+#endif
 }
+
 Vector3 RigidBody::get_angular_velocity() const {
 
 	return angular_velocity;
@@ -768,7 +815,9 @@ void RigidBody::set_use_custom_integrator(bool p_enable) {
 		return;
 
 	custom_integrator = p_enable;
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_set_omit_force_integration(get_rid(), p_enable);
+#endif
 }
 bool RigidBody::is_using_custom_integrator() {
 
@@ -778,13 +827,17 @@ bool RigidBody::is_using_custom_integrator() {
 void RigidBody::set_sleeping(bool p_sleeping) {
 
 	sleeping = p_sleeping;
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_set_state(get_rid(), PhysicsServer::BODY_STATE_SLEEPING, sleeping);
+#endif
 }
 
 void RigidBody::set_can_sleep(bool p_active) {
 
 	can_sleep = p_active;
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_set_state(get_rid(), PhysicsServer::BODY_STATE_CAN_SLEEP, p_active);
+#endif
 }
 
 bool RigidBody::is_able_to_sleep() const {
@@ -800,7 +853,9 @@ bool RigidBody::is_sleeping() const {
 void RigidBody::set_max_contacts_reported(int p_amount) {
 
 	max_contacts_reported = p_amount;
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_set_max_contacts_reported(get_rid(), p_amount);
+#endif
 }
 
 int RigidBody::get_max_contacts_reported() const {
@@ -809,34 +864,46 @@ int RigidBody::get_max_contacts_reported() const {
 }
 
 void RigidBody::add_central_force(const Vector3 &p_force) {
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_add_central_force(get_rid(), p_force);
+#endif
 }
 
 void RigidBody::add_force(const Vector3 &p_force, const Vector3 &p_pos) {
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_add_force(get_rid(), p_force, p_pos);
+#endif
 }
 
 void RigidBody::add_torque(const Vector3 &p_torque) {
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_add_torque(get_rid(), p_torque);
+#endif
 }
 
 void RigidBody::apply_central_impulse(const Vector3 &p_impulse) {
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_apply_central_impulse(get_rid(), p_impulse);
+#endif
 }
 
 void RigidBody::apply_impulse(const Vector3 &p_pos, const Vector3 &p_impulse) {
-
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_apply_impulse(get_rid(), p_pos, p_impulse);
+#endif
 }
 
 void RigidBody::apply_torque_impulse(const Vector3 &p_impulse) {
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_apply_torque_impulse(get_rid(), p_impulse);
+#endif
 }
 
 void RigidBody::set_use_continuous_collision_detection(bool p_enable) {
-
 	ccd = p_enable;
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_set_enable_continuous_collision_detection(get_rid(), p_enable);
+#endif
 }
 
 bool RigidBody::is_using_continuous_collision_detection() const {
@@ -881,11 +948,15 @@ bool RigidBody::is_contact_monitor_enabled() const {
 }
 
 void RigidBody::set_axis_lock(PhysicsServer::BodyAxis p_axis, bool p_lock) {
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_set_axis_lock(get_rid(), p_axis, p_lock);
+#endif
 }
 
 bool RigidBody::get_axis_lock(PhysicsServer::BodyAxis p_axis) const {
+#ifdef USE_BULLET
 	return PhysicsServer::get_singleton()->body_is_axis_locked(get_rid(), p_axis);
+#endif
 }
 
 Array RigidBody::get_colliding_bodies() const {
@@ -1062,8 +1133,9 @@ RigidBody::RigidBody() :
 	custom_integrator = false;
 	contact_monitor = NULL;
 	can_sleep = true;
-
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_set_force_integration_callback(get_rid(), this, "_direct_state_changed");
+#endif
 }
 
 RigidBody::~RigidBody() {
@@ -1073,6 +1145,8 @@ RigidBody::~RigidBody() {
 }
 
 void RigidBody::_reload_physics_characteristics() {
+#ifdef USE_BULLET
+
 	if (physics_material_override.is_null()) {
 		PhysicsServer::get_singleton()->body_set_param(get_rid(), PhysicsServer::BODY_PARAM_BOUNCE, 0);
 		PhysicsServer::get_singleton()->body_set_param(get_rid(), PhysicsServer::BODY_PARAM_FRICTION, 1);
@@ -1080,6 +1154,7 @@ void RigidBody::_reload_physics_characteristics() {
 		PhysicsServer::get_singleton()->body_set_param(get_rid(), PhysicsServer::BODY_PARAM_BOUNCE, physics_material_override->computed_bounce());
 		PhysicsServer::get_singleton()->body_set_param(get_rid(), PhysicsServer::BODY_PARAM_FRICTION, physics_material_override->computed_friction());
 	}
+#endif
 }
 
 //////////////////////////////////////////////////////
@@ -1103,6 +1178,7 @@ Ref<KinematicCollision> KinematicBody::_move(const Vector3 &p_motion, bool p_inf
 }
 
 bool KinematicBody::move_and_collide(const Vector3 &p_motion, bool p_infinite_inertia, Collision &r_collision, bool p_exclude_raycast_shapes, bool p_test_only) {
+#ifdef USE_BULLET
 
 	Transform gt = get_global_transform();
 	PhysicsServer::MotionResult result;
@@ -1133,6 +1209,9 @@ bool KinematicBody::move_and_collide(const Vector3 &p_motion, bool p_infinite_in
 	}
 
 	return colliding;
+#else
+	return false;
+#endif
 }
 
 //so, if you pass 45 as limit, avoid numerical precision erros when angle is 45.
@@ -1300,11 +1379,14 @@ Vector3 KinematicBody::get_floor_velocity() const {
 bool KinematicBody::test_move(const Transform &p_from, const Vector3 &p_motion, bool p_infinite_inertia) {
 
 	ERR_FAIL_COND_V(!is_inside_tree(), false);
+#ifdef USE_BULLET
 
 	return PhysicsServer::get_singleton()->body_test_motion(get_rid(), p_from, p_motion, p_infinite_inertia);
+#endif
 }
 
 bool KinematicBody::separate_raycast_shapes(bool p_infinite_inertia, Collision &r_collision) {
+#ifdef USE_BULLET
 
 	PhysicsServer::SeparationResult sep_res[8]; //max 8 rays
 
@@ -1339,20 +1421,29 @@ bool KinematicBody::separate_raycast_shapes(bool p_infinite_inertia, Collision &
 	} else {
 		return false;
 	}
+#else
+	return false;
+#endif
 }
 
 void KinematicBody::set_axis_lock(PhysicsServer::BodyAxis p_axis, bool p_lock) {
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_set_axis_lock(get_rid(), p_axis, p_lock);
+#endif
 }
 
 bool KinematicBody::get_axis_lock(PhysicsServer::BodyAxis p_axis) const {
+#ifdef USE_BULLET
 	return PhysicsServer::get_singleton()->body_is_axis_locked(get_rid(), p_axis);
+#endif
 }
 
 void KinematicBody::set_safe_margin(float p_margin) {
 
 	margin = p_margin;
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_set_kinematic_safe_margin(get_rid(), margin);
+#endif
 }
 
 float KinematicBody::get_safe_margin() const {
@@ -1542,6 +1633,8 @@ void PhysicalBone::JointData::_get_property_list(List<PropertyInfo> *p_list) con
 }
 
 bool PhysicalBone::PinJointData::_set(const StringName &p_name, const Variant &p_value, RID j) {
+#ifdef USE_BULLET
+
 	if (JointData::_set(p_name, p_value, j)) {
 		return true;
 	}
@@ -1564,7 +1657,7 @@ bool PhysicalBone::PinJointData::_set(const StringName &p_name, const Variant &p
 	} else {
 		return false;
 	}
-
+#endif
 	return true;
 }
 
@@ -1595,6 +1688,8 @@ void PhysicalBone::PinJointData::_get_property_list(List<PropertyInfo> *p_list) 
 }
 
 bool PhysicalBone::ConeJointData::_set(const StringName &p_name, const Variant &p_value, RID j) {
+#ifdef USE_BULLET
+
 	if (JointData::_set(p_name, p_value, j)) {
 		return true;
 	}
@@ -1627,7 +1722,7 @@ bool PhysicalBone::ConeJointData::_set(const StringName &p_name, const Variant &
 	} else {
 		return false;
 	}
-
+#endif
 	return true;
 }
 
@@ -1741,6 +1836,7 @@ void PhysicalBone::HingeJointData::_get_property_list(List<PropertyInfo> *p_list
 }
 
 bool PhysicalBone::SliderJointData::_set(const StringName &p_name, const Variant &p_value, RID j) {
+#ifdef USE_BULLET
 	if (JointData::_set(p_name, p_value, j)) {
 		return true;
 	}
@@ -1798,7 +1894,7 @@ bool PhysicalBone::SliderJointData::_set(const StringName &p_name, const Variant
 	} else {
 		return false;
 	}
-
+#endif
 	return true;
 }
 
@@ -1851,6 +1947,8 @@ void PhysicalBone::SliderJointData::_get_property_list(List<PropertyInfo> *p_lis
 }
 
 bool PhysicalBone::SixDOFJointData::_set(const StringName &p_name, const Variant &p_value, RID j) {
+#ifdef USE_BULLET
+
 	if (JointData::_set(p_name, p_value, j)) {
 		return true;
 	}
@@ -1981,11 +2079,13 @@ bool PhysicalBone::SixDOFJointData::_set(const StringName &p_name, const Variant
 	} else {
 		return false;
 	}
-
+#endif
 	return true;
 }
 
 bool PhysicalBone::SixDOFJointData::_get(const StringName &p_name, Variant &r_ret) const {
+#ifdef USE_BULLET
+
 	if (JointData::_get(p_name, r_ret)) {
 		return true;
 	}
@@ -2053,7 +2153,7 @@ bool PhysicalBone::SixDOFJointData::_get(const StringName &p_name, Variant &r_re
 	} else {
 		return false;
 	}
-
+#endif
 	return true;
 }
 
@@ -2267,6 +2367,7 @@ void PhysicalBone::_fix_joint_offset() {
 }
 
 void PhysicalBone::_reload_joint() {
+#ifdef USE_BULLET
 
 	if (joint.is_valid()) {
 		PhysicsServer::get_singleton()->free(joint);
@@ -2367,6 +2468,7 @@ void PhysicalBone::_reload_joint() {
 		case JOINT_TYPE_NONE: {
 		} break;
 	}
+#endif
 }
 
 void PhysicalBone::_on_bone_parent_changed() {
@@ -2526,7 +2628,9 @@ void PhysicalBone::set_mass(real_t p_mass) {
 
 	ERR_FAIL_COND(p_mass <= 0);
 	mass = p_mass;
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_set_param(get_rid(), PhysicsServer::BODY_PARAM_MASS, mass);
+#endif
 }
 
 real_t PhysicalBone::get_mass() const {
@@ -2549,7 +2653,9 @@ void PhysicalBone::set_friction(real_t p_friction) {
 	ERR_FAIL_COND(p_friction < 0 || p_friction > 1);
 
 	friction = p_friction;
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_set_param(get_rid(), PhysicsServer::BODY_PARAM_FRICTION, friction);
+#endif
 }
 
 real_t PhysicalBone::get_friction() const {
@@ -2562,7 +2668,9 @@ void PhysicalBone::set_bounce(real_t p_bounce) {
 	ERR_FAIL_COND(p_bounce < 0 || p_bounce > 1);
 
 	bounce = p_bounce;
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_set_param(get_rid(), PhysicsServer::BODY_PARAM_BOUNCE, bounce);
+#endif
 }
 
 real_t PhysicalBone::get_bounce() const {
@@ -2573,7 +2681,9 @@ real_t PhysicalBone::get_bounce() const {
 void PhysicalBone::set_gravity_scale(real_t p_gravity_scale) {
 
 	gravity_scale = p_gravity_scale;
+#ifdef USE_BULLET
 	PhysicsServer::get_singleton()->body_set_param(get_rid(), PhysicsServer::BODY_PARAM_GRAVITY_SCALE, gravity_scale);
+#endif
 }
 
 real_t PhysicalBone::get_gravity_scale() const {
@@ -2694,6 +2804,7 @@ void PhysicalBone::_reset_staticness_state() {
 }
 
 void PhysicalBone::_start_physics_simulation() {
+#ifdef USE_BULLET
 	if (_internal_simulate_physics || !parent_skeleton) {
 		return;
 	}
@@ -2704,9 +2815,11 @@ void PhysicalBone::_start_physics_simulation() {
 	PhysicsServer::get_singleton()->body_set_force_integration_callback(get_rid(), this, "_direct_state_changed");
 	parent_skeleton->set_bone_ignore_animation(bone_id, true);
 	_internal_simulate_physics = true;
+#endif
 }
 
 void PhysicalBone::_stop_physics_simulation() {
+#ifdef USE_BULLET
 	if (!_internal_simulate_physics || !parent_skeleton) {
 		return;
 	}
@@ -2716,4 +2829,5 @@ void PhysicalBone::_stop_physics_simulation() {
 	PhysicsServer::get_singleton()->body_set_force_integration_callback(get_rid(), NULL, "");
 	parent_skeleton->set_bone_ignore_animation(bone_id, false);
 	_internal_simulate_physics = false;
+#endif
 }
