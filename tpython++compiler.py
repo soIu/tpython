@@ -1572,12 +1572,19 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 				else:
 					iter_name = s.split(' in ')[0].split()[-1]
 					iterable = s.split(' in ')[-1][:-1]
-					## TODO need a better way to deal with looping over std:: standard containers vs interal tpy objects
-					if iterable not in __global_vecs:
-						auto_unwrap[ iter_name ] = "__EXTERNAL_OBJECT__"
+					if mode=='js':
+						## this works for looping over object member names, TODO looping over an array python style, getting the items not the indices
+						if iter_name.startswith('(') and iterable.endswith(')'):
+							w += 'for %s in %s {' %(iter_name, iterable)
+						else:
+							w += 'for (%s in %s){' %(iter_name, iterable)
+					else:
+						## TODO need a better way to deal with looping over std:: standard containers vs interal tpy objects
+						if iterable not in __global_vecs:
+							auto_unwrap[ iter_name ] = "__EXTERNAL_OBJECT__"
 
-					w += 'for (auto %s: %s){' %(iter_name, iterable)
-					##raise RuntimeError("TODO translate python interator style to c++11 for iter loop\n%s" %w)
+						w += 'for (auto %s: %s){' %(iter_name, iterable)
+						##raise RuntimeError("TODO translate python interator style to c++11 for iter loop\n%s" %w)
 			else:  ## c++ style
 				loop = s[len('for '):-1]
 				if not loop.startswith('('):
