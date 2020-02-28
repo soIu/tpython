@@ -2204,7 +2204,8 @@ def metapy2tinypypp( source ):
 		if js:
 			info = {'js_funcs':{}, 'js_header':[]}
 			js = pythonicpp(js, info=info, mode='js')
-
+			open('/tmp/__tpython_js_debug__.js','wb').write( js.encode('utf-8') )
+			
 			if info['js_funcs']:
 				new_shared = []
 				for ln in shared:
@@ -2227,6 +2228,10 @@ def metapy2tinypypp( source ):
 								raise SyntaxError('unable to auto-wrap javascript function')
 							break
 					new_shared.append(ln)
+
+				open('/tmp/__tpython_py_debug__.py','wb').write( ('\n'.join(new_shared)).encode('utf-8') )
+
+
 				shared = new_shared
 				shared = ['evaljs("""', js, '""")'] + shared
 

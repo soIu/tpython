@@ -647,8 +647,16 @@ def rebuild(stage=None, exe_name='tpython++'):
 				cpp = open('./tinypy/__user_pythonic__.gen.h', 'rb').read().decode('utf-8')
 				if 'tp_obj sdl=sdlwrapper_new();' in cpp:
 					cpp = cpp.split('tp_obj sdl=sdlwrapper_new();')[-1]
+				js = ''
+				if os.path.isfile('/tmp/__tpython_js_debug__.js'):
+					js = open('/tmp/__tpython_js_debug__.js', 'rb').read().decode('utf-8')
+				py = ''
+				if os.path.isfile('/tmp/__tpython_py_debug__.py'):
+					py = open('/tmp/__tpython_py_debug__.py', 'rb').read().decode('utf-8')
 				cpp = cpp.replace("<", "&lt;").replace(">", "&gt;")
-				html = html.replace('</body>', SIMPLE_JS_EDITOR + '<hr/><pre style="background-color:black;color:green" contenteditable="true" id="TPY_SRC">%s</pre><hr/><pre>%s</pre></body>' %(script, cpp))
+				js  = js.replace("<", "&lt;").replace(">", "&gt;")
+				py  = py.replace("<", "&lt;").replace(">", "&gt;")
+				html = html.replace('</body>', SIMPLE_JS_EDITOR + '<hr/><pre style="background-color:black;color:green" contenteditable="true" id="TPY_SRC">%s</pre><hr/><pre>%s</pre><hr/><pre>%s</pre><hr/><pre>%s</pre></body>' %(script, js, py, cpp))
 			else:
 				html = html.replace('</body>', SIMPLE_JS_EDITOR + '<hr/><pre contenteditable="true" id="TPY_SRC">%s</pre></body>' %script)
 			open('./%s.html' %exe, 'wb').write( html.encode('utf-8') )
@@ -700,7 +708,11 @@ def rebuild(stage=None, exe_name='tpython++'):
 
 def main():
 	if os.path.isfile('/tmp/tpython_preload_libs.js'):
-		os.system('rm -rf /tmp/tpython_preload_libs.js')
+		os.system('rm -f /tmp/tpython_preload_libs.js')
+	if os.path.isfile('/tmp/__tpython_js_debug__.js'):
+		os.system('rm -f /tmp/__tpython_js_debug__.js')
+	if os.path.isfile('/tmp/__tpython_py_debug__.py'):
+		os.system('rm -f /tmp/__tpython_py_debug__.py')
 
 	#if '--clean' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv:
 	if '--clean' in sys.argv:
