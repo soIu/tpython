@@ -890,6 +890,23 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 						raise RuntimeError(THREEJS_MISSING)
 					dat = open(os.path.join(threepath, 'build/three.min.js')).read()
 					info['js_header'].append(dat)
+				elif inc.endswith('.js'):
+					ipath = None
+					for arg in sys.argv:
+						if arg.startswith('--import-path'):
+							assert '=' in arg
+							ipath = arg.split('=')[-1]
+							break
+					if not ipath:
+						raise RuntimeError('you must provide the option `--import-path=` to import external js files')
+					else:
+						jspath = os.path.join(ipath, inc)
+						if os.path.isfile(jspath):
+							dat = open(jspath).read()
+							info['js_header'].append(dat)
+						else:
+							raise RuntimeError('could not import js file: ' + jspath )
+
 			else:
 				if inc.startswith("<"):
 					assert inc.endswith(">")

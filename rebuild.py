@@ -325,6 +325,10 @@ def rebuild(stage=None, exe_name='tpython++'):
 				cmd.append('--wasm')
 			if '--sdl-deprecated' in sys.argv:
 				cmd.append('--sdl-deprecated')
+				
+			for a in sys.argv:
+				if a.startswith('--import-path='):
+					cmd.append(a)
 
 			subprocess.check_call(cmd)
 			os.system('cp -v /tmp/embedded_bytecode.gen.h ./tinypy/__user_bytecode__.gen.h')
