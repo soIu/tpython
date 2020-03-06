@@ -204,6 +204,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 	mods = ''
 	opts = '-Wcast-align'
 	libs = '-lm -ldl -lpthread'
+	html_template = None
 
 	C  = 'gcc'
 	CC = 'c++'
@@ -296,6 +297,30 @@ def rebuild(stage=None, exe_name='tpython++'):
 	unreal_plugin = None
 	unreal_ver = None
 	unreal_project = os.path.expanduser('~/Documents/Unreal Projects/TPythonPluginTest')
+	
+	print(sys.argv)
+	for arg in sys.argv[1:]:
+		if arg.startswith('--html-template='):
+			html_template = open(arg.split('=')[-1], 'rb').read().decode('utf-8')
+
+		elif arg.endswith( ('.unreal', '.unreal/') ):
+			unreal_plugin = arg
+			#mode = 'unreal'
+			if '-DBLENDOT_TYPES' in defs:
+				defs = defs.replace('-DBLENDOT_TYPES', '')
+				mods = ''
+			if not aot_modules:
+				defs += ' -DUSE_USER_CUSTOM_CPP'
+		elif os.path.isdir(arg):
+			unreal_project = arg
+		elif arg.startswith('--unreal-'):
+			if arg.startswith('--unreal-version='):
+				unreal_ver = arg
+		elif arg in ('--unreal', '--miniunreal'):
+			miniunreal = True
+			defs += ' -DMINIUNREAL'
+
+	
 	for arg in sys.argv[1:]:
 		if arg.endswith( '.py' ):
 			script = open(arg).read()
@@ -336,23 +361,6 @@ def rebuild(stage=None, exe_name='tpython++'):
 				if os.path.isfile('./tinypy/__user_pythonic__.pyh'):
 					defs += ' -DUSE_USER_CUSTOM_CPP'
 			break
-		elif arg.endswith( ('.unreal', '.unreal/') ):
-			unreal_plugin = arg
-			#mode = 'unreal'
-			if '-DBLENDOT_TYPES' in defs:
-				defs = defs.replace('-DBLENDOT_TYPES', '')
-				mods = ''
-			if not aot_modules:
-				defs += ' -DUSE_USER_CUSTOM_CPP'
-		elif os.path.isdir(arg):
-			unreal_project = arg
-		elif arg.startswith('--unreal-'):
-			if arg.startswith('--unreal-version='):
-				unreal_ver = arg
-		elif arg in ('--unreal', '--miniunreal'):
-			miniunreal = True
-			defs += ' -DMINIUNREAL'
-
 
 	if '--shared' in sys.argv or unreal_plugin:
 		if '--windows' in sys.argv or '--mingw' in sys.argv:
@@ -644,25 +652,30 @@ def rebuild(stage=None, exe_name='tpython++'):
 
 		## insert user source code into html file ##
 		if script:
-			html = open('./%s.html' %exe, 'rb').read().decode('utf-8')
-			assert '</body>' in html
-			script = script.replace("<", "&lt;").replace(">", "&gt;")
-			if os.path.isfile('./tinypy/__user_pythonic__.gen.h'):
-				cpp = open('./tinypy/__user_pythonic__.gen.h', 'rb').read().decode('utf-8')
-				if 'tp_obj sdl=sdlwrapper_new();' in cpp:
-					cpp = cpp.split('tp_obj sdl=sdlwrapper_new();')[-1]
-				js = ''
-				if os.path.isfile('/tmp/__tpython_js_debug__.js'):
-					js = open('/tmp/__tpython_js_debug__.js', 'rb').read().decode('utf-8')
-				py = ''
-				if os.path.isfile('/tmp/__tpython_py_debug__.py'):
-					py = open('/tmp/__tpython_py_debug__.py', 'rb').read().decode('utf-8')
-				cpp = cpp.replace("<", "&lt;").replace(">", "&gt;")
-				js  = js.replace("<", "&lt;").replace(">", "&gt;")
-				py  = py.replace("<", "&lt;").replace(">", "&gt;")
-				html = html.replace('</body>', SIMPLE_JS_EDITOR + '<hr/><pre style="background-color:black;color:green" contenteditable="true" id="TPY_SRC">%s</pre><hr/><pre>%s</pre><hr/><pre>%s</pre><hr/><pre>%s</pre></body>' %(script, js, py, cpp))
+			if html_template:
+				html = html_template.replace('</head>', '<script async type="text/javascript" src="tpython%2B%2B.js"></script></head>')
 			else:
-				html = html.replace('</body>', SIMPLE_JS_EDITOR + '<hr/><pre contenteditable="true" id="TPY_SRC">%s</pre></body>' %script)
+				html = open('./%s.html' %exe, 'rb').read().decode('utf-8')
+				assert '</body>' in html
+				script = script.replace("<", "&lt;").replace(">", "&gt;")
+				if os.path.isfile('./tinypy/__user_pythonic__.gen.h'):
+					cpp = open('./tinypy/__user_pythonic__.gen.h', 'rb').read().decode('utf-8')
+					if 'tp_obj sdl=sdlwrapper_new();' in cpp:
+						cpp = cpp.split('tp_obj sdl=sdlwrapper_new();')[-1]
+					js = ''
+					if os.path.isfile('/tmp/__tpython_js_debug__.js'):
+						js = open('/tmp/__tpython_js_debug__.js', 'rb').read().decode('utf-8')
+					py = ''
+					if os.path.isfile('/tmp/__tpython_py_debug__.py'):
+						py = open('/tmp/__tpython_py_debug__.py', 'rb').read().decode('utf-8')
+					cpp = cpp.replace("<", "&lt;").replace(">", "&gt;")
+					js  = js.replace("<", "&lt;").replace(">", "&gt;")
+					py  = py.replace("<", "&lt;").replace(">", "&gt;")
+					html = html.replace('</body>', SIMPLE_JS_EDITOR + '<hr/><pre style="background-color:black;color:green" contenteditable="true" id="TPY_SRC">%s</pre><hr/><pre>%s</pre><hr/><pre>%s</pre><hr/><pre>%s</pre></body>' %(script, js, py, cpp))
+				else:
+					html = html.replace('</body>', SIMPLE_JS_EDITOR + '<hr/><pre contenteditable="true" id="TPY_SRC">%s</pre></body>' %script)
+
+
 			open('./%s.html' %exe, 'wb').write( html.encode('utf-8') )
 
 			if '--keyboard-events' in sys.argv:
