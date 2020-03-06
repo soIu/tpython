@@ -378,7 +378,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 	if '--cpython' in sys.argv:
 		defs += ' -DUSE_PYTHON'
 		libs += ' -lpython3.7m'
-		opts += ' -I/usr/local/include/python3.7m'
+		opts += ' -I/usr/include/python3.7m'
 		tpyc_gen_h = [
 			'static std::string __tpc_source__ = std::string(R"RAWSTRING(',
 			open('tpc').read(),
