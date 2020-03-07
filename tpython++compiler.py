@@ -804,6 +804,9 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		if s.startswith('##'):
 			ln = ln.replace('##', '//')
 			out.append(ln)
+		elif s.startswith('#') and mode=='js':
+			ln = ln.replace('#', '//')
+			out.append(ln)
 		elif user_pythonic and s.startswith("#"):
 			## note user can not directly use macro syntax
 			pass
@@ -1583,9 +1586,15 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					iter_name = s.split(' in ')[0].split()[-1]
 					if ',' in iter_to:
 						iter_start, iter_to = iter_to.split(',')
-						w += 'for (int %s=%s; %s<%s; %s++){' %(iter_name, iter_start, iter_name, iter_to, iter_name)
+						if mode=='js':
+							w += 'for (var %s=%s; %s<%s; %s++){' %(iter_name, iter_start, iter_name, iter_to, iter_name)
+						else:
+							w += 'for (int %s=%s; %s<%s; %s++){' %(iter_name, iter_start, iter_name, iter_to, iter_name)
 					else:
-						w += 'for (int %s=0; %s<%s; %s++){' %(iter_name, iter_name, iter_to, iter_name)
+						if mode=='js':
+							w += 'for (var %s=0; %s<%s; %s++){' %(iter_name, iter_name, iter_to, iter_name)
+						else:
+							w += 'for (int %s=0; %s<%s; %s++){' %(iter_name, iter_name, iter_to, iter_name)
 				else:
 					iter_name = s.split(' in ')[0].split()[-1]
 					iterable = s.split(' in ')[-1][:-1]
