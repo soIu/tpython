@@ -8,6 +8,11 @@ os.chdir(workspace_dir)
 ## Ubuntu Notes:
 ## sudo apt-get install g++-arm-linux-gnueabi gcc-arm-linux-gnueabi binutils-arm-linux-gnueabi
 
+def install_emsdk():
+	subprocess.check_call(['git', 'clone', 'https://github.com/emscripten-core/emsdk.git'], cwd=os.path.expanduser('~/'))
+	subprocess.check_call(['./emsdk', 'install', 'latest-upstream'], cwd=os.path.expanduser('~/emsdk'))
+	subprocess.check_call(['./emsdk', 'activate', 'latest-upstream'], cwd=os.path.expanduser('~/emsdk'))
+
 ## https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent
 SIMPLE_JS_EDITOR = '''
 <script>
@@ -394,8 +399,10 @@ def rebuild(stage=None, exe_name='tpython++'):
 			os.mkdir('tpythonos_build')
 			subprocess.check_call(['conan', 'install', '../tinypy', '-pr', 'clang-6.0-linux-x86_64'], cwd='./tpythonos_build')
 	elif '--wasm' in sys.argv or '--html' in sys.argv:
+		if not os.path.isdir( os.path.expanduser('~/emsdk')):
+			install_emsdk()
 		mode = 'wasm'
-		CC = os.path.expanduser('~/emsdk/fastcomp/emscripten/em++')
+		CC = os.path.expanduser('~/emsdk/upstream/emscripten/em++')
 		libs = ''
 		#opts += ' -O3 -fno-rtti -s FILESYSTEM=0 -s DISABLE_EXCEPTION_CATCHING=0'
 		## note: blendot types require rtti (run time type info)
