@@ -10,7 +10,7 @@ with c++:
 		window.alert( a + b + n)
 	@module( mycppmodule )
 	def foo(n, a, b):
-		call_alert(n, a, b)
+		call_alert(n, a.as_cstring(), b.as_cstring() )
 		int r = myfunc(4, 5)
 		print(r)
 		return None

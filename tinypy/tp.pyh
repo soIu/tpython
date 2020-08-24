@@ -433,7 +433,7 @@ class tp_obj:
 	operator bool() const;
 	operator int() const;
 	operator float() const;
-	##operator const char*() const;
+	##operator const char*() const;   // this was causing problems with the overloaded `print` helper?
 	operator char() const;
 	operator uint8_t() const;
 	tp_obj operator[] (int index);
@@ -547,6 +547,8 @@ class tp_obj:
 	def reverse() ->tp_obj;
 	def contains(int n) ->bool;
 	friend bool operator>> (int n, tp_obj self) { return self.contains(n);}
+	def as_string() -> std::string;
+	def as_cstring() -> const char*;
 
 ## base class for all AOT subclasses ##
 class tpy_subclass( tp_obj ):

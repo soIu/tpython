@@ -277,7 +277,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 		source = source.splitlines()
 	print(file_name)
 	if file_name.endswith('.aot.pyh'):
-		tpy_modules_aot[file_name] = source
+		if '--aot-modules' in sys.argv:
+			tpy_modules_aot[file_name] = source
 		return None
 
 	if type(fodg) is list:
@@ -575,7 +576,11 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 						b += 'return None;}'
 					else:
 						b += '}'
-					b += '// end of function: %s ' %func_name
+					if em_js:
+						em_js = False
+						b += '); // end of JS function: %s ' %func_name
+					else:
+						b += '// end of function: %s ' %func_name
 					in_func = False
 					func_indent = -1
 				else:
@@ -703,7 +708,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 							a = a + ('.template unwrap<class %s>()' %auto_unwrap[a])
 
 					#elif is_virt:
-					elif in_func:
+					elif in_func and not em_js:
 						hits = []
 						for clsname in classes:
 							if b.split('[')[0] in classes[clsname]['members']:
@@ -751,16 +756,17 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 							elif s.startswith('switch '):
 								pass
 							else:
-								print('parse error')
+								print('WARNING: can not determine types of:')
 								print(b)
 								print(s)
 								print(part)
-								print('=======this class members:')
-								print(class_members)
-								for cls in classes:
-									print(cls)
-									print(classes[cls])
-								raise RuntimeError("unable to find the class type from member or method use on variable: `%s`" %a)		
+								if '--fully-static-types' in sys.argv:
+									print('=======this class members:')
+									print(class_members)
+									for cls in classes:
+										print(cls)
+										print(classes[cls])
+									raise RuntimeError("unable to find the class type from member or method use on variable: `%s`" %a)		
 						elif len(hits) > 1:
 							raise SyntaxError('can not auto unwrap a pointer because multiple classes have the same named members or methods: %s line: `%s`' %(str(hits), s))
 						elif len(hits) == 1:
@@ -1397,7 +1403,11 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			elif em_js:
 				if in_class:
 					raise SyntaxError('@javascript functions can not defined inside a class')
-				func += 'EM_JS(%s, %s, (%s), {' %(returns, func_name, ','.join(args))
+				if returns=='tp_obj':
+					## warning: 'myfunc' has C-linkage specified, but returns user-defined type 'tp_obj' which is incompatible with C [-Wreturn-type-c-linkage]
+					func += 'EM_JS(void, %s, (%s), {' %(func_name, ','.join(args))
+				else:
+					func += 'EM_JS(%s, %s, (%s), {' %(returns, func_name, ','.join(args))
 
 			else:
 				if in_class and func_name == class_name:
@@ -2217,7 +2227,8 @@ def metapy2tinypypp( source ):
 	#raise RuntimeError('\n'.join(shared))
 
 	if aot and len(shared)==1:
-		raise SyntaxError('bytecode is blank, did you forget to define and call `main()` at the end of the script?')
+		print('WARN: bytecode is blank, did you forget to define and call `main()` at the end of the script?')
+		shared = []
 
 	scripts = []
 	if len(thread_local):

@@ -1293,6 +1293,12 @@ def tp_obj::as_vector() -> std::vector<tp_obj>:
 		raise "tp_obj::as_vector can only be used on a list and dict types"
 	return r
 
+def tp_obj::as_string()->std::string:
+	return tp_as_string(NULL, *this, False)
+
+def tp_obj::as_cstring()->const char*:
+	return tp_as_string(NULL, *this, False).c_str()
+
 
 def tp_set_pointer(void *ptr) -> int:
 	if __tpy_rpointers__.count(ptr) > 0:

@@ -267,7 +267,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 	use_sdl = False
 
 	if '--no-aot-modules' in sys.argv:
-		pass
+		print('NO AOT MODULES')
 	else:
 		## by default, always link with SDL and ODE
 		use_sdl = True
@@ -654,11 +654,13 @@ def rebuild(stage=None, exe_name='tpython++'):
 	if mode == 'wasm':
 		pakopath = os.path.expanduser('~/pako/dist/pako_inflate.min.js')
 		pako = ''
+		is_html = False
 		if exe.endswith('.html'):
 			exe = exe.split('.html')[0]
+			is_html = True
 
 		## insert user source code into html file ##
-		if script:
+		if script and is_html:
 			if html_template:
 				html = html_template.replace('</head>', '<script async type="text/javascript" src="tpython%2B%2B.js"></script></head>')
 			else:
