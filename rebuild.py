@@ -271,28 +271,28 @@ def rebuild(stage=None, exe_name='tpython++'):
 	if '--no-aot-modules' in sys.argv:
 		print('NO AOT MODULES')
 	else:
-		## by default, always link with SDL and ODE
-		use_sdl = True
-		if '--clang' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv:
-			print("WARN: miniode is not yet fully supported by clang")
-			print("https://bitbucket.org/odedevs/ode/issues/66/different-behavior-with-clang-vs-gcc")
-		elif '--aot' not in sys.argv:
-			print("WARN: miniode is not yet fully supported by GCC when compiled without AOT")
-			print("body.getRotation() is known to return invalid values")
-			print("the workaround is to rebuild with --aot, and make your script fully AOT compatible")
-		aot_modules = True
-		for odefile in os.listdir('./tinypy/miniode/ode'):
-			if odefile.endswith('.cpp'):
-				if odefile=='fastdot.cpp':
-					pass
-				elif odefile.startswith('fast') or odefile in ('resource_control.cpp', 'collision_libccd.cpp'):
-					print('skipping: ', odefile)
-					continue
-				mods += ' miniode/ode/' + odefile
-		for odefile in os.listdir('./tinypy/miniode/ode/joints'):
-			if odefile.endswith('.cpp'):
-				mods += ' miniode/ode/joints/' + odefile
-		defs += ' -DUSE_ODE -DODE_PLATFORM_LINUX -DdTHREADING_INTF_DISABLED'
+		#use_sdl = True
+		if '--ode' in sys.argv:
+			aot_modules = True
+			if '--clang' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv:
+				print("WARN: miniode is not yet fully supported by clang")
+				print("https://bitbucket.org/odedevs/ode/issues/66/different-behavior-with-clang-vs-gcc")
+			elif '--aot' not in sys.argv:
+				print("WARN: miniode is not yet fully supported by GCC when compiled without AOT")
+				print("body.getRotation() is known to return invalid values")
+				print("the workaround is to rebuild with --aot, and make your script fully AOT compatible")
+			for odefile in os.listdir('./tinypy/miniode/ode'):
+				if odefile.endswith('.cpp'):
+					if odefile=='fastdot.cpp':
+						pass
+					elif odefile.startswith('fast') or odefile in ('resource_control.cpp', 'collision_libccd.cpp'):
+						print('skipping: ', odefile)
+						continue
+					mods += ' miniode/ode/' + odefile
+			for odefile in os.listdir('./tinypy/miniode/ode/joints'):
+				if odefile.endswith('.cpp'):
+					mods += ' miniode/ode/joints/' + odefile
+			defs += ' -DUSE_ODE -DODE_PLATFORM_LINUX -DdTHREADING_INTF_DISABLED'
 		if '--aot-pure' in sys.argv:
 			defs += ' -DPURE_AOT'
 		else:
@@ -334,8 +334,6 @@ def rebuild(stage=None, exe_name='tpython++'):
 			if 'import sdl' in script:
 				use_sdl = True
 				aot_modules = True
-			embed_bytecode = True
-			defs += ' -DUSE_EMBEDDED_BYTECODE'
 			cmd = [
 				'./tpython++compiler.py', 
 				'--beta', 
@@ -363,7 +361,16 @@ def rebuild(stage=None, exe_name='tpython++'):
 					cmd.append(a)
 
 			subprocess.check_call(cmd)
-			os.system('cp -v /tmp/embedded_bytecode.gen.h ./tinypy/__user_bytecode__.gen.h')
+			if os.path.isfile('/tmp/embedded_bytecode.gen.h'):
+				os.system('cp -v /tmp/embedded_bytecode.gen.h ./tinypy/__user_bytecode__.gen.h')
+				embed_bytecode = True
+				defs += ' -DUSE_EMBEDDED_BYTECODE'
+
+			else:
+				## no bytecode ##
+				#open('./tinypy/__user_bytecode__.gen.h', 'wb').write('')
+				pass
+
 			if not aot_modules:
 				if os.path.isfile('./tinypy/__user_pythonic__.pyh'):
 					defs += ' -DUSE_USER_CUSTOM_CPP'
@@ -409,6 +416,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 		#opts += ' -O3 -fno-rtti -s FILESYSTEM=0 -s DISABLE_EXCEPTION_CATCHING=0'
 		## note: blendot types require rtti (run time type info)
 		opts += ' -Os '
+		exeopts += ''' -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "intArrayFromString", "intArrayToString", "setValue", "getValue", "allocate", "getMemory", "AsciiToString", "stringToAscii", "UTF8ArrayToString", "UTF8ToString"]' '''
 		if '--debug' in sys.argv:
 			#exeopts += ' -s DISABLE_EXCEPTION_CATCHING=2 -s FILESYSTEM=0'  ## something requires fs
 			#exeopts += ' -s DISABLE_EXCEPTION_CATCHING=2 -s SAFE_HEAP=1 -s WARN_UNALIGNED=1'  ## no need for SAFE_HEAP with wasm, because it can do unaligned casts?
@@ -761,6 +769,7 @@ def main():
 		os.system('rm -rf tinypy/blendot/scene/resources/*.o')
 		os.system('rm -f tinypy/miniode/ode/*.o')
 		os.system('rm -f tinypy/miniode/ode/joints/*.o')
+		os.system('rm -f /tmp/embedded_bytecode.gen.h')
 
 
 	trans_files = []

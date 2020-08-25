@@ -2656,12 +2656,13 @@ def main():
 
 		if len(scripts) == 1:
 			source = scripts[0]
-			tempf = '/tmp/%s_main.py'%name
-			if '--debug' in sys.argv:
-				print(source)
+			if source.strip():
+				tempf = '/tmp/%s_main.py'%name
+				if '--debug' in sys.argv:
+					print(source)
 
-			open(tempf, 'wb').write(source.encode('utf-8'))
-			subprocess.check_call(['./tpc']+exargs+['-o', './%s.bytecode'%name, tempf])
+				open(tempf, 'wb').write(source.encode('utf-8'))
+				subprocess.check_call(['./tpc']+exargs+['-o', './%s.bytecode'%name, tempf])
 		else:
 			for i in range(len(scripts)):
 				source = scripts[i]

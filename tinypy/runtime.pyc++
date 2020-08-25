@@ -14,16 +14,6 @@ if defined(USE_SDL):
 import <random>
 std::mt19937 *__rand_engine = NULL;
 
-#ifndef __EMSCRIPTEN_major__
-
-def tp_save(TP, const char * fname, tp_obj v):
-	FILE *f
-	f = fopen(fname,"wb")
-	if not f:
-		tp_raise(, tp_string_atom(tp, "tp_save IOError: ?"))
-	fwrite(tp_string_getptr(v), tp_string_len(v), 1, f)
-	fclose(f)
-
 def tp_load(TP, const char * fname) -> tp_obj:
 	FILE *f
 	long l
@@ -44,6 +34,15 @@ def tp_load(TP, const char * fname) -> tp_obj:
 	fclose(f)
 	return r
 
+#ifndef __EMSCRIPTEN_major__
+
+def tp_save(TP, const char * fname, tp_obj v):
+	FILE *f
+	f = fopen(fname,"wb")
+	if not f:
+		tp_raise(, tp_string_atom(tp, "tp_save IOError: ?"))
+	fwrite(tp_string_getptr(v), tp_string_len(v), 1, f)
+	fclose(f)
 
 def tpy_exists(TP) -> tp_obj:
 	char * fname = tp_cstr(tp, TP_STR())
