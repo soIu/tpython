@@ -17,14 +17,14 @@ with c++:
 			print(self.x)
 			print(self.y)
 			return self.x + self.y
-		def __init__(self, x, y ):
+		def __init__(self, int x, int y ):
 			self.x = x
 			self.y = y
 	@module( mycppmodule )
 	def new_foo(a, b):
 		print("making new foo from c++")
-		Foo *fptr = new Foo(tp, a,b)
-		return *fptr
+		fptr = Foo(a,b)
+		return fptr
 
 
 import mycppmodule

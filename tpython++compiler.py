@@ -1414,6 +1414,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					func += '%s(%s) %s{' %(func_name, ','.join(args), exopts)
 				elif in_class and is_init and user_pythonic:
 					func += '%s %s(%s) %s{' %(returns, func_name, ','.join(args), exopts)
+					argnames = [arg.split()[-1] for arg in args]
+
 					if auto_templates:
 						class_con.append('template<' + ','.join( ['typename T_%s' %i for i in range(len(auto_templates))] ) + '>')
 						class_new.append('template<' + ','.join( ['typename T_%s' %i for i in range(len(auto_templates))] ) + '>')
@@ -1425,9 +1427,17 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 						'	this->pointer.classid  = %s;' %classes[class_name]['id'] ,
 						#'	this->pointer.val  = (void*)this;',
 						#'	print(this);',
-						'	this->%s__init__(%s);' % (class_name, ','.join(auto_templates)),
-						'}'
 					])
+					if auto_templates:
+						class_con.extend([
+							'	this->%s__init__(%s);' % (class_name, ','.join(auto_templates)),
+							'}'
+						])
+					else:
+						class_con.extend([
+							'	this->%s__init__(%s);' % (class_name, ','.join(argnames)),
+							'}'
+						])
 					class_new.extend([
 						## it is not safe to return a copy of the class, because changes made to it will not be updated in obj->pointer.val
 						#'%s %s_new(%s) {' % (class_name, class_name, ','.join(args)),
@@ -1439,19 +1449,34 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 						'	return *(tp_obj*)obj;',
 						'}'
 					])
+					if '--wasm' in sys.argv:
+						class_new.extend([
+							'extern "C" int EMSCRIPTEN_KEEPALIVE new_%s(%s) {' % (class_name, ','.join(args)),
+							'	%s* obj = new %s(%s);' % (class_name, class_name, ','.join(auto_templates)),
+							'	return (int)obj;',
+							'}'
+						])
+
 					## generate tpython interpreter wrapper function ##
-					if not class_name.startswith('_'):
+					if not class_name.startswith('_') and auto_templates:
 						mods['__aot_builtin_module__'].append([
 							class_name,
 							'__tpy_%s_new' %class_name,
 						])
-						class_new.append('tp_obj __tpy_%s_new(TP) {' % class_name )
-						for arg in auto_templates:
-							class_new.append('	tp_obj %s = TP_OBJ();' % arg )
-						class_new.extend([
-							'	return %s_new(%s);' % (class_name, ','.join(auto_templates)),
-							'}'
-						])
+						if auto_templates:
+							class_new.append('tp_obj __tpy_%s_new(TP) {' % class_name )
+							for arg in auto_templates:
+								class_new.append('	tp_obj %s = TP_OBJ();' % arg )
+							class_new.extend([
+								'	return %s_new(%s);' % (class_name, ','.join(auto_templates)),
+								'}'
+							])
+						#else:
+						#	class_new.append('tp_obj __tpy_%s_new(%s) {' % (class_name, ','.join(args)) )
+						#	class_new.extend([
+						#		'	return %s_new(%s);' % (class_name, ','.join(argnames)),
+						#		'}'
+						#	])
 
 					if len(args):
 						## also generate default constructor
@@ -2535,6 +2560,7 @@ def pythonicpp_translate( path, file=None, secure=False, secure_binary=False, ma
 
 def main():
 	print('pyc++ compilier and tpythonpp bytecode translator')
+	print(sys.argv)
 	global UNREAL_VER
 	input_file = None
 	exargs = []

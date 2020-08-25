@@ -170,6 +170,8 @@ def gen_interpreter(stage=None):
 		'./tpython++compiler.py', 
 		'./tinypy'
 	]
+	if '--wasm' in sys.argv:
+		cmd.append('--wasm')
 	if '--aot-pure' in sys.argv:
 		cmd.append('--aot-pure')
 	if '--sdl-deprecated' in sys.argv:
@@ -779,6 +781,8 @@ def main():
 				cmd.append('--debug')
 			if vis_args:
 				cmd.extend(vis_args)
+			if '--wasm' in sys.argv:
+				cmd.append('--wasm')
 			print(cmd)
 			subprocess.check_call(cmd)
 
