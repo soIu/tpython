@@ -1,9 +1,7 @@
 # tpythonpp
 
-A tiny GIL-less python implementation (based on TinyPy), written in Pythonic++ (a dialect of C++), and optimized for speed and portability to mobile platforms.
-TPython++ is used by the Blendot game engine.  http://blendot.org
-
-Follow me on Twitter: https://twitter.com/DJRaptor11
+A tiny GIL-less python implementation (based on TinyPy), written in Pythonic++ (a dialect of C++).
+TPython++ is used by Panjea.com to translate Pythonic++ to WASM.  http://www.panjea.com
 
 # Benchmarks
 

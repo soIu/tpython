@@ -2129,6 +2129,15 @@ def metapy2tinypypp( source ):
 				in_js = False
 			else:
 				js.append(ln)
+
+		elif in_cpp:
+			if not ln.strip():
+				in_cpp = False
+				## aot python can be used before `with c++:` but not after
+				in_aot = False
+			else:
+				cpp.append(ln)
+
 		elif in_aot:
 			if ln.strip():
 				s = ln.strip()
@@ -2177,12 +2186,10 @@ def metapy2tinypypp( source ):
 			elif append_next_blank_hack:
 				aot.append( '\t' + append_next_blank_hack )
 				append_next_blank_hack = None
-
-		elif in_cpp:
-			if not ln.strip():
+			elif not ln.strip() and in_cpp:
+				## this should never happen
 				in_cpp = False
-			else:
-				cpp.append(ln)
+
 		elif thread is not None:
 			if ln.startswith('\t'):
 				thread.append( ln[1:] )
