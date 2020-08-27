@@ -1030,9 +1030,9 @@ def tp_tiny_object(double x, double y, double z, double rx, double ry, double rz
 	val.__object.pos.x = x
 	val.__object.pos.y = y
 	val.__object.pos.z = z
-	val.__object.rx = (int8_t)rx;
-	val.__object.ry = (int8_t)ry;
-	val.__object.rz = (int8_t)rz;
+	val.__object.rx = (int16_t)rx;
+	val.__object.ry = (int16_t)ry;
+	val.__object.rz = (int16_t)rz;
 	return val
 
 
@@ -1549,7 +1549,7 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 			ss << "quat( x=" << self.__quat.q.x << ", y=" << self.__quat.q.y << ", z=" << self.__quat.q.z << ", w=" << self.__quat.q.w << ")"
 			break
 		case TP_TOBJECT:
-			ss << "object3D( x=" << self.__object.pos.x << ", y=" << self.__object.pos.y << ", z=" << self.__object.pos.z << ")"
+			ss << "object3D( position: x=" << self.__object.pos.x << ", y=" << self.__object.pos.y << ", z=" << self.__object.pos.z << " rotation: x=" << self.__object.rx << ", y=" << self.__object.ry << ", z=" << self.__object.rz << ")"
 			break
 		#ifdef BLENDOT_TYPES
 		case TP_COLOR:

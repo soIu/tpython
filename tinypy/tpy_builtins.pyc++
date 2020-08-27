@@ -540,6 +540,15 @@ def tpy_quat(TP) ->tp_obj:
 	tp_obj w = TP_OBJ()
 	return tp_quat(x.number.val, y.number.val, z.number.val, w.number.val)
 
+def tpy_object3D(TP) ->tp_obj:
+	tp_obj x = TP_OBJ()
+	tp_obj y = TP_OBJ()
+	tp_obj z = TP_OBJ()
+	tp_obj rx= TP_OBJ()
+	tp_obj ry= TP_OBJ()
+	tp_obj rz= TP_OBJ()
+	return tp_tiny_object(x.number.val, y.number.val, z.number.val, rx.number.val, ry.number.val, rz.number.val)
+
 
 #ifdef BLENDOT_TYPES
 
@@ -740,6 +749,7 @@ def tp_module_builtins_init(TP):
 	tp_set(tp, builtins, "vec3", tp_function(tp, tpy_vec3))
 	tp_set(tp, builtins, "vec4", tp_function(tp, tpy_quat))
 	tp_set(tp, builtins, "quat", tp_function(tp, tpy_quat))
+	tp_set(tp, builtins, "object3D", tp_function(tp, tpy_object3D))
 	if defined(__EMSCRIPTEN_major__):
 		tp_set(tp, builtins, "em_set_main", tp_function(tp, tpy_emscripten_set_main_loop))
 	if defined(BLENDOT_TYPES):
