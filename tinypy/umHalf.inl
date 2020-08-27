@@ -47,8 +47,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 inline std::ostream& operator << (std::ostream &out, const HalfFloat &self){
 	out << (float)self;
+	//out << (double)self;
 	return out;
 }
+
+//inline std::ostream& operator << (std::ostream &out, const float &self){
+//	out << self;
+//	return out;
+//}
+
 // ------------------------------------------------------------------------------------------------
 inline HalfFloat HalfFloat::set(float other)
 {

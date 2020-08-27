@@ -5,6 +5,8 @@
 
 define(TINY_LIST_PARAMS=1)
 
+import "half.hpp"
+
 if defined(USE_RPMALLOC):
 	import "rpmalloc.h"
 
@@ -149,7 +151,8 @@ enum TPTypeID:
 	TP_SPATIAL = 14,
 	TP_MESH    = 15,
 	TP_MESHI   = 16,
-	TP_UOBJECT   = 20,
+	TP_UOBJECT = 20,
+	TP_TOBJECT = 21,
 	TP_SET   = 25,
 	TP_POINTER   = 26,
 	TP_LIST_TINY = 27,
@@ -360,6 +363,21 @@ def tp_string_is_4bitsable( const char* ptr, int length ) ->bool:
 			default: return false
 	return true
 
+## a tiny generic 3D object ##
+
+struct TinyObject:
+	## 4 bytes
+	TPTypeInfo type;
+	## 6 bytes
+	int8_t  sx:6;
+	int16_t rx:10;
+	int8_t  sy:6;
+	int16_t ry:10;
+	int8_t  sz:6;
+	int16_t rz:10;
+	## 6 bytes
+	struct {half_float::half x; half_float::half y; half_float::half z;} pos;
+
 
 class tp_obj:
 	using iterator = std::vector<tp_obj>::iterator;
@@ -404,6 +422,7 @@ class tp_obj:
 	struct { TPTypeInfo type; struct Vector2 vec; } __vec2;
 	struct { TPTypeInfo type; struct Vector3 vec; } __vec3;
 	struct { TPTypeInfo type; struct Quat q; } __quat;
+	struct TinyObject __object;
 	if defined(BLENDOT_TYPES):
 		struct { TPTypeInfo type; struct Color *c; } color;
 		struct { TPTypeInfo type; struct Rect2 *r; } rect;
@@ -1004,6 +1023,18 @@ def tp_pointer(void *ptr) -> tp_obj:
 	val.pointer.val = ptr
 	return val
 
+## generic tiny 3D object ##
+@static
+def tp_tiny_object(double x, double y, double z, double rx, double ry, double rz) -> tp_obj:
+	tp_obj val = {TP_TOBJECT};
+	val.__object.pos.x = x
+	val.__object.pos.y = y
+	val.__object.pos.z = z
+	val.__object.rx = (int8_t)rx;
+	val.__object.ry = (int8_t)ry;
+	val.__object.rz = (int8_t)rz;
+	return val
+
 
 ## only used by function call params list for now, not GC tracked ##
 #ifdef TINY_LIST_PARAMS
@@ -1509,13 +1540,16 @@ def tp_as_string(TP, tp_obj self, bool quote_strings=true) ->std::string:
 			ss << "None"
 			break
 		case TP_VEC2:
-			ss << "vec2( x=" << self.__vec2.vec.x << ", y=" << self.__vec2.vec.y << ")"
+			ss << "vec2( x=" << (double)self.__vec2.vec.x << ", y=" << (double)self.__vec2.vec.y << ")"
 			break
 		case TP_VEC3:
-			ss << "vec3( x=" << self.__vec3.vec.x << ", y=" << self.__vec3.vec.y << ", z=" << self.__vec3.vec.z << ")"
+			ss << "vec3( x=" << (double)self.__vec3.vec.x << ", y=" << (double)self.__vec3.vec.y << ", z=" << (double)self.__vec3.vec.z << ")"
 			break
 		case TP_QUAT:
 			ss << "quat( x=" << self.__quat.q.x << ", y=" << self.__quat.q.y << ", z=" << self.__quat.q.z << ", w=" << self.__quat.q.w << ")"
+			break
+		case TP_TOBJECT:
+			ss << "object3D( x=" << self.__object.pos.x << ", y=" << self.__object.pos.y << ", z=" << self.__object.pos.z << ")"
 			break
 		#ifdef BLENDOT_TYPES
 		case TP_COLOR:

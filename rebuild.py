@@ -295,8 +295,8 @@ def rebuild(stage=None, exe_name='tpython++'):
 			defs += ' -DUSE_ODE -DODE_PLATFORM_LINUX -DdTHREADING_INTF_DISABLED'
 		if '--aot-pure' in sys.argv:
 			defs += ' -DPURE_AOT'
-		else:
-			defs += ' -DUSE_USER_CUSTOM_CPP'
+		#else:
+		#	defs += ' -DUSE_USER_CUSTOM_CPP'
 
 	script = None
 	embed_bytecode = False
@@ -316,8 +316,8 @@ def rebuild(stage=None, exe_name='tpython++'):
 			if '-DBLENDOT_TYPES' in defs:
 				defs = defs.replace('-DBLENDOT_TYPES', '')
 				mods = ''
-			if not aot_modules:
-				defs += ' -DUSE_USER_CUSTOM_CPP'
+			#if not aot_modules:
+			#	defs += ' -DUSE_USER_CUSTOM_CPP'
 		elif os.path.isdir(arg):
 			unreal_project = arg
 		elif arg.startswith('--unreal-'):

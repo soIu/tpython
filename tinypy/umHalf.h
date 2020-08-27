@@ -68,6 +68,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////////
 struct HalfFloat {
 	inline friend std::ostream & operator << (std::ostream &out, const HalfFloat &self);
+	//inline friend std::ostream & operator << (std::ostream &out, const float &self);
 	friend HalfFloat operator+ (HalfFloat, HalfFloat);
 	friend HalfFloat operator- (HalfFloat, HalfFloat);
 	friend HalfFloat operator* (HalfFloat, HalfFloat);
