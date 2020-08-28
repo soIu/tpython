@@ -578,17 +578,47 @@ class tpy_subclass( tp_obj ):
 ## WASM Object3D ##
 class Object3D( tp_obj ):
 	def Object3D():
-		this->type = TPTypeInfo{TP_TOBJECT};
+		this🠊type = TPTypeInfo{TP_TOBJECT};
 	def Object3D(double x, double y, double z,  double rx, double ry, double rz ):
-		this->type = TPTypeInfo{TP_TOBJECT};
-		this->__object.pos.x = x;
-		this->__object.pos.y = y;
-		this->__object.pos.z = z;
-		this->__object.rx = rx;
-		this->__object.ry = ry;
-		this->__object.rz = rz;
+		this🠊type = TPTypeInfo{TP_TOBJECT};
+		this🠊__object.pos.x = x
+		this🠊__object.pos.y = y
+		this🠊__object.pos.z = z
+		this🠊__object.rx = rx
+		this🠊__object.ry = ry
+		this🠊__object.rz = rz
 	def on_update():
 		pass
+	def x() ->float:
+		return this🠊__object.pos.x
+	def x( float val ) ->float:
+		this🠊__object.pos.x = val
+		return val
+	def y() ->float:
+		return this🠊__object.pos.y
+	def y( float val ) ->float:
+		this🠊__object.pos.y = val
+		return val
+	def z() ->float:
+		return this🠊__object.pos.z
+	def z( float val ) ->float:
+		this🠊__object.pos.z = val
+		return val
+	def rx() ->int:
+		return this🠊__object.rx
+	def rx( int val ) ->int:
+		this🠊__object.rx = val
+		return val
+	def ry() ->int:
+		return this🠊__object.ry
+	def ry( int val ) ->int:
+		this🠊__object.ry = val
+		return val
+	def rz() ->int:
+		return this🠊__object.rz
+	def rz( int val ) ->int:
+		this🠊__object.rz = val
+		return val
 
 
 @extern.C

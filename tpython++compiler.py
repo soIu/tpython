@@ -807,6 +807,14 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			s = ' '.join(newln)
 			ln = ('\t'*indent) + s
 
+		if user_pythonic and in_class and not in_func:
+			lns = ln.strip()
+			if lns.endswith(';'):
+				lns = lns[:-1]
+			if lns and ' ' in lns:
+				mname = lns.split()[-1]
+				class_members_exp[mname] = lns
+
 		if s.startswith('##'):
 			ln = ln.replace('##', '//')
 			out.append(ln)
@@ -1049,6 +1057,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			class_indent = indent
 			class_name = s[:-1].split()[-1].strip()
 			#class_members = {}
+			class_members_exp = {}
 			base_classes = []
 			tp_obj_subclass = False
 			if s.count('(')==1 and s.count(')')==1:
@@ -1839,7 +1848,9 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 						if member.count('.') == 1 and member.startswith('self.'):
 							mtype = 'tp_obj'
 							mname = member.split('.')[-1].strip()
-							if val.startswith('['):
+							if mname in class_members_exp:
+								pass
+							elif val.startswith('['):
 								mtype = 'std::vector<tp_obj>'
 								#mtype = 'tp_obj' # crashes
 								class_members[ mname ] = mtype
