@@ -3,6 +3,40 @@ import "tp_internal.gen.h"
 
 tp_obj tp_None = {TP_NONE};
 
+
+@extern.C
+@EMSCRIPTEN_KEEPALIVE
+def Object3D_pos_x( long addr ) ->double:
+	Object3D* ptr = (Object3D*)addr;
+	return ptr->__object.pos.x;
+@extern.C
+@EMSCRIPTEN_KEEPALIVE
+def Object3D_pos_y( long addr ) ->double:
+	Object3D* ptr = (Object3D*)addr;
+	return ptr->__object.pos.y;
+@extern.C
+@EMSCRIPTEN_KEEPALIVE
+def Object3D_pos_z( long addr ) ->double:
+	Object3D* ptr = (Object3D*)addr;
+	return ptr->__object.pos.z;
+
+@extern.C
+@EMSCRIPTEN_KEEPALIVE
+def Object3D_rot_x( long addr ) ->double:
+	Object3D* ptr = (Object3D*)addr;
+	return ptr->__object.rx;
+@extern.C
+@EMSCRIPTEN_KEEPALIVE
+def Object3D_rot_y( long addr ) ->double:
+	Object3D* ptr = (Object3D*)addr;
+	return ptr->__object.ry;
+@extern.C
+@EMSCRIPTEN_KEEPALIVE
+def Object3D_rot_z( long addr ) ->double:
+	Object3D* ptr = (Object3D*)addr;
+	return ptr->__object.rz;
+
+
 import "tpd_list.gen.cpp"
 import "tpd_dict.gen.cpp"
 

@@ -12,6 +12,8 @@ if defined(USE_RPMALLOC):
 
 if defined(__EMSCRIPTEN_major__):
 	import <emscripten.h>
+else:
+	define(EMSCRIPTEN_KEEPALIVE=)
 
 if defined(USE_EMBEDDED_BYTECODE):
 	import "__user_bytecode__.gen.h"
@@ -573,6 +575,40 @@ class tp_obj:
 class tpy_subclass( tp_obj ):
 	std::unordered_map<std::string, tp_obj> __methods__
 
+## WASM Object3D ##
+class Object3D( tp_obj ):
+	def Object3D():
+		this->type = TPTypeInfo{TP_TOBJECT};
+	def Object3D(double x, double y, double z,  double rx, double ry, double rz ):
+		this->type = TPTypeInfo{TP_TOBJECT};
+		this->__object.pos.x = x;
+		this->__object.pos.y = y;
+		this->__object.pos.z = z;
+		this->__object.rx = rx;
+		this->__object.ry = ry;
+		this->__object.rz = rz;
+	def on_update():
+		pass
+
+
+@extern.C
+@EMSCRIPTEN_KEEPALIVE 
+def Object3D_pos_x( long addr ) ->double;
+@extern.C
+@EMSCRIPTEN_KEEPALIVE 
+def Object3D_pos_y( long addr ) ->double;
+@extern.C
+@EMSCRIPTEN_KEEPALIVE 
+def Object3D_pos_z( long addr ) ->double;
+@extern.C
+@EMSCRIPTEN_KEEPALIVE 
+def Object3D_rot_x( long addr ) ->double;
+@extern.C
+@EMSCRIPTEN_KEEPALIVE 
+def Object3D_rot_y( long addr ) ->double;
+@extern.C
+@EMSCRIPTEN_KEEPALIVE 
+def Object3D_rot_z( long addr ) ->double;
 
 
 

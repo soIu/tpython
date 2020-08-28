@@ -266,7 +266,7 @@ def get_base_members( classes, class_name, base_members={} ):
 	#for m in classes[class_name]:
 	base_members.update( classes[class_name]['members'] )
 	for base in classes[class_name]['bases']:
-		if base in ('tp_obj', 'tpy_subclass'):
+		if base in ('tp_obj', 'tpy_subclass', 'Object3D'):
 			continue
 		get_base_members( classes, base, base_members )
 
@@ -997,6 +997,8 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			out.append( 'extern ' )
 		elif s == '@inline':
 			out.append( 'inline ' )
+		elif s == '@EMSCRIPTEN_KEEPALIVE':
+			out.append( 'EMSCRIPTEN_KEEPALIVE ' )
 		elif s.startswith('@'):
 			raise SyntaxError( 'Unknown decorator syntax: ' + s )
 		elif ' def[' in s and ln.endswith(':'):
@@ -1120,10 +1122,10 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 			unscram_name = None
 			is_init  = False
 			
-			if in_class and user_pythonic and not func_name.startswith('__'):
+			if in_class and user_pythonic and not func_name.startswith('__') and class_name in classes:
 				#if class_name not in ('tp_obj', 'tpy_subclass'):
 				for base in classes[class_name]['bases']:
-					if base in ('tp_obj', 'tpy_subclass'):
+					if base in ('tp_obj', 'tpy_subclass', 'Object3D'):
 						continue
 					if func_name in classes[base]['vmethods']:
 						is_virt = True
@@ -1216,9 +1218,11 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 				elif in_class and tp_obj_subclass:
 					if i==0:
-						assert arg == 'self'
-						if func_name == class_name:
-							args.append('TP')
+						if arg == 'self':
+							if func_name == class_name:
+								args.append('TP')
+						else:
+							args.append( arg )
 					#elif i==1 and arg=='TP':
 					#	args.append(arg)
 					else:
@@ -1420,14 +1424,20 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 						class_con.append('template<' + ','.join( ['typename T_%s' %i for i in range(len(auto_templates))] ) + '>')
 						class_new.append('template<' + ','.join( ['typename T_%s' %i for i in range(len(auto_templates))] ) + '>')
 
-					class_con.extend([
-						'%s(%s) %s{' % (class_name, ','.join(args), exopts),
-						#'	print("new class %s");' %class_name,
-						'	this->type.type_id = TP_POINTER;',
-						'	this->pointer.classid  = %s;' %classes[class_name]['id'] ,
-						#'	this->pointer.val  = (void*)this;',
-						#'	print(this);',
-					])
+					if 'Object3D' in base_classes:
+						class_con.extend([
+							'%s(%s) %s{' % (class_name, ','.join(args), exopts),
+							'	this->type.type_id = TP_TOBJECT;',
+						])
+					else:
+						class_con.extend([
+							'%s(%s) %s{' % (class_name, ','.join(args), exopts),
+							#'	print("new class %s");' %class_name,
+							'	this->type.type_id = TP_POINTER;',
+							'	this->pointer.classid  = %s;' %classes[class_name]['id'] ,
+							#'	this->pointer.val  = (void*)this;',
+							#'	print(this);',
+						])
 					if auto_templates:
 						class_con.extend([
 							'	this->%s__init__(%s);' % (class_name, ','.join(auto_templates)),
@@ -1438,24 +1448,33 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 							'	this->%s__init__(%s);' % (class_name, ','.join(argnames)),
 							'}'
 						])
-					class_new.extend([
-						## it is not safe to return a copy of the class, because changes made to it will not be updated in obj->pointer.val
-						#'%s %s_new(%s) {' % (class_name, class_name, ','.join(args)),
-						## it is safe to return a tp_obj as a copy, which simply holds a pointer to the new object
-						'tp_obj %s_new(%s) {' % (class_name, ','.join(args)),
-						'	%s* obj = new %s(%s);' % (class_name, class_name, ','.join(auto_templates)),
-						'	obj->pointer.val = (void*)obj;',
-						#'	return *obj;',  ## do not return a copy
-						'	return *(tp_obj*)obj;',
-						'}'
-					])
+					if auto_templates:
+						class_new.extend([
+							## it is not safe to return a copy of the class, because changes made to it will not be updated in obj->pointer.val
+							#'%s %s_new(%s) {' % (class_name, class_name, ','.join(args)),
+							## it is safe to return a tp_obj as a copy, which simply holds a pointer to the new object
+							'tp_obj %s_new(%s) {' % (class_name, ','.join(args)),
+							'	%s* obj = new %s(%s);' % (class_name, class_name, ','.join(auto_templates)),
+							'	obj->pointer.val = (void*)obj;',
+							#'	return *obj;',  ## do not return a copy
+							'	return *(tp_obj*)obj;',
+							'}'
+						])
 					if '--wasm' in sys.argv:
 						class_new.extend([
 							'extern "C" int EMSCRIPTEN_KEEPALIVE new_%s(%s) {' % (class_name, ','.join(args)),
-							'	%s* obj = new %s(%s);' % (class_name, class_name, ','.join(auto_templates)),
+							'	%s* obj = new %s(%s);' % (class_name, class_name, ','.join(argnames)),
 							'	return (int)obj;',
 							'}'
 						])
+						if 'Object3D' in base_classes:
+							class_new.extend([
+								'extern "C" int EMSCRIPTEN_KEEPALIVE %s_on_update(long addr) {' % class_name,
+								'	%s* obj = (%s*)addr;' % (class_name, class_name),
+								'	obj->on_update();',
+								'	return 1;',
+								'}'
+							])
 
 					## generate tpython interpreter wrapper function ##
 					if not class_name.startswith('_') and auto_templates:
@@ -1535,7 +1554,7 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 
 				out.extend(tpargs)
 				
-			if in_class and user_pythonic and is_init:
+			if in_class and user_pythonic and is_init and 'Object3D' not in base_classes:
 				## generate lambda wrappers
 				for methname in classes[ class_name ]['methods']:
 					if methname.startswith('_'):
@@ -1554,18 +1573,19 @@ def pythonicpp( source, header='', file_name='', info={}, swap_self_to_this=Fals
 					out.append(wrapper)
 					out.append('			this->__methods__["%s"] = tp_function(__%s_wrapper);' %(methname, methname))
 
-			elif in_class and func_name==class_name and tp_obj_subclass:
-				raise RuntimeError("tp_obj_subclass is DEPRECATED - replaced by higher level AOT")
-				out.append('			this->type.type_id = TP_OBJECT;')
-				out.append('			this->dict.val = tpd_dict_new(tp);')
-				out.append('			this->obj.info->meta = tp_None;')
-				## generate lambda wrappers
-				for methname in classes[ class_name ]['methods']:
-					methargs = classes[ class_name ]['methods'][methname]
-					margs =  ','.join( ['TP_OBJ()' for ma in methargs] )
-					wrapper = '			std::function<tp_obj(tp_vm*)> __%s_wrapper = [=](tp_vm *tp){return this->%s(%s);};' %(methname, methname, margs)
-					out.append(wrapper)
-					out.append('			tp_set(tp, *this, "%s", tp_function(tp, __%s_wrapper));' %(methname, methname))
+			## note: TODO add some option for this - aug 27, 2020
+			#elif in_class and func_name==class_name and tp_obj_subclass:
+			#	raise RuntimeError("tp_obj_subclass is DEPRECATED - replaced by higher level AOT")
+			#	out.append('			this->type.type_id = TP_OBJECT;')
+			#	out.append('			this->dict.val = tpd_dict_new(tp);')
+			#	out.append('			this->obj.info->meta = tp_None;')
+			#	## generate lambda wrappers
+			#	for methname in classes[ class_name ]['methods']:
+			#		methargs = classes[ class_name ]['methods'][methname]
+			#		margs =  ','.join( ['TP_OBJ()' for ma in methargs] )
+			#		wrapper = '			std::function<tp_obj(tp_vm*)> __%s_wrapper = [=](tp_vm *tp){return this->%s(%s);};' %(methname, methname, margs)
+			#		out.append(wrapper)
+			#		out.append('			tp_set(tp, *this, "%s", tp_function(tp, __%s_wrapper));' %(methname, methname))
 			elif in_class:
 				classes[ class_name ]['methods'][ func_name ] = args
 				if is_virt:
