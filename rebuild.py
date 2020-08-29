@@ -417,6 +417,10 @@ def rebuild(stage=None, exe_name='tpython++'):
 		## note: blendot types require rtti (run time type info)
 		opts += ' -Os '
 		exeopts += ''' -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "intArrayFromString", "intArrayToString", "setValue", "getValue", "allocate", "getMemory", "AsciiToString", "stringToAscii", "UTF8ArrayToString", "UTF8ToString"]' '''
+		if '--filesystem' in sys.argv:
+			pass
+		else:
+			exeopts += ' -s FILESYSTEM=0'
 		if '--debug' in sys.argv:
 			#exeopts += ' -s DISABLE_EXCEPTION_CATCHING=2 -s FILESYSTEM=0'  ## something requires fs
 			#exeopts += ' -s DISABLE_EXCEPTION_CATCHING=2 -s SAFE_HEAP=1 -s WARN_UNALIGNED=1'  ## no need for SAFE_HEAP with wasm, because it can do unaligned casts?
@@ -426,7 +430,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 			#exeopts += ' -s WARN_UNALIGNED=1 -s ASYNCIFY' ## asyncify is deprecated, and makes the binary 50% larger anyways
 			exeopts += ' -s WARN_UNALIGNED=1'			
 			if '--super-tiny' in sys.argv:
-				exeopts += ' -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s FILESYSTEM=0'
+				exeopts += ' -s ERROR_ON_UNDEFINED_SYMBOLS=0'
 
 		if '--closure' in sys.argv:
 			exeopts += ' --closure 1'
