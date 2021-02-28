@@ -101,7 +101,7 @@ Makefile = '''
 VMLIB_FILES=tp.gen.cpp dummy-compiler.cpp runtime.gen.cpp <MODULES>
 
 %.o : %.cpp
-	<CC> $(CFLAGS) <DEFINES> -std=c++17 <OPTIONS> <SDL_INCLUDE> -I .  -I ./tinypy/uninext -I ./tinypy/blendot -I ./tinypy/miniunreal -I ./tinypy/miniode -c -o $@ $<
+	<CC> $(CFLAGS) <DEFINES> -std=c++17 <OPTIONS> <SDL_INCLUDE> -I . <EXTRA_INCLUDES> -c -o $@ $<
 
 all: <EXE>
 
@@ -122,7 +122,7 @@ RPMALLOC_FILES=rpmalloc.c
 VMLIB_FILES=tp.gen.cpp dummy-compiler.cpp runtime.gen.cpp <MODULES>
 
 %.o : %.cpp
-	<CC> $(CFLAGS) <DEFINES> -std=c++17 <OPTIONS> <SDL_INCLUDE> -I .  -I ./tinypy/blendot -I ./tinypy/miniunreal -I ./tinypy/miniode -c -o $@ $<
+	<CC> $(CFLAGS) <DEFINES> -std=c++17 <OPTIONS> <SDL_INCLUDE> -I . <EXTRA_INCLUDES> -c -o $@ $<
 
 %.o : %.c
 	<C> -O3 -DENABLE_THREAD_CACHE=0 -I . -c tinypy/rpmalloc.c -o tinypy/rpmalloc.o
@@ -207,6 +207,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 	mode = 'linux'
 	exe = exe_name
 	exeopts = ''
+	extra_inc = ''  # -I ./tinypy/blendot -I ./tinypy/miniunreal -I ./tinypy/miniode
 	defs = ''
 	mods = ''
 	opts = '-Wcast-align'
@@ -234,12 +235,19 @@ def rebuild(stage=None, exe_name='tpython++'):
 	elif '--miniunreal' in sys.argv or '--unreal' in sys.argv:
 		defs = '-DUNREAL_TYPES'
 		mods = ''
+		extra_inc += ' -I ./tinypy/miniunreal '
 	elif '--blendot' in sys.argv:
 		defs = '-DBLENDOT_TYPES'
 		mods = BlendotTypesFiles
+		assert '--uninext' not in sys.argv
+		extra_inc += ' -I ./tinypy/blendot '
 	elif '--uninext' in sys.argv:
 		defs = '-DTPY_UNINEXT'
 		mods = UninextFiles
+		assert '--blendot' not in sys.argv
+		if '--no-blendot' not in sys.argv:
+			sys.argv.append('--no-blendot')
+		extra_inc += ' -I ./tinypy/uninext '
 
 	if '--rpmalloc' in sys.argv:
 		print("WARN: rpmalloc is not fully compatible with SDL and AOT modules")
@@ -276,6 +284,8 @@ def rebuild(stage=None, exe_name='tpython++'):
 	else:
 		#use_sdl = True
 		if '--ode' in sys.argv:
+			extra_inc += ' -I ./tinypy/miniode '
+
 			aot_modules = True
 			if '--clang' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv:
 				print("WARN: miniode is not yet fully supported by clang")
@@ -649,7 +659,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 		subprocess.check_call(['time', './tpython++'])
 
 	else:
-		makefile = mkfile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe).replace('<EXEOPTS>', exeopts).replace('<OPTIONS>', opts).replace('<MODULES>', mods).replace('<SDL_INCLUDE>', sdl_inc)
+		makefile = mkfile.replace("<CC>", CC).replace('<DEFINES>', defs).replace('<LIBS>', libs).replace('<EXE>', exe).replace('<EXEOPTS>', exeopts).replace('<OPTIONS>', opts).replace('<MODULES>', mods).replace('<SDL_INCLUDE>', sdl_inc).replace('<EXTRA_INCLUDES>', extra_inc)
 		if mode=='windows':
 			makefile = makefile.replace('-rdynamic', '')
 

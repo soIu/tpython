@@ -44,6 +44,12 @@ if defined(MINIUNREAL):
 	import "Internationalization/Text.h"
 	import "miniunreal/UObject/Object.h"
 
+if defined(TPY_UNINEXT):
+	import "uninext/Core.h"
+	import "uninext/Map.h"
+	import "uninext/Player.h"
+	import "uninext/Minion.h"
+
 import <cstddef>
 
 if defined(INCLUDEOS):
@@ -153,6 +159,9 @@ enum TPTypeID:
 	TP_SPATIAL = 14,
 	TP_MESH    = 15,
 	TP_MESHI   = 16,
+	TP_UNINEXT_GAME = 17,
+	TP_UNINEXT_PLAYER = 18,
+	TP_UNINEXT_MINION = 19,
 	TP_UOBJECT = 20,
 	TP_TOBJECT = 21,
 	TP_SET   = 25,
@@ -439,6 +448,10 @@ class tp_obj:
 		struct { TPTypeInfo type; struct MeshInstance *ptr; } meshi;
 	if defined(UNREAL_TYPES):
 		struct { TPTypeInfo type; struct UObject *ptr; } uob;
+	if defined(TPY_UNINEXT):
+		struct { TPTypeInfo type; struct CCore *ptr; } game;
+		struct { TPTypeInfo type; struct Player *ptr; } player;
+		struct { TPTypeInfo type; struct Minion *ptr; } minion;
 	};  // end of union
 	tp_obj operator() (std::vector<tp_obj> args);
 	tp_obj operator=(int n);
