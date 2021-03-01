@@ -1137,6 +1137,12 @@ def tp_tiny_list() -> tp_obj:
 
 #endif
 
+@static
+def tp_uninext_engine(CCore *ptr) -> tp_obj:
+	tp_obj val = {TP_UNINEXT_GAME};
+	val.game.ptr = ptr
+	return val
+
 
 @static
 def tp_vec2(double x, double y) -> tp_obj:

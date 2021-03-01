@@ -10,6 +10,9 @@ if defined(USE_PYTHON):
 if defined(USE_SDL):
 	import "module_sdl.h"
 
+if defined(TPY_UNINEXT):
+	import "module_uninext.h"
+
 #ifndef PURE_AOT
 import <random>
 std::mt19937 *__rand_engine = NULL;
@@ -216,6 +219,9 @@ def tp_module_corelib_init(TP):
 	#endif
 	#ifdef USE_SDL
 	  tp_module_sdl_init(tp)
+	#endif
+	#ifdef TPY_UNINEXT
+	  tp_module_uninext_init(tp)
 	#endif
 	#ifdef INCLUDEOS_VGA
 	  tp_module_vga_init(tp)
