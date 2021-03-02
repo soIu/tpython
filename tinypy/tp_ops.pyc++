@@ -286,6 +286,22 @@ def _tp_get(TP, tp_obj self, tp_obj k, int mget) -> tp_obj:
 				print(k)
 				raise "invalid string method"
 			#endif
+	elif type == TP_UNINEXT_GAME:
+		if k == "update":
+			auto fn = def[=](tp_vm *t):
+				self.game.ptr🠊Update()
+				return tp_None
+			return tp_function(tp, fn)
+		elif k == "draw":
+			auto fn = def[=](tp_vm *t):
+				self.game.ptr🠊Draw()
+				return tp_None
+			return tp_function(tp, fn)
+		elif k == "mainloop":
+			auto fn = def[=](tp_vm *t):
+				self.game.ptr🠊mainLoop()
+				return tp_None
+			return tp_function(tp, fn)
 	elif type == TP_VEC2:
 		if k == "x":
 			return tp_number(self.__vec2.vec.x)

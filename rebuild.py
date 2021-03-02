@@ -229,7 +229,16 @@ def rebuild(stage=None, exe_name='tpython++'):
 			C = os.path.join(clang_path, 'bin/clang')
 
 
-	if '--no-blendot' in sys.argv or '--includeos' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv:
+	if '--uninext' in sys.argv:
+		defs = '-DTPY_UNINEXT'
+		mods = UninextFiles
+		assert '--blendot' not in sys.argv
+		if '--no-blendot' not in sys.argv:
+			sys.argv.append('--no-blendot')
+		extra_inc += ' -I ./tinypy/uninext '
+		opts += ' -s USE_SDL=2 '
+
+	elif '--no-blendot' in sys.argv or '--includeos' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv:
 		defs = ''
 		mods = ''
 	elif '--miniunreal' in sys.argv or '--unreal' in sys.argv:
@@ -241,13 +250,6 @@ def rebuild(stage=None, exe_name='tpython++'):
 		mods = BlendotTypesFiles
 		assert '--uninext' not in sys.argv
 		extra_inc += ' -I ./tinypy/blendot '
-	elif '--uninext' in sys.argv:
-		defs = '-DTPY_UNINEXT'
-		mods = UninextFiles
-		assert '--blendot' not in sys.argv
-		if '--no-blendot' not in sys.argv:
-			sys.argv.append('--no-blendot')
-		extra_inc += ' -I ./tinypy/uninext '
 
 	if '--rpmalloc' in sys.argv:
 		print("WARN: rpmalloc is not fully compatible with SDL and AOT modules")
