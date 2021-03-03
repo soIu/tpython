@@ -236,7 +236,8 @@ def rebuild(stage=None, exe_name='tpython++'):
 		if '--no-blendot' not in sys.argv:
 			sys.argv.append('--no-blendot')
 		extra_inc += ' -I ./tinypy/uninext '
-		opts += ' -s USE_SDL=2 '
+		if '--wasm' in sys.argv:
+			opts += ' -s USE_SDL=2 '
 
 	elif '--no-blendot' in sys.argv or '--includeos' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv:
 		defs = ''
