@@ -2695,18 +2695,18 @@ def main():
 		if len(scripts) == 1:
 			source = scripts[0]
 			if source.strip():
-				tempf = '/tmp/%s_main.py'%name
+				tempf = '/tmp/%s__TPY__.py'%name
 				if '--debug' in sys.argv:
 					print(source)
 
 				open(tempf, 'wb').write(source.encode('utf-8'))
-				subprocess.check_call(['./tpc']+exargs+['-o', './%s.bytecode'%name, tempf])
+				subprocess.check_call(['./tpc']+exargs+['-o', '/tmp/%s.bytecode'%name, tempf])
 		else:
 			for i in range(len(scripts)):
 				source = scripts[i]
 				tempf = '/tmp/%s_thread%s.py'%(name,i)
 				open(tempf, 'wb').write(source.encode('utf-8'))
-				subprocess.check_call(['./tpc']+exargs+['-o', './%s_thread%s.bytecode'%(name,i), tempf])
+				subprocess.check_call(['./tpc']+exargs+['-o', '/tmp/%s_thread%s.bytecode'%(name,i), tempf])
 
 	if pythonicpp_paths:
 		for path in pythonicpp_paths:

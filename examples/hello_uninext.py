@@ -1,15 +1,15 @@
 import uninext
 game = None
 def loop():
-	print('game.clear')
+	#print('game.clear')
 	game.clear()
-	print('game.inputs')
+	#print('game.inputs')
 	game.input()
-	print('game.update')
+	#print('game.update')
 	game.update()
-	print('game.draw')
+	#print('game.draw')
 	game.draw()
-	print('game.show')
+	#print('game.show')
 	game.show()
 
 def main():
