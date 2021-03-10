@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import os, sys, subprocess, random, json
+import os, sys, subprocess, random, json, base64
 
 # always generate code relative to this file.
 workspace_dir = os.path.dirname(os.path.abspath(__file__))
@@ -47,7 +47,7 @@ try running the commands below, and then rebuild.
 
 '''
 
-def pakoify(js, exe='tpython++'):
+def pakoify(js, exe='tpython++', wasmgz=None):
 	assert exe in js
 	js = js.replace("'%s.wasm'" %exe, "'%s.wasm.gz'" %exe)
 	#assert js.count('(xhr.response)')==2
@@ -57,6 +57,15 @@ def pakoify(js, exe='tpython++'):
 		'return WebAssembly.instantiate(binary, info);',
 		'return WebAssembly.instantiate(pako.inflate(binary),info);'
 	)
+
+	if wasmgz:
+		assert js.count("function getBinary() {")==1
+		wbin = "Module['wasmBinary']=pako.inflate(atob('%s'));" % base64.b64encode(wasmgz)
+		js = js.replace(
+			"function getBinary() {",
+			wbin + "\nfunction getBinary() {"
+		)
+
 	return js
 
 def gen_interpreter_codes(randomize=False):
@@ -732,9 +741,12 @@ def rebuild(stage=None, exe_name='tpython++'):
 		elif exe.endswith('.js'):
 			exe = exe.split('.js')[0]
 
+
+		wasmgz = None
 		if os.path.isfile(pakopath):
 			pako = open(pakopath).read()
 			subprocess.check_call(['gzip', '--force', './%s.wasm' %exe])
+			wasmgz = open('./%s.wasm.gz' %exe, 'rb').read()
 		else:
 			print(PAKO_MISSING)
 
@@ -742,13 +754,13 @@ def rebuild(stage=None, exe_name='tpython++'):
 			a = open('/tmp/tpython_preload_libs.js').read()
 			b = open('./%s.js' %exe).read()
 			if pako:
-				c = pako + '\n' + a + '\n' + pakoify(b, exe=exe)
+				c = pako + '\n' + a + '\n' + pakoify(b, exe=exe, wasmgz=wasmgz)
 			else:
 				c = a + '\n' + b
 			open('./%s.js' %exe, 'wb').write(c.encode('utf-8'))
 		elif pako:
 			b = open('./%s.js' %exe ).read()
-			c = pako + '\n' + pakoify(b, exe=exe)
+			c = pako + '\n' + pakoify(b, exe=exe, wasmgz=wasmgz)
 			open('./%s.js' %exe, 'wb').write(c.encode('utf-8'))
 			
 	#####################
