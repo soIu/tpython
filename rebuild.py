@@ -286,7 +286,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 			sys.argv.append('--no-blendot')
 		extra_inc += ' -I ./tinypy/uninext '
 		if '--wasm' in sys.argv:
-			opts += ' -s USE_SDL=2 '
+			opts += ' -s USE_SDL=2 -s USE_SDL_IMAGE=2'
 
 	elif '--no-blendot' in sys.argv or '--includeos' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv:
 		defs = ''
@@ -482,10 +482,14 @@ def rebuild(stage=None, exe_name='tpython++'):
 		## note: blendot types require rtti (run time type info)
 		opts += ' -Os '
 		exeopts += ''' -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "intArrayFromString", "intArrayToString", "setValue", "getValue", "allocate", "getMemory", "AsciiToString", "stringToAscii", "UTF8ArrayToString", "UTF8ToString"]' '''
-		if '--filesystem' in sys.argv:
+		if '--filesystem' in sys.argv or '--uninext' in sys.argv:
 			pass
 		else:
 			exeopts += ' -s FILESYSTEM=0'
+
+		if '--uninext' in sys.argv:
+			exeopts += ' --embed-file tinypy/uninext/files'
+
 		if '--debug' in sys.argv:
 			#exeopts += ' -s DISABLE_EXCEPTION_CATCHING=2 -s FILESYSTEM=0'  ## something requires fs
 			#exeopts += ' -s DISABLE_EXCEPTION_CATCHING=2 -s SAFE_HEAP=1 -s WARN_UNALIGNED=1'  ## no need for SAFE_HEAP with wasm, because it can do unaligned casts?
@@ -504,7 +508,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 			## SDL1 is better
 			#exeopts += ' -s USE_SDL=2'
 			#if '--sdl-image' in sys.argv:
-			#	exeopts += """ -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]'"""
+			exeopts += """ -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]'"""
 			pass
 		if '--html' in sys.argv:
 			exe += '.html'
