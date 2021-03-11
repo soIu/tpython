@@ -47,23 +47,63 @@ try running the commands below, and then rebuild.
 
 '''
 
+EMHACK = '''
+// EMSCRIPTEN_START_ASM
+var asm =Module["asm"]// EMSCRIPTEN_END_ASM
+(asmGlobalArg, asmLibraryArg, buffer);
+'''.strip()
+
+EMHACK_NEW = '''
+// EMSCRIPTEN_START_ASM
+Module["asm"](asmGlobalArg, asmLibraryArg, buffer, function after_wasm_load(asm) {
+'''
+
+
 def pakoify(js, exe='tpython++', wasmgz=None):
 	assert exe in js
 	js = js.replace("'%s.wasm'" %exe, "'%s.wasm.gz'" %exe)
 	#assert js.count('(xhr.response)')==2
 	#js = js.replace('(xhr.response)')
 	assert js.count('return WebAssembly.instantiate(binary, info);') == 1
-	js = js.replace(
-		'return WebAssembly.instantiate(binary, info);',
-		'return WebAssembly.instantiate(pako.inflate(binary),info);'
-	)
+	assert js.count('var exports = createWasm(env);') == 1
+
 
 	if wasmgz:
-		assert js.count("function getBinary() {")==1
-		wbin = "Module['wasmBinary']=pako.inflate(atob('%s'));" % base64.b64encode(wasmgz)
+		#assert js.count("function getBinary() {")==1
+		#wbin = "Module['wasmBinary']=pako.inflate(atob('%s'));" % base64.b64encode(wasmgz)
+		#js = js.replace(
+		#	"function getBinary() {",
+		#	wbin + "\nfunction getBinary() {"
+		#)
+
+		js = js.replace('run();', '/*bypassed run*/;')
+
 		js = js.replace(
-			"function getBinary() {",
-			wbin + "\nfunction getBinary() {"
+			"Module['asm'] = function(global, env, providedBuffer) {",
+			"Module['asm'] = function __module_module_do_asm(global, env, providedBuffer, callback) {"
+		)
+
+		r = """var info = {'env': env, 'global': {'NaN': NaN, 'Infinity': Infinity }, 'global.Math': Math, 'asm2wasm': asm2wasmImports};"""
+		r += 'var wasm = WebAssembly.instantiate(pako.inflate(atob("%s")),info);' % base64.b64encode(wasmgz)
+		r += 'console.log(wasm);'
+		r += 'wasm.then( function (result){ Module["asm"]=result.instance.exports; callback(Module.asm); run();} ); var exports = {};'
+		#r += 'var exports = wasm.instance.exports;'
+		#r += "Module['asm'] = exports;"
+		#r += "callback(exports);"
+		js = js.replace('var exports = createWasm(env);', r)
+
+		assert js.count(EMHACK)==1
+		js = js.replace(EMHACK, EMHACK_NEW)
+
+		js = js.replace('Module["asm"] = asm;', '});')
+
+
+		js = js.replace("Module['asm'] = asm;", '')
+
+	else:
+		js = js.replace(
+			'return WebAssembly.instantiate(binary, info);',
+			'return WebAssembly.instantiate(pako.inflate(binary),info);'
 		)
 
 	return js
