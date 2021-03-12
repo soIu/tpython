@@ -286,7 +286,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 			sys.argv.append('--no-blendot')
 		extra_inc += ' -I ./tinypy/uninext '
 		if '--wasm' in sys.argv:
-			opts += ' -s USE_SDL=2 -s USE_SDL_IMAGE=2'
+			opts += ' -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_MIXER=2'
 
 	elif '--no-blendot' in sys.argv or '--includeos' in sys.argv or '--html' in sys.argv or '--wasm' in sys.argv:
 		defs = ''
@@ -508,7 +508,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 			## SDL1 is better
 			#exeopts += ' -s USE_SDL=2'
 			#if '--sdl-image' in sys.argv:
-			exeopts += """ -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]'"""
+			exeopts += """ -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]' -s USE_SDL_MIXER=2"""
 			pass
 		if '--html' in sys.argv:
 			exe += '.html'
