@@ -58,6 +58,42 @@ EMHACK_NEW = '''
 Module["asm"](asmGlobalArg, asmLibraryArg, buffer, function after_wasm_load(asm) {
 '''
 
+EMHACK_INIT = '''
+var info = {'env': env, 'global': {'NaN': NaN, 'Infinity': Infinity }, 'global.Math': Math, 'asm2wasm': asm2wasmImports};
+var wasm = WebAssembly.instantiate(pako.inflate(atob("%s")),info);
+console.log(wasm);
+wasm.then( function (result){
+	Module["asm"]=result.instance.exports;
+	callback(Module.asm);  // init global ctors //
+	//for (var i=0; i<Module.preRun.length; i++)
+	//	Module.preRun[i]();
+	run();
+}); 
+
+
+var exports = {};
+'''
+
+EMHACK_FS_HEAD = '''
+(function() {
+ var loadPackage = function(metadata) {
+
+  function runWithFS() {
+'''.strip()
+
+EMHACK_FS_TAIL = '''
+  if (Module['calledRun']) {
+    runWithFS();
+  } else {
+    if (!Module['preRun']) Module['preRun'] = [];
+    Module["preRun"].push(runWithFS); // FS is not initialized yet, wait for it
+  }
+
+ }
+ loadPackage({"files": []});
+
+})();
+'''.strip()
 
 def pakoify(js, exe='tpython++', wasmgz=None):
 	assert exe in js
@@ -66,7 +102,19 @@ def pakoify(js, exe='tpython++', wasmgz=None):
 	#js = js.replace('(xhr.response)')
 	assert js.count('return WebAssembly.instantiate(binary, info);') == 1
 	assert js.count('var exports = createWasm(env);') == 1
+	assert js.count("Module['preRun'] = [];") == 2
+	assert js.count("var Module = typeof Module !== 'undefined' ? Module : {};") == 1
 
+	assert js.count(EMHACK_FS_HEAD)==1
+	assert js.count(EMHACK_FS_TAIL)==1
+
+	js = js.replace(EMHACK_FS_HEAD, 'function runWithFS() {').replace(EMHACK_FS_TAIL, '')
+
+	assert js.count('initRuntime();')==1
+	js = js.replace('initRuntime();', 'initRuntime(); runWithFS();')
+
+	assert js.count('var path = NODEFS.realPath(stream.node);') ==1
+	js = js.replace('var path = NODEFS.realPath(stream.node);', 'var path = NODEFS.realPath(stream.node);console.log("realPath="+path);')
 
 	if wasmgz:
 		#assert js.count("function getBinary() {")==1
@@ -83,14 +131,10 @@ def pakoify(js, exe='tpython++', wasmgz=None):
 			"Module['asm'] = function __module_module_do_asm(global, env, providedBuffer, callback) {"
 		)
 
-		r = """var info = {'env': env, 'global': {'NaN': NaN, 'Infinity': Infinity }, 'global.Math': Math, 'asm2wasm': asm2wasmImports};"""
-		r += 'var wasm = WebAssembly.instantiate(pako.inflate(atob("%s")),info);' % base64.b64encode(wasmgz)
-		r += 'console.log(wasm);'
-		r += 'wasm.then( function (result){ Module["asm"]=result.instance.exports; callback(Module.asm); run();} ); var exports = {};'
 		#r += 'var exports = wasm.instance.exports;'
 		#r += "Module['asm'] = exports;"
 		#r += "callback(exports);"
-		js = js.replace('var exports = createWasm(env);', r)
+		js = js.replace('var exports = createWasm(env);', EMHACK_INIT % base64.b64encode(wasmgz))
 
 		assert js.count(EMHACK)==1
 		js = js.replace(EMHACK, EMHACK_NEW)
@@ -99,6 +143,21 @@ def pakoify(js, exe='tpython++', wasmgz=None):
 
 
 		js = js.replace("Module['asm'] = asm;", '')
+
+
+		js = js.replace(
+			"Module['preRun'] = [];",
+			'/*bypassed preRun=[]*/;'
+		)
+		js = js.replace("Module['postRun'] = [];", "")
+		js = js.replace(
+			"var Module = typeof Module !== 'undefined' ? Module : {};",
+			"var Module = typeof Module !== 'undefined' ? Module : {preRun:[], postRun:[]};"
+		)
+
+		assert js.count("var callback = callbacks.shift();") == 1
+		js = js.replace("var callback = callbacks.shift();", "var callback = callbacks.shift();console.log('callRuntimeCallbacks', callback);")
+
 
 	else:
 		js = js.replace(
@@ -508,7 +567,10 @@ def rebuild(stage=None, exe_name='tpython++'):
 			## SDL1 is better
 			#exeopts += ' -s USE_SDL=2'
 			#if '--sdl-image' in sys.argv:
-			exeopts += """ -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]' -s USE_SDL_MIXER=2"""
+
+			## note: png requires zlib
+			#exeopts += """ -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["png"]' -s USE_SDL_MIXER=2"""
+			exeopts += """ -s USE_SDL_IMAGE=2 -s SDL2_IMAGE_FORMATS='["gif"]' -s USE_SDL_MIXER=2 -s TOTAL_MEMORY=512MB"""
 			pass
 		if '--html' in sys.argv:
 			exe += '.html'
