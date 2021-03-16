@@ -152,7 +152,7 @@ def pakoify(js, exe='tpython++', wasmgz=None):
 		js = js.replace("Module['postRun'] = [];", "")
 		js = js.replace(
 			"var Module = typeof Module !== 'undefined' ? Module : {};",
-			"var Module = typeof Module !== 'undefined' ? Module : {preRun:[], postRun:[]};"
+			"var Module = typeof Module !== 'undefined' ? Module : {preRun:[], postRun:[], canvas:document.getElementById('canvas')};"
 		)
 
 		assert js.count("var callback = callbacks.shift();") == 1
@@ -432,7 +432,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 	print(sys.argv)
 	for arg in sys.argv[1:]:
 		if arg.startswith('--html-template='):
-			html_template = open(arg.split('=')[-1], 'rb').read().decode('utf-8')
+			html_template = open( os.path.expanduser(arg.split('=')[-1]), 'rb').read().decode('utf-8')
 
 		elif arg.endswith( ('.unreal', '.unreal/') ):
 			unreal_plugin = arg
@@ -807,9 +807,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 
 		## insert user source code into html file ##
 		if script and is_html:
-			if html_template:
-				html = html_template.replace('</head>', '<script async type="text/javascript" src="tpython%2B%2B.js"></script></head>')
-			else:
+			if not html_template:
 				html = open('./%s.html' %exe, 'rb').read().decode('utf-8')
 				assert '</body>' in html
 				script = script.replace("<", "&lt;").replace(">", "&gt;")
@@ -830,9 +828,6 @@ def rebuild(stage=None, exe_name='tpython++'):
 				else:
 					html = html.replace('</body>', SIMPLE_JS_EDITOR + '<hr/><pre contenteditable="true" id="TPY_SRC">%s</pre></body>' %script)
 
-
-			open('./%s.html' %exe, 'wb').write( html.encode('utf-8') )
-
 			if '--keyboard-events' in sys.argv:
 				pass
 			else:
@@ -843,7 +838,8 @@ def rebuild(stage=None, exe_name='tpython++'):
 					"var Module = typeof Module !== 'undefined' ? Module : {};\nModule['doNotCaptureKeyboard']=true;"
 			
 				)
-				js = open('./%s.js' %exe, 'wb').write( js.encode('utf-8') )
+				open('./%s.js' %exe, 'wb').write( js.encode('utf-8') )
+
 		elif exe.endswith('.js'):
 			exe = exe.split('.js')[0]
 
@@ -856,6 +852,7 @@ def rebuild(stage=None, exe_name='tpython++'):
 		else:
 			print(PAKO_MISSING)
 
+		c = js
 		if os.path.isfile('/tmp/tpython_preload_libs.js'):
 			a = open('/tmp/tpython_preload_libs.js').read()
 			b = open('./%s.js' %exe).read()
@@ -868,6 +865,17 @@ def rebuild(stage=None, exe_name='tpython++'):
 			b = open('./%s.js' %exe ).read()
 			c = pako + '\n' + pakoify(b, exe=exe, wasmgz=wasmgz)
 			open('./%s.js' %exe, 'wb').write(c.encode('utf-8'))
+
+		if html_template:
+			if '--external-js' in sys.argv:
+				assert '</head>' in html_template
+				html = html_template.replace('</head>', '<script async type="text/javascript" src="tpython%2B%2B.js"></script></head>')
+			else:
+				assert '</body>' in html_template
+				html = html_template.replace('</body>', '<script type="text/javascript">%s</script></body>' % c)
+
+		open('./%s.html' %exe, 'wb').write( html.encode('utf-8') )
+
 			
 	#####################
 	if mode == 'windows':
