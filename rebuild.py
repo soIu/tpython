@@ -81,6 +81,44 @@ EMHACK_FS_HEAD = '''
   function runWithFS() {
 '''.strip()
 
+COMPRESSION_MAPPING = {
+	"a":255,
+	"b":188,
+	"c":173,
+	"d":168,
+	"e":116,
+	"f":200,
+	"g":241,
+	"h":136,
+	"i":252,
+	"j":249,
+	"k":152,
+	"l":128,
+	"m":176,
+	"n":151,
+	"o":172,
+	"p":217,
+	"q":216,
+	"r":236,
+	"s":174,
+	"t":153,
+	"u":228,
+	"v":240,
+	"w":208,
+	"x":165,
+	"y":199,
+	"z":185,
+}
+
+EMHACK_FS_HEAD_NEW = '''
+function runWithFS() {
+	var %s;
+	%s
+''' % (
+		','.join(COMPRESSION_MAPPING.keys()),
+		';'.join(['%s=%s' %(key,COMPRESSION_MAPPING[key]) for key in COMPRESSION_MAPPING])
+	)
+
 EMHACK_FS_TAIL = '''
   if (Module['calledRun']) {
     runWithFS();
@@ -108,13 +146,28 @@ def pakoify(js, exe='tpython++', wasmgz=None):
 	assert js.count(EMHACK_FS_HEAD)==1
 	assert js.count(EMHACK_FS_TAIL)==1
 
-	js = js.replace(EMHACK_FS_HEAD, 'function runWithFS() {').replace(EMHACK_FS_TAIL, '')
+	js = js.replace(EMHACK_FS_HEAD, EMHACK_FS_HEAD_NEW).replace(EMHACK_FS_TAIL, '')
 
 	assert js.count('initRuntime();')==1
 	js = js.replace('initRuntime();', 'initRuntime(); runWithFS();')
 
 	assert js.count('var path = NODEFS.realPath(stream.node);') ==1
 	js = js.replace('var path = NODEFS.realPath(stream.node);', 'var path = NODEFS.realPath(stream.node);console.log("realPath="+path);')
+
+	## compress inline files ##
+	newjs = []
+	for ln in js.splitlines():
+		if ln.startswith('fileData') and '.push.apply(' in ln:
+			a,b = ln.split(', [')
+			b = b.replace(' ', '')
+			for key in COMPRESSION_MAPPING:
+				val = str(COMPRESSION_MAPPING[key])
+				if val in b:
+					b = b.replace(val, key)
+			ln = a + ',[' + b
+		newjs.append(ln)
+
+	js = '\n'.join(newjs)
 
 	if wasmgz:
 		#assert js.count("function getBinary() {")==1

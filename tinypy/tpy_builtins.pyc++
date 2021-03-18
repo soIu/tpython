@@ -24,7 +24,8 @@ def tpy_emscripten_set_main_loop(TP) ->tp_obj:
 	## TODO ensure that this is a bytecode function
 	__em_main_func__ = func.func.info->code
 	__em_tp__ = tp
-	emscripten_set_main_loop(__em_main_loop__, 30, 1)
+	##emscripten_set_main_loop(__em_main_loop__, 30, 1)
+	emscripten_set_main_loop(__em_main_loop__, -1, 1)
 	return None
 
 #endif
