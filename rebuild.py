@@ -143,6 +143,12 @@ def pakoify(js, exe='tpython++', wasmgz=None):
 	assert js.count("Module['preRun'] = [];") == 2
 	assert js.count("var Module = typeof Module !== 'undefined' ? Module : {};") == 1
 
+	assert js.count('function __registerKeyEventCallback(target, userData, useCapture, callbackfunc, eventTypeId, eventTypeString, targetThread) {') == 1
+	js = js.replace(
+		'function __registerKeyEventCallback(target, userData, useCapture, callbackfunc, eventTypeId, eventTypeString, targetThread) {',
+		'function __registerKeyEventCallback(target, userData, useCapture, callbackfunc, eventTypeId, eventTypeString, targetThread) { return;'
+	)
+
 	assert js.count(EMHACK_FS_HEAD)==1
 	assert js.count(EMHACK_FS_TAIL)==1
 
@@ -909,14 +915,17 @@ def rebuild(stage=None, exe_name='tpython++'):
 		if os.path.isfile('/tmp/tpython_preload_libs.js'):
 			a = open('/tmp/tpython_preload_libs.js').read()
 			b = open('./%s.js' %exe).read()
-			if pako:
+			if pako and '--no-pako-lib' not in sys.argv:
 				c = pako + '\n' + a + '\n' + pakoify(b, exe=exe, wasmgz=wasmgz)
 			else:
 				c = a + '\n' + b
 			open('./%s.js' %exe, 'wb').write(c.encode('utf-8'))
 		elif pako:
 			b = open('./%s.js' %exe ).read()
-			c = pako + '\n' + pakoify(b, exe=exe, wasmgz=wasmgz)
+			if '--no-pako-lib' in sys.argv:
+				c = pakoify(b, exe=exe, wasmgz=wasmgz)
+			else:
+				c = pako + '\n' + pakoify(b, exe=exe, wasmgz=wasmgz)
 			open('./%s.js' %exe, 'wb').write(c.encode('utf-8'))
 
 		if html_template:
