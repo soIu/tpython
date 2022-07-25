@@ -449,7 +449,7 @@ class tp_obj:
 	if defined(UNREAL_TYPES):
 		struct { TPTypeInfo type; struct UObject *ptr; } uob;
 	if defined(TPY_UNINEXT):
-		struct { TPTypeInfo type; struct CCore *ptr; } game;
+		//struct { TPTypeInfo type; struct CCore *ptr; } game;
 		struct { TPTypeInfo type; struct Player *ptr; } player;
 		struct { TPTypeInfo type; struct Minion *ptr; } minion;
 	};  // end of union
@@ -1137,12 +1137,12 @@ def tp_tiny_list() -> tp_obj:
 
 #endif
 
-@static
+/*@static
 def tp_uninext_engine(CCore *ptr) -> tp_obj:
 	tp_obj val = {TP_UNINEXT_GAME};
-	val.game.ptr = ptr
+	//val.game.ptr = ptr
 	return val
-
+*/
 
 @static
 def tp_vec2(double x, double y) -> tp_obj:
